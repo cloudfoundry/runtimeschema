@@ -375,12 +375,13 @@ var _ = Describe("RunOnce BBS", func() {
 				})
 
 				It("should not kick the pending key", func(done Done) {
-					events, _, _ := store.Watch("/v1/run_once/pending")
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
 					bbs.ConvergeRunOnce()
 
 					bbs.DesireRunOnce(otherRunOnce)
 
-					Ω((<-events).Node.Key).Should(Equal("/v1/run_once/pending/some-other-guid"))
+					Ω(<-events).Should(Equal(otherRunOnce))
 
 					close(done)
 				})
@@ -393,12 +394,13 @@ var _ = Describe("RunOnce BBS", func() {
 				})
 
 				It("should not kick the pending key", func(done Done) {
-					events, _, _ := store.Watch("/v1/run_once/pending")
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
 					bbs.ConvergeRunOnce()
 
 					bbs.DesireRunOnce(otherRunOnce)
 
-					Ω((<-events).Node.Key).Should(Equal("/v1/run_once/pending/some-other-guid"))
+					Ω(<-events).Should(Equal(otherRunOnce))
 
 					close(done)
 				})
@@ -411,23 +413,23 @@ var _ = Describe("RunOnce BBS", func() {
 				})
 
 				It("should not kick the pending key", func(done Done) {
-					events, _, _ := store.Watch("/v1/run_once/pending")
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
 					bbs.ConvergeRunOnce()
 
 					bbs.DesireRunOnce(otherRunOnce)
 
-					Ω((<-events).Node.Key).Should(Equal("/v1/run_once/pending/some-other-guid"))
+					Ω(<-events).Should(Equal(otherRunOnce))
 
 					close(done)
 				})
 
 				It("should kick the completed key", func(done Done) {
-					events, _, _ := store.Watch("/v1/run_once/completed")
+					events, _, _ := bbs.WatchForCompletedRunOnce()
+
 					bbs.ConvergeRunOnce()
 
-					event := <-events
-					Ω(event.Node.Key).Should(Equal("/v1/run_once/completed/some-guid"))
-					Ω(event.Node.Value).Should(Equal(runOnce.ToJSON()))
+					Ω(<-events).Should(Equal(runOnce))
 
 					close(done)
 				})
@@ -435,12 +437,11 @@ var _ = Describe("RunOnce BBS", func() {
 
 			Context("and there are no other keys", func() {
 				It("should kick the pending key", func(done Done) {
-					events, _, _ := store.Watch("/v1/run_once/pending")
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
 					bbs.ConvergeRunOnce()
 
-					event := <-events
-					Ω(event.Node.Key).Should(Equal("/v1/run_once/pending/some-guid"))
-					Ω(event.Node.Value).Should(Equal(runOnce.ToJSON()))
+					Ω(<-events).Should(Equal(runOnce))
 
 					close(done)
 				})
