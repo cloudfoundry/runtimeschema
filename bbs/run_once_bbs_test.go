@@ -217,9 +217,17 @@ var _ = Describe("RunOnce BBS", func() {
 	})
 
 	Describe("WatchForDesiredRunOnce", func() {
-		It("should send an event down the pipe for creates", func(done Done) {
-			events, _, _ := bbs.WatchForDesiredRunOnce()
+		var (
+			events <-chan (models.RunOnce)
+			stop   chan<- bool
+		)
 
+		BeforeEach(func() {
+			events, stop, _ = bbs.WatchForDesiredRunOnce()
+			time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
+		})
+
+		It("should send an event down the pipe for creates", func(done Done) {
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -229,8 +237,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should send an event down the pipe for sets", func(done Done) {
-			events, _, _ := bbs.WatchForDesiredRunOnce()
-
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -245,8 +251,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should not send an event down the pipe for deletes", func(done Done) {
-			events, _, _ := bbs.WatchForDesiredRunOnce()
-
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -267,8 +271,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("closes the events channel when told to stop", func(done Done) {
-			events, stop, _ := bbs.WatchForDesiredRunOnce()
-
 			stop <- true
 
 			err := bbs.DesireRunOnce(runOnce)
@@ -283,9 +285,17 @@ var _ = Describe("RunOnce BBS", func() {
 	})
 
 	Describe("WatchForCompletedRunOnce", func() {
-		It("should send an event down the pipe for creates", func(done Done) {
-			events, _, _ := bbs.WatchForCompletedRunOnce()
+		var (
+			events <-chan (models.RunOnce)
+			stop   chan<- bool
+		)
 
+		BeforeEach(func() {
+			events, stop, _ = bbs.WatchForCompletedRunOnce()
+			time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
+		})
+
+		It("should send an event down the pipe for creates", func(done Done) {
 			err := bbs.CompletedRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -295,8 +305,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should send an event down the pipe for sets", func(done Done) {
-			events, _, _ := bbs.WatchForCompletedRunOnce()
-
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -313,8 +321,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should not send an event down the pipe for deletes", func(done Done) {
-			events, _, _ := bbs.WatchForCompletedRunOnce()
-
 			err := bbs.CompletedRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -334,8 +340,6 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("closes the events channel when told to stop", func(done Done) {
-			events, stop, _ := bbs.WatchForCompletedRunOnce()
-
 			stop <- true
 
 			err := bbs.CompletedRunOnce(runOnce)
