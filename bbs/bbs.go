@@ -1,0 +1,37 @@
+package bbs
+
+import (
+	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-cf-experimental/runtime-schema/models"
+)
+
+//Bulletin Board System/Store
+
+type ExecutorBBS interface {
+	WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) //filter out delete...
+
+	ClaimRunOnce(models.RunOnce) error
+	StartRunOnce(models.RunOnce) error
+	CompletedRunOnce(models.RunOnce) error
+
+	ConvergeRunOnce() //should be executed periodically
+}
+
+type StagerBBS interface {
+	WatchForCompletedRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) //filter out delete...
+
+	DesireRunOnce(models.RunOnce) error
+	ResolveRunOnce(models.RunOnce) error
+}
+
+func New(store storeadapter.StoreAdapter) *BBS {
+	return &BBS{
+		ExecutorBBS: &executorBBS{store: store},
+		StagerBBS:   &stagerBBS{store: store},
+	}
+}
+
+type BBS struct {
+	ExecutorBBS
+	StagerBBS
+}
