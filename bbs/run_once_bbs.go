@@ -65,6 +65,33 @@ func watchForRunOnceModificationsOnState(store storeadapter.StoreAdapter, state 
 	return runOnces, stopOuter, errs
 }
 
+func getAllRunOnces(store storeadapter.StoreAdapter, state string) ([]models.RunOnce, error) {
+	node, err := store.ListRecursively(runOnceSchemaPath(state))
+	if err == storeadapter.ErrorKeyNotFound {
+		return []models.RunOnce{}, nil
+	}
+
+	if err != nil {
+		return []models.RunOnce{}, err
+	}
+
+	runOnces := []models.RunOnce{}
+	for _, node := range node.ChildNodes {
+		runOnce, _ := models.NewRunOnceFromJSON(node.Value)
+		runOnces = append(runOnces, runOnce)
+	}
+
+	return runOnces, nil
+}
+
+func (self *BBS) GetAllClaimedRunOnces() ([]models.RunOnce, error) {
+	return getAllRunOnces(self.store, "claimed")
+}
+
+func (self *BBS) GetAllStartingRunOnces() ([]models.RunOnce, error) {
+	return getAllRunOnces(self.store, "running")
+}
+
 func (self *stagerBBS) WatchForCompletedRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
 	return watchForRunOnceModificationsOnState(self.store, "completed")
 }

@@ -28,10 +28,12 @@ func New(store storeadapter.StoreAdapter) *BBS {
 	return &BBS{
 		ExecutorBBS: &executorBBS{store: store},
 		StagerBBS:   &stagerBBS{store: store},
+		store:       store,
 	}
 }
 
 type BBS struct {
 	ExecutorBBS
 	StagerBBS
+	store storeadapter.StoreAdapter
 }

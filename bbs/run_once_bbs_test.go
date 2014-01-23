@@ -353,6 +353,30 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
+	Describe("GetAllClaimedRunOnces", func() {
+		It("should send an event down the pipe", func() {
+			err := bbs.ClaimRunOnce(runOnce)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			runOnces, err := bbs.GetAllClaimedRunOnces()
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(runOnces).Should(HaveLen(1))
+			Ω(runOnces).Should(ContainElement(runOnce))
+		})
+	})
+
+	Describe("GetAllStartingRunOnces", func() {
+		It("should send an event down the pipe", func() {
+			err := bbs.StartRunOnce(runOnce)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			runOnces, err := bbs.GetAllStartingRunOnces()
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(runOnces).Should(HaveLen(1))
+			Ω(runOnces).Should(ContainElement(runOnce))
+		})
+	})
+
 	Describe("ConvergeRunOnce", func() {
 		var otherRunOnce models.RunOnce
 
