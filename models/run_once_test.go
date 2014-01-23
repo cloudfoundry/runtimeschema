@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/pivotal-cf-experimental/runtime-schema/models"
+	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
 var _ = Describe("RunOnce", func() {

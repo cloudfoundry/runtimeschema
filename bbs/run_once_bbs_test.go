@@ -4,8 +4,8 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/pivotal-cf-experimental/runtime-schema/bbs"
-	"github.com/pivotal-cf-experimental/runtime-schema/models"
+	. "github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"time"
 )
 

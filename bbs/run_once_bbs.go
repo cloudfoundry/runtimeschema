@@ -2,7 +2,7 @@ package bbs
 
 import (
 	"github.com/cloudfoundry/storeadapter"
-	"github.com/pivotal-cf-experimental/runtime-schema/models"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"path"
 	"time"
 )
