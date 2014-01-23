@@ -224,7 +224,6 @@ var _ = Describe("RunOnce BBS", func() {
 
 		BeforeEach(func() {
 			events, stop, _ = bbs.WatchForDesiredRunOnce()
-			time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
 		})
 
 		It("should send an event down the pipe for creates", func(done Done) {
@@ -292,7 +291,6 @@ var _ = Describe("RunOnce BBS", func() {
 
 		BeforeEach(func() {
 			events, stop, _ = bbs.WatchForCompletedRunOnce()
-			time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
 		})
 
 		It("should send an event down the pipe for creates", func(done Done) {
