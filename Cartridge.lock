@@ -1,6 +1,6 @@
 bitbucket.org/kardianos/osext	364fb577de68
 github.com/cloudfoundry/gunk	24e811fc31d116330aaadfa9ff8e6693580436e1
-github.com/cloudfoundry/storeadapter	bf8788eab3f955b8ad3e127b319c1634fb4988e4
+github.com/cloudfoundry/storeadapter	52569d3bfa91cd42b8c85b12a59fbd6c90df19bb
 github.com/coreos/go-etcd	9eb06f3f7382351c3dd3a5d04a6f2c1ee12032a0
 github.com/coreos/go-log	70d039bee4b0e389e5be560491d8291708506f59
 github.com/coreos/go-systemd	ae95250ce5abe29f1af2a737caabbfdb561918c0

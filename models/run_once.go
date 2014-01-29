@@ -7,6 +7,12 @@ import (
 type RunOnce struct {
 	Guid string `json:"guid"`
 
+	// this is so that any stager can process a complete event,
+	// because the CC <-> Stager interaction is a one-to-one request-response
+	//
+	// ideally staging completion is a "broadcast" event instead and this goes away
+	ReplyTo string `json:"reply_to"`
+
 	ExecutorID string `json:"executor_id"`
 
 	ContainerHandle string `json:"container_handle"`

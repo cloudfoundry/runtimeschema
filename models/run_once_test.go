@@ -10,11 +10,12 @@ import (
 var _ = Describe("RunOnce", func() {
 	var runOnce RunOnce
 
-	runOncePayload := `{"guid":"some-guid","executor_id":"executor","container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so"}`
+	runOncePayload := `{"guid":"some-guid","reply_to":"some-requester","executor_id":"executor","container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so"}`
 
 	BeforeEach(func() {
 		runOnce = RunOnce{
 			Guid:            "some-guid",
+			ReplyTo:         "some-requester",
 			ExecutorID:      "executor",
 			ContainerHandle: "17fgsafdfcvc",
 			Failed:          true,
