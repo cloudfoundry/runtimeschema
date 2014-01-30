@@ -35,10 +35,11 @@ func retryIndefinitelyOnStoreTimeout(callback func() error) error {
 }
 
 func watchForRunOnceModificationsOnState(store storeadapter.StoreAdapter, state string) (<-chan models.RunOnce, chan<- bool, <-chan error) {
-	stopOuter := make(chan bool)
 	runOnces := make(chan models.RunOnce)
+	stopOuter := make(chan bool)
+	errsOuter := make(chan error, 1)
 
-	events, stopInner, errs := store.Watch(runOnceSchemaPath(state))
+	events, stopInner, errsInner := store.Watch(runOnceSchemaPath(state))
 
 	go func() {
 		for {
@@ -58,11 +59,15 @@ func watchForRunOnceModificationsOnState(store storeadapter.StoreAdapter, state 
 
 					runOnces <- runOnce
 				}
+
+			case err := <-errsInner:
+				errsOuter <- err
+				return
 			}
 		}
 	}()
 
-	return runOnces, stopOuter, errs
+	return runOnces, stopOuter, errsOuter
 }
 
 func getAllRunOnces(store storeadapter.StoreAdapter, state string) ([]models.RunOnce, error) {
