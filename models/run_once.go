@@ -13,6 +13,8 @@ type RunOnce struct {
 	// ideally staging completion is a "broadcast" event instead and this goes away
 	ReplyTo string `json:"reply_to"`
 
+	Stack string `json:"stack"`
+
 	ExecutorID string `json:"executor_id"`
 
 	ContainerHandle string `json:"container_handle"`
