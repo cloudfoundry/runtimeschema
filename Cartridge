@@ -3,10 +3,10 @@ bitbucket.org/kardianos/osext tip
 github.com/cloudfoundry/gunk origin/master
 github.com/cloudfoundry/storeadapter origin/master
 github.com/coreos/go-etcd/etcd origin/master
-github.com/coreos/go-log origin/master
-github.com/coreos/go-systemd origin/master
+github.com/coreos/go-log/log origin/master
+github.com/coreos/go-systemd/dbus origin/master
 github.com/nu7hatch/gouuid origin/master
-github.com/samuel/go-zookeeper origin/master
+github.com/samuel/go-zookeeper/zk origin/master
 
 # tests
 github.com/onsi/ginkgo origin/master
