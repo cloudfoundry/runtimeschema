@@ -37,4 +37,17 @@ var _ = Describe("ExecutorAction", func() {
 			Ω(unmarshalledAction).Should(Equal(action))
 		})
 	})
+
+	Describe("Factories", func() {
+		It("makes a copy object", func() {
+			newCopy := NewCopyAction("http://from-location.com/myapp", "to-location")
+			Ω(newCopy).ShouldNot(BeNil())
+
+			Ω(newCopy.Name).Should(Equal("copy"))
+			Ω(newCopy.Args).Should(Equal(Arguments{
+				"from": "http://from-location.com/myapp",
+				"to":   "to-location",
+			}))
+		})
+	})
 })

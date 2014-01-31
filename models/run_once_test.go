@@ -14,10 +14,7 @@ var _ = Describe("RunOnce", func() {
 	runOncePayload := `{"guid":"some-guid","reply_to":"some-requester","stack":"some-stack","executor_id":"executor","actions":[{"name":"copy","args":{"from":"old_location","to":"new_location"}}],"container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so"}`
 
 	BeforeEach(func() {
-		action = ExecutorAction{
-			Name: "copy",
-			Args: Arguments{"from": "old_location", "to": "new_location"},
-		}
+		action = NewCopyAction("old_location", "new_location")
 
 		runOnce = RunOnce{
 			Guid:            "some-guid",
