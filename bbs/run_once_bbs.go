@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const ClaimTTL uint64 = 10
+const ClaimTTL uint64 = 10 //seconds
 const RunOnceSchemaRoot = "/v1/run_once"
 
 type executorBBS struct {
@@ -228,4 +228,14 @@ func (self *executorBBS) ConvergeRunOnce() {
 
 	self.store.SetMulti(storeNodesToSet)
 	self.store.Delete(keysToDelete...)
+}
+
+func (self *executorBBS) GrabRunOnceLock(duration time.Duration) (bool, error) {
+	err := self.store.Create(storeadapter.StoreNode{
+		Key:   runOnceSchemaPath("lock"),
+		Value: []byte("placeholder data"),
+		TTL:   uint64(duration.Seconds()),
+	})
+
+	return (err == nil), err
 }

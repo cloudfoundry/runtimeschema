@@ -3,6 +3,8 @@ package bbs
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+
+	"time"
 )
 
 //Bulletin Board System/Store
@@ -15,6 +17,7 @@ type ExecutorBBS interface {
 	CompletedRunOnce(models.RunOnce) error
 
 	ConvergeRunOnce() //should be executed periodically
+	GrabRunOnceLock(time.Duration) (bool, error)
 }
 
 type StagerBBS interface {

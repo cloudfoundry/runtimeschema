@@ -375,6 +375,18 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
+	Describe("Locking", func() {
+		It("grabs the lock and holds it", func() {
+			ttl := 1 * time.Second
+			result, _ := bbs.GrabRunOnceLock(ttl)
+			Ω(result).To(BeTrue())
+
+			result, _ = bbs.GrabRunOnceLock(ttl)
+			Ω(result).To(BeFalse())
+		})
+
+	})
+
 	Describe("ConvergeRunOnce", func() {
 		var otherRunOnce models.RunOnce
 
@@ -458,15 +470,16 @@ var _ = Describe("RunOnce BBS", func() {
 			})
 
 			Context("and there are no other keys", func() {
-				It("should kick the pending key", func(done Done) {
-					events, _, _ := bbs.WatchForDesiredRunOnce()
+				It("should kick the pending key",
+					func(done Done) {
+						events, _, _ := bbs.WatchForDesiredRunOnce()
 
-					bbs.ConvergeRunOnce()
+						bbs.ConvergeRunOnce()
 
-					Ω(<-events).Should(Equal(runOnce))
+						Ω(<-events).Should(Equal(runOnce))
 
-					close(done)
-				})
+						close(done)
+					})
 			})
 		})
 
