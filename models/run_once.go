@@ -17,6 +17,8 @@ type RunOnce struct {
 
 	ExecutorID string `json:"executor_id"`
 
+	Actions []ExecutorAction `json:"actions"`
+
 	ContainerHandle string `json:"container_handle"`
 
 	Failed        bool   `json:"failed"`
