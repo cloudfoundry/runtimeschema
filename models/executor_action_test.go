@@ -12,12 +12,17 @@ import (
 var _ = Describe("ExecutorAction", func() {
 	var action ExecutorAction
 
-	actionPayload := `{"name":"copy","args":{"from":"old_location","to":"new_location"}}`
+	actionPayload := `{"name":"copy","args":{"compress":true,"extract":true,"from":"old_location","to":"new_location"}}`
 
 	BeforeEach(func() {
 		action = ExecutorAction{
 			Name: "copy",
-			Args: Arguments{"from": "old_location", "to": "new_location"},
+			Args: Arguments{
+				"from":     "old_location",
+				"to":       "new_location",
+				"extract":  true,
+				"compress": true,
+			},
 		}
 	})
 
@@ -40,13 +45,15 @@ var _ = Describe("ExecutorAction", func() {
 
 	Describe("Factories", func() {
 		It("makes a copy object", func() {
-			newCopy := NewCopyAction("http://from-location.com/myapp", "to-location")
+			newCopy := NewCopyAction("http://from-location.com/myapp", "to-location", true, true)
 			Ω(newCopy).ShouldNot(BeNil())
 
 			Ω(newCopy.Name).Should(Equal("copy"))
 			Ω(newCopy.Args).Should(Equal(Arguments{
-				"from": "http://from-location.com/myapp",
-				"to":   "to-location",
+				"from":     "http://from-location.com/myapp",
+				"to":       "to-location",
+				"extract":  true,
+				"compress": true,
 			}))
 		})
 	})
