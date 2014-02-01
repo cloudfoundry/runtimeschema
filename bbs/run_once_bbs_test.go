@@ -351,8 +351,20 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
+	Describe("GetAllPendingRunOnces", func() {
+		It("returns all RunOnces in 'pending' state", func() {
+			err := bbs.DesireRunOnce(runOnce)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			runOnces, err := bbs.GetAllPendingRunOnces()
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(runOnces).Should(HaveLen(1))
+			Ω(runOnces).Should(ContainElement(runOnce))
+		})
+	})
+
 	Describe("GetAllClaimedRunOnces", func() {
-		It("should send an event down the pipe", func() {
+		It("returns all RunOnces in 'claimed' state", func() {
 			err := bbs.ClaimRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -364,7 +376,7 @@ var _ = Describe("RunOnce BBS", func() {
 	})
 
 	Describe("GetAllStartingRunOnces", func() {
-		It("should send an event down the pipe", func() {
+		It("returns all RunOnces in 'running' state", func() {
 			err := bbs.StartRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 

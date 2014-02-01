@@ -89,6 +89,10 @@ func getAllRunOnces(store storeadapter.StoreAdapter, state string) ([]models.Run
 	return runOnces, nil
 }
 
+func (self *BBS) GetAllPendingRunOnces() ([]models.RunOnce, error) {
+	return getAllRunOnces(self.store, "pending")
+}
+
 func (self *BBS) GetAllClaimedRunOnces() ([]models.RunOnce, error) {
 	return getAllRunOnces(self.store, "claimed")
 }
