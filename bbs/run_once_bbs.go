@@ -101,6 +101,10 @@ func (self *BBS) GetAllStartingRunOnces() ([]models.RunOnce, error) {
 	return getAllRunOnces(self.store, "running")
 }
 
+func (self *BBS) GetAllCompletedRunOnces() ([]models.RunOnce, error) {
+	return getAllRunOnces(self.store, "completed")
+}
+
 func (self *stagerBBS) WatchForCompletedRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
 	return watchForRunOnceModificationsOnState(self.store, "completed")
 }
@@ -173,7 +177,7 @@ func (self *executorBBS) StartRunOnce(runOnce models.RunOnce) error {
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
-func (self *executorBBS) CompletedRunOnce(runOnce models.RunOnce) error {
+func (self *executorBBS) CompleteRunOnce(runOnce models.RunOnce) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.Create(storeadapter.StoreNode{
 			Key:   runOnceSchemaPath("completed", runOnce.Guid),

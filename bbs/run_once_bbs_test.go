@@ -184,7 +184,7 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
-	Describe("CompletedRunOnce", func() {
+	Describe("CompleteRunOnce", func() {
 		BeforeEach(func() {
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -200,7 +200,7 @@ var _ = Describe("RunOnce BBS", func() {
 			runOnce.Failed = true
 			runOnce.FailureReason = "because i said so"
 
-			err := bbs.CompletedRunOnce(runOnce)
+			err := bbs.CompleteRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			node, err := store.Get("/v1/run_once/completed/some-guid")
@@ -212,7 +212,7 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		Context("when the store is out of commission", func() {
-			itRetriesUntilStoreComesBack((*BBS).CompletedRunOnce)
+			itRetriesUntilStoreComesBack((*BBS).CompleteRunOnce)
 		})
 	})
 
@@ -294,7 +294,7 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should send an event down the pipe for creates", func(done Done) {
-			err := bbs.CompletedRunOnce(runOnce)
+			err := bbs.CompleteRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(<-events).To(Equal(runOnce))
@@ -306,7 +306,7 @@ var _ = Describe("RunOnce BBS", func() {
 			err := bbs.DesireRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompletedRunOnce(runOnce)
+			err = bbs.CompleteRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(<-events).To(Equal(runOnce))
@@ -319,7 +319,7 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 
 		It("should not send an event down the pipe for deletes", func(done Done) {
-			err := bbs.CompletedRunOnce(runOnce)
+			err := bbs.CompleteRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(<-events).To(Equal(runOnce))
@@ -329,7 +329,7 @@ var _ = Describe("RunOnce BBS", func() {
 			otherRunOnce := runOnce
 			otherRunOnce.Guid = runOnce.Guid + "1"
 
-			err = bbs.CompletedRunOnce(otherRunOnce)
+			err = bbs.CompleteRunOnce(otherRunOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Expect(<-events).To(Equal(otherRunOnce))
@@ -340,7 +340,7 @@ var _ = Describe("RunOnce BBS", func() {
 		It("closes the events channel when told to stop", func(done Done) {
 			stop <- true
 
-			err := bbs.CompletedRunOnce(runOnce)
+			err := bbs.CompleteRunOnce(runOnce)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			_, ok := <-events
@@ -381,6 +381,18 @@ var _ = Describe("RunOnce BBS", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			runOnces, err := bbs.GetAllStartingRunOnces()
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(runOnces).Should(HaveLen(1))
+			Ω(runOnces).Should(ContainElement(runOnce))
+		})
+	})
+
+	Describe("GetAllCompletedRunOnces", func() {
+		It("returns all RunOnces in 'completed' state", func() {
+			err := bbs.CompleteRunOnce(runOnce)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			runOnces, err := bbs.GetAllCompletedRunOnces()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(runOnces).Should(HaveLen(1))
 			Ω(runOnces).Should(ContainElement(runOnce))
@@ -454,7 +466,7 @@ var _ = Describe("RunOnce BBS", func() {
 
 			Context("and there is a completed key", func() {
 				BeforeEach(func() {
-					err := bbs.CompletedRunOnce(runOnce)
+					err := bbs.CompleteRunOnce(runOnce)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -503,7 +515,7 @@ var _ = Describe("RunOnce BBS", func() {
 				err = bbs.StartRunOnce(runOnce)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompletedRunOnce(runOnce)
+				err = bbs.CompleteRunOnce(runOnce)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

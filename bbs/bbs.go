@@ -14,7 +14,7 @@ type ExecutorBBS interface {
 
 	ClaimRunOnce(models.RunOnce) error
 	StartRunOnce(models.RunOnce) error
-	CompletedRunOnce(models.RunOnce) error
+	CompleteRunOnce(models.RunOnce) error
 
 	ConvergeRunOnce() //should be executed periodically
 	GrabRunOnceLock(time.Duration) (bool, error)

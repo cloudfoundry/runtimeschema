@@ -24,7 +24,7 @@ func (fakeBBS *FakeExecutorBBS) StartRunOnce(models.RunOnce) error {
 	return nil
 }
 
-func (fakeBBS *FakeExecutorBBS) CompletedRunOnce(models.RunOnce) error {
+func (fakeBBS *FakeExecutorBBS) CompleteRunOnce(models.RunOnce) error {
 	return nil
 }
 
