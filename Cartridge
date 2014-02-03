@@ -1,14 +1,12 @@
-# runtime
 bitbucket.org/kardianos/osext tip
-github.com/cloudfoundry/gunk origin/master
-github.com/cloudfoundry/storeadapter origin/master
+github.com/cloudfoundry/gunk *
+github.com/cloudfoundry/storeadapter *
 github.com/coreos/go-etcd/etcd origin/master
 github.com/coreos/go-log/log origin/master
 github.com/coreos/go-systemd/dbus origin/master
 github.com/nu7hatch/gouuid origin/master
 github.com/samuel/go-zookeeper/zk origin/master
 
-# tests
-github.com/onsi/ginkgo origin/master
-github.com/onsi/gomega origin/master
-github.com/coreos/etcd origin/master
+github.com/onsi/ginkgo origin/master test
+github.com/onsi/gomega origin/master test
+github.com/coreos/etcd origin/master test
