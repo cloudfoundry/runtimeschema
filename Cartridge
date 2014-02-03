@@ -1,6 +1,7 @@
-bitbucket.org/kardianos/osext tip
 github.com/cloudfoundry/gunk *
 github.com/cloudfoundry/storeadapter *
+
+bitbucket.org/kardianos/osext tip
 github.com/coreos/go-etcd/etcd origin/master
 github.com/coreos/go-log/log origin/master
 github.com/coreos/go-systemd/dbus origin/master
