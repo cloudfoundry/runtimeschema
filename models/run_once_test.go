@@ -11,7 +11,7 @@ var _ = Describe("RunOnce", func() {
 	var runOnce RunOnce
 	var action ExecutorAction
 
-	runOncePayload := `{"guid":"some-guid","reply_to":"some-requester","stack":"some-stack","executor_id":"executor","actions":[{"name":"copy","args":{"compress":true,"extract":true,"from":"old_location","to":"new_location"}}],"container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so"}`
+	runOncePayload := `{"guid":"some-guid","reply_to":"some-requester","stack":"some-stack","executor_id":"executor","actions":[{"name":"copy","args":{"compress":true,"extract":true,"from":"old_location","to":"new_location"}}],"container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so","memory_mb":256,"disk_mb":1024}`
 
 	BeforeEach(func() {
 		action = NewCopyAction("old_location", "new_location", true, true)
@@ -25,6 +25,8 @@ var _ = Describe("RunOnce", func() {
 			ContainerHandle: "17fgsafdfcvc",
 			Failed:          true,
 			FailureReason:   "because i said so",
+			MemoryMB:        256,
+			DiskMB:          1024,
 		}
 	})
 

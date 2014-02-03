@@ -23,6 +23,9 @@ type RunOnce struct {
 
 	Failed        bool   `json:"failed"`
 	FailureReason string `json:"failure_reason"`
+
+	MemoryMB int `json:"memory_mb"`
+	DiskMB   int `json:"disk_mb"`
 }
 
 func NewRunOnceFromJSON(payload []byte) (RunOnce, error) {
