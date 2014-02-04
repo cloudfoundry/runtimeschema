@@ -9,18 +9,40 @@ import (
 
 var _ = Describe("RunOnce", func() {
 	var runOnce RunOnce
-	var action ExecutorAction
 
-	runOncePayload := `{"guid":"some-guid","reply_to":"some-requester","stack":"some-stack","executor_id":"executor","actions":[{"name":"copy","args":{"compress":true,"extract":true,"from":"old_location","to":"new_location"}}],"container_handle":"17fgsafdfcvc","failed":true,"failure_reason":"because i said so","memory_mb":256,"disk_mb":1024}`
+	runOncePayload := `{
+		"guid":"some-guid",
+		"reply_to":"some-requester",
+		"stack":"some-stack",
+		"executor_id":"executor",
+		"actions":[
+			{
+				"action":"copy",
+				"args":{"from":"old_location","to":"new_location","extract":true,"compress":true}
+			}
+		],
+		"container_handle":"17fgsafdfcvc",
+		"failed":true,
+		"failure_reason":"because i said so",
+		"memory_mb":256,
+		"disk_mb":1024
+	}`
 
 	BeforeEach(func() {
-		action = NewCopyAction("old_location", "new_location", true, true)
-
 		runOnce = RunOnce{
-			Guid:            "some-guid",
-			ReplyTo:         "some-requester",
-			Stack:           "some-stack",
-			Actions:         []ExecutorAction{action},
+			Guid:    "some-guid",
+			ReplyTo: "some-requester",
+			Stack:   "some-stack",
+			Actions: []ExecutorAction{
+				{
+					Action: CopyAction{
+						From:     "old_location",
+						To:       "new_location",
+						Extract:  true,
+						Compress: true,
+					},
+				},
+			},
 			ExecutorID:      "executor",
 			ContainerHandle: "17fgsafdfcvc",
 			Failed:          true,
@@ -33,7 +55,7 @@ var _ = Describe("RunOnce", func() {
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
 			json := runOnce.ToJSON()
-			Ω(string(json)).Should(Equal(runOncePayload))
+			Ω(string(json)).Should(MatchJSON(runOncePayload))
 		})
 	})
 

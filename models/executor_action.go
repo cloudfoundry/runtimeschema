@@ -1,20 +1,65 @@
 package models
 
-type ExecutorAction struct {
-	Name string    `json:"name"`
-	Args Arguments `json:"args"`
+import (
+	"encoding/json"
+	"errors"
+)
+
+var InvalidActionConversion = errors.New("Invalid Action Conversion")
+
+type CopyAction struct {
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Extract  bool   `json:"extract"`
+	Compress bool   `json:"compress"`
 }
 
-type Arguments map[string]interface{}
+type executorActionEnvelope struct {
+	Name          string           `json:"action"`
+	ActionPayload *json.RawMessage `json:"args"`
+}
 
-func NewCopyAction(from string, to string, extract bool, compress bool) ExecutorAction {
-	return ExecutorAction{
-		Name: "copy",
-		Args: Arguments{
-			"from":     from,
-			"to":       to,
-			"extract":  extract,
-			"compress": compress,
-		},
+type ExecutorAction struct {
+	Action interface{} `json:"-"`
+}
+
+func (a ExecutorAction) MarshalJSON() ([]byte, error) {
+	var envelope executorActionEnvelope
+
+	payload, err := json.Marshal(a.Action)
+
+	if err != nil {
+		return nil, err
 	}
+
+	switch a.Action.(type) {
+	case CopyAction:
+		envelope.Name = "copy"
+	default:
+		return nil, InvalidActionConversion
+	}
+
+	envelope.ActionPayload = (*json.RawMessage)(&payload)
+
+	return json.Marshal(envelope)
+}
+
+func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
+	var envelope executorActionEnvelope
+
+	err := json.Unmarshal(bytes, &envelope)
+	if err != nil {
+		return err
+	}
+
+	switch envelope.Name {
+	case "copy":
+		copyAction := CopyAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &copyAction)
+		a.Action = copyAction
+	default:
+		err = InvalidActionConversion
+	}
+
+	return err
 }

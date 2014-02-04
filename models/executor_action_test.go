@@ -10,51 +10,53 @@ import (
 )
 
 var _ = Describe("ExecutorAction", func() {
-	var action ExecutorAction
+	var action *ExecutorAction
 
-	actionPayload := `{"name":"copy","args":{"compress":true,"extract":true,"from":"old_location","to":"new_location"}}`
-
-	BeforeEach(func() {
-		action = ExecutorAction{
-			Name: "copy",
-			Args: Arguments{
-				"from":     "old_location",
-				"to":       "new_location",
-				"extract":  true,
-				"compress": true,
-			},
-		}
-	})
-
-	Describe("Converting to JSON", func() {
-		It("creates a json representation of the object", func() {
-			json, err := json.Marshal(action)
-			Ω(err).Should(BeNil())
-			Ω(string(json)).Should(Equal(actionPayload))
+	Describe("With an invalid action", func() {
+		It("should fail to marshal", func() {
+			invalidAction := []string{"butts", "from", "mars"}
+			payload, err := json.Marshal(&ExecutorAction{Action: invalidAction})
+			Ω(payload).Should(BeZero())
+			Ω(err.(*json.MarshalerError).Err).Should(Equal(InvalidActionConversion))
 		})
-	})
 
-	Describe("Converting from JSON", func() {
-		It("constructs an object from the json string", func() {
-			var unmarshalledAction ExecutorAction
+		It("should fail to unmarshal", func() {
+			var unmarshalledAction *ExecutorAction
+			actionPayload := `{"action":"buttz","args":{"from":"space"}}`
 			err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
-			Ω(err).Should(BeNil())
-			Ω(unmarshalledAction).Should(Equal(action))
+			Ω(err).Should(Equal(InvalidActionConversion))
 		})
 	})
 
-	Describe("Factories", func() {
-		It("makes a copy object", func() {
-			newCopy := NewCopyAction("http://from-location.com/myapp", "to-location", true, true)
-			Ω(newCopy).ShouldNot(BeNil())
+	Describe("Copy", func() {
+		actionPayload := `{"action":"copy","args":{"from":"old_location","to":"new_location","extract":true,"compress":true}}`
 
-			Ω(newCopy.Name).Should(Equal("copy"))
-			Ω(newCopy.Args).Should(Equal(Arguments{
-				"from":     "http://from-location.com/myapp",
-				"to":       "to-location",
-				"extract":  true,
-				"compress": true,
-			}))
+		BeforeEach(func() {
+			action = &ExecutorAction{
+				Action: CopyAction{
+					From:     "old_location",
+					To:       "new_location",
+					Extract:  true,
+					Compress: true,
+				},
+			}
+		})
+
+		Describe("Converting to JSON", func() {
+			It("creates a json representation of the object", func() {
+				json, err := json.Marshal(action)
+				Ω(err).Should(BeNil())
+				Ω(string(json)).Should(Equal(actionPayload))
+			})
+		})
+
+		Describe("Converting from JSON", func() {
+			It("constructs an object from the json string", func() {
+				var unmarshalledAction *ExecutorAction
+				err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
+				Ω(err).Should(BeNil())
+				Ω(unmarshalledAction).Should(Equal(action))
+			})
 		})
 	})
 })
