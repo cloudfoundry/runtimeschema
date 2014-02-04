@@ -10,8 +10,6 @@ import (
 )
 
 var _ = Describe("ExecutorAction", func() {
-	var action *ExecutorAction
-
 	Describe("With an invalid action", func() {
 		It("should fail to marshal", func() {
 			invalidAction := []string{"butts", "from", "mars"}
@@ -28,23 +26,12 @@ var _ = Describe("ExecutorAction", func() {
 		})
 	})
 
-	Describe("Copy", func() {
-		actionPayload := `{"action":"copy","args":{"from":"old_location","to":"new_location","extract":true,"compress":true}}`
-
-		BeforeEach(func() {
-			action = &ExecutorAction{
-				Action: CopyAction{
-					From:     "old_location",
-					To:       "new_location",
-					Extract:  true,
-					Compress: true,
-				},
-			}
-		})
-
+	itSerializesAndDeserializes := func(actionPayload string, action interface{}) {
 		Describe("Converting to JSON", func() {
 			It("creates a json representation of the object", func() {
-				json, err := json.Marshal(action)
+				marshalledAction := action
+
+				json, err := json.Marshal(&marshalledAction)
 				Ω(err).Should(BeNil())
 				Ω(string(json)).Should(Equal(actionPayload))
 			})
@@ -55,8 +42,33 @@ var _ = Describe("ExecutorAction", func() {
 				var unmarshalledAction *ExecutorAction
 				err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
 				Ω(err).Should(BeNil())
-				Ω(unmarshalledAction).Should(Equal(action))
+				Ω(*unmarshalledAction).Should(Equal(action))
 			})
 		})
+	}
+
+	Describe("Copy", func() {
+		itSerializesAndDeserializes(
+			`{"action":"copy","args":{"from":"old_location","to":"new_location","extract":true,"compress":true}}`,
+			ExecutorAction{
+				Action: CopyAction{
+					From:     "old_location",
+					To:       "new_location",
+					Extract:  true,
+					Compress: true,
+				},
+			},
+		)
+	})
+
+	Describe("Run", func() {
+		itSerializesAndDeserializes(
+			`{"action":"run","args":{"script":"rm -rf /"}}`,
+			ExecutorAction{
+				Action: RunAction{
+					Script: "rm -rf /",
+				},
+			},
+		)
 	})
 })

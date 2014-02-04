@@ -14,6 +14,10 @@ type CopyAction struct {
 	Compress bool   `json:"compress"`
 }
 
+type RunAction struct {
+	Script string `json:"script"`
+}
+
 type executorActionEnvelope struct {
 	Name          string           `json:"action"`
 	ActionPayload *json.RawMessage `json:"args"`
@@ -35,6 +39,8 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 	switch a.Action.(type) {
 	case CopyAction:
 		envelope.Name = "copy"
+	case RunAction:
+		envelope.Name = "run"
 	default:
 		return nil, InvalidActionConversion
 	}
@@ -57,6 +63,10 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		copyAction := CopyAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &copyAction)
 		a.Action = copyAction
+	case "run":
+		runAction := RunAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &runAction)
+		a.Action = runAction
 	default:
 		err = InvalidActionConversion
 	}
