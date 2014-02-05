@@ -479,16 +479,42 @@ var _ = Describe("RunOnce BBS", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
-				It("should not kick the pending key", func(done Done) {
-					events, _, _ := bbs.WatchForDesiredRunOnce()
+				Context("and the associated executor is still alive", func() {
+					BeforeEach(func() {
+						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
+						Ω(err).ShouldNot(HaveOccurred())
+						close(stop)
+					})
 
-					bbs.ConvergeRunOnce()
+					It("should not kick the pending key", func(done Done) {
+						events, _, _ := bbs.WatchForDesiredRunOnce()
 
-					bbs.DesireRunOnce(otherRunOnce)
+						bbs.ConvergeRunOnce()
 
-					Ω(<-events).Should(Equal(otherRunOnce))
+						bbs.DesireRunOnce(otherRunOnce)
 
-					close(done)
+						Ω(<-events).Should(Equal(otherRunOnce))
+
+						close(done)
+					})
+
+					It("should not mark the task as completed/failed", func() {
+						bbs.ConvergeRunOnce()
+						completedRunOnces, err := bbs.GetAllCompletedRunOnces()
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(completedRunOnces).Should(HaveLen(0))
+					})
+				})
+
+				Context("and the associated executor has gone missing", func() {
+					It("should mark the RunOnce as completed (in the failed state)", func() {
+						bbs.ConvergeRunOnce()
+						completedRunOnces, err := bbs.GetAllCompletedRunOnces()
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(completedRunOnces).Should(HaveLen(1))
+						Ω(completedRunOnces[0].Failed).Should(BeTrue())
+						Ω(completedRunOnces[0].FailureReason).Should(ContainSubstring("executor"))
+					})
 				})
 			})
 
@@ -498,16 +524,42 @@ var _ = Describe("RunOnce BBS", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
-				It("should not kick the pending key", func(done Done) {
-					events, _, _ := bbs.WatchForDesiredRunOnce()
+				Context("and the associated executor is still alive", func() {
+					BeforeEach(func() {
+						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
+						Ω(err).ShouldNot(HaveOccurred())
+						close(stop)
+					})
 
-					bbs.ConvergeRunOnce()
+					It("should not kick the pending key", func(done Done) {
+						events, _, _ := bbs.WatchForDesiredRunOnce()
 
-					bbs.DesireRunOnce(otherRunOnce)
+						bbs.ConvergeRunOnce()
 
-					Ω(<-events).Should(Equal(otherRunOnce))
+						bbs.DesireRunOnce(otherRunOnce)
 
-					close(done)
+						Ω(<-events).Should(Equal(otherRunOnce))
+
+						close(done)
+					})
+
+					It("should not mark the task as completed/failed", func() {
+						bbs.ConvergeRunOnce()
+						completedRunOnces, err := bbs.GetAllCompletedRunOnces()
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(completedRunOnces).Should(HaveLen(0))
+					})
+				})
+
+				Context("and the associated executor has gone missing", func() {
+					It("should mark the RunOnce as completed (in the failed state)", func() {
+						bbs.ConvergeRunOnce()
+						completedRunOnces, err := bbs.GetAllCompletedRunOnces()
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(completedRunOnces).Should(HaveLen(1))
+						Ω(completedRunOnces[0].Failed).Should(BeTrue())
+						Ω(completedRunOnces[0].FailureReason).Should(ContainSubstring("executor"))
+					})
 				})
 			})
 

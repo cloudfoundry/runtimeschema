@@ -240,6 +240,13 @@ func (self *executorBBS) ConvergeRunOnce() {
 		return
 	}
 
+	executorState, err := self.store.ListRecursively(ExecutorSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		executorState = storeadapter.StoreNode{}
+	} else if err != nil {
+		return
+	}
+
 	storeNodesToSet := []storeadapter.StoreNode{}
 	keysToDelete := []string{}
 
@@ -257,9 +264,21 @@ func (self *executorBBS) ConvergeRunOnce() {
 			continue
 		}
 
-		_, isClaimed := claimed.Lookup(guid)
-		_, isRunning := running.Lookup(guid)
-		if isClaimed || isRunning {
+		claimedNode, isClaimed := claimed.Lookup(guid)
+
+		if isClaimed {
+			if !verifyExecutorIsPresent(claimedNode, executorState) {
+				storeNodesToSet = append(storeNodesToSet, failedRunOnceNodeFromNode(claimedNode, "executor disappeared before completion"))
+			}
+			continue
+		}
+
+		runningNode, isRunning := running.Lookup(guid)
+
+		if isRunning {
+			if !verifyExecutorIsPresent(runningNode, executorState) {
+				storeNodesToSet = append(storeNodesToSet, failedRunOnceNodeFromNode(runningNode, "executor disappeared before completion"))
+			}
 			continue
 		}
 
@@ -279,6 +298,22 @@ func (self *executorBBS) ConvergeRunOnce() {
 
 	self.store.SetMulti(storeNodesToSet)
 	self.store.Delete(keysToDelete...)
+}
+
+func verifyExecutorIsPresent(node storeadapter.StoreNode, executorState storeadapter.StoreNode) bool {
+	runOnce, _ := models.NewRunOnceFromJSON(node.Value)
+	_, executorIsAlive := executorState.Lookup(runOnce.ExecutorID)
+	return executorIsAlive
+}
+
+func failedRunOnceNodeFromNode(node storeadapter.StoreNode, failureMessage string) storeadapter.StoreNode {
+	runOnce, _ := models.NewRunOnceFromJSON(node.Value)
+	runOnce.Failed = true
+	runOnce.FailureReason = failureMessage
+	return storeadapter.StoreNode{
+		Key:   runOnceSchemaPath("completed", runOnce.Guid),
+		Value: runOnce.ToJSON(),
+	}
 }
 
 func (self *executorBBS) GrabRunOnceLock(duration time.Duration) (bool, error) {
