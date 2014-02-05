@@ -12,6 +12,10 @@ type FakeExecutorBBS struct {
 	ErrorOnGrabLock error
 }
 
+func (fakeBBS *FakeExecutorBBS) MaintainPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, error) {
+	return nil, nil
+}
+
 func (fakeBBS *FakeExecutorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
 	return nil, nil, nil
 }

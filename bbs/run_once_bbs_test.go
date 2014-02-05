@@ -85,6 +85,53 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
+	Describe("MaintainPresence", func() {
+		var (
+			executorId string
+			interval   uint64
+			stop       chan bool
+			err        error
+		)
+
+		BeforeEach(func() {
+			executorId = "stubExecutor"
+			interval = uint64(1)
+
+			stop, err = bbs.MaintainPresence(interval, executorId)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("should put /executor/EXECUTOR_ID in the store with a TTL", func() {
+			node, err := store.Get("/v1/executor/" + executorId)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(node).Should(Equal(storeadapter.StoreNode{
+				Key:   "/v1/executor/" + executorId,
+				Value: []byte{},
+				TTL:   interval, // move to config one day
+			}))
+
+			close(stop)
+		})
+
+		It("should periodically maintain the TTL", func() {
+			time.Sleep(2 * time.Second)
+
+			_, err = store.Get("/v1/executor/" + executorId)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			close(stop)
+		})
+
+		It("should be possible to stop maintaining presence", func() {
+			close(stop)
+
+			time.Sleep(2 * time.Second)
+
+			_, err = store.Get("/v1/executor/" + executorId)
+			Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+		})
+	})
+
 	Describe("ClaimRunOnce", func() {
 		Context("when claimed with a correctly configured runOnce", func() {
 			BeforeEach(func() {

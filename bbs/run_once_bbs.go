@@ -8,17 +8,24 @@ import (
 )
 
 const ClaimTTL uint64 = 10 //seconds
-const RunOnceSchemaRoot = "/v1/run_once"
+const SchemaRoot = "/v1/"
+const RunOnceSchemaRoot = SchemaRoot + "run_once"
+const ExecutorSchemaRoot = SchemaRoot + "executor"
 
 type executorBBS struct {
 	store storeadapter.StoreAdapter
 }
+
 type stagerBBS struct {
 	store storeadapter.StoreAdapter
 }
 
 func runOnceSchemaPath(segments ...string) string {
 	return path.Join(append([]string{RunOnceSchemaRoot}, segments...)...)
+}
+
+func executorSchemaPath(segments ...string) string {
+	return path.Join(append([]string{ExecutorSchemaRoot}, segments...)...)
 }
 
 func retryIndefinitelyOnStoreTimeout(callback func() error) error {
@@ -130,6 +137,42 @@ func (self *stagerBBS) ResolveRunOnce(runOnce models.RunOnce) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.Delete(runOnceSchemaPath("pending", runOnce.Guid))
 	})
+}
+
+func (self *executorBBS) MaintainPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, error) {
+	err := self.store.SetMulti([]storeadapter.StoreNode{
+		{
+			Key:   executorSchemaPath(executorId),
+			Value: []byte{},
+			TTL:   heartbeatIntervalInSeconds,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	stop := make(chan bool)
+	go func() {
+		ticker := time.NewTicker(time.Duration(heartbeatIntervalInSeconds) * time.Second / 2)
+		for {
+			select {
+			case <-ticker.C:
+				self.store.SetMulti([]storeadapter.StoreNode{
+					{
+						Key:   executorSchemaPath(executorId),
+						Value: []byte{},
+						TTL:   heartbeatIntervalInSeconds,
+					},
+				})
+			case <-stop:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+	return stop, nil
 }
 
 func (self *executorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
