@@ -139,7 +139,7 @@ func (self *stagerBBS) ResolveRunOnce(runOnce models.RunOnce) error {
 	})
 }
 
-func (self *executorBBS) MaintainPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, error) {
+func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, error) {
 	err := self.store.SetMulti([]storeadapter.StoreNode{
 		{
 			Key:   executorSchemaPath(executorId),

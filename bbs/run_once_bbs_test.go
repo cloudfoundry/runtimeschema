@@ -85,7 +85,7 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
-	Describe("MaintainPresence", func() {
+	Describe("MaintainExecutorPresence", func() {
 		var (
 			executorId string
 			interval   uint64
@@ -97,7 +97,7 @@ var _ = Describe("RunOnce BBS", func() {
 			executorId = "stubExecutor"
 			interval = uint64(1)
 
-			stop, err = bbs.MaintainPresence(interval, executorId)
+			stop, err = bbs.MaintainExecutorPresence(interval, executorId)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -493,7 +493,7 @@ var _ = Describe("RunOnce BBS", func() {
 
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
-						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
+						stop, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
 					})
@@ -538,7 +538,7 @@ var _ = Describe("RunOnce BBS", func() {
 
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
-						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
+						stop, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
 					})
