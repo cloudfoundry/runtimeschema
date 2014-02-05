@@ -10,10 +10,18 @@ type FakeExecutorBBS struct {
 	CallsToConverge int
 	LockIsGrabbable bool
 	ErrorOnGrabLock error
+
+	MaintainingPresenceHeartbeatInterval uint64
+	MaintainingPresenceExecutorID        string
+	MaintainingPresenceStopChannel       chan bool
+	MaintainingPresenceError             error
 }
 
 func (fakeBBS *FakeExecutorBBS) MaintainPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, error) {
-	return nil, nil
+	fakeBBS.MaintainingPresenceHeartbeatInterval = heartbeatIntervalInSeconds
+	fakeBBS.MaintainingPresenceExecutorID = executorID
+	fakeBBS.MaintainingPresenceStopChannel = make(chan bool)
+	return fakeBBS.MaintainingPresenceStopChannel, fakeBBS.MaintainingPresenceError
 }
 
 func (fakeBBS *FakeExecutorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {

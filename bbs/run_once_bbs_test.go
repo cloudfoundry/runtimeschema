@@ -479,23 +479,23 @@ var _ = Describe("RunOnce BBS", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
+				It("should not kick the pending key", func(done Done) {
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
+					bbs.ConvergeRunOnce()
+
+					bbs.DesireRunOnce(otherRunOnce)
+
+					Ω(<-events).Should(Equal(otherRunOnce))
+
+					close(done)
+				})
+
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
 						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
-					})
-
-					It("should not kick the pending key", func(done Done) {
-						events, _, _ := bbs.WatchForDesiredRunOnce()
-
-						bbs.ConvergeRunOnce()
-
-						bbs.DesireRunOnce(otherRunOnce)
-
-						Ω(<-events).Should(Equal(otherRunOnce))
-
-						close(done)
 					})
 
 					It("should not mark the task as completed/failed", func() {
@@ -524,23 +524,23 @@ var _ = Describe("RunOnce BBS", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
+				It("should not kick the pending key", func(done Done) {
+					events, _, _ := bbs.WatchForDesiredRunOnce()
+
+					bbs.ConvergeRunOnce()
+
+					bbs.DesireRunOnce(otherRunOnce)
+
+					Ω(<-events).Should(Equal(otherRunOnce))
+
+					close(done)
+				})
+
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
 						stop, err := bbs.MaintainPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
-					})
-
-					It("should not kick the pending key", func(done Done) {
-						events, _, _ := bbs.WatchForDesiredRunOnce()
-
-						bbs.ConvergeRunOnce()
-
-						bbs.DesireRunOnce(otherRunOnce)
-
-						Ω(<-events).Should(Equal(otherRunOnce))
-
-						close(done)
 					})
 
 					It("should not mark the task as completed/failed", func() {
