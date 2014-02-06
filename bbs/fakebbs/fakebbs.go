@@ -18,7 +18,7 @@ type FakeExecutorBBS struct {
 	MaintainingPresenceError             error
 }
 
-func (fakeBBS *FakeExecutorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, error) {
+func (fakeBBS *FakeExecutorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, chan error, error) {
 	fakeBBS.MaintainingPresenceHeartbeatInterval = heartbeatIntervalInSeconds
 	fakeBBS.MaintainingPresenceExecutorID = executorID
 	fakeBBS.MaintainingPresenceStopChannel = make(chan bool)
