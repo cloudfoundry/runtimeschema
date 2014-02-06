@@ -181,6 +181,23 @@ func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uin
 	return stop, errors, nil
 }
 
+func (self *BBS) GetAllExecutors() ([]string, error) {
+	nodes, err := self.store.ListRecursively(ExecutorSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	executors := []string{}
+
+	for _, node := range nodes.ChildNodes {
+		executors = append(executors, node.KeyComponents()[2])
+	}
+
+	return executors, nil
+}
+
 func (self *executorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
 	return watchForRunOnceModificationsOnState(self.store, "pending")
 }

@@ -141,6 +141,34 @@ var _ = Describe("RunOnce BBS", func() {
 		})
 	})
 
+	Describe("GetAllExecutors", func() {
+		It("returns a list of the executor IDs that exist", func() {
+			executors, err := bbs.GetAllExecutors()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(executors).Should(BeEmpty())
+
+			stopA, _, err := bbs.MaintainExecutorPresence(1, "executor-a")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			stopB, _, err := bbs.MaintainExecutorPresence(1, "executor-b")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(func() []string {
+				executors, _ := bbs.GetAllExecutors()
+				return executors
+			}).Should(ContainElement("executor-a"))
+
+			Eventually(func() []string {
+				executors, _ := bbs.GetAllExecutors()
+				return executors
+			}).Should(ContainElement("executor-b"))
+
+			close(stopA)
+			close(stopB)
+		})
+	})
+
 	Describe("ClaimRunOnce", func() {
 		Context("when claimed with a correctly configured runOnce", func() {
 			BeforeEach(func() {
