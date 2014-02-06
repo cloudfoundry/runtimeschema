@@ -10,7 +10,7 @@ import (
 //Bulletin Board System/Store
 
 type ExecutorBBS interface {
-	MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, error)
+	MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorID string) (chan bool, chan error, error)
 	WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) //filter out delete...
 
 	ClaimRunOnce(models.RunOnce) error

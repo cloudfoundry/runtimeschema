@@ -14,6 +14,7 @@ type FakeExecutorBBS struct {
 	MaintainingPresenceHeartbeatInterval uint64
 	MaintainingPresenceExecutorID        string
 	MaintainingPresenceStopChannel       chan bool
+	MaintainingPresenceErrorChannel      chan error
 	MaintainingPresenceError             error
 }
 
@@ -21,8 +22,9 @@ func (fakeBBS *FakeExecutorBBS) MaintainExecutorPresence(heartbeatIntervalInSeco
 	fakeBBS.MaintainingPresenceHeartbeatInterval = heartbeatIntervalInSeconds
 	fakeBBS.MaintainingPresenceExecutorID = executorID
 	fakeBBS.MaintainingPresenceStopChannel = make(chan bool)
+	fakeBBS.MaintainingPresenceErrorChannel = make(chan error)
 
-	return fakeBBS.MaintainingPresenceStopChannel, fakeBBS.MaintainingPresenceError
+	return fakeBBS.MaintainingPresenceStopChannel, fakeBBS.MaintainingPresenceErrorChannel, fakeBBS.MaintainingPresenceError
 }
 
 func (fakeBBS *FakeExecutorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {

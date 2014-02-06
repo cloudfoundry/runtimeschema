@@ -89,6 +89,7 @@ var _ = Describe("RunOnce BBS", func() {
 		var (
 			executorId string
 			interval   uint64
+			errors     chan error
 			stop       chan bool
 			err        error
 		)
@@ -97,7 +98,7 @@ var _ = Describe("RunOnce BBS", func() {
 			executorId = "stubExecutor"
 			interval = uint64(1)
 
-			stop, err = bbs.MaintainExecutorPresence(interval, executorId)
+			stop, errors, err = bbs.MaintainExecutorPresence(interval, executorId)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -119,6 +120,14 @@ var _ = Describe("RunOnce BBS", func() {
 			_, err = store.Get("/v1/executor/" + executorId)
 			Ω(err).ShouldNot(HaveOccurred())
 
+			close(stop)
+		})
+
+		It("should report an error and stop trying if it fails to update the TTL", func() {
+			err = store.Delete("/v1/executor/" + executorId)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(errors, 2).Should(Receive())
 			close(stop)
 		})
 
@@ -493,7 +502,7 @@ var _ = Describe("RunOnce BBS", func() {
 
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
-						stop, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
+						stop, _, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
 					})
@@ -538,7 +547,7 @@ var _ = Describe("RunOnce BBS", func() {
 
 				Context("and the associated executor is still alive", func() {
 					BeforeEach(func() {
-						stop, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
+						stop, _, err := bbs.MaintainExecutorPresence(10, runOnce.ExecutorID)
 						Ω(err).ShouldNot(HaveOccurred())
 						close(stop)
 					})

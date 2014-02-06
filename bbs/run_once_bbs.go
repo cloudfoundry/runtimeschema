@@ -139,7 +139,7 @@ func (self *stagerBBS) ResolveRunOnce(runOnce models.RunOnce) error {
 	})
 }
 
-func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, error) {
+func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, chan error, error) {
 	err := self.store.SetMulti([]storeadapter.StoreNode{
 		{
 			Key:   executorSchemaPath(executorId),
@@ -149,30 +149,36 @@ func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uin
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	stop := make(chan bool)
+	errors := make(chan error)
+
 	go func() {
 		ticker := time.NewTicker(time.Duration(heartbeatIntervalInSeconds) * time.Second / 2)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ticker.C:
-				self.store.SetMulti([]storeadapter.StoreNode{
-					{
-						Key:   executorSchemaPath(executorId),
-						Value: []byte{},
-						TTL:   heartbeatIntervalInSeconds,
-					},
+				err := self.store.Update(storeadapter.StoreNode{
+					Key:   executorSchemaPath(executorId),
+					Value: []byte{},
+					TTL:   heartbeatIntervalInSeconds,
 				})
+
+				if err != nil {
+					errors <- err
+					return
+				}
 			case <-stop:
-				ticker.Stop()
 				return
 			}
 		}
 	}()
 
-	return stop, nil
+	return stop, errors, nil
 }
 
 func (self *executorBBS) WatchForDesiredRunOnce() (<-chan models.RunOnce, chan<- bool, <-chan error) {
