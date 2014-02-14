@@ -34,6 +34,8 @@ var _ = Describe("RunOnce", func() {
 	}`
 
 	BeforeEach(func() {
+		index := 42
+
 		runOnce = RunOnce{
 			Guid:    "some-guid",
 			ReplyTo: "some-requester",
@@ -50,7 +52,7 @@ var _ = Describe("RunOnce", func() {
 			Log: LogConfig{
 				Guid:       "123",
 				SourceName: "APP",
-				Index:      42,
+				Index:      &index,
 			},
 			ExecutorID:      "executor",
 			ContainerHandle: "17fgsafdfcvc",

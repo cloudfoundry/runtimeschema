@@ -29,7 +29,7 @@ type RunOnce struct {
 type LogConfig struct {
 	Guid       string `json:"guid"`
 	SourceName string `json:"source_name"`
-	Index      int    `json:"index"`
+	Index      *int    `json:"index"`
 }
 
 func NewRunOnceFromJSON(payload []byte) (RunOnce, error) {
