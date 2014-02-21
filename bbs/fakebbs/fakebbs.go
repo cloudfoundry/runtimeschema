@@ -97,3 +97,7 @@ func (fakeBBS *FakeStagerBBS) ResolveRunOnce(runOnce models.RunOnce) error {
 	fakeBBS.ResolvedRunOnce = runOnce
 	return fakeBBS.ResolveRunOnceErr
 }
+
+func (fakeBBS *FakeStagerBBS) GetAvailableFileServer() (string, error) {
+	panic("implement me!")
+}
