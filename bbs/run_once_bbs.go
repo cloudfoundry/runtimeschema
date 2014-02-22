@@ -139,8 +139,10 @@ func (self *stagerBBS) ResolveRunOnce(runOnce models.RunOnce) error {
 	})
 }
 
-func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorId string) (chan bool, chan error, error) {
-	return maintainPresence(self.store, executorSchemaPath(executorId), []byte{}, heartbeatIntervalInSeconds)
+func (self *executorBBS) MaintainExecutorPresence(heartbeatIntervalInSeconds uint64, executorId string) (*Presence, chan error, error) {
+	presence := NewPresence(self.store, executorSchemaPath(executorId), []byte{})
+	errors, err := presence.Maintain(heartbeatIntervalInSeconds)
+	return presence, errors, err
 }
 
 func (self *BBS) GetAllExecutors() ([]string, error) {

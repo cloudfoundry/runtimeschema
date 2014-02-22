@@ -4,7 +4,6 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models/factories"
 	"github.com/cloudfoundry/storeadapter"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,8 +16,8 @@ var _ = Describe("Stager BBS", func() {
 		fileServerId  string
 		interval      uint64
 		errors        chan error
-		stop          chan bool
 		err           error
+		presence      *Presence
 	)
 
 	BeforeEach(func() {
@@ -31,8 +30,12 @@ var _ = Describe("Stager BBS", func() {
 			fileServerId = factories.GenerateGuid()
 			interval = uint64(1)
 
-			stop, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
+			presence, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
 			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			presence.Remove()
 		})
 
 		It("should put /file-server/FILE_SERVER_ID in the store with a TTL", func() {
@@ -43,34 +46,6 @@ var _ = Describe("Stager BBS", func() {
 				Value: []byte(fileServerURL),
 				TTL:   interval, // move to config one day
 			}))
-
-			close(stop)
-		})
-
-		It("should periodically maintain the TTL", func() {
-			time.Sleep(2 * time.Second)
-
-			_, err = store.Get("/v1/file_server/" + fileServerId)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			close(stop)
-		})
-
-		It("should report an error and stop trying if it fails to update the TTL", func() {
-			err = store.Delete("/v1/file_server/" + fileServerId)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Eventually(errors, 2).Should(Receive())
-			close(stop)
-		})
-
-		It("should be possible to stop maintaining presence", func() {
-			close(stop)
-
-			time.Sleep(2 * time.Second)
-
-			_, err = store.Get("/v1/file_server/" + fileServerId)
-			Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 		})
 	})
 
@@ -81,7 +56,7 @@ var _ = Describe("Stager BBS", func() {
 				fileServerId = factories.GenerateGuid()
 				interval = uint64(1)
 
-				stop, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
+				presence, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -103,10 +78,10 @@ var _ = Describe("Stager BBS", func() {
 
 				interval = uint64(1)
 
-				stop, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
+				presence, errors, err = bbs.MaintainFileServerPresence(interval, fileServerURL, fileServerId)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				stop, errors, err = bbs.MaintainFileServerPresence(interval, otherFileServerURL, otherFileServerId)
+				presence, errors, err = bbs.MaintainFileServerPresence(interval, otherFileServerURL, otherFileServerId)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
