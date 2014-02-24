@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+type PresenceInterface interface {
+	Remove() error
+}
+
 type Presence struct {
 	store    storeadapter.StoreAdapter
 	key      string

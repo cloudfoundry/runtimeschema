@@ -17,7 +17,7 @@ var _ = Describe("Stager BBS", func() {
 		interval      uint64
 		errors        chan error
 		err           error
-		presence      *Presence
+		presence      PresenceInterface
 	)
 
 	BeforeEach(func() {

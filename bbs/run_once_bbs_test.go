@@ -91,7 +91,7 @@ var _ = Describe("RunOnce BBS", func() {
 			interval   uint64
 			errors     chan error
 			err        error
-			presence   *Presence
+			presence   PresenceInterface
 		)
 
 		BeforeEach(func() {
@@ -512,7 +512,7 @@ var _ = Describe("RunOnce BBS", func() {
 				})
 
 				Context("and the associated executor is still alive", func() {
-					var presence *Presence
+					var presence PresenceInterface
 
 					BeforeEach(func() {
 						var err error
@@ -570,7 +570,7 @@ var _ = Describe("RunOnce BBS", func() {
 				})
 
 				Context("and the associated executor is still alive", func() {
-					var presence *Presence
+					var presence PresenceInterface
 
 					BeforeEach(func() {
 						var err error
