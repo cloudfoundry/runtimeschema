@@ -20,82 +20,6 @@ type stagerBBS struct {
 	store storeadapter.StoreAdapter
 }
 
-func runOnceSchemaPath(segments ...string) string {
-	return path.Join(append([]string{RunOnceSchemaRoot}, segments...)...)
-}
-
-func executorSchemaPath(segments ...string) string {
-	return path.Join(append([]string{ExecutorSchemaRoot}, segments...)...)
-}
-
-func retryIndefinitelyOnStoreTimeout(callback func() error) error {
-	for {
-		err := callback()
-
-		if err == storeadapter.ErrorTimeout {
-			time.Sleep(time.Second)
-			continue
-		}
-
-		return err
-	}
-}
-
-func watchForRunOnceModificationsOnState(store storeadapter.StoreAdapter, state string) (<-chan models.RunOnce, chan<- bool, <-chan error) {
-	runOnces := make(chan models.RunOnce)
-	stopOuter := make(chan bool)
-	errsOuter := make(chan error, 1)
-
-	events, stopInner, errsInner := store.Watch(runOnceSchemaPath(state))
-
-	go func() {
-		for {
-			select {
-			case <-stopOuter:
-				stopInner <- true
-				close(runOnces)
-				return
-
-			case event := <-events:
-				switch event.Type {
-				case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-					runOnce, err := models.NewRunOnceFromJSON(event.Node.Value)
-					if err != nil {
-						continue
-					}
-
-					runOnces <- runOnce
-				}
-
-			case err := <-errsInner:
-				errsOuter <- err
-				return
-			}
-		}
-	}()
-
-	return runOnces, stopOuter, errsOuter
-}
-
-func getAllRunOnces(store storeadapter.StoreAdapter, state string) ([]models.RunOnce, error) {
-	node, err := store.ListRecursively(runOnceSchemaPath(state))
-	if err == storeadapter.ErrorKeyNotFound {
-		return []models.RunOnce{}, nil
-	}
-
-	if err != nil {
-		return []models.RunOnce{}, err
-	}
-
-	runOnces := []models.RunOnce{}
-	for _, node := range node.ChildNodes {
-		runOnce, _ := models.NewRunOnceFromJSON(node.Value)
-		runOnces = append(runOnces, runOnce)
-	}
-
-	return runOnces, nil
-}
-
 func (self *BBS) GetAllPendingRunOnces() ([]models.RunOnce, error) {
 	return getAllRunOnces(self.store, "pending")
 }
@@ -287,11 +211,97 @@ func (self *executorBBS) ConvergeRunOnce() {
 	self.store.Delete(keysToDelete...)
 }
 
+func (self *executorBBS) GrabRunOnceLock(duration time.Duration) (bool, error) {
+	err := self.store.Create(storeadapter.StoreNode{
+		Key:   runOnceSchemaPath("lock"),
+		Value: []byte("placeholder data"),
+		TTL:   uint64(duration.Seconds()),
+	})
+
+	return (err == nil), err
+}
+
 func (self *BBS) printNodes(message string, nodes []storeadapter.StoreNode) {
 	fmt.Println(message)
 	for _, node := range nodes {
 		fmt.Printf("    %s [%d]: %s\n", node.Key, node.TTL, string(node.Value))
 	}
+}
+
+func runOnceSchemaPath(segments ...string) string {
+	return path.Join(append([]string{RunOnceSchemaRoot}, segments...)...)
+}
+
+func executorSchemaPath(segments ...string) string {
+	return path.Join(append([]string{ExecutorSchemaRoot}, segments...)...)
+}
+
+func retryIndefinitelyOnStoreTimeout(callback func() error) error {
+	for {
+		err := callback()
+
+		if err == storeadapter.ErrorTimeout {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		return err
+	}
+}
+
+func watchForRunOnceModificationsOnState(store storeadapter.StoreAdapter, state string) (<-chan models.RunOnce, chan<- bool, <-chan error) {
+	runOnces := make(chan models.RunOnce)
+	stopOuter := make(chan bool)
+	errsOuter := make(chan error, 1)
+
+	events, stopInner, errsInner := store.Watch(runOnceSchemaPath(state))
+
+	go func() {
+		for {
+			select {
+			case <-stopOuter:
+				stopInner <- true
+				close(runOnces)
+				return
+
+			case event := <-events:
+				switch event.Type {
+				case storeadapter.CreateEvent, storeadapter.UpdateEvent:
+					runOnce, err := models.NewRunOnceFromJSON(event.Node.Value)
+					if err != nil {
+						continue
+					}
+
+					runOnces <- runOnce
+				}
+
+			case err := <-errsInner:
+				errsOuter <- err
+				return
+			}
+		}
+	}()
+
+	return runOnces, stopOuter, errsOuter
+}
+
+func getAllRunOnces(store storeadapter.StoreAdapter, state string) ([]models.RunOnce, error) {
+	node, err := store.ListRecursively(runOnceSchemaPath(state))
+	if err == storeadapter.ErrorKeyNotFound {
+		return []models.RunOnce{}, nil
+	}
+
+	if err != nil {
+		return []models.RunOnce{}, err
+	}
+
+	runOnces := []models.RunOnce{}
+	for _, node := range node.ChildNodes {
+		runOnce, _ := models.NewRunOnceFromJSON(node.Value)
+		runOnces = append(runOnces, runOnce)
+	}
+
+	return runOnces, nil
 }
 
 func verifyExecutorIsPresent(node storeadapter.StoreNode, executorState storeadapter.StoreNode) bool {
@@ -308,14 +318,4 @@ func failedRunOnceNodeFromNode(node storeadapter.StoreNode, failureMessage strin
 		Key:   runOnceSchemaPath("completed", runOnce.Guid),
 		Value: runOnce.ToJSON(),
 	}
-}
-
-func (self *executorBBS) GrabRunOnceLock(duration time.Duration) (bool, error) {
-	err := self.store.Create(storeadapter.StoreNode{
-		Key:   runOnceSchemaPath("lock"),
-		Value: []byte("placeholder data"),
-		TTL:   uint64(duration.Seconds()),
-	})
-
-	return (err == nil), err
 }
