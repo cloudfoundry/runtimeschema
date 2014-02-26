@@ -19,6 +19,7 @@ var _ = Describe("RunOnce BBS", func() {
 			Guid:            "some-guid",
 			ExecutorID:      "executor-id",
 			ContainerHandle: "container-handle",
+			CreatedAt:       time.Now(),
 		}
 	})
 
@@ -476,7 +477,8 @@ var _ = Describe("RunOnce BBS", func() {
 
 		BeforeEach(func() {
 			otherRunOnce = models.RunOnce{
-				Guid: "some-other-guid",
+				Guid:      "some-other-guid",
+				CreatedAt: time.Now(),
 			}
 		})
 
