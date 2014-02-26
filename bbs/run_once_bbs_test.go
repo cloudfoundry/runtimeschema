@@ -21,8 +21,6 @@ var _ = Describe("RunOnce BBS", func() {
 			ContainerHandle: "container-handle",
 			CreatedAt:       time.Now(),
 		}
-
-		println("runonce createdat:", runOnce.CreatedAt.String())
 	})
 
 	itRetriesUntilStoreComesBack := func(action func(*BBS, models.RunOnce) error) {
@@ -303,7 +301,10 @@ var _ = Describe("RunOnce BBS", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			e := <-events
-			println("---", e.CreatedAt.String())
+
+			println("runonce createdat:", runOnce.CreatedAt.Location().String())
+			println("1111", e.CreatedAt.Location().String())
+
 			Expect(e).To(Equal(runOnce))
 
 			err = bbs.DesireRunOnce(runOnce)
