@@ -19,7 +19,7 @@ var _ = Describe("RunOnce BBS", func() {
 			Guid:            "some-guid",
 			ExecutorID:      "executor-id",
 			ContainerHandle: "container-handle",
-			CreatedAt:       time.Now(),
+			CreatedAt:       time.Now().UnixNano(),
 		}
 	})
 
@@ -301,9 +301,6 @@ var _ = Describe("RunOnce BBS", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			e := <-events
-
-			println("runonce createdat:", runOnce.CreatedAt.Location().String())
-			println("1111", e.CreatedAt.Location().String())
 
 			Expect(e).To(Equal(runOnce))
 
