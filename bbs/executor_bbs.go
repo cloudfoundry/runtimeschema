@@ -157,12 +157,10 @@ func (self *executorBBS) ConvergeRunOnce(timeToClaim time.Duration) {
 	self.store.Delete(keysToDelete...)
 }
 
-func (self *executorBBS) GrabRunOnceLock(duration time.Duration) (bool, error) {
-	err := self.store.Create(storeadapter.StoreNode{
-		Key:   runOnceSchemaPath("lock"),
-		Value: []byte("placeholder data"),
-		TTL:   uint64(duration.Seconds()),
+func (self *executorBBS) MaintainConvergeLock(interval time.Duration, executorID string) (<-chan bool, chan<- chan bool, error) {
+	return self.store.MaintainNode(storeadapter.StoreNode{
+		Key:   runOnceSchemaPath("converge_lock"),
+		Value: []byte(executorID),
+		TTL:   uint64(interval.Seconds()),
 	})
-
-	return (err == nil), err
 }

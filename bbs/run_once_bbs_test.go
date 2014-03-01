@@ -347,17 +347,4 @@ var _ = Describe("RunOnce BBS", func() {
 			Ω(runOnces).Should(ContainElement(runOnce))
 		})
 	})
-
-	Describe("Locking", func() {
-		It("grabs the lock and holds it", func() {
-			ttl := 1 * time.Second
-			result, _ := bbs.GrabRunOnceLock(ttl)
-			Ω(result).To(BeTrue())
-
-			result, _ = bbs.GrabRunOnceLock(ttl)
-			Ω(result).To(BeFalse())
-		})
-
-	})
-
 })

@@ -17,8 +17,12 @@ func (p *FakePresence) Remove() {
 
 type FakeExecutorBBS struct {
 	CallsToConverge int
-	LockIsGrabbable bool
-	ErrorOnGrabLock error
+
+	MaintainConvergeInterval    time.Duration
+	MaintainConvergeExecutorID  string
+	MaintainConvergeLostChannel <-chan bool
+	MaintainConvergeStopChannel chan<- chan bool
+	MaintainConvergeLockError   error
 
 	MaintainingPresenceHeartbeatInterval uint64
 	MaintainingPresenceExecutorID        string
@@ -74,8 +78,12 @@ func (fakeBBS *FakeExecutorBBS) ConvergeRunOnce(timeToClaim time.Duration) {
 	fakeBBS.CallsToConverge++
 }
 
-func (fakeBBS *FakeExecutorBBS) GrabRunOnceLock(time.Duration) (bool, error) {
-	return fakeBBS.LockIsGrabbable, fakeBBS.ErrorOnGrabLock
+func (fakeBBS *FakeExecutorBBS) MaintainConvergeLock(interval time.Duration, executorID string) (<-chan bool, chan<- chan bool, error) {
+	fakeBBS.MaintainConvergeInterval = interval
+	fakeBBS.MaintainConvergeExecutorID = executorID
+	fakeBBS.MaintainConvergeLostChannel = make(chan bool)
+	fakeBBS.MaintainConvergeStopChannel = make(chan chan bool)
+	return fakeBBS.MaintainConvergeLostChannel, fakeBBS.MaintainConvergeStopChannel, fakeBBS.MaintainConvergeLockError
 }
 
 type FakeStagerBBS struct {
