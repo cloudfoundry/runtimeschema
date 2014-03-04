@@ -2,7 +2,7 @@ package router
 
 import (
 	"fmt"
-	"github.com/gorilla/pat"
+	"github.com/bmizerany/pat"
 	"net/http"
 	"strings"
 )
@@ -26,13 +26,13 @@ func (r Routes) Router(actions Handlers) (http.Handler, error) {
 		}
 		switch strings.ToUpper(route.Method) {
 		case "GET":
-			p.Get(route.Path, handler.ServeHTTP)
+			p.Get(route.Path, handler)
 		case "POST":
-			p.Post(route.Path, handler.ServeHTTP)
+			p.Post(route.Path, handler)
 		case "PUT":
-			p.Put(route.Path, handler.ServeHTTP)
+			p.Put(route.Path, handler)
 		case "DELETE":
-			p.Delete(route.Path, handler.ServeHTTP)
+			p.Del(route.Path, handler)
 		default:
 			return nil, fmt.Errorf("invalid verb: %s", route.Method)
 		}
