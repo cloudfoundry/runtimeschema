@@ -10,14 +10,99 @@ import (
 )
 
 var _ = Describe("Router", func() {
-
 	var (
 		r    http.Handler
 		resp *httptest.ResponseRecorder
 		err  error
 	)
 
-	Describe("MakePat", func() {
+	Describe("Route", func() {
+		Describe("PathWithParams", func() {
+			var route router.Route
+			BeforeEach(func() {
+				route = router.Route{
+					Handler: "whatevz",
+					Method:  "GET",
+					Path:    "/a/path/:param/with/:many_things/:many/in/:it",
+				}
+			})
+
+			It("should return a url with all :entries populated by the passed in hash", func() {
+				Ω(route.PathWithParams(map[string]string{
+					"param":       "1",
+					"many_things": "2",
+					"many":        "a space",
+					"it":          "4",
+				})).Should(Equal(`/a/path/1/with/2/a%20space/in/4`))
+			})
+
+			Context("when the hash is missing params", func() {
+				It("should error", func() {
+					_, err := route.PathWithParams(map[string]string{
+						"param": "1",
+						"many":  "2",
+						"it":    "4",
+					})
+					Ω(err).Should(HaveOccurred())
+				})
+			})
+
+			Context("when the hash has extra params", func() {
+				It("should totally not care", func() {
+					Ω(route.PathWithParams(map[string]string{
+						"param":       "1",
+						"many_things": "2",
+						"many":        "a space",
+						"it":          "4",
+						"donut":       "bacon",
+					})).Should(Equal(`/a/path/1/with/2/a%20space/in/4`))
+				})
+			})
+
+			Context("with a trailing slash", func() {
+				It("should work", func() {
+					route = router.Route{
+						Handler: "whatevz",
+						Method:  "GET",
+						Path:    "/a/path/:param/",
+					}
+					Ω(route.PathWithParams(map[string]string{
+						"param": "1",
+					})).Should(Equal(`/a/path/1/`))
+				})
+			})
+		})
+	})
+
+	Describe("Routes#RouteForHandler", func() {
+		var routes router.Routes
+		BeforeEach(func() {
+			routes = router.Routes{
+				{Path: "/something", Method: "GET", Handler: "getter"},
+				{Path: "/something", Method: "POST", Handler: "poster"},
+				{Path: "/something", Method: "PuT", Handler: "putter"},
+				{Path: "/something", Method: "DELETE", Handler: "deleter"},
+			}
+		})
+
+		Context("when the route is present", func() {
+			It("returns the route with the matching handler name", func() {
+				route, ok := routes.RouteForHandler("getter")
+				Ω(ok).Should(BeTrue())
+				Ω(route.Method).Should(Equal("GET"))
+			})
+		})
+
+		Context("when the route is not present", func() {
+			It("returns falseness", func() {
+				route, ok := routes.RouteForHandler("orangutanger")
+				Ω(ok).Should(BeFalse())
+				Ω(route).Should(BeZero())
+			})
+		})
+	})
+
+	Describe("Routes#Router", func() {
 		Context("when all the handlers are present", func() {
 			BeforeEach(func() {
 				resp = httptest.NewRecorder()

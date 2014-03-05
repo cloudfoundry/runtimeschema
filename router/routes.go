@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bmizerany/pat"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -15,7 +16,38 @@ type Route struct {
 	Path    string
 }
 
+func (r Route) PathWithParams(params map[string]string) (string, error) {
+	components := strings.Split(r.Path, "/")
+	for i, c := range components {
+		if len(c) == 0 {
+			continue
+		}
+		if c[0] == ':' {
+			val, ok := params[c[1:]]
+			if !ok {
+				return "", fmt.Errorf("missing param %s", c)
+			}
+			components[i] = val
+		}
+	}
+
+	u, err := url.Parse(strings.Join(components, "/"))
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
+
 type Routes []Route
+
+func (r Routes) RouteForHandler(handler string) (Route, bool) {
+	for _, route := range r {
+		if route.Handler == handler {
+			return route, true
+		}
+	}
+	return Route{}, false
+}
 
 func (r Routes) Router(actions Handlers) (http.Handler, error) {
 	p := pat.New()
