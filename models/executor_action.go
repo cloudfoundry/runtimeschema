@@ -21,6 +21,7 @@ type UploadAction struct {
 
 type RunAction struct {
 	Script  string        `json:"script"`
+	Args    []string      `json:"args"`
 	Env     [][]string    `json:"env"`
 	Timeout time.Duration `json:"timeout"`
 }
