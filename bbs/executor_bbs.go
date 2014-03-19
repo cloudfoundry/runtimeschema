@@ -37,10 +37,10 @@ func (self *executorBBS) ClaimRunOnce(runOnce *models.RunOnce, executorID string
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: runOnce.ToJSON(),
 		})
 	})
@@ -59,10 +59,10 @@ func (self *executorBBS) StartRunOnce(runOnce *models.RunOnce, containerHandle s
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: runOnce.ToJSON(),
 		})
 	})
@@ -84,10 +84,10 @@ func (self *executorBBS) CompleteRunOnce(runOnce *models.RunOnce, failed bool, f
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
+			Key:   runOnceSchemaPath(runOnce),
 			Value: runOnce.ToJSON(),
 		})
 	})
@@ -190,13 +190,13 @@ func (self *executorBBS) batchCompareAndSwapRunOnces(runOncesToCAS [][]models.Ru
 
 	for _, runOncePair := range runOncesToCAS {
 		originalStoreNode := storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOncePair[0].Guid),
+			Key:   runOnceSchemaPath(&runOncePair[0]),
 			Value: runOncePair[0].ToJSON(),
 		}
 
 		runOncePair[1].UpdatedAt = self.timeProvider.Time().UnixNano()
 		newStoreNode := storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOncePair[1].Guid),
+			Key:   runOnceSchemaPath(&runOncePair[1]),
 			Value: runOncePair[1].ToJSON(),
 		}
 
@@ -237,7 +237,7 @@ func demoteToCompleted(runOnce models.RunOnce) models.RunOnce {
 
 func (self *executorBBS) MaintainConvergeLock(interval time.Duration, executorID string) (<-chan bool, chan<- chan bool, error) {
 	return self.store.MaintainNode(storeadapter.StoreNode{
-		Key:   runOnceSchemaPath("converge_lock"),
+		Key:   lockSchemaPath("converge_lock"),
 		Value: []byte(executorID),
 		TTL:   uint64(interval.Seconds()),
 	})

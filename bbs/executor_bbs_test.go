@@ -576,7 +576,6 @@ var _ = Describe("Executor BBS", func() {
 
 	Context("MaintainConvergeLock", func() {
 		Describe("Maintain the converge lock", func() {
-
 			Context("when the lock is available", func() {
 				It("should return immediately", func() {
 					lostLock, releaseLock, err := bbs.MaintainConvergeLock(1*time.Minute, "my_id")
