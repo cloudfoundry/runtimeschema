@@ -121,9 +121,16 @@ func (self *executorBBS) ConvergeRunOnce(timeToClaim time.Duration) {
 		}, message)
 	}
 
-	runOncesToSet := []models.RunOnce{}
 	keysToDelete := []string{}
 	unclaimedTimeoutBoundary := self.timeProvider.Time().Add(-timeToClaim).UnixNano()
+
+	runOncesToCAS := [][]models.RunOnce{}
+	scheduleForCAS := func(oldRunOnce, newRunOnce models.RunOnce) {
+		runOncesToCAS = append(runOncesToCAS, []models.RunOnce{
+			oldRunOnce,
+			newRunOnce,
+		})
+	}
 
 	for _, node := range runOnceState.ChildNodes {
 		runOnce, err := models.NewRunOnceFromJSON(node.Value)
@@ -140,50 +147,73 @@ func (self *executorBBS) ConvergeRunOnce(timeToClaim time.Duration) {
 		case models.RunOnceStatePending:
 			if runOnce.CreatedAt <= unclaimedTimeoutBoundary {
 				logError(runOnce, "runonce.converge.failed-to-claim")
-				runOnce = markRunOnceFailed(runOnce, "not claimed within time limit")
+				scheduleForCAS(runOnce, markRunOnceFailed(runOnce, "not claimed within time limit"))
+			} else {
+				scheduleForCAS(runOnce, runOnce)
 			}
-			runOncesToSet = append(runOncesToSet, runOnce)
 		case models.RunOnceStateClaimed:
 			claimedTooLong := self.timeProvider.Time().Sub(time.Unix(0, runOnce.UpdatedAt)) >= 30*time.Second
 			_, executorIsAlive := executorState.Lookup(runOnce.ExecutorID)
 
 			if !executorIsAlive {
 				logError(runOnce, "runonce.converge.executor-disappeared")
-				runOncesToSet = append(runOncesToSet, markRunOnceFailed(runOnce, "executor disappeared before completion"))
+				scheduleForCAS(runOnce, markRunOnceFailed(runOnce, "executor disappeared before completion"))
 			} else if claimedTooLong {
 				logError(runOnce, "runonce.converge.failed-to-start")
-				runOncesToSet = append(runOncesToSet, demoteToPending(runOnce))
+				scheduleForCAS(runOnce, demoteToPending(runOnce))
 			}
 		case models.RunOnceStateRunning:
 			_, executorIsAlive := executorState.Lookup(runOnce.ExecutorID)
 
 			if !executorIsAlive {
 				logError(runOnce, "runonce.converge.executor-disappeared")
-				runOncesToSet = append(runOncesToSet, markRunOnceFailed(runOnce, "executor disappeared before completion"))
+				scheduleForCAS(runOnce, markRunOnceFailed(runOnce, "executor disappeared before completion"))
 			}
 		case models.RunOnceStateCompleted:
-			runOncesToSet = append(runOncesToSet, runOnce)
+			scheduleForCAS(runOnce, runOnce)
 		case models.RunOnceStateResolving:
 			resolvingTooLong := self.timeProvider.Time().Sub(time.Unix(0, runOnce.UpdatedAt)) >= 30*time.Second
 
 			if resolvingTooLong {
 				logError(runOnce, "runonce.converge.failed-to-resolve")
-				runOncesToSet = append(runOncesToSet, demoteToCompleted(runOnce))
+				scheduleForCAS(runOnce, demoteToCompleted(runOnce))
 			}
 		}
 	}
 
-	storeNodesToSet := make([]storeadapter.StoreNode, len(runOncesToSet))
-	for i, runOnce := range runOncesToSet {
-		runOnce.UpdatedAt = self.timeProvider.Time().UnixNano()
-		storeNodesToSet[i] = storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce.Guid),
-			Value: runOnce.ToJSON(),
+	self.batchCompareAndSwapRunOnces(runOncesToCAS, logger)
+	self.store.Delete(keysToDelete...)
+}
+
+func (self *executorBBS) batchCompareAndSwapRunOnces(runOncesToCAS [][]models.RunOnce, logger *gosteno.Logger) {
+	done := make(chan struct{}, len(runOncesToCAS))
+
+	for _, runOncePair := range runOncesToCAS {
+		originalStoreNode := storeadapter.StoreNode{
+			Key:   runOnceSchemaPath(runOncePair[0].Guid),
+			Value: runOncePair[0].ToJSON(),
 		}
+
+		runOncePair[1].UpdatedAt = self.timeProvider.Time().UnixNano()
+		newStoreNode := storeadapter.StoreNode{
+			Key:   runOnceSchemaPath(runOncePair[1].Guid),
+			Value: runOncePair[1].ToJSON(),
+		}
+
+		go func() {
+			err := self.store.CompareAndSwap(originalStoreNode, newStoreNode)
+			if err != nil {
+				logger.Errord(map[string]interface{}{
+					"error": err.Error(),
+				}, "runonce.converge.failed-to-compare-and-swap")
+			}
+			done <- struct{}{}
+		}()
 	}
 
-	self.store.SetMulti(storeNodesToSet)
-	self.store.Delete(keysToDelete...)
+	for _ = range runOncesToCAS {
+		<-done
+	}
 }
 
 func markRunOnceFailed(runOnce models.RunOnce, reason string) models.RunOnce {
