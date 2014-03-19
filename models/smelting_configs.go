@@ -113,6 +113,28 @@ func (s LinuxSmeltingConfig) Script() string {
 	return strings.Join(argv, " ")
 }
 
+func (s LinuxSmeltingConfig) Validate() error {
+	var missingFlags []string
+
+	s.FlagSet.VisitAll(func(flag *flag.Flag) {
+		schemaFlag, ok := s.values[flag.Name]
+		if !ok {
+			return
+		}
+
+		value := *schemaFlag
+		if value == "" {
+			missingFlags = append(missingFlags, "-"+flag.Name)
+		}
+	})
+
+	if len(missingFlags) > 0 {
+		return fmt.Errorf("missing flags: %s", strings.Join(missingFlags, ", "))
+	}
+
+	return nil
+}
+
 func (s LinuxSmeltingConfig) AppDir() string {
 	return *s.appDir
 }
