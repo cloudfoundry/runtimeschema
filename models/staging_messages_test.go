@@ -55,12 +55,12 @@ var _ = Describe("StagingMessages", func() {
           }`
 
 		It("extracts key and url", func() {
-			var adminBuildpack Buildpack
+			var buildpack Buildpack
 
-			err := json.Unmarshal([]byte(ccJSONFragment), &adminBuildpack)
+			err := json.Unmarshal([]byte(ccJSONFragment), &buildpack)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(adminBuildpack).To(Equal(Buildpack{
+			Ω(buildpack).To(Equal(Buildpack{
 				Key: "ocaml-buildpack",
 				Url: "http://ocaml.org/buildpack.zip",
 			}))
