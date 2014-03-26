@@ -13,4 +13,4 @@ go get -t ./...
 go get github.com/coreos/etcd
 
 go install github.com/onsi/ginkgo/ginkgo
-ginkgo -r -skipMeasurements -randomizeAllSpecs "$@"
+ginkgo -r -skipMeasurements -randomizeAllSpecs -race "$@"
