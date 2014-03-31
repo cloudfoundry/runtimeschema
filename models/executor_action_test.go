@@ -10,7 +10,7 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-var _ = FDescribe("ExecutorAction", func() {
+var _ = Describe("ExecutorAction", func() {
 	Describe("With an invalid action", func() {
 		It("should fail to marshal", func() {
 			invalidAction := []string{"butts", "from", "mars"}
