@@ -48,6 +48,7 @@ type FileServerBBS interface {
 
 type ServistryBBS interface {
 	RegisterCC(registration models.CCRegistrationMessage, ttl time.Duration) error
+	UnregisterCC(registration models.CCRegistrationMessage) error
 }
 
 func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider) *BBS {

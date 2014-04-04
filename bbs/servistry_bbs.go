@@ -38,3 +38,11 @@ func (bbs *servistryBBS) RegisterCC(registration models.CCRegistrationMessage, t
 
 	return err
 }
+
+func (bbs *servistryBBS) UnregisterCC(registration models.CCRegistrationMessage) error {
+	err := bbs.store.Delete(ccRegistrationKey(registration))
+	if err == storeadapter.ErrorKeyNotFound {
+		return nil
+	}
+	return err
+}
