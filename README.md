@@ -1,4 +1,4 @@
-runtime_schema
+runtime-schema
 ==============
 
 Shared golang schema for runtime.
