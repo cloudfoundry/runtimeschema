@@ -1,20 +1,22 @@
 package models
 
 const (
-	ExecutorService = "executor"
+	ExecutorServiceName   = "Executor"
+	FileServerServiceName = "FileServer"
 )
 
 type ServiceRegistration struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
+	Name     string `json:"name"`
+	Id       string `json:"id"`
+	Location string `json:"location"`
 }
 
 type ServiceRegistrations []ServiceRegistration
 
-func (s ServiceRegistrations) ExecutorRegistrations() ServiceRegistrations {
+func (s ServiceRegistrations) FilterByName(serviceName string) ServiceRegistrations {
 	registrations := ServiceRegistrations{}
 	for _, reg := range s {
-		if reg.Name == ExecutorService {
+		if reg.Name == serviceName {
 			registrations = append(registrations, reg)
 		}
 	}

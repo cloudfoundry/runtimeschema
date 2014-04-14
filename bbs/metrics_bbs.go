@@ -7,6 +7,11 @@ import (
 	"path"
 )
 
+var serviceSchemas = map[string]string{
+	models.ExecutorServiceName:   ExecutorSchemaRoot,
+	models.FileServerServiceName: FileServerSchemaRoot,
+}
+
 type metricsBBS struct {
 	store storeadapter.StoreAdapter
 }
@@ -37,28 +42,32 @@ func (bbs *metricsBBS) GetAllRunOnces() ([]*models.RunOnce, error) {
 func (bbs *metricsBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {
 	registrations := models.ServiceRegistrations{}
 
-	executorRegistrations, err := bbs.getExecutorRegistrations()
-	if err != nil {
-		return registrations, err
+	for serviceName := range serviceSchemas {
+		serviceRegistrations, err := bbs.registrationsForServiceName(serviceName)
+		if err != nil {
+			return models.ServiceRegistrations{}, err
+		}
+		registrations = append(registrations, serviceRegistrations...)
 	}
-	registrations = append(registrations, executorRegistrations...)
+
 	return registrations, nil
 }
 
-func (bbs *metricsBBS) getExecutorRegistrations() (models.ServiceRegistrations, error) {
+func (bbs *metricsBBS) registrationsForServiceName(name string) (models.ServiceRegistrations, error) {
 	registrations := models.ServiceRegistrations{}
 
-	executorRootNode, err := bbs.store.ListRecursively(ExecutorSchemaRoot)
+	rootNode, err := bbs.store.ListRecursively(serviceSchemas[name])
 	if err == storeadapter.ErrorKeyNotFound {
 		return registrations, nil
 	} else if err != nil {
 		return registrations, err
 	}
 
-	for _, node := range executorRootNode.ChildNodes {
+	for _, node := range rootNode.ChildNodes {
 		reg := models.ServiceRegistration{
-			Name: models.ExecutorService,
-			Id:   path.Base(node.Key),
+			Name:     name,
+			Id:       path.Base(node.Key),
+			Location: string(node.Value),
 		}
 		registrations = append(registrations, reg)
 	}

@@ -12,7 +12,7 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs"
 )
 
-var _ = Context("Servistry BBS", func() {
+var _ = Context("Metrics BBS", func() {
 	var bbs *BBS
 	var timeProvider *faketimeprovider.FakeTimeProvider
 
@@ -22,30 +22,61 @@ var _ = Context("Servistry BBS", func() {
 	})
 
 	Describe("GetServiceRegistrations", func() {
-		expectedExecutorRegistrations := models.ServiceRegistrations{
-			{Name: "executor", Id: "guid-0"},
-			{Name: "executor", Id: "guid-1"},
-		}
+		var registrations models.ServiceRegistrations
+		var registrationsErr error
 
-		BeforeEach(func() {
-			serviceNodes := []storeadapter.StoreNode{
-				{
-					Key: "/v1/executor/guid-0",
-				},
-				{
-					Key: "/v1/executor/guid-1",
-				},
-			}
-			err := store.SetMulti(serviceNodes)
-			Ω(err).ShouldNot(HaveOccurred())
+		JustBeforeEach(func() {
+			registrations, registrationsErr = bbs.GetServiceRegistrations()
 		})
 
-		It("returns the executor service registrations", func() {
-			regisirations, err := bbs.GetServiceRegistrations()
-			Ω(err).ShouldNot(HaveOccurred())
+		Context("when etcd returns sucessfully", func() {
+			BeforeEach(func() {
+				serviceNodes := []storeadapter.StoreNode{
+					{
+						Key: "/v1/executor/guid-0",
+					},
+					{
+						Key: "/v1/executor/guid-1",
+					},
+					{
+						Key:   "/v1/file_server/guid-0",
+						Value: []byte("http://example.com/file-server"),
+					},
+				}
+				err := store.SetMulti(serviceNodes)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
 
-			executorRegistrations := regisirations.ExecutorRegistrations()
-			Ω(executorRegistrations).Should(Equal(expectedExecutorRegistrations))
+			It("does not return an error", func() {
+				Ω(registrationsErr).ShouldNot(HaveOccurred())
+			})
+
+			It("returns the executor service registrations", func() {
+				executorRegistrations := registrations.FilterByName(models.ExecutorServiceName)
+				Ω(executorRegistrations).Should(HaveLen(2))
+				Ω(executorRegistrations).Should(ContainElement(models.ServiceRegistration{
+					Name: models.ExecutorServiceName, Id: "guid-0",
+				}))
+				Ω(executorRegistrations).Should(ContainElement(models.ServiceRegistration{
+					Name: models.ExecutorServiceName, Id: "guid-1",
+				}))
+			})
+
+			It("returns the file-server service registrations", func() {
+				Ω(registrations.FilterByName(models.FileServerServiceName)).Should(Equal(models.ServiceRegistrations{
+					{Name: models.FileServerServiceName, Id: "guid-0", Location: "http://example.com/file-server"},
+				}))
+			})
+		})
+
+		Context("when etcd comes up empty", func() {
+			It("does not return an error", func() {
+				Ω(registrationsErr).ShouldNot(HaveOccurred())
+			})
+
+			It("returns empty registrations", func() {
+				Ω(registrations).Should(BeEmpty())
+			})
 		})
 	})
 })
