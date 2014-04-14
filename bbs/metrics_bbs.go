@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	steno "github.com/cloudfoundry/gosteno"
 	"github.com/cloudfoundry/storeadapter"
+	"path"
 )
 
 type metricsBBS struct {
@@ -31,4 +32,36 @@ func (bbs *metricsBBS) GetAllRunOnces() ([]*models.RunOnce, error) {
 	}
 
 	return runOnces, nil
+}
+
+func (bbs *metricsBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {
+	registrations := models.ServiceRegistrations{}
+
+	executorRegistrations, err := bbs.getExecutorRegistrations()
+	if err != nil {
+		return registrations, err
+	}
+	registrations = append(registrations, executorRegistrations...)
+	return registrations, nil
+}
+
+func (bbs *metricsBBS) getExecutorRegistrations() (models.ServiceRegistrations, error) {
+	registrations := models.ServiceRegistrations{}
+
+	executorRootNode, err := bbs.store.ListRecursively(ExecutorSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return registrations, nil
+	} else if err != nil {
+		return registrations, err
+	}
+
+	for _, node := range executorRootNode.ChildNodes {
+		reg := models.ServiceRegistration{
+			Name: models.ExecutorService,
+			Id:   path.Base(node.Key),
+		}
+		registrations = append(registrations, reg)
+	}
+
+	return registrations, nil
 }
