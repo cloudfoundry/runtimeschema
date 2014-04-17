@@ -13,7 +13,7 @@ type DownloadAction struct {
 	From                   string `json:"from"`
 	To                     string `json:"to"`
 	Extract                bool   `json:"extract"`
-	DownloadFailureMessage string `json:download-failure-message,omitempty`
+	DownloadFailureMessage string `json:"download_failure_message,omitempty"`
 }
 
 type UploadAction struct {
