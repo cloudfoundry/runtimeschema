@@ -5,7 +5,7 @@ type StagingRequestFromCC struct {
 	TaskId                         string      `json:"task_id"`
 	Stack                          string      `json:"stack"`
 	AppBitsDownloadUri             string      `json:"app_bits_download_uri"`
-	BuildArtifactsCacheDownloadUri string      `json:"build_artifacts_cache_download_uri"`
+	BuildArtifactsCacheDownloadUri string      `json:"build_artifacts_cache_download_uri,omitempty"`
 	FileDescriptors                int         `json:"file_descriptors"`
 	MemoryMB                       int         `json:"memory_mb"`
 	DiskMB                         int         `json:"disk_mb"`
