@@ -13,8 +13,8 @@ const TaskSchemaRoot = SchemaRoot + "run_once"
 const ExecutorSchemaRoot = SchemaRoot + "executor"
 const LockSchemaRoot = SchemaRoot + "locks"
 
-func runOnceSchemaPath(runOnce *models.Task) string {
-	return path.Join(TaskSchemaRoot, runOnce.Guid)
+func taskSchemaPath(task *models.Task) string {
+	return path.Join(TaskSchemaRoot, task.Guid)
 }
 
 func executorSchemaPath(executorID string) string {
@@ -39,14 +39,14 @@ func retryIndefinitelyOnStoreTimeout(callback func() error) error {
 }
 
 func watchForTaskModificationsOnState(store storeadapter.StoreAdapter, state models.TaskState) (<-chan *models.Task, chan<- bool, <-chan error) {
-	runOnces := make(chan *models.Task)
+	tasks := make(chan *models.Task)
 	stopOuter := make(chan bool)
 	errsOuter := make(chan error)
 
 	events, stopInner, errsInner := store.Watch(TaskSchemaRoot)
 
 	go func() {
-		defer close(runOnces)
+		defer close(tasks)
 		defer close(errsOuter)
 
 		for {
@@ -61,13 +61,13 @@ func watchForTaskModificationsOnState(store storeadapter.StoreAdapter, state mod
 				}
 				switch event.Type {
 				case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-					runOnce, err := models.NewTaskFromJSON(event.Node.Value)
+					task, err := models.NewTaskFromJSON(event.Node.Value)
 					if err != nil {
 						continue
 					}
 
-					if runOnce.State == state {
-						runOnces <- &runOnce
+					if task.State == state {
+						tasks <- &task
 					}
 				}
 
@@ -80,5 +80,5 @@ func watchForTaskModificationsOnState(store storeadapter.StoreAdapter, state mod
 		}
 	}()
 
-	return runOnces, stopOuter, errsOuter
+	return tasks, stopOuter, errsOuter
 }

@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("Executor BBS", func() {
 	var bbs *BBS
-	var runOnce *models.Task
+	var task *models.Task
 	var timeToClaim time.Duration
 	var presence Presence
 	var timeProvider *faketimeprovider.FakeTimeProvider
@@ -26,7 +26,7 @@ var _ = Describe("Executor BBS", func() {
 		timeToClaim = 30 * time.Second
 		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
 		bbs = New(store, timeProvider)
-		runOnce = &models.Task{
+		task = &models.Task{
 			Guid: "some-guid",
 		}
 	})
@@ -54,43 +54,43 @@ var _ = Describe("Executor BBS", func() {
 	Describe("ClaimTask", func() {
 		Context("when claiming a pending Task", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("puts the Task in the claim state", func() {
-				err := bbs.ClaimTask(runOnce, "executor-ID")
+				err := bbs.ClaimTask(task, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.State).Should(Equal(models.TaskStateClaimed))
-				Ω(runOnce.ExecutorID).Should(Equal("executor-ID"))
+				Ω(task.State).Should(Equal(models.TaskStateClaimed))
+				Ω(task.ExecutorID).Should(Equal("executor-ID"))
 
 				node, err := store.Get("/v1/run_once/some-guid")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(node).Should(Equal(storeadapter.StoreNode{
 					Key:   "/v1/run_once/some-guid",
-					Value: runOnce.ToJSON(),
+					Value: task.ToJSON(),
 				}))
 			})
 
 			It("should bump UpdatedAt", func() {
-				err := bbs.ClaimTask(runOnce, "executor-ID")
+				err := bbs.ClaimTask(task, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(task.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ClaimTask(runOnce, "executor-ID")
+					return bbs.ClaimTask(task, "executor-ID")
 				})
 			})
 		})
 
 		Context("when claiming a Task that is not in the pending state", func() {
 			It("returns an error", func() {
-				err := bbs.ClaimTask(runOnce, "executor-ID")
+				err := bbs.ClaimTask(task, "executor-ID")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -99,47 +99,47 @@ var _ = Describe("Executor BBS", func() {
 	Describe("StartTask", func() {
 		Context("when starting a claimed Task", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-ID")
+				err = bbs.ClaimTask(task, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("sets the state to running", func() {
-				err := bbs.StartTask(runOnce, "container-handle")
+				err := bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.State).Should(Equal(models.TaskStateRunning))
-				Ω(runOnce.ContainerHandle).Should(Equal("container-handle"))
+				Ω(task.State).Should(Equal(models.TaskStateRunning))
+				Ω(task.ContainerHandle).Should(Equal("container-handle"))
 
 				node, err := store.Get("/v1/run_once/some-guid")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(node).Should(Equal(storeadapter.StoreNode{
 					Key:   "/v1/run_once/some-guid",
-					Value: runOnce.ToJSON(),
+					Value: task.ToJSON(),
 				}))
 			})
 
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.StartTask(runOnce, "container-handle")
+				err := bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(task.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartTask(runOnce, "container-handle")
+					return bbs.StartTask(task, "container-handle")
 				})
 			})
 		})
 
 		Context("When starting a Task that is not in the claimed state", func() {
 			It("returns an error", func() {
-				err := bbs.StartTask(runOnce, "container-handle")
+				err := bbs.StartTask(task, "container-handle")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -148,50 +148,50 @@ var _ = Describe("Executor BBS", func() {
 	Describe("CompleteTask", func() {
 		Context("when completing a running Task", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-ID")
+				err = bbs.ClaimTask(task, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(runOnce, "container-handle")
+				err = bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("sets the Task in the completed state", func() {
-				err := bbs.CompleteTask(runOnce, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.Failed).Should(BeTrue())
-				Ω(runOnce.FailureReason).Should(Equal("because i said so"))
+				Ω(task.Failed).Should(BeTrue())
+				Ω(task.FailureReason).Should(Equal("because i said so"))
 
 				node, err := store.Get("/v1/run_once/some-guid")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(node).Should(Equal(storeadapter.StoreNode{
 					Key:   "/v1/run_once/some-guid",
-					Value: runOnce.ToJSON(),
+					Value: task.ToJSON(),
 				}))
 			})
 
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.CompleteTask(runOnce, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(runOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(task.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.CompleteTask(runOnce, false, "", "a result")
+					return bbs.CompleteTask(task, false, "", "a result")
 				})
 			})
 		})
 
 		Context("When completing a Task that is not in the running state", func() {
 			It("returns an error", func() {
-				err := bbs.CompleteTask(runOnce, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task, true, "because i said so", "a result")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -273,41 +273,41 @@ var _ = Describe("Executor BBS", func() {
 		})
 
 		It("should send an event down the pipe for creates", func(done Done) {
-			err := bbs.DesireTask(runOnce)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Expect(<-events).To(Equal(runOnce))
+			Expect(<-events).To(Equal(task))
 
 			close(done)
 		})
 
 		It("should send an event down the pipe for sets", func(done Done) {
-			err := bbs.DesireTask(runOnce)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			e := <-events
 
-			Expect(e).To(Equal(runOnce))
+			Expect(e).To(Equal(task))
 
-			err = bbs.DesireTask(runOnce)
+			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Expect(<-events).To(Equal(runOnce))
+			Expect(<-events).To(Equal(task))
 
 			close(done)
 		})
 
 		It("should not send an event down the pipe for deletes", func(done Done) {
-			err := bbs.DesireTask(runOnce)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Expect(<-events).To(Equal(runOnce))
+			Expect(<-events).To(Equal(task))
 
-			err = bbs.ResolveTask(runOnce)
+			err = bbs.ResolveTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			otherTask := runOnce
-			otherTask.Guid = runOnce.Guid + "1"
+			otherTask := task
+			otherTask.Guid = task.Guid + "1"
 
 			err = bbs.DesireTask(otherTask)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -320,7 +320,7 @@ var _ = Describe("Executor BBS", func() {
 		It("closes the events and errors channel when told to stop", func(done Done) {
 			stop <- true
 
-			err := bbs.DesireTask(runOnce)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(events).Should(BeClosed())
@@ -361,7 +361,7 @@ var _ = Describe("Executor BBS", func() {
 
 		Context("when a Task is pending", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -373,8 +373,8 @@ var _ = Describe("Executor BBS", func() {
 				var noticedOnce *models.Task
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
 
-				runOnce.UpdatedAt = timeProvider.Time().UnixNano()
-				Ω(noticedOnce).Should(Equal(runOnce))
+				task.UpdatedAt = timeProvider.Time().UnixNano()
+				Ω(noticedOnce).Should(Equal(task))
 			})
 
 			Context("when the Task has been pending for longer than the timeToClaim", func() {
@@ -396,10 +396,10 @@ var _ = Describe("Executor BBS", func() {
 
 		Context("when a Task is claimed", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-id")
+				err = bbs.ClaimTask(task, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				var status <-chan bool
@@ -433,10 +433,10 @@ var _ = Describe("Executor BBS", func() {
 					var noticedOnce *models.Task
 					Eventually(desiredEvents).Should(Receive(&noticedOnce))
 
-					runOnce.State = models.TaskStatePending
-					runOnce.UpdatedAt = timeProvider.Time().UnixNano()
-					runOnce.ExecutorID = ""
-					Ω(noticedOnce).Should(Equal(runOnce))
+					task.State = models.TaskStatePending
+					task.UpdatedAt = timeProvider.Time().UnixNano()
+					task.ExecutorID = ""
+					Ω(noticedOnce).Should(Equal(task))
 				})
 			})
 
@@ -465,13 +465,13 @@ var _ = Describe("Executor BBS", func() {
 
 		Context("when a Task is running", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-id")
+				err = bbs.ClaimTask(task, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(runOnce, "container-handle")
+				err = bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				var status <-chan bool
@@ -518,16 +518,16 @@ var _ = Describe("Executor BBS", func() {
 
 		Context("when a Task is completed", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-id")
+				err = bbs.ClaimTask(task, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(runOnce, "container-handle")
+				err = bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(runOnce, true, "'cause I said so", "a magical result")
+				err = bbs.CompleteTask(task, true, "'cause I said so", "a magical result")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -551,19 +551,19 @@ var _ = Describe("Executor BBS", func() {
 
 		Context("when a Task is resolving", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(runOnce)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(runOnce, "executor-id")
+				err = bbs.ClaimTask(task, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(runOnce, "container-handle")
+				err = bbs.StartTask(task, "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(runOnce, true, "'cause I said so", "a result")
+				err = bbs.CompleteTask(task, true, "'cause I said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ResolvingTask(runOnce)
+				err = bbs.ResolvingTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -586,9 +586,9 @@ var _ = Describe("Executor BBS", func() {
 					var noticedOnce *models.Task
 					Eventually(completedEvents).Should(Receive(&noticedOnce))
 
-					runOnce.State = models.TaskStateCompleted
-					runOnce.UpdatedAt = timeProvider.Time().UnixNano()
-					Ω(noticedOnce).Should(Equal(runOnce))
+					task.State = models.TaskStateCompleted
+					task.UpdatedAt = timeProvider.Time().UnixNano()
+					Ω(noticedOnce).Should(Equal(task))
 				})
 			})
 		})

@@ -18,35 +18,35 @@ func (s *stagerBBS) WatchForCompletedTask() (<-chan *models.Task, chan<- bool, <
 // The stager calls this when it wants to desire a payload
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
-func (s *stagerBBS) DesireTask(runOnce *models.Task) error {
+func (s *stagerBBS) DesireTask(task *models.Task) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
-		if runOnce.CreatedAt == 0 {
-			runOnce.CreatedAt = s.timeProvider.Time().UnixNano()
+		if task.CreatedAt == 0 {
+			task.CreatedAt = s.timeProvider.Time().UnixNano()
 		}
-		runOnce.UpdatedAt = s.timeProvider.Time().UnixNano()
-		runOnce.State = models.TaskStatePending
+		task.UpdatedAt = s.timeProvider.Time().UnixNano()
+		task.State = models.TaskStatePending
 		return s.store.SetMulti([]storeadapter.StoreNode{
 			{
-				Key:   runOnceSchemaPath(runOnce),
-				Value: runOnce.ToJSON(),
+				Key:   taskSchemaPath(task),
+				Value: task.ToJSON(),
 			},
 		})
 	})
 }
 
-func (s *stagerBBS) ResolvingTask(runOnce *models.Task) error {
-	originalValue := runOnce.ToJSON()
+func (s *stagerBBS) ResolvingTask(task *models.Task) error {
+	originalValue := task.ToJSON()
 
-	runOnce.UpdatedAt = s.timeProvider.Time().UnixNano()
-	runOnce.State = models.TaskStateResolving
+	task.UpdatedAt = s.timeProvider.Time().UnixNano()
+	task.State = models.TaskStateResolving
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return s.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
+			Key:   taskSchemaPath(task),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
-			Value: runOnce.ToJSON(),
+			Key:   taskSchemaPath(task),
+			Value: task.ToJSON(),
 		})
 	})
 }
@@ -54,8 +54,8 @@ func (s *stagerBBS) ResolvingTask(runOnce *models.Task) error {
 // The stager calls this when it wants to signal that it has received a completion and is handling it
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should assume that someone else is handling the completion and should bail
-func (s *stagerBBS) ResolveTask(runOnce *models.Task) error {
+func (s *stagerBBS) ResolveTask(task *models.Task) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
-		return s.store.Delete(runOnceSchemaPath(runOnce))
+		return s.store.Delete(taskSchemaPath(task))
 	})
 }

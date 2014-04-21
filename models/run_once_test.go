@@ -10,9 +10,9 @@ import (
 )
 
 var _ = Describe("Task", func() {
-	var runOnce Task
+	var task Task
 
-	runOncePayload := `{
+	taskPayload := `{
 		"guid":"some-guid",
 		"reply_to":"some-requester",
 		"stack":"some-stack",
@@ -43,7 +43,7 @@ var _ = Describe("Task", func() {
 	BeforeEach(func() {
 		index := 42
 
-		runOnce = Task{
+		task = Task{
 			Guid:    "some-guid",
 			ReplyTo: "some-requester",
 			Stack:   "some-stack",
@@ -77,17 +77,17 @@ var _ = Describe("Task", func() {
 
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
-			json := runOnce.ToJSON()
-			Ω(string(json)).Should(MatchJSON(runOncePayload))
+			json := task.ToJSON()
+			Ω(string(json)).Should(MatchJSON(taskPayload))
 		})
 	})
 
 	Describe("NewTaskFromJSON", func() {
 		It("returns a Task with correct fields", func() {
-			decodedTask, err := NewTaskFromJSON([]byte(runOncePayload))
+			decodedTask, err := NewTaskFromJSON([]byte(taskPayload))
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedTask).Should(Equal(runOnce))
+			Ω(decodedTask).Should(Equal(task))
 		})
 
 		Context("with an invalid payload", func() {

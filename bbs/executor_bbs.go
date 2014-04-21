@@ -27,21 +27,21 @@ func (self *executorBBS) WatchForDesiredTask() (<-chan *models.Task, chan<- bool
 // The executor calls this when it wants to claim a runonce
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the executor should assume that someone else is handling the claim and should bail
-func (self *executorBBS) ClaimTask(runOnce *models.Task, executorID string) error {
-	originalValue := runOnce.ToJSON()
+func (self *executorBBS) ClaimTask(task *models.Task, executorID string) error {
+	originalValue := task.ToJSON()
 
-	runOnce.UpdatedAt = self.timeProvider.Time().UnixNano()
+	task.UpdatedAt = self.timeProvider.Time().UnixNano()
 
-	runOnce.State = models.TaskStateClaimed
-	runOnce.ExecutorID = executorID
+	task.State = models.TaskStateClaimed
+	task.ExecutorID = executorID
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
+			Key:   taskSchemaPath(task),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
-			Value: runOnce.ToJSON(),
+			Key:   taskSchemaPath(task),
+			Value: task.ToJSON(),
 		})
 	})
 }
@@ -49,21 +49,21 @@ func (self *executorBBS) ClaimTask(runOnce *models.Task, executorID string) erro
 // The executor calls this when it is about to run the runonce in the claimed container
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the executor should assume that someone else is running and should clean up and bail
-func (self *executorBBS) StartTask(runOnce *models.Task, containerHandle string) error {
-	originalValue := runOnce.ToJSON()
+func (self *executorBBS) StartTask(task *models.Task, containerHandle string) error {
+	originalValue := task.ToJSON()
 
-	runOnce.UpdatedAt = self.timeProvider.Time().UnixNano()
+	task.UpdatedAt = self.timeProvider.Time().UnixNano()
 
-	runOnce.State = models.TaskStateRunning
-	runOnce.ContainerHandle = containerHandle
+	task.State = models.TaskStateRunning
+	task.ContainerHandle = containerHandle
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
+			Key:   taskSchemaPath(task),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
-			Value: runOnce.ToJSON(),
+			Key:   taskSchemaPath(task),
+			Value: task.ToJSON(),
 		})
 	})
 }
@@ -72,23 +72,23 @@ func (self *executorBBS) StartTask(runOnce *models.Task, containerHandle string)
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
-func (self *executorBBS) CompleteTask(runOnce *models.Task, failed bool, failureReason string, result string) error {
-	originalValue := runOnce.ToJSON()
+func (self *executorBBS) CompleteTask(task *models.Task, failed bool, failureReason string, result string) error {
+	originalValue := task.ToJSON()
 
-	runOnce.UpdatedAt = self.timeProvider.Time().UnixNano()
+	task.UpdatedAt = self.timeProvider.Time().UnixNano()
 
-	runOnce.State = models.TaskStateCompleted
-	runOnce.Failed = failed
-	runOnce.FailureReason = failureReason
-	runOnce.Result = result
+	task.State = models.TaskStateCompleted
+	task.Failed = failed
+	task.FailureReason = failureReason
+	task.Result = result
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return self.store.CompareAndSwap(storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
+			Key:   taskSchemaPath(task),
 			Value: originalValue,
 		}, storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(runOnce),
-			Value: runOnce.ToJSON(),
+			Key:   taskSchemaPath(task),
+			Value: task.ToJSON(),
 		})
 	})
 }
@@ -102,7 +102,7 @@ func (self *executorBBS) CompleteTask(runOnce *models.Task, failed bool, failure
 // 5. Mark as failed any run-onces that have been in the pending state for > timeToClaim
 // 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
 func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
-	runOnceState, err := self.store.ListRecursively(TaskSchemaRoot)
+	taskState, err := self.store.ListRecursively(TaskSchemaRoot)
 	if err != nil {
 		return
 	}
@@ -115,25 +115,25 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 	}
 
 	logger := gosteno.NewLogger("bbs")
-	logError := func(runOnce models.Task, message string) {
+	logError := func(task models.Task, message string) {
 		logger.Errord(map[string]interface{}{
-			"runonce": runOnce,
+			"runonce": task,
 		}, message)
 	}
 
 	keysToDelete := []string{}
 	unclaimedTimeoutBoundary := self.timeProvider.Time().Add(-timeToClaim).UnixNano()
 
-	runOncesToCAS := [][]models.Task{}
+	tasksToCAS := [][]models.Task{}
 	scheduleForCAS := func(oldTask, newTask models.Task) {
-		runOncesToCAS = append(runOncesToCAS, []models.Task{
+		tasksToCAS = append(tasksToCAS, []models.Task{
 			oldTask,
 			newTask,
 		})
 	}
 
-	for _, node := range runOnceState.ChildNodes {
-		runOnce, err := models.NewTaskFromJSON(node.Value)
+	for _, node := range taskState.ChildNodes {
+		task, err := models.NewTaskFromJSON(node.Value)
 		if err != nil {
 			logger.Errord(map[string]interface{}{
 				"key":   node.Key,
@@ -143,61 +143,61 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 			continue
 		}
 
-		switch runOnce.State {
+		switch task.State {
 		case models.TaskStatePending:
-			if runOnce.CreatedAt <= unclaimedTimeoutBoundary {
-				logError(runOnce, "runonce.converge.failed-to-claim")
-				scheduleForCAS(runOnce, markTaskFailed(runOnce, "not claimed within time limit"))
+			if task.CreatedAt <= unclaimedTimeoutBoundary {
+				logError(task, "runonce.converge.failed-to-claim")
+				scheduleForCAS(task, markTaskFailed(task, "not claimed within time limit"))
 			} else {
-				scheduleForCAS(runOnce, runOnce)
+				scheduleForCAS(task, task)
 			}
 		case models.TaskStateClaimed:
-			claimedTooLong := self.timeProvider.Time().Sub(time.Unix(0, runOnce.UpdatedAt)) >= 30*time.Second
-			_, executorIsAlive := executorState.Lookup(runOnce.ExecutorID)
+			claimedTooLong := self.timeProvider.Time().Sub(time.Unix(0, task.UpdatedAt)) >= 30*time.Second
+			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
 
 			if !executorIsAlive {
-				logError(runOnce, "runonce.converge.executor-disappeared")
-				scheduleForCAS(runOnce, markTaskFailed(runOnce, "executor disappeared before completion"))
+				logError(task, "runonce.converge.executor-disappeared")
+				scheduleForCAS(task, markTaskFailed(task, "executor disappeared before completion"))
 			} else if claimedTooLong {
-				logError(runOnce, "runonce.converge.failed-to-start")
-				scheduleForCAS(runOnce, demoteToPending(runOnce))
+				logError(task, "runonce.converge.failed-to-start")
+				scheduleForCAS(task, demoteToPending(task))
 			}
 		case models.TaskStateRunning:
-			_, executorIsAlive := executorState.Lookup(runOnce.ExecutorID)
+			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
 
 			if !executorIsAlive {
-				logError(runOnce, "runonce.converge.executor-disappeared")
-				scheduleForCAS(runOnce, markTaskFailed(runOnce, "executor disappeared before completion"))
+				logError(task, "runonce.converge.executor-disappeared")
+				scheduleForCAS(task, markTaskFailed(task, "executor disappeared before completion"))
 			}
 		case models.TaskStateCompleted:
-			scheduleForCAS(runOnce, runOnce)
+			scheduleForCAS(task, task)
 		case models.TaskStateResolving:
-			resolvingTooLong := self.timeProvider.Time().Sub(time.Unix(0, runOnce.UpdatedAt)) >= 30*time.Second
+			resolvingTooLong := self.timeProvider.Time().Sub(time.Unix(0, task.UpdatedAt)) >= 30*time.Second
 
 			if resolvingTooLong {
-				logError(runOnce, "runonce.converge.failed-to-resolve")
-				scheduleForCAS(runOnce, demoteToCompleted(runOnce))
+				logError(task, "runonce.converge.failed-to-resolve")
+				scheduleForCAS(task, demoteToCompleted(task))
 			}
 		}
 	}
 
-	self.batchCompareAndSwapTasks(runOncesToCAS, logger)
+	self.batchCompareAndSwapTasks(tasksToCAS, logger)
 	self.store.Delete(keysToDelete...)
 }
 
-func (self *executorBBS) batchCompareAndSwapTasks(runOncesToCAS [][]models.Task, logger *gosteno.Logger) {
-	done := make(chan struct{}, len(runOncesToCAS))
+func (self *executorBBS) batchCompareAndSwapTasks(tasksToCAS [][]models.Task, logger *gosteno.Logger) {
+	done := make(chan struct{}, len(tasksToCAS))
 
-	for _, runOncePair := range runOncesToCAS {
+	for _, taskPair := range tasksToCAS {
 		originalStoreNode := storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(&runOncePair[0]),
-			Value: runOncePair[0].ToJSON(),
+			Key:   taskSchemaPath(&taskPair[0]),
+			Value: taskPair[0].ToJSON(),
 		}
 
-		runOncePair[1].UpdatedAt = self.timeProvider.Time().UnixNano()
+		taskPair[1].UpdatedAt = self.timeProvider.Time().UnixNano()
 		newStoreNode := storeadapter.StoreNode{
-			Key:   runOnceSchemaPath(&runOncePair[1]),
-			Value: runOncePair[1].ToJSON(),
+			Key:   taskSchemaPath(&taskPair[1]),
+			Value: taskPair[1].ToJSON(),
 		}
 
 		go func() {
@@ -211,28 +211,28 @@ func (self *executorBBS) batchCompareAndSwapTasks(runOncesToCAS [][]models.Task,
 		}()
 	}
 
-	for _ = range runOncesToCAS {
+	for _ = range tasksToCAS {
 		<-done
 	}
 }
 
-func markTaskFailed(runOnce models.Task, reason string) models.Task {
-	runOnce.State = models.TaskStateCompleted
-	runOnce.Failed = true
-	runOnce.FailureReason = reason
-	return runOnce
+func markTaskFailed(task models.Task, reason string) models.Task {
+	task.State = models.TaskStateCompleted
+	task.Failed = true
+	task.FailureReason = reason
+	return task
 }
 
-func demoteToPending(runOnce models.Task) models.Task {
-	runOnce.State = models.TaskStatePending
-	runOnce.ExecutorID = ""
-	runOnce.ContainerHandle = ""
-	return runOnce
+func demoteToPending(task models.Task) models.Task {
+	task.State = models.TaskStatePending
+	task.ExecutorID = ""
+	task.ContainerHandle = ""
+	return task
 }
 
-func demoteToCompleted(runOnce models.Task) models.Task {
-	runOnce.State = models.TaskStateCompleted
-	return runOnce
+func demoteToCompleted(task models.Task) models.Task {
+	task.State = models.TaskStateCompleted
+	return task
 }
 
 func (self *executorBBS) MaintainConvergeLock(interval time.Duration, executorID string) (<-chan bool, chan<- chan bool, error) {

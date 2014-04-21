@@ -26,17 +26,17 @@ func (bbs *metricsBBS) GetAllTasks() ([]*models.Task, error) {
 		return []*models.Task{}, err
 	}
 
-	runOnces := []*models.Task{}
+	tasks := []*models.Task{}
 	for _, node := range node.ChildNodes {
-		runOnce, err := models.NewTaskFromJSON(node.Value)
+		task, err := models.NewTaskFromJSON(node.Value)
 		if err != nil {
-			steno.NewLogger("bbs").Errorf("cannot parse runOnce JSON for key %s: %s", node.Key, err.Error())
+			steno.NewLogger("bbs").Errorf("cannot parse task JSON for key %s: %s", node.Key, err.Error())
 		} else {
-			runOnces = append(runOnces, &runOnce)
+			tasks = append(tasks, &task)
 		}
 	}
 
-	return runOnces, nil
+	return tasks, nil
 }
 
 func (bbs *metricsBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {

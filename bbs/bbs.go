@@ -20,9 +20,9 @@ type ExecutorBBS interface {
 
 	WatchForDesiredTask() (<-chan *models.Task, chan<- bool, <-chan error)
 
-	ClaimTask(runOnce *models.Task, executorID string) error
-	StartTask(runOnce *models.Task, containerHandle string) error
-	CompleteTask(runOnce *models.Task, failed bool, failureReason string, result string) error
+	ClaimTask(task *models.Task, executorID string) error
+	StartTask(task *models.Task, containerHandle string) error
+	CompleteTask(task *models.Task, failed bool, failureReason string, result string) error
 
 	ConvergeTask(timeToClaim time.Duration)
 	MaintainConvergeLock(interval time.Duration, executorID string) (disappeared <-chan bool, stop chan<- chan bool, err error)

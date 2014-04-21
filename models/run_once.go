@@ -50,14 +50,14 @@ type LogConfig struct {
 }
 
 func NewTaskFromJSON(payload []byte) (Task, error) {
-	var runOnce Task
+	var task Task
 
-	err := json.Unmarshal(payload, &runOnce)
+	err := json.Unmarshal(payload, &task)
 	if err != nil {
 		return Task{}, err
 	}
 
-	return runOnce, nil
+	return task, nil
 }
 
 func (self Task) ToJSON() []byte {

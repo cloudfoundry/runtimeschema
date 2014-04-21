@@ -52,8 +52,8 @@ func (fakeBBS *FakeExecutorBBS) WatchForDesiredTask() (<-chan *models.Task, chan
 	return nil, nil, nil
 }
 
-func (fakeBBS *FakeExecutorBBS) ClaimTask(runOnce *models.Task, executorID string) error {
-	runOnce.ExecutorID = executorID
+func (fakeBBS *FakeExecutorBBS) ClaimTask(task *models.Task, executorID string) error {
+	task.ExecutorID = executorID
 
 	fakeBBS.RLock()
 	err := fakeBBS.claimTaskErr
@@ -64,7 +64,7 @@ func (fakeBBS *FakeExecutorBBS) ClaimTask(runOnce *models.Task, executorID strin
 	}
 
 	fakeBBS.Lock()
-	fakeBBS.claimedTasks = append(fakeBBS.claimedTasks, runOnce)
+	fakeBBS.claimedTasks = append(fakeBBS.claimedTasks, task)
 	fakeBBS.Unlock()
 
 	return nil
@@ -87,7 +87,7 @@ func (fakeBBS *FakeExecutorBBS) SetClaimTaskErr(err error) {
 	fakeBBS.claimTaskErr = err
 }
 
-func (fakeBBS *FakeExecutorBBS) StartTask(runOnce *models.Task, containerHandle string) error {
+func (fakeBBS *FakeExecutorBBS) StartTask(task *models.Task, containerHandle string) error {
 	fakeBBS.RLock()
 	err := fakeBBS.startTaskErr
 	fakeBBS.RUnlock()
@@ -96,10 +96,10 @@ func (fakeBBS *FakeExecutorBBS) StartTask(runOnce *models.Task, containerHandle 
 		return err
 	}
 
-	runOnce.ContainerHandle = containerHandle
+	task.ContainerHandle = containerHandle
 
 	fakeBBS.Lock()
-	fakeBBS.startedTasks = append(fakeBBS.startedTasks, runOnce)
+	fakeBBS.startedTasks = append(fakeBBS.startedTasks, task)
 	fakeBBS.Unlock()
 
 	return nil
@@ -122,7 +122,7 @@ func (fakeBBS *FakeExecutorBBS) SetStartTaskErr(err error) {
 	fakeBBS.startTaskErr = err
 }
 
-func (fakeBBS *FakeExecutorBBS) CompleteTask(runOnce *models.Task, failed bool, failureReason string, result string) error {
+func (fakeBBS *FakeExecutorBBS) CompleteTask(task *models.Task, failed bool, failureReason string, result string) error {
 	fakeBBS.RLock()
 	err := fakeBBS.completeTaskErr
 	fakeBBS.RUnlock()
@@ -131,12 +131,12 @@ func (fakeBBS *FakeExecutorBBS) CompleteTask(runOnce *models.Task, failed bool, 
 		return err
 	}
 
-	runOnce.Failed = failed
-	runOnce.FailureReason = failureReason
-	runOnce.Result = result
+	task.Failed = failed
+	task.FailureReason = failureReason
+	task.Result = result
 
 	fakeBBS.Lock()
-	fakeBBS.completedTasks = append(fakeBBS.completedTasks, runOnce)
+	fakeBBS.completedTasks = append(fakeBBS.completedTasks, task)
 	fakeBBS.Unlock()
 
 	return nil

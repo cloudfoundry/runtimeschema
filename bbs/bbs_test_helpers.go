@@ -50,9 +50,9 @@ func (self *BBS) printNodes(message string, nodes []storeadapter.StoreNode) {
 	}
 }
 
-func filterTasks(runOnces []*models.Task, state models.TaskState) []*models.Task {
+func filterTasks(tasks []*models.Task, state models.TaskState) []*models.Task {
 	result := make([]*models.Task, 0)
-	for _, model := range runOnces {
+	for _, model := range tasks {
 		if model.State == state {
 			result = append(result, model)
 		}
