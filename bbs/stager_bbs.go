@@ -11,20 +11,20 @@ type stagerBBS struct {
 	timeProvider timeprovider.TimeProvider
 }
 
-func (s *stagerBBS) WatchForCompletedRunOnce() (<-chan *models.RunOnce, chan<- bool, <-chan error) {
-	return watchForRunOnceModificationsOnState(s.store, models.RunOnceStateCompleted)
+func (s *stagerBBS) WatchForCompletedTask() (<-chan *models.Task, chan<- bool, <-chan error) {
+	return watchForTaskModificationsOnState(s.store, models.TaskStateCompleted)
 }
 
 // The stager calls this when it wants to desire a payload
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
-func (s *stagerBBS) DesireRunOnce(runOnce *models.RunOnce) error {
+func (s *stagerBBS) DesireTask(runOnce *models.Task) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		if runOnce.CreatedAt == 0 {
 			runOnce.CreatedAt = s.timeProvider.Time().UnixNano()
 		}
 		runOnce.UpdatedAt = s.timeProvider.Time().UnixNano()
-		runOnce.State = models.RunOnceStatePending
+		runOnce.State = models.TaskStatePending
 		return s.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   runOnceSchemaPath(runOnce),
@@ -34,11 +34,11 @@ func (s *stagerBBS) DesireRunOnce(runOnce *models.RunOnce) error {
 	})
 }
 
-func (s *stagerBBS) ResolvingRunOnce(runOnce *models.RunOnce) error {
+func (s *stagerBBS) ResolvingTask(runOnce *models.Task) error {
 	originalValue := runOnce.ToJSON()
 
 	runOnce.UpdatedAt = s.timeProvider.Time().UnixNano()
-	runOnce.State = models.RunOnceStateResolving
+	runOnce.State = models.TaskStateResolving
 
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return s.store.CompareAndSwap(storeadapter.StoreNode{
@@ -54,7 +54,7 @@ func (s *stagerBBS) ResolvingRunOnce(runOnce *models.RunOnce) error {
 // The stager calls this when it wants to signal that it has received a completion and is handling it
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should assume that someone else is handling the completion and should bail
-func (s *stagerBBS) ResolveRunOnce(runOnce *models.RunOnce) error {
+func (s *stagerBBS) ResolveTask(runOnce *models.Task) error {
 	return retryIndefinitelyOnStoreTimeout(func() error {
 		return s.store.Delete(runOnceSchemaPath(runOnce))
 	})

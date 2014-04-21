@@ -9,8 +9,8 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-var _ = Describe("RunOnce", func() {
-	var runOnce RunOnce
+var _ = Describe("Task", func() {
+	var runOnce Task
 
 	runOncePayload := `{
 		"guid":"some-guid",
@@ -43,7 +43,7 @@ var _ = Describe("RunOnce", func() {
 	BeforeEach(func() {
 		index := 42
 
-		runOnce = RunOnce{
+		runOnce = Task{
 			Guid:    "some-guid",
 			ReplyTo: "some-requester",
 			Stack:   "some-stack",
@@ -71,7 +71,7 @@ var _ = Describe("RunOnce", func() {
 			DiskMB:          1024,
 			CreatedAt:       time.Date(2014, time.February, 25, 23, 46, 11, 00, time.UTC).UnixNano(),
 			UpdatedAt:       time.Date(2014, time.February, 25, 23, 46, 11, 10, time.UTC).UnixNano(),
-			State:           RunOnceStatePending,
+			State:           TaskStatePending,
 		}
 	})
 
@@ -82,20 +82,20 @@ var _ = Describe("RunOnce", func() {
 		})
 	})
 
-	Describe("NewRunOnceFromJSON", func() {
-		It("returns a RunOnce with correct fields", func() {
-			decodedRunOnce, err := NewRunOnceFromJSON([]byte(runOncePayload))
+	Describe("NewTaskFromJSON", func() {
+		It("returns a Task with correct fields", func() {
+			decodedTask, err := NewTaskFromJSON([]byte(runOncePayload))
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedRunOnce).Should(Equal(runOnce))
+			Ω(decodedTask).Should(Equal(runOnce))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedRunOnce, err := NewRunOnceFromJSON([]byte("butts lol"))
+				decodedTask, err := NewTaskFromJSON([]byte("butts lol"))
 				Ω(err).Should(HaveOccurred())
 
-				Ω(decodedRunOnce).Should(BeZero())
+				Ω(decodedTask).Should(BeZero())
 			})
 		})
 	})
