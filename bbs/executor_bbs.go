@@ -24,7 +24,7 @@ func (self *executorBBS) WatchForDesiredTask() (<-chan *models.Task, chan<- bool
 	return watchForTaskModificationsOnState(self.store, models.TaskStatePending)
 }
 
-// The executor calls this when it wants to claim a runonce
+// The executor calls this when it wants to claim a task
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the executor should assume that someone else is handling the claim and should bail
 func (self *executorBBS) ClaimTask(task *models.Task, executorID string) error {
@@ -46,7 +46,7 @@ func (self *executorBBS) ClaimTask(task *models.Task, executorID string) error {
 	})
 }
 
-// The executor calls this when it is about to run the runonce in the claimed container
+// The executor calls this when it is about to run the task in the claimed container
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the executor should assume that someone else is running and should clean up and bail
 func (self *executorBBS) StartTask(task *models.Task, containerHandle string) error {
@@ -68,7 +68,7 @@ func (self *executorBBS) StartTask(task *models.Task, containerHandle string) er
 	})
 }
 
-// The executor calls this when it has finished running the runonce (be it success or failure)
+// The executor calls this when it has finished running the task (be it success or failure)
 // stagerBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
@@ -117,7 +117,7 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 	logger := gosteno.NewLogger("bbs")
 	logError := func(task models.Task, message string) {
 		logger.Errord(map[string]interface{}{
-			"runonce": task,
+			"task": task,
 		}, message)
 	}
 
@@ -138,7 +138,7 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 			logger.Errord(map[string]interface{}{
 				"key":   node.Key,
 				"value": string(node.Value),
-			}, "runonce.converge.json-parse-failure")
+			}, "task.converge.json-parse-failure")
 			keysToDelete = append(keysToDelete, node.Key)
 			continue
 		}
@@ -146,7 +146,7 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 		switch task.State {
 		case models.TaskStatePending:
 			if task.CreatedAt <= unclaimedTimeoutBoundary {
-				logError(task, "runonce.converge.failed-to-claim")
+				logError(task, "task.converge.failed-to-claim")
 				scheduleForCAS(task, markTaskFailed(task, "not claimed within time limit"))
 			} else {
 				scheduleForCAS(task, task)
@@ -156,17 +156,17 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
 
 			if !executorIsAlive {
-				logError(task, "runonce.converge.executor-disappeared")
+				logError(task, "task.converge.executor-disappeared")
 				scheduleForCAS(task, markTaskFailed(task, "executor disappeared before completion"))
 			} else if claimedTooLong {
-				logError(task, "runonce.converge.failed-to-start")
+				logError(task, "task.converge.failed-to-start")
 				scheduleForCAS(task, demoteToPending(task))
 			}
 		case models.TaskStateRunning:
 			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
 
 			if !executorIsAlive {
-				logError(task, "runonce.converge.executor-disappeared")
+				logError(task, "task.converge.executor-disappeared")
 				scheduleForCAS(task, markTaskFailed(task, "executor disappeared before completion"))
 			}
 		case models.TaskStateCompleted:
@@ -175,7 +175,7 @@ func (self *executorBBS) ConvergeTask(timeToClaim time.Duration) {
 			resolvingTooLong := self.timeProvider.Time().Sub(time.Unix(0, task.UpdatedAt)) >= 30*time.Second
 
 			if resolvingTooLong {
-				logError(task, "runonce.converge.failed-to-resolve")
+				logError(task, "task.converge.failed-to-resolve")
 				scheduleForCAS(task, demoteToCompleted(task))
 			}
 		}
@@ -205,7 +205,7 @@ func (self *executorBBS) batchCompareAndSwapTasks(tasksToCAS [][]models.Task, lo
 			if err != nil {
 				logger.Errord(map[string]interface{}{
 					"error": err.Error(),
-				}, "runonce.converge.failed-to-compare-and-swap")
+				}, "task.converge.failed-to-compare-and-swap")
 			}
 			done <- struct{}{}
 		}()
