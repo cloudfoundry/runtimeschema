@@ -12,5 +12,19 @@ go get -t ./...
 
 go get github.com/coreos/etcd
 
+go get github.com/dustin/goveralls
 go install github.com/onsi/ginkgo/ginkgo
-ginkgo -r -skipMeasurements -randomizeAllSpecs -race "$@"
+ginkgo -r -cover -skipMeasurements -randomizeAllSpecs -race "$@"
+
+# don't leak coveralls token
+set +x
+
+if [ -n "$COVERALLS_TOKEN" ]; then
+  profiles=$(find . -name '*.coverprofile' | grep -v fake | grep -v Godeps )
+
+  echo mode: set > all.coverprofile
+  cat $profiles | grep -v mode: >> all.coverprofile
+
+  goveralls -service drone.io -coverprofile=all.coverprofile $COVERALLS_TOKEN || \
+    echo "Coveralls failed. :("
+fi
