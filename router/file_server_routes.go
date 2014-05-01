@@ -9,9 +9,9 @@ const (
 
 func NewFileServerRoutes() Routes {
 	return Routes{
-		{Path: "/static/", Method: "GET", Handler: FS_STATIC},
-		{Path: "/droplet/:guid", Method: "POST", Handler: FS_UPLOAD_DROPLET},
-		{Path: "/build_artifacts/:app_guid", Method: "POST", Handler: FS_UPLOAD_BUILD_ARTIFACTS},
-		{Path: "/build_artifacts/:app_guid", Method: "GET", Handler: FS_DOWNLOAD_BUILD_ARTIFACTS},
+		{Path: "/v1/static/", Method: "GET", Handler: FS_STATIC},
+		{Path: "/v1/droplet/:guid", Method: "POST", Handler: FS_UPLOAD_DROPLET},
+		{Path: "/v1/build_artifacts/:app_guid", Method: "POST", Handler: FS_UPLOAD_BUILD_ARTIFACTS},
+		{Path: "/v1/build_artifacts/:app_guid", Method: "GET", Handler: FS_DOWNLOAD_BUILD_ARTIFACTS},
 	}
 }
