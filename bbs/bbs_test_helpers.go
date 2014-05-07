@@ -43,6 +43,30 @@ func (self *BBS) GetAllExecutors() ([]string, error) {
 	return executors, nil
 }
 
+func (bbs *BBS) GetAllTransitionalLongRunningProcesses() ([]models.TransitionalLongRunningProcess, error) {
+	lrps := []models.TransitionalLongRunningProcess{}
+
+	node, err := bbs.store.ListRecursively(LongRunningProcessSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return lrps, nil
+	}
+
+	if err != nil {
+		return lrps, err
+	}
+
+	for _, node := range node.ChildNodes {
+		lrp, err := models.NewTransitionalLongRunningProcessFromJSON(node.Value)
+		if err != nil {
+			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+		} else {
+			lrps = append(lrps, lrp)
+		}
+	}
+
+	return lrps, nil
+}
+
 func (self *BBS) printNodes(message string, nodes []storeadapter.StoreNode) {
 	fmt.Println(message)
 	for _, node := range nodes {
