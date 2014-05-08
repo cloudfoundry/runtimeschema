@@ -2,26 +2,27 @@ package bbs
 
 import (
 	"fmt"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 )
 
-func (self *BBS) GetAllPendingTasks() ([]*models.Task, error) {
+func (self *BBS) GetAllPendingTasks() ([]models.Task, error) {
 	all, err := self.GetAllTasks()
 	return filterTasks(all, models.TaskStatePending), err
 }
 
-func (self *BBS) GetAllClaimedTasks() ([]*models.Task, error) {
+func (self *BBS) GetAllClaimedTasks() ([]models.Task, error) {
 	all, err := self.GetAllTasks()
 	return filterTasks(all, models.TaskStateClaimed), err
 }
 
-func (self *BBS) GetAllStartingTasks() ([]*models.Task, error) {
+func (self *BBS) GetAllStartingTasks() ([]models.Task, error) {
 	all, err := self.GetAllTasks()
 	return filterTasks(all, models.TaskStateRunning), err
 }
 
-func (self *BBS) GetAllCompletedTasks() ([]*models.Task, error) {
+func (self *BBS) GetAllCompletedTasks() ([]models.Task, error) {
 	all, err := self.GetAllTasks()
 	return filterTasks(all, models.TaskStateCompleted), err
 }
@@ -74,8 +75,8 @@ func (self *BBS) printNodes(message string, nodes []storeadapter.StoreNode) {
 	}
 }
 
-func filterTasks(tasks []*models.Task, state models.TaskState) []*models.Task {
-	result := make([]*models.Task, 0)
+func filterTasks(tasks []models.Task, state models.TaskState) []models.Task {
+	result := make([]models.Task, 0)
 	for _, model := range tasks {
 		if model.State == state {
 			result = append(result, model)
