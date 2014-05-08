@@ -13,6 +13,7 @@ go get -t ./...
 go get github.com/coreos/etcd
 
 go get github.com/dustin/goveralls
+go get code.google.com/p/go.tools/cmd/cover
 go install github.com/onsi/ginkgo/ginkgo
 ginkgo -r -cover -skipMeasurements -randomizeAllSpecs -race "$@"
 
