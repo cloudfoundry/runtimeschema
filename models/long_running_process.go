@@ -15,6 +15,7 @@ type TransitionalLongRunningProcess struct {
 	Actions []ExecutorAction     `json:"actions"`
 	Log     LogConfig            `json:"log"`
 	State   TransitionalLRPState `json:"state"`
+	Environment  []EnvironmentVariable `json:"environment"`
 }
 
 func NewTransitionalLongRunningProcessFromJSON(payload []byte) (TransitionalLongRunningProcess, error) {
