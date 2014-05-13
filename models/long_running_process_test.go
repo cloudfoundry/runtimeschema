@@ -28,10 +28,7 @@ var _ = Describe("LongRunningProcess", func() {
       "source_name": "APP",
       "index": 42
     },
-    "state": 1,
-		"environment": [
-			{"key":"foo","value":"bar"}
-		]
+    "state": 1
   }`
 
 	BeforeEach(func() {
@@ -55,9 +52,6 @@ var _ = Describe("LongRunningProcess", func() {
 				Index:      &index,
 			},
 			State: TransitionalLRPStateDesired,
-			Environment: []EnvironmentVariable{
-				{Key: "foo", Value: "bar"},
-			},
 		}
 	})
 
