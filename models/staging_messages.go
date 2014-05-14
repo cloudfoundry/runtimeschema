@@ -25,9 +25,12 @@ type EnvironmentVariable struct {
 }
 
 type StagingInfo struct {
+	// yaml keys matter here! they are used by the old DEA for staging_info.yml
 	BuildpackKey      string `yaml:"-" json:"buildpack_key,omitempty"`
 	DetectedBuildpack string `yaml:"detected_buildpack" json:"detected_buildpack"`
-	StartCommand      string `yaml:"start_command" json:"start_command"`
+
+	// do not change to be consistent keys; look up 4 lines
+	DetectedStartCommand string `yaml:"start_command" json:"detected_start_command"`
 }
 
 type StagingResponseForCC struct {
