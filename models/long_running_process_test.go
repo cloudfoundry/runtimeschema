@@ -15,6 +15,10 @@ var _ = Describe("LongRunningProcess", func() {
     "stack":"some-stack",
     "memory_mb" : 128,
     "disk_mb" : 512,
+    "ports": [
+      { "container_port": 8080 },
+      { "container_port": 8081, "host_port": 1234 }
+    ],
     "actions":[
       {
         "action":"download",
@@ -42,6 +46,10 @@ var _ = Describe("LongRunningProcess", func() {
 			Stack:    "some-stack",
 			MemoryMB: 128,
 			DiskMB:   512,
+			Ports: []PortMapping{
+				{ContainerPort: 8080},
+				{ContainerPort: 8081, HostPort: 1234},
+			},
 			Actions: []ExecutorAction{
 				{
 					Action: DownloadAction{

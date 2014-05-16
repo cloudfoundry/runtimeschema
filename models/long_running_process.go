@@ -18,6 +18,12 @@ type TransitionalLongRunningProcess struct {
 	State    TransitionalLRPState `json:"state"`
 	MemoryMB int                  `json:"memory_mb"`
 	DiskMB   int                  `json:"disk_mb"`
+	Ports    []PortMapping        `json:"ports"`
+}
+
+type PortMapping struct {
+	ContainerPort int `json:"container_port"`
+	HostPort      int `json:"host_port,omitempty"`
 }
 
 func NewTransitionalLongRunningProcessFromJSON(payload []byte) (TransitionalLongRunningProcess, error) {
