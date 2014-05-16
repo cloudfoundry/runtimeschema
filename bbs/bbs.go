@@ -24,7 +24,7 @@ type ExecutorBBS interface {
 
 type RepBBS interface {
 	//services
-	MaintainRepPresence(heartbeatInterval time.Duration, repPresence models.RepPresence) (Presence, <-chan bool, error)
+	MaintainRepPresence(heartbeatInterval time.Duration, repPresence models.RepPresence) (services_bbs.Presence, <-chan bool, error)
 
 	//task
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
