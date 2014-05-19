@@ -49,6 +49,9 @@ type AppManagerBBS interface {
 	//lrp
 	DesireTransitionalLongRunningProcess(models.TransitionalLongRunningProcess) error
 	RequestLRPStartAuction(models.LRPStartAuction) error
+
+	//services
+	GetAvailableFileServer() (string, error)
 }
 
 type AuctioneerBBS interface {
