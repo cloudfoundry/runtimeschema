@@ -6,7 +6,7 @@ type FileServerGetter struct {
 
 func (fs *FileServerGetter) GetAvailableFileServer() (string, error) {
 	if fs.WhenGettingAvailableFileServer != nil {
-		return fakeBBS.WhenGettingAvailableFileServer()
+		return fs.WhenGettingAvailableFileServer()
 	}
 
 	return "http://some-fake-file-server", nil
