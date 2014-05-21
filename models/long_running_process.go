@@ -22,8 +22,8 @@ type TransitionalLongRunningProcess struct {
 }
 
 type PortMapping struct {
-	ContainerPort int `json:"container_port"`
-	HostPort      int `json:"host_port,omitempty"`
+	ContainerPort uint32 `json:"container_port"`
+	HostPort      uint32 `json:"host_port,omitempty"`
 }
 
 func NewTransitionalLongRunningProcessFromJSON(payload []byte) (TransitionalLongRunningProcess, error) {
