@@ -8,11 +8,11 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
-func (self *LongRunningProcessBBS) WatchForDesiredLongRunningProcess() (<-chan models.DesiredLRP, chan<- bool, <-chan error) {
+func (self *LongRunningProcessBBS) WatchForDesiredLongRunningProcesses() (<-chan models.DesiredLRP, chan<- bool, <-chan error) {
 	return watchForDesiredLRPs(self.store)
 }
 
-func (self *LongRunningProcessBBS) WatchForActualLongRunningProcess() (<-chan models.LRP, chan<- bool, <-chan error) {
+func (self *LongRunningProcessBBS) WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error) {
 	return watchForActualLRPs(self.store)
 }
 
