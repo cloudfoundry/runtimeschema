@@ -91,6 +91,14 @@ type FileServerBBS interface {
 	) (presence services_bbs.Presence, disappeared <-chan bool, err error)
 }
 
+type LRPRouterBBS interface {
+	// lrp
+	WatchForDesiredLongRunningProcesses() (<-chan models.DesiredLRP, chan<- bool, <-chan error)
+	WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error)
+	GetAllDesiredLongRunningProcesses() ([]models.DesiredLRP, error)
+	GetAllActualLongRunningProcesses() ([]models.LRP, error)
+}
+
 func NewExecutorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider) ExecutorBBS {
 	return NewBBS(store, timeProvider)
 }
@@ -120,6 +128,10 @@ func NewMetricsBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 }
 
 func NewFileServerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider) FileServerBBS {
+	return NewBBS(store, timeProvider)
+}
+
+func NewLRPRouterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider) LRPRouterBBS {
 	return NewBBS(store, timeProvider)
 }
 
