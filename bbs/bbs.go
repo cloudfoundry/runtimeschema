@@ -38,7 +38,7 @@ type RepBBS interface {
 
 type ConvergerBBS interface {
 	//task
-	ConvergeTask(timeToClaim time.Duration)
+	ConvergeTask(timeToClaim time.Duration, converganceInterval time.Duration)
 
 	//lock
 	MaintainConvergeLock(interval time.Duration, executorID string) (disappeared <-chan bool, stop chan<- chan bool, err error)
