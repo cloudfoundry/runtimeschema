@@ -33,7 +33,7 @@ var _ = Describe("LRPRouter", func() {
 		}
 
 		BeforeEach(func() {
-			events, stop, errors = bbs.WatchForDesiredLongRunningProcess()
+			events, stop, errors = bbs.WatchForDesiredLongRunningProcesses()
 		})
 
 		AfterEach(func() {
@@ -84,7 +84,7 @@ var _ = Describe("LRPRouter", func() {
 		lrp := models.LRP{ProcessGuid: "some-process-guid"}
 
 		BeforeEach(func() {
-			events, stop, errors = bbs.WatchForActualLongRunningProcess()
+			events, stop, errors = bbs.WatchForActualLongRunningProcesses()
 		})
 
 		AfterEach(func() {
