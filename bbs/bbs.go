@@ -93,10 +93,12 @@ type FileServerBBS interface {
 
 type LRPRouterBBS interface {
 	// lrp
-	WatchForDesiredLongRunningProcesses() (<-chan models.DesiredLRP, chan<- bool, <-chan error)
+	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error)
 	GetAllDesiredLongRunningProcesses() ([]models.DesiredLRP, error)
 	GetAllActualLongRunningProcesses() ([]models.LRP, error)
+	GetDesiredLRP(processGuid string) (models.DesiredLRP, error)
+	GetActualLRPs(processGuid string) ([]models.LRP, error)
 }
 
 func NewExecutorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider) ExecutorBBS {

@@ -7,6 +7,11 @@ type PortMapping struct {
 	HostPort      uint32 `json:"host_port,omitempty"`
 }
 
+type DesiredLRPChange struct {
+	Before *DesiredLRP
+	After  *DesiredLRP
+}
+
 ///
 
 type LRPStartAuctionState int
