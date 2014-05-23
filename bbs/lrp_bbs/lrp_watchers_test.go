@@ -44,7 +44,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.DesireLongRunningProcess(lrp)
+			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
@@ -54,7 +54,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.DesireLongRunningProcess(lrp)
+			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -62,7 +62,7 @@ var _ = Describe("LrpWatchers", func() {
 			changedLRP := lrp
 			changedLRP.Instances++
 
-			err = bbs.DesireLongRunningProcess(changedLRP)
+			err = bbs.DesireLRP(changedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
@@ -72,7 +72,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for deletes", func() {
-			err := bbs.DesireLongRunningProcess(lrp)
+			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -90,7 +90,7 @@ var _ = Describe("LrpWatchers", func() {
 			stop <- true
 			stopped = true
 
-			err := bbs.DesireLongRunningProcess(lrp)
+			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(events).Should(BeClosed())
@@ -98,18 +98,18 @@ var _ = Describe("LrpWatchers", func() {
 		})
 	})
 
-	Describe("WatchForActualLongRunningProcesses", func() {
+	Describe("WatchForActualLRPChanges", func() {
 		var (
-			events  <-chan models.LRP
+			events  <-chan models.ActualLRPChange
 			stop    chan<- bool
 			errors  <-chan error
 			stopped bool
 		)
 
-		lrp := models.LRP{ProcessGuid: "some-process-guid", State: models.LRPStateRunning}
+		lrp := models.LRP{ProcessGuid: "some-process-guid", State: models.LRPStateStarting}
 
 		BeforeEach(func() {
-			events, stop, errors = bbs.WatchForActualLongRunningProcesses()
+			events, stop, errors = bbs.WatchForActualLRPChanges()
 		})
 
 		AfterEach(func() {
@@ -119,29 +119,53 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp)
+			err := bbs.ReportActualLRPAsStarting(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(lrp)))
+			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
+				Before: nil,
+				After:  &lrp,
+			})))
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp)
+			err := bbs.ReportActualLRPAsStarting(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(lrp)))
+			Eventually(events).Should(Receive())
 
-			err = bbs.ReportActualLongRunningProcessAsRunning(lrp)
+			changedLRP := lrp
+			changedLRP.State = models.LRPStateRunning
+
+			err = bbs.ReportActualLRPAsRunning(changedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(lrp)))
+			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
+				Before: &lrp,
+				After:  &changedLRP,
+			})))
+		})
+
+		It("sends an event down the pipe for delete", func() {
+			err := bbs.ReportActualLRPAsStarting(lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(events).Should(Receive())
+
+			err = bbs.RemoveActualLRP(lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
+				Before: &lrp,
+				After:  nil,
+			})))
 		})
 
 		It("closes the events and errors channel when told to stop", func() {
 			stop <- true
 			stopped = true
 
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp)
+			err := bbs.ReportActualLRPAsRunning(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(events).Should(BeClosed())

@@ -15,7 +15,7 @@ var _ = Describe("LRP", func() {
 		bbs = New(etcdClient)
 	})
 
-	Describe("DesireLongRunningProcess", func() {
+	Describe("DesireLRP", func() {
 		var lrp models.DesiredLRP
 
 		BeforeEach(func() {
@@ -30,7 +30,7 @@ var _ = Describe("LRP", func() {
 		})
 
 		It("creates /v1/desired/<process-guid>/<index>", func() {
-			err := bbs.DesireLongRunningProcess(lrp)
+			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			node, err := etcdClient.Get("/v1/desired/some-process-guid")
@@ -40,7 +40,7 @@ var _ = Describe("LRP", func() {
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireLongRunningProcess(lrp)
+				return bbs.DesireLRP(lrp)
 			})
 		})
 	})
@@ -62,9 +62,9 @@ var _ = Describe("LRP", func() {
 			}
 		})
 
-		Describe("ReportActualLongRunningProcessAsStarting", func() {
+		Describe("ReportActualLRPAsStarting", func() {
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLongRunningProcessAsStarting(lrp)
+				err := bbs.ReportActualLRPAsStarting(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get("/v1/actual/some-process-guid/1/some-instance-guid")
@@ -77,14 +77,14 @@ var _ = Describe("LRP", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ReportActualLongRunningProcessAsStarting(lrp)
+					return bbs.ReportActualLRPAsStarting(lrp)
 				})
 			})
 		})
 
-		Describe("ReportActualLongRunningProcessAsRunning", func() {
+		Describe("ReportActualLRPAsRunning", func() {
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLongRunningProcessAsRunning(lrp)
+				err := bbs.ReportActualLRPAsRunning(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get("/v1/actual/some-process-guid/1/some-instance-guid")
@@ -97,18 +97,18 @@ var _ = Describe("LRP", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ReportActualLongRunningProcessAsRunning(lrp)
+					return bbs.ReportActualLRPAsRunning(lrp)
 				})
 			})
 		})
 
-		Describe("RemoveActualLongRunningProcess", func() {
+		Describe("RemoveActualLRP", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLongRunningProcessAsStarting(lrp)
+				bbs.ReportActualLRPAsStarting(lrp)
 			})
 
 			It("should remove the LRP", func() {
-				err := bbs.RemoveActualLongRunningProcess(lrp)
+				err := bbs.RemoveActualLRP(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get("/v1/actual/some-process-guid/1/some-instance-guid")
@@ -117,7 +117,7 @@ var _ = Describe("LRP", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLongRunningProcess(lrp)
+					return bbs.RemoveActualLRP(lrp)
 				})
 			})
 		})

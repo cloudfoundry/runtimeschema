@@ -11,7 +11,7 @@ func (self *LongRunningProcessBBS) WatchForDesiredLRPChanges() (<-chan models.De
 }
 
 //XXXX
-func (self *LongRunningProcessBBS) WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error) {
+func (self *LongRunningProcessBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
 	return watchForActualLRPs(self.store)
 }
 
@@ -75,15 +75,15 @@ func watchForDesiredLRPChanges(store storeadapter.StoreAdapter) (<-chan models.D
 	return changes, stopOuter, errsOuter
 }
 
-func watchForActualLRPs(store storeadapter.StoreAdapter) (<-chan models.LRP, chan<- bool, <-chan error) {
-	lrps := make(chan models.LRP)
+func watchForActualLRPs(store storeadapter.StoreAdapter) (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
+	changes := make(chan models.ActualLRPChange)
 	stopOuter := make(chan bool)
 	errsOuter := make(chan error)
 
 	events, stopInner, errsInner := store.Watch(shared.ActualLRPSchemaRoot)
 
 	go func() {
-		defer close(lrps)
+		defer close(changes)
 		defer close(errsOuter)
 
 		for {
@@ -97,12 +97,31 @@ func watchForActualLRPs(store storeadapter.StoreAdapter) (<-chan models.LRP, cha
 					return
 				}
 
-				lrp, err := models.NewLRPFromJSON(event.Node.Value)
-				if err != nil {
-					continue
+				var before *models.LRP
+				var after *models.LRP
+
+				if event.Node != nil {
+					aft, err := models.NewLRPFromJSON(event.Node.Value)
+					if err != nil {
+						continue
+					}
+
+					after = &aft
 				}
 
-				lrps <- lrp
+				if event.PrevNode != nil {
+					bef, err := models.NewLRPFromJSON(event.PrevNode.Value)
+					if err != nil {
+						continue
+					}
+
+					before = &bef
+				}
+
+				changes <- models.ActualLRPChange{
+					Before: before,
+					After:  after,
+				}
 
 			case err, ok := <-errsInner:
 				if ok {
@@ -113,5 +132,5 @@ func watchForActualLRPs(store storeadapter.StoreAdapter) (<-chan models.LRP, cha
 		}
 	}()
 
-	return lrps, stopOuter, errsOuter
+	return changes, stopOuter, errsOuter
 }

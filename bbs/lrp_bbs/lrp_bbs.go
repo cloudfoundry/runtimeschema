@@ -16,7 +16,7 @@ func New(store storeadapter.StoreAdapter) *LongRunningProcessBBS {
 	}
 }
 
-func (bbs *LongRunningProcessBBS) DesireLongRunningProcess(lrp models.DesiredLRP) error {
+func (bbs *LongRunningProcessBBS) DesireLRP(lrp models.DesiredLRP) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
@@ -27,13 +27,13 @@ func (bbs *LongRunningProcessBBS) DesireLongRunningProcess(lrp models.DesiredLRP
 	})
 }
 
-func (bbs *LongRunningProcessBBS) RemoveActualLongRunningProcess(lrp models.LRP) error {
+func (bbs *LongRunningProcessBBS) RemoveActualLRP(lrp models.LRP) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.Delete(shared.ActualLRPSchemaPath(lrp))
 	})
 }
 
-func (bbs *LongRunningProcessBBS) ReportActualLongRunningProcessAsStarting(lrp models.LRP) error {
+func (bbs *LongRunningProcessBBS) ReportActualLRPAsStarting(lrp models.LRP) error {
 	lrp.State = models.LRPStateStarting
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
@@ -45,7 +45,7 @@ func (bbs *LongRunningProcessBBS) ReportActualLongRunningProcessAsStarting(lrp m
 	})
 }
 
-func (bbs *LongRunningProcessBBS) ReportActualLongRunningProcessAsRunning(lrp models.LRP) error {
+func (bbs *LongRunningProcessBBS) ReportActualLRPAsRunning(lrp models.LRP) error {
 	lrp.State = models.LRPStateRunning
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{

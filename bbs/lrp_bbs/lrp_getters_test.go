@@ -21,13 +21,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.DesiredLRP{ProcessGuid: "guidC"}
 
 		BeforeEach(func() {
-			err := bbs.DesireLongRunningProcess(lrp1)
+			err := bbs.DesireLRP(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLongRunningProcess(lrp2)
+			err = bbs.DesireLRP(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLongRunningProcess(lrp3)
+			err = bbs.DesireLRP(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -45,13 +45,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.DesiredLRP{ProcessGuid: "guidC"}
 
 		BeforeEach(func() {
-			err := bbs.DesireLongRunningProcess(lrp1)
+			err := bbs.DesireLRP(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLongRunningProcess(lrp2)
+			err = bbs.DesireLRP(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLongRunningProcess(lrp3)
+			err = bbs.DesireLRP(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -69,13 +69,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.LRP{ProcessGuid: "guid3", Index: 2, InstanceGuid: "some-instance-guid", State: models.LRPStateRunning}
 
 		BeforeEach(func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp1)
+			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsRunning(lrp3)
+			err = bbs.ReportActualLRPAsRunning(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -93,13 +93,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.LRP{ProcessGuid: "guid3", Index: 2, InstanceGuid: "some-instance-guid", State: models.LRPStateRunning}
 
 		BeforeEach(func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp1)
+			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsRunning(lrp3)
+			err = bbs.ReportActualLRPAsRunning(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -119,13 +119,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.LRP{ProcessGuid: "guidB", Index: 2, InstanceGuid: "some-instance-guid", State: models.LRPStateRunning}
 
 		BeforeEach(func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp1)
+			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsRunning(lrp3)
+			err = bbs.ReportActualLRPAsRunning(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -144,13 +144,13 @@ var _ = Describe("LrpGetters", func() {
 		lrp3 := models.LRP{ProcessGuid: "guidB", Index: 2, InstanceGuid: "some-instance-guid", State: models.LRPStateRunning}
 
 		BeforeEach(func() {
-			err := bbs.ReportActualLongRunningProcessAsRunning(lrp1)
+			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLongRunningProcessAsRunning(lrp3)
+			err = bbs.ReportActualLRPAsRunning(lrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
