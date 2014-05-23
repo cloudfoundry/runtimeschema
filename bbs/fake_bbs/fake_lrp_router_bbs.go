@@ -3,11 +3,11 @@ package fake_bbs
 import "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 type FakeLRPRouterBBS struct {
-	desiredLRPChan     chan models.DesiredLRP
-	desiredLRPStopChan chan bool
-	desiredLRPErrChan  chan error
+	DesiredLRPChangeChan chan models.DesiredLRPChange
+	desiredLRPStopChan   chan bool
+	desiredLRPErrChan    chan error
 
-	actualLRPChan     chan models.LRP
+	ActualLRPChan     chan models.LRP
 	actualLRPStopChan chan bool
 	actualLRPErrChan  chan error
 
@@ -17,23 +17,24 @@ type FakeLRPRouterBBS struct {
 	DesiredLRP models.DesiredLRP
 	ActualLRPs []models.LRP
 
-	WhenGettingAllActualLongRunningProcesses func() ([]models.LRP, error)
+	WhenGettingAllActualLongRunningProcesses  func() ([]models.LRP, error)
 	WhenGettingAllDesiredLongRunningProcesses func() ([]models.DesiredLRP, error)
 }
 
 func NewFakeLRPRouterBBS() *FakeLRPRouterBBS {
 	return &FakeLRPRouterBBS{
-		desiredLRPChan:     make(chan models.DesiredLRP, 1),
-		desiredLRPStopChan: make(chan bool),
-		desiredLRPErrChan:  make(chan error),
-		actualLRPChan:      make(chan models.LRP, 1),
-		actualLRPStopChan:  make(chan bool),
-		actualLRPErrChan:   make(chan error),
+		DesiredLRPChangeChan: make(chan models.DesiredLRPChange, 1),
+		desiredLRPStopChan:   make(chan bool),
+		desiredLRPErrChan:    make(chan error),
+
+		ActualLRPChan:     make(chan models.LRP, 1),
+		actualLRPStopChan: make(chan bool),
+		actualLRPErrChan:  make(chan error),
 	}
 }
 
-func (fakeBBS *FakeLRPRouterBBS) WatchForDesiredLongRunningProcesses() (<-chan models.DesiredLRP, chan<- bool, <-chan error) {
-	return fakeBBS.desiredLRPChan, fakeBBS.desiredLRPStopChan, fakeBBS.desiredLRPErrChan
+func (fakeBBS *FakeLRPRouterBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
+	return fakeBBS.desiredLRPChangeChan, fakeBBS.desiredLRPStopChan, fakeBBS.desiredLRPErrChan
 }
 
 func (fakeBBS *FakeLRPRouterBBS) WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error) {
