@@ -34,11 +34,11 @@ func NewFakeLRPRouterBBS() *FakeLRPRouterBBS {
 }
 
 func (fakeBBS *FakeLRPRouterBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
-	return fakeBBS.desiredLRPChangeChan, fakeBBS.desiredLRPStopChan, fakeBBS.desiredLRPErrChan
+	return fakeBBS.DesiredLRPChangeChan, fakeBBS.desiredLRPStopChan, fakeBBS.desiredLRPErrChan
 }
 
 func (fakeBBS *FakeLRPRouterBBS) WatchForActualLongRunningProcesses() (<-chan models.LRP, chan<- bool, <-chan error) {
-	return fakeBBS.actualLRPChan, fakeBBS.actualLRPStopChan, fakeBBS.actualLRPErrChan
+	return fakeBBS.ActualLRPChan, fakeBBS.actualLRPStopChan, fakeBBS.actualLRPErrChan
 }
 
 func (fakeBBS *FakeLRPRouterBBS) GetAllDesiredLongRunningProcesses() ([]models.DesiredLRP, error) {
