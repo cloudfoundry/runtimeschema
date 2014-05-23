@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("LrpGetters", func() {
-	var bbs *LongRunningProcessBBS
+	var bbs *LRPBBS
 
 	BeforeEach(func() {
 		bbs = New(etcdClient)

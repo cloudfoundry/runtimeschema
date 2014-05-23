@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
-func (bbs *LongRunningProcessBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
+func (bbs *LRPBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
 	lrps := []models.DesiredLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
@@ -33,7 +33,7 @@ func (bbs *LongRunningProcessBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, erro
 	return lrps, nil
 }
 
-func (bbs *LongRunningProcessBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (bbs *LRPBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{
 		ProcessGuid: processGuid,
 	}))
@@ -43,7 +43,7 @@ func (bbs *LongRunningProcessBBS) GetDesiredLRPByProcessGuid(processGuid string)
 	return models.NewDesiredLRPFromJSON(node.Value)
 }
 
-func (bbs *LongRunningProcessBBS) GetAllActualLRPs() ([]models.LRP, error) {
+func (bbs *LRPBBS) GetAllActualLRPs() ([]models.LRP, error) {
 	lrps := []models.LRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
@@ -71,7 +71,7 @@ func (bbs *LongRunningProcessBBS) GetAllActualLRPs() ([]models.LRP, error) {
 	return lrps, nil
 }
 
-func (bbs *LongRunningProcessBBS) GetRunningActualLRPs() ([]models.LRP, error) {
+func (bbs *LRPBBS) GetRunningActualLRPs() ([]models.LRP, error) {
 	lrps, err := bbs.GetAllActualLRPs()
 	if err != nil {
 		return []models.LRP{}, err
@@ -80,7 +80,7 @@ func (bbs *LongRunningProcessBBS) GetRunningActualLRPs() ([]models.LRP, error) {
 	return filterActualLRPs(lrps, models.LRPStateRunning), nil
 }
 
-func (bbs *LongRunningProcessBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.LRP, error) {
+func (bbs *LRPBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.LRP, error) {
 	lrps := []models.LRP{}
 
 	node, err := bbs.store.ListRecursively(path.Join(shared.ActualLRPSchemaRoot, processGuid))
@@ -106,7 +106,7 @@ func (bbs *LongRunningProcessBBS) GetActualLRPsByProcessGuid(processGuid string)
 	return lrps, nil
 }
 
-func (bbs *LongRunningProcessBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.LRP, error) {
+func (bbs *LRPBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.LRP, error) {
 	lrps, err := bbs.GetActualLRPsByProcessGuid(processGuid)
 	if err != nil {
 		return []models.LRP{}, err

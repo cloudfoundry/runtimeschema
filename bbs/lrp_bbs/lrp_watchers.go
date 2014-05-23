@@ -6,12 +6,12 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
-func (self *LongRunningProcessBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
+func (self *LRPBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
 	return watchForDesiredLRPChanges(self.store)
 }
 
 //XXXX
-func (self *LongRunningProcessBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
+func (self *LRPBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
 	return watchForActualLRPs(self.store)
 }
 
