@@ -50,6 +50,7 @@ type AppManagerBBS interface {
 	//lrp
 	DesireLRP(models.DesiredLRP) error
 	RequestLRPStartAuction(models.LRPStartAuction) error
+	GetActualLRPsByProcessGuid(string) ([]models.LRP, error)
 
 	//services
 	GetAvailableFileServer() (string, error)
