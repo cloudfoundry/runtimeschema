@@ -9,5 +9,5 @@ import (
 
 func TestFakeBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "FakeBbs Suite")
+	RunSpecs(t, "Fake BBS Suite")
 }

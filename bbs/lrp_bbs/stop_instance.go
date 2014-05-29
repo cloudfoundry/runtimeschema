@@ -55,44 +55,20 @@ func (bbs *LRPBBS) RemoveStopLRPInstance(stopInstance models.StopLRPInstance) er
 
 func (bbs *LRPBBS) WatchForStopLRPInstance() (<-chan models.StopLRPInstance, chan<- bool, <-chan error) {
 	stopInstances := make(chan models.StopLRPInstance)
-	stopOuter := make(chan bool)
-	errsOuter := make(chan error)
 
-	events, stopInner, errsInner := bbs.store.Watch(shared.StopLRPInstanceSchemaRoot)
-
-	go func() {
-		defer close(stopInstances)
-		defer close(errsOuter)
-
-		for {
-			select {
-			case <-stopOuter:
-				close(stopInner)
-				return
-
-			case event, ok := <-events:
-				if !ok {
-					return
-				}
-
-				switch event.Type {
-				case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-					stopInstance, err := models.NewStopLRPInstanceFromJSON(event.Node.Value)
-					if err != nil {
-						continue
-					}
-
-					stopInstances <- stopInstance
-				}
-
-			case err, ok := <-errsInner:
-				if ok {
-					errsOuter <- err
-				}
-				return
+	filter := func(event storeadapter.WatchEvent) (models.StopLRPInstance, bool) {
+		switch event.Type {
+		case storeadapter.CreateEvent, storeadapter.UpdateEvent:
+			stopInstance, err := models.NewStopLRPInstanceFromJSON(event.Node.Value)
+			if err != nil {
+				return models.StopLRPInstance{}, false
 			}
+			return stopInstance, true
 		}
-	}()
+		return models.StopLRPInstance{}, false
+	}
 
-	return stopInstances, stopOuter, errsOuter
+	stop, errs := shared.WatchWithFilter(bbs.store, shared.StopLRPInstanceSchemaRoot, stopInstances, filter)
+
+	return stopInstances, stop, errs
 }
