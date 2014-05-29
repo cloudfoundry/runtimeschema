@@ -1,6 +1,8 @@
 package lrp_bbs
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -15,6 +17,30 @@ func (bbs *LRPBBS) RequestStopLRPInstance(stopInstance models.StopLRPInstance) e
 			},
 		})
 	})
+}
+
+func (bbs *LRPBBS) GetAllStopLRPInstances() ([]models.StopLRPInstance, error) {
+	stopInstances := []models.StopLRPInstance{}
+
+	node, err := bbs.store.ListRecursively(shared.StopLRPInstanceSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return stopInstances, nil
+	}
+
+	if err != nil {
+		return stopInstances, err
+	}
+
+	for _, node := range node.ChildNodes {
+		lrp, err := models.NewStopLRPInstanceFromJSON(node.Value)
+		if err != nil {
+			return stopInstances, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+		} else {
+			stopInstances = append(stopInstances, lrp)
+		}
+	}
+
+	return stopInstances, nil
 }
 
 func (bbs *LRPBBS) RemoveStopLRPInstance(stopInstance models.StopLRPInstance) error {

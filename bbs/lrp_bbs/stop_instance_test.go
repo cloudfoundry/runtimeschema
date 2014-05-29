@@ -48,6 +48,31 @@ var _ = Describe("StopInstance", func() {
 		})
 	})
 
+	Describe("GetAllStopLRPInstances", func() {
+		It("gets all stop instances", func() {
+			stopInstance1 := models.StopLRPInstance{
+				InstanceGuid: "some-instance-guid-1",
+			}
+			stopInstance2 := models.StopLRPInstance{
+				InstanceGuid: "some-instance-guid-2+",
+			}
+
+			err := bbs.RequestStopLRPInstance(stopInstance1)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.RequestStopLRPInstance(stopInstance2)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			stopInstances, err := bbs.GetAllStopLRPInstances()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(stopInstances).Should(HaveLen(2))
+
+			Ω(stopInstances).Should(ContainElement(stopInstance1))
+			Ω(stopInstances).Should(ContainElement(stopInstance2))
+		})
+	})
+
 	Describe("RemoveStopLRPInstance", func() {
 		It("removes the key if it exists", func() {
 			err := bbs.RequestStopLRPInstance(stopInstance)
