@@ -2,6 +2,7 @@ package services_bbs
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry/storeadapter"
@@ -13,17 +14,19 @@ type Presence interface {
 }
 
 type presence struct {
-	store   storeadapter.StoreAdapter
-	key     string
-	value   []byte
-	release chan chan bool
+	store      storeadapter.StoreAdapter
+	key        string
+	value      []byte
+	release    chan chan bool
+	removeOnce *sync.Once
 }
 
 func NewPresence(store storeadapter.StoreAdapter, key string, value []byte) Presence {
 	return &presence{
-		store: store,
-		key:   key,
-		value: value,
+		store:      store,
+		key:        key,
+		value:      value,
+		removeOnce: new(sync.Once),
 	}
 }
 
@@ -43,20 +46,17 @@ func (p *presence) Maintain(interval time.Duration) (<-chan bool, error) {
 	}
 
 	p.release = release
-
 	return status, nil
 }
 
 func (p *presence) Remove() {
-	if p.release == nil {
-		return
-	}
+	p.removeOnce.Do(func() {
+		release := p.release
+		p.release = nil
 
-	release := p.release
-	p.release = nil
+		stopFinishedChan := make(chan bool)
+		release <- stopFinishedChan
 
-	stopFinishedChan := make(chan bool)
-	release <- stopFinishedChan
-
-	<-stopFinishedChan
+		<-stopFinishedChan
+	})
 }
