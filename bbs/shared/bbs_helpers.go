@@ -1,8 +1,8 @@
 package shared
 
 import (
-	"time"
 	"github.com/cloudfoundry/storeadapter"
+	"time"
 )
 
 func RetryIndefinitelyOnStoreTimeout(callback func() error) error {
