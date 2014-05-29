@@ -10,7 +10,6 @@ func (self *LRPBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange,
 	return watchForDesiredLRPChanges(self.store)
 }
 
-//XXXX
 func (self *LRPBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
 	return watchForActualLRPs(self.store)
 }
