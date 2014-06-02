@@ -49,6 +49,11 @@ type ConvergerBBS interface {
 	MaintainConvergeLock(interval time.Duration, executorID string) (disappeared <-chan bool, stop chan<- chan bool, err error)
 }
 
+type TPSBBS interface {
+	//lrp
+	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+}
+
 type AppManagerBBS interface {
 	//lrp
 	DesireLRP(models.DesiredLRP) error
@@ -145,6 +150,10 @@ func NewFileServerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider
 }
 
 func NewLRPRouterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger *steno.Logger) LRPRouterBBS {
+	return NewBBS(store, timeProvider, logger)
+}
+
+func NewTPSBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger *steno.Logger) TPSBBS {
 	return NewBBS(store, timeProvider, logger)
 }
 
