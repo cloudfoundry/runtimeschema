@@ -61,6 +61,7 @@ type AppManagerBBS interface {
 	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RequestLRPStartAuction(models.LRPStartAuction) error
 	RequestStopLRPInstance(stopInstance models.StopLRPInstance) error
+	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 
 	//services
 	GetAvailableFileServer() (string, error)
