@@ -127,7 +127,7 @@ func (fakeBBS *FakeRepBBS) StartTask(task models.Task, containerHandle string) (
 	return task, nil
 }
 
-func (fakeBBS *FakeRepBBS) ReportActualLRPAsStarting(lrp models.ActualLRP) error {
+func (fakeBBS *FakeRepBBS) ReportActualLRPAsStarting(lrp models.ActualLRP, executorID string) error {
 	fakeBBS.RLock()
 	err := fakeBBS.startingLrpErr
 	fakeBBS.RUnlock()

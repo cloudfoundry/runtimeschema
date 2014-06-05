@@ -86,7 +86,7 @@ var _ = Describe("LrpWatchers", func() {
 		)
 
 		BeforeEach(func() {
-			lrp = models.ActualLRP{ProcessGuid: "some-process-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano()}
+			lrp = models.ActualLRP{ProcessGuid: "some-process-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano(), ExecutorID: "executor-id"}
 			events, stop, errors = bbs.WatchForActualLRPChanges()
 		})
 
@@ -95,7 +95,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.ReportActualLRPAsStarting(lrp)
+			err := bbs.ReportActualLRPAsStarting(lrp, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
@@ -105,7 +105,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.ReportActualLRPAsStarting(lrp)
+			err := bbs.ReportActualLRPAsStarting(lrp, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -123,7 +123,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for delete", func() {
-			err := bbs.ReportActualLRPAsStarting(lrp)
+			err := bbs.ReportActualLRPAsStarting(lrp, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())

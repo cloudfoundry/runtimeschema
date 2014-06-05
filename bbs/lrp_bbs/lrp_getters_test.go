@@ -62,13 +62,13 @@ var _ = Describe("LrpGetters", func() {
 	Describe("GetAllActualLRPs", func() {
 		BeforeEach(func() {
 			lrp1 = models.ActualLRP{ProcessGuid: "guid1", Index: 1, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
-			lrp2 = models.ActualLRP{ProcessGuid: "guid2", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano()}
+			lrp2 = models.ActualLRP{ProcessGuid: "guid2", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano(), ExecutorID: "executor-id"}
 			lrp3 = models.ActualLRP{ProcessGuid: "guid3", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
 
 			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLRPAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ReportActualLRPAsRunning(lrp3)
@@ -86,13 +86,13 @@ var _ = Describe("LrpGetters", func() {
 	Describe("GetRunningActualLRPs", func() {
 		BeforeEach(func() {
 			lrp1 = models.ActualLRP{ProcessGuid: "guid1", Index: 1, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
-			lrp2 = models.ActualLRP{ProcessGuid: "guid2", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano()}
+			lrp2 = models.ActualLRP{ProcessGuid: "guid2", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano(), ExecutorID: "executor-id"}
 			lrp3 = models.ActualLRP{ProcessGuid: "guid3", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
 
 			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLRPAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ReportActualLRPAsRunning(lrp3)
@@ -112,13 +112,13 @@ var _ = Describe("LrpGetters", func() {
 	Describe("GetActualLRPsByProcessGuid", func() {
 		BeforeEach(func() {
 			lrp1 = models.ActualLRP{ProcessGuid: "guidA", Index: 1, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
-			lrp2 = models.ActualLRP{ProcessGuid: "guidA", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano()}
+			lrp2 = models.ActualLRP{ProcessGuid: "guidA", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano(), ExecutorID: "executor-id"}
 			lrp3 = models.ActualLRP{ProcessGuid: "guidB", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
 
 			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLRPAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ReportActualLRPAsRunning(lrp3)
@@ -137,13 +137,13 @@ var _ = Describe("LrpGetters", func() {
 	Describe("GetRunningActualLRPsByProcessGuid", func() {
 		BeforeEach(func() {
 			lrp1 = models.ActualLRP{ProcessGuid: "guidA", Index: 1, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
-			lrp2 = models.ActualLRP{ProcessGuid: "guidA", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano()}
+			lrp2 = models.ActualLRP{ProcessGuid: "guidA", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateStarting, Since: timeProvider.Time().UnixNano(), ExecutorID: "executor-id"}
 			lrp3 = models.ActualLRP{ProcessGuid: "guidB", Index: 2, InstanceGuid: "some-instance-guid", State: models.ActualLRPStateRunning, Since: timeProvider.Time().UnixNano()}
 
 			err := bbs.ReportActualLRPAsRunning(lrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ReportActualLRPAsStarting(lrp2)
+			err = bbs.ReportActualLRPAsStarting(lrp2, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ReportActualLRPAsRunning(lrp3)
