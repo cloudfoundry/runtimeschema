@@ -42,46 +42,11 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 			keysToDelete = append(keysToDelete, node.Key)
 			continue
 		}
+
 		knownDesiredProcessGuids[desiredLRP.ProcessGuid] = true
-
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
-		var actuals delta_force.ActualInstances
-		for _, actualLRP := range actualLRPsForDesired {
-			actuals = append(actuals, delta_force.ActualInstance{
-				Index: actualLRP.Index,
-				Guid:  actualLRP.InstanceGuid,
-			})
-		}
-		result := delta_force.Reconcile(desiredLRP.Instances, actuals)
 
-		var shouldKickDesiredLRP bool
-
-		if len(result.IndicesToStart) > 0 {
-			bbs.logger.Infod(map[string]interface{}{
-				"process-guid":      desiredLRP.ProcessGuid,
-				"desired-instances": desiredLRP.Instances,
-				"missing-indices":   result.IndicesToStart,
-			}, "lrp-converger.detected-missing-instance")
-			shouldKickDesiredLRP = true
-		}
-		if len(result.GuidsToStop) > 0 {
-			bbs.logger.Infod(map[string]interface{}{
-				"process-guid":      desiredLRP.ProcessGuid,
-				"desired-instances": desiredLRP.Instances,
-				"extra-guids":       result.GuidsToStop,
-			}, "lrp-converger.detected-extra-instance")
-			shouldKickDesiredLRP = true
-		}
-		if len(result.IndicesToStopOneGuid) > 0 {
-			bbs.logger.Infod(map[string]interface{}{
-				"process-guid":       desiredLRP.ProcessGuid,
-				"desired-instances":  desiredLRP.Instances,
-				"duplicated-indices": result.IndicesToStopOneGuid,
-			}, "lrp-converger.detected-duplicate-instance")
-			shouldKickDesiredLRP = true
-		}
-
-		if shouldKickDesiredLRP {
+		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired) {
 			desiredLRPsToCAS = append(desiredLRPsToCAS, compareAndSwappableDesiredLRP{
 				OldIndex:      node.Index,
 				NewDesiredLRP: desiredLRP,
@@ -89,7 +54,21 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 		}
 	}
 
+	stopLRPInstances := bbs.instancesToStop(knownDesiredProcessGuids, actualsByProcessGuid)
+
+	bbs.store.Delete(keysToDelete...)
+	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
+	err = bbs.RequestStopLRPInstances(stopLRPInstances)
+	if err != nil {
+		bbs.logger.Errord(map[string]interface{}{
+			"error": err.Error(),
+		}, "lrp-converger.failed-to-request-stops")
+	}
+}
+
+func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string][]models.ActualLRP) []models.StopLRPInstance {
 	var stopLRPInstances []models.StopLRPInstance
+
 	for processGuid, actuals := range actualsByProcessGuid {
 		if !knownDesiredProcessGuids[processGuid] {
 			for _, actual := range actuals {
@@ -108,14 +87,42 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 		}
 	}
 
-	bbs.store.Delete(keysToDelete...)
-	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
-	err = bbs.RequestStopLRPInstances(stopLRPInstances)
-	if err != nil {
-		bbs.logger.Errord(map[string]interface{}{
-			"error": err.Error(),
-		}, "lrp-converger.failed-to-request-stops")
+	return stopLRPInstances
+}
+
+func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {
+	var actuals delta_force.ActualInstances
+	for _, actualLRP := range actualLRPsForDesired {
+		actuals = append(actuals, delta_force.ActualInstance{
+			Index: actualLRP.Index,
+			Guid:  actualLRP.InstanceGuid,
+		})
 	}
+	result := delta_force.Reconcile(desiredLRP.Instances, actuals)
+
+	if len(result.IndicesToStart) > 0 {
+		bbs.logger.Infod(map[string]interface{}{
+			"process-guid":      desiredLRP.ProcessGuid,
+			"desired-instances": desiredLRP.Instances,
+			"missing-indices":   result.IndicesToStart,
+		}, "lrp-converger.detected-missing-instance")
+	}
+	if len(result.GuidsToStop) > 0 {
+		bbs.logger.Infod(map[string]interface{}{
+			"process-guid":      desiredLRP.ProcessGuid,
+			"desired-instances": desiredLRP.Instances,
+			"extra-guids":       result.GuidsToStop,
+		}, "lrp-converger.detected-extra-instance")
+	}
+	if len(result.IndicesToStopOneGuid) > 0 {
+		bbs.logger.Infod(map[string]interface{}{
+			"process-guid":       desiredLRP.ProcessGuid,
+			"desired-instances":  desiredLRP.Instances,
+			"duplicated-indices": result.IndicesToStopOneGuid,
+		}, "lrp-converger.detected-duplicate-instance")
+	}
+
+	return !result.Empty()
 }
 
 func (bbs *LRPBBS) pruneActualsWithMissingExecutors() (map[string][]models.ActualLRP, error) {
