@@ -89,7 +89,7 @@ var _ = Describe("LRPStartAuction", func() {
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte("butts lol"))
+				decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte("aliens lol"))
 				Ω(err).Should(HaveOccurred())
 
 				Ω(decodedStartAuction).Should(BeZero())
