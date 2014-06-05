@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("StopInstance", func() {
+var _ = Describe("StopLRPInstance", func() {
 	var stopInstance models.StopLRPInstance
 
 	BeforeEach(func() {
