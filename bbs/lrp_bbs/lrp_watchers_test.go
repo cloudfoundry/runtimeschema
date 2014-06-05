@@ -112,8 +112,9 @@ var _ = Describe("LrpWatchers", func() {
 
 			changedLRP := lrp
 			changedLRP.State = models.ActualLRPStateRunning
+			changedLRP.ExecutorID = "executor-id"
 
-			err = bbs.ReportActualLRPAsRunning(changedLRP)
+			err = bbs.ReportActualLRPAsRunning(changedLRP, "executor-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{

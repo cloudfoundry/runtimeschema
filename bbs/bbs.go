@@ -35,7 +35,7 @@ type RepBBS interface {
 
 	///lrp
 	ReportActualLRPAsStarting(lrp models.ActualLRP, executorID string) error
-	ReportActualLRPAsRunning(lrp models.ActualLRP) error
+	ReportActualLRPAsRunning(lrp models.ActualLRP, executorId string) error
 	RemoveActualLRP(lrp models.ActualLRP) error
 	WatchForStopLRPInstance() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
 	ResolveStopLRPInstance(stopInstance models.StopLRPInstance) error

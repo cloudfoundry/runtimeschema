@@ -65,9 +65,10 @@ func (bbs *LRPBBS) ReportActualLRPAsStarting(lrp models.ActualLRP, executorID st
 	})
 }
 
-func (bbs *LRPBBS) ReportActualLRPAsRunning(lrp models.ActualLRP) error {
+func (bbs *LRPBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, executorID string) error {
 	lrp.State = models.ActualLRPStateRunning
 	lrp.Since = bbs.timeProvider.Time().UnixNano()
+	lrp.ExecutorID = executorID
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{

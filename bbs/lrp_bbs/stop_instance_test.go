@@ -120,7 +120,7 @@ var _ = Describe("StopInstance", func() {
 					ProcessGuid:  stopInstance.ProcessGuid,
 					InstanceGuid: stopInstance.InstanceGuid,
 					Index:        stopInstance.Index,
-				})
+				}, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.ResolveStopLRPInstance(stopInstance)
@@ -142,7 +142,7 @@ var _ = Describe("StopInstance", func() {
 					ProcessGuid:  stopInstance.ProcessGuid,
 					InstanceGuid: stopInstance.InstanceGuid,
 					Index:        stopInstance.Index,
-				})
+				}, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

@@ -103,7 +103,7 @@ var _ = Describe("LRP", func() {
 
 		Describe("ReportActualLRPAsRunning", func() {
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLRPAsRunning(lrp)
+				err := bbs.ReportActualLRPAsRunning(lrp, executorID)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get("/v1/actual/some-process-guid/1/some-instance-guid")
@@ -112,12 +112,13 @@ var _ = Describe("LRP", func() {
 				expectedLRP := lrp
 				expectedLRP.State = models.ActualLRPStateRunning
 				expectedLRP.Since = timeProvider.Time().UnixNano()
+				expectedLRP.ExecutorID = executorID
 				Ω(node.Value).Should(MatchJSON(expectedLRP.ToJSON()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ReportActualLRPAsRunning(lrp)
+					return bbs.ReportActualLRPAsRunning(lrp, executorID)
 				})
 			})
 		})
