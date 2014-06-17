@@ -6,6 +6,8 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/stop_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	steno "github.com/cloudfoundry/gosteno"
@@ -123,7 +125,7 @@ type FileServerBBS interface {
 	) (presence services_bbs.Presence, disappeared <-chan bool, err error)
 }
 
-type LRPRouterBBS interface {
+type RouteEmitterBBS interface {
 	// lrp
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
@@ -169,7 +171,7 @@ func NewFileServerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider
 	return NewBBS(store, timeProvider, logger)
 }
 
-func NewLRPRouterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger *steno.Logger) LRPRouterBBS {
+func NewRouteEmitterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger *steno.Logger) RouteEmitterBBS {
 	return NewBBS(store, timeProvider, logger)
 }
 
@@ -179,16 +181,20 @@ func NewTPSBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimePr
 
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger *steno.Logger) *BBS {
 	return &BBS{
-		LockBBS:     lock_bbs.New(store),
-		LRPBBS:      lrp_bbs.New(store, timeProvider, logger),
-		ServicesBBS: services_bbs.New(store, logger),
-		TaskBBS:     task_bbs.New(store, timeProvider, logger),
+		LockBBS:         lock_bbs.New(store),
+		LRPBBS:          lrp_bbs.New(store, timeProvider, logger),
+		StartAuctionBBS: start_auction_bbs.New(store, timeProvider, logger),
+		StopAuctionBBS:  stop_auction_bbs.New(store, timeProvider, logger),
+		ServicesBBS:     services_bbs.New(store, logger),
+		TaskBBS:         task_bbs.New(store, timeProvider, logger),
 	}
 }
 
 type BBS struct {
 	*lock_bbs.LockBBS
 	*lrp_bbs.LRPBBS
+	*start_auction_bbs.StartAuctionBBS
+	*stop_auction_bbs.StopAuctionBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
 }
