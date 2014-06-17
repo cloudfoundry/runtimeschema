@@ -46,7 +46,11 @@ type RepBBS interface {
 type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs()
+
+	//start auction
 	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
+
+	//stop auction
 	ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
 
 	//task
@@ -64,10 +68,14 @@ type TPSBBS interface {
 type AppManagerBBS interface {
 	//lrp
 	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	RequestLRPStartAuction(models.LRPStartAuction) error
-	RequestLRPStopAuction(models.LRPStopAuction) error
 	RequestStopLRPInstance(stopInstance models.StopLRPInstance) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
+
+	//start auction
+	RequestLRPStartAuction(models.LRPStartAuction) error
+
+	//stop auction
+	RequestLRPStopAuction(models.LRPStopAuction) error
 
 	//services
 	GetAvailableFileServer() (string, error)
@@ -85,10 +93,12 @@ type AuctioneerBBS interface {
 	//services
 	GetAllReps() ([]models.RepPresence, error)
 
-	//lrp
+	//start auction
 	WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
 	ClaimLRPStartAuction(models.LRPStartAuction) error
 	ResolveLRPStartAuction(models.LRPStartAuction) error
+
+	//stop auction
 	WatchForLRPStopAuction() (<-chan models.LRPStopAuction, chan<- bool, <-chan error)
 	ClaimLRPStopAuction(models.LRPStopAuction) error
 	ResolveLRPStopAuction(models.LRPStopAuction) error
