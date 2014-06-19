@@ -13,7 +13,7 @@ type LRPIdentifier struct {
 }
 
 func LRPIdentifierFromOpaqueID(opaqueID string) (LRPIdentifier, error) {
-	substrings := strings.Split(opaqueID, "/")
+	substrings := strings.Split(opaqueID, ".")
 	if len(substrings) != 3 {
 		return LRPIdentifier{}, fmt.Errorf("invalid opaqueID for LRP: %s", opaqueID)
 	}
@@ -31,5 +31,5 @@ func LRPIdentifierFromOpaqueID(opaqueID string) (LRPIdentifier, error) {
 }
 
 func (ids LRPIdentifier) OpaqueID() string {
-	return fmt.Sprintf("%s/%d/%s", ids.ProcessGuid, ids.Index, ids.InstanceGuid)
+	return fmt.Sprintf("%s.%d.%s", ids.ProcessGuid, ids.Index, ids.InstanceGuid)
 }
