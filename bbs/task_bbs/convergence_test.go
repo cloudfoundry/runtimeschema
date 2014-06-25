@@ -47,7 +47,9 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		bbs = New(etcdClient, timeProvider, logger)
 		task = models.Task{
-			Guid: "some-guid",
+			Guid:    "some-guid",
+			Stack:   "pancakes",
+			Actions: dummyActions,
 		}
 		servicesBBS = services_bbs.New(etcdClient, logger)
 	})
