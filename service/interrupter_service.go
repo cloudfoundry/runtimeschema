@@ -1,20 +1,21 @@
 package service
 
 import (
-	"github.com/cloudfoundry/gosteno"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/pivotal-golang/lager"
 )
 
 // StopHandler implements the standard termination policy for all services.
 type interrupter struct {
 	stopSignal chan os.Signal
-	logger     *gosteno.Logger
+	logger     lager.Logger
 	shutdown   chan struct{}
 }
 
-func NewInterrupterService(logger *gosteno.Logger) Service {
+func NewInterrupterService(logger lager.Logger) Service {
 	return &interrupter{
 		stopSignal: make(chan os.Signal, 1),
 		logger:     logger,
@@ -28,7 +29,10 @@ func (i *interrupter) Start(onPrematureStop func()) error {
 	go func() {
 		sig, ok := <-i.stopSignal
 		if ok {
-			i.logger.Infof("interrupter.stop_signal.recieved.%s", sig)
+			i.logger.Info("interrupter.received-stop-signal", lager.Data{
+				"signal": sig.String(),
+			})
+
 			i.Stop()
 			onPrematureStop()
 		}
