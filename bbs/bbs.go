@@ -70,7 +70,7 @@ type NsyncBBS interface {
 	// lrp
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
-	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
+	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	ChangeDesiredLRP(change models.DesiredLRPChange) error
 }
 
