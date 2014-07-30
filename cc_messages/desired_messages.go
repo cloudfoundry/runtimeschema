@@ -5,6 +5,7 @@ import "encoding/json"
 type DesireAppRequestFromCC struct {
 	ProcessGuid     string      `json:"process_guid"`
 	DropletUri      string      `json:"droplet_uri"`
+	DockerImageUrl  string      `json:"docker_image_url"`
 	Stack           string      `json:"stack"`
 	StartCommand    string      `json:"start_command"`
 	Environment     Environment `json:"environment"`
