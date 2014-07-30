@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	. "github.com/cloudfoundry-incubator/stager/staging_messages"
+	. "github.com/cloudfoundry-incubator/runtime-schema/cc_messages"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
