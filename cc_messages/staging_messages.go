@@ -4,7 +4,7 @@ type DockerStagingRequestFromCC struct {
 	AppId           string      `json:"app_id"`
 	TaskId          string      `json:"task_id"`
 	Stack           string      `json:"stack"`
-	DockerImageUrl  string      `json:"docker_image_url"`
+	DockerImageUrl  string      `json:"docker_image"`
 	FileDescriptors int         `json:"file_descriptors"`
 	MemoryMB        int         `json:"memory_mb"`
 	DiskMB          int         `json:"disk_mb"`
