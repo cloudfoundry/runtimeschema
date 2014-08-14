@@ -16,29 +16,39 @@ type compareAndSwappableLRPStartAuction struct {
 }
 
 func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
-	node, err := bbs.store.ListRecursively(shared.LRPStartAuctionSchemaRoot)
+	keysToDelete := []string{}
+	auctionsToCAS := []compareAndSwappableLRPStartAuction{}
+
+	dirsToKeep := map[string]struct{}{}
+	processDirsToPossiblyDelete := map[string]struct{}{}
+
+	auctionRoot, err := bbs.store.ListRecursively(shared.LRPStartAuctionSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
 		bbs.logger.Error("failed-to-get-start-auctions", err)
 		return
 	}
 
-	var keysToDelete []string
-	var auctionsToCAS []compareAndSwappableLRPStartAuction
+	for _, processDir := range auctionRoot.ChildNodes {
+		if len(processDir.ChildNodes) == 0 {
+			keysToDelete = append(keysToDelete, processDir.Key)
+			continue
+		}
 
-	for _, node := range node.ChildNodes {
-		for _, node := range node.ChildNodes {
-			auction, err := models.NewLRPStartAuctionFromJSON(node.Value)
+		for _, auctionNode := range processDir.ChildNodes {
+			auction, err := models.NewLRPStartAuctionFromJSON(auctionNode.Value)
 			if err != nil {
 				bbs.logger.Info("detected-invalid-start-auction-json", lager.Data{
 					"error":   err.Error(),
-					"payload": node.Value,
+					"payload": auctionNode.Value,
 				})
 
-				keysToDelete = append(keysToDelete, node.Key)
+				keysToDelete = append(keysToDelete, auctionNode.Key)
+				processDirsToPossiblyDelete[processDir.Key] = struct{}{}
 				continue
 			}
 
 			updatedAt := time.Unix(0, auction.UpdatedAt)
+
 			switch auction.State {
 			case models.LRPStartAuctionStatePending:
 				if bbs.timeProvider.Time().Sub(updatedAt) > kickPendingDuration {
@@ -48,10 +58,12 @@ func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Du
 					})
 
 					auctionsToCAS = append(auctionsToCAS, compareAndSwappableLRPStartAuction{
-						OldIndex:           node.Index,
+						OldIndex:           auctionNode.Index,
 						NewLRPStartAuction: auction,
 					})
 				}
+
+				dirsToKeep[processDir.Key] = struct{}{}
 
 			case models.LRPStartAuctionStateClaimed:
 				if bbs.timeProvider.Time().Sub(updatedAt) > expireClaimedDuration {
@@ -60,13 +72,27 @@ func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Du
 						"expiration-duration": expireClaimedDuration,
 					})
 
-					keysToDelete = append(keysToDelete, node.Key)
+					keysToDelete = append(keysToDelete, auctionNode.Key)
+					processDirsToPossiblyDelete[processDir.Key] = struct{}{}
+				} else {
+					dirsToKeep[processDir.Key] = struct{}{}
 				}
+
+			default:
+				dirsToKeep[processDir.Key] = struct{}{}
 			}
 		}
 	}
 
-	bbs.store.Delete(keysToDelete...)
+	processDirsToDelete := []string{}
+	for key := range processDirsToPossiblyDelete {
+		if _, ok := dirsToKeep[key]; !ok {
+			processDirsToDelete = append(processDirsToDelete, key)
+		}
+	}
+
+	bbs.store.DeleteLeaves(keysToDelete...)
+	bbs.store.DeleteLeaves(processDirsToDelete...)
 	bbs.batchCompareAndSwapLRPStartAuctions(auctionsToCAS)
 }
 
