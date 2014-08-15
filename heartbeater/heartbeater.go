@@ -76,22 +76,23 @@ func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 		case <-time.After(h.Interval):
 			err := h.Client.CompareAndSwap(node, node)
 			logger.Info("compare-and-swap")
-			if err != nil {
-				switch err {
-				case storeadapter.ErrorTimeout:
-					logger.Error("store-timeout", err)
-					if connectionTimeout == nil {
-						connectionTimeout = time.After(time.Duration(ttl * uint64(time.Second)))
-					}
-				default:
-					logger.Error("compare-and-swap-failed", err)
-					return ErrLockFailed
+			switch err {
+			case storeadapter.ErrorTimeout:
+				logger.Error("store-timeout", err)
+				if connectionTimeout == nil {
+					connectionTimeout = time.After(time.Duration(ttl * uint64(time.Second)))
 				}
-			} else {
+			case storeadapter.ErrorKeyNotFound:
+				err := h.Client.Create(node)
+				if err != nil && connectionTimeout == nil {
+					connectionTimeout = time.After(time.Duration(ttl * uint64(time.Second)))
+				}
+			case nil:
 				connectionTimeout = nil
+			default:
+				logger.Error("compare-and-swap-failed", err)
+				return ErrLockFailed
 			}
 		}
 	}
-
-	return nil
 }

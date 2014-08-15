@@ -86,12 +86,55 @@ var _ = Describe("Heartbeater", func() {
 			Eventually(heartBeat.Wait()).Should(Receive())
 		})
 
-		It("exits with an error", func() {
-			Eventually(heartBeat.Wait(), 5*time.Second).Should(Receive(Equal(heartbeater.ErrLockFailed)))
+		It("re-creates the node", func() {
+			Eventually(matchtHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
 		})
 
-		It("does not write to the node", func() {
-			Consistently(matchtHeartbeatNode(expectedHeartbeatNode), heartbeatInterval*2).Should(Equal(storeadapter.ErrorKeyNotFound))
+		Describe("when there is a connection error", func() {
+			BeforeEach(func() {
+				etcdProxy.Signal(os.Kill)
+				Eventually(etcdProxy.Wait(), 3*time.Second).Should(Receive(BeNil()))
+			})
+
+			It("retries until it succeeds", func() {
+				restarted := make(chan struct{})
+				go func() {
+					time.Sleep(500 * time.Millisecond)
+					etcdProxy = ifrit.Envoke(proxyRunner)
+					close(restarted)
+				}()
+
+				Eventually(matchtHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
+				<-restarted
+			})
+
+			Describe("when the TTL expires", func() {
+				It("exits with an error", func() {
+					Eventually(heartBeat.Wait(), 5*time.Second).Should(Receive(Equal(heartbeater.ErrStoreUnavailable)))
+				})
+			})
+		})
+
+		Describe("when someone else acquires the lock first", func() {
+			var doppelNode storeadapter.StoreNode
+
+			BeforeEach(func() {
+				doppelNode = storeadapter.StoreNode{
+					Key:   heartbeatKey,
+					Value: []byte("doppel-value"),
+				}
+
+				err := etcdClient.Create(doppelNode)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("does not write to the node", func() {
+				Consistently(matchtHeartbeatNode(doppelNode), heartbeatInterval*2).Should(BeNil())
+			})
+
+			It("exits with an error", func() {
+				Eventually(heartBeat.Wait(), 5*time.Second).Should(Receive(Equal(heartbeater.ErrLockFailed)))
+			})
 		})
 	})
 
