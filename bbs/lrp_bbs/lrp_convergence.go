@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry-incubator/delta_force/delta_force"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -127,87 +128,38 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 }
 
 func (bbs *LRPBBS) pruneActualsWithMissingExecutors() (map[string][]models.ActualLRP, error) {
-	keysToDelete := []string{}
 	actualsByProcessGuid := map[string][]models.ActualLRP{}
 
-	dirsToKeep := map[string]struct{}{}
-	indexDirsToPossiblyDelete := map[string]struct{}{}
-	processDirsToPossiblyDelete := map[string]struct{}{}
-
-	executorState, err := bbs.store.ListRecursively(shared.ExecutorSchemaRoot)
+	executorRoot, err := bbs.store.ListRecursively(shared.ExecutorSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		executorState = storeadapter.StoreNode{}
+		executorRoot = storeadapter.StoreNode{}
 	} else if err != nil {
 		bbs.logger.Error("failed-to-get-executors", err)
 		return nil, err
 	}
 
-	actualRoot, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return actualsByProcessGuid, nil
-	} else if err != nil {
-		bbs.logger.Error("failed-to-get-actual-lrps", err)
+	err = prune.Prune(bbs.store, shared.ActualLRPSchemaRoot, func(node storeadapter.StoreNode) (shouldKeep bool) {
+		actual, err := models.NewActualLRPFromJSON(node.Value)
+		if err != nil {
+			return false
+		}
+
+		if _, ok := executorRoot.Lookup(actual.ExecutorID); !ok {
+			bbs.logger.Info("detected-actual-with-missing-executor", lager.Data{
+				"actual":      actual,
+				"executor-id": actual.ExecutorID,
+			})
+			return false
+		}
+
+		actualsByProcessGuid[actual.ProcessGuid] = append(actualsByProcessGuid[actual.ProcessGuid], actual)
+		return true
+	})
+
+	if err != nil {
+		bbs.logger.Error("failed-to-prune-actual-lrps", err)
 		return nil, err
 	}
-
-	for _, processDir := range actualRoot.ChildNodes {
-		if len(processDir.ChildNodes) == 0 {
-			keysToDelete = append(keysToDelete, processDir.Key)
-			continue
-		}
-
-		for _, indexDir := range processDir.ChildNodes {
-			if len(processDir.ChildNodes) == 0 {
-				keysToDelete = append(keysToDelete, indexDir.Key)
-				processDirsToPossiblyDelete[processDir.Key] = struct{}{}
-				continue
-			}
-
-			for _, instanceNode := range indexDir.ChildNodes {
-				actual, err := models.NewActualLRPFromJSON(instanceNode.Value)
-				if err != nil {
-					keysToDelete = append(keysToDelete, instanceNode.Key)
-					processDirsToPossiblyDelete[processDir.Key] = struct{}{}
-					indexDirsToPossiblyDelete[indexDir.Key] = struct{}{}
-					continue
-				}
-
-				if _, ok := executorState.Lookup(actual.ExecutorID); ok {
-					actualsByProcessGuid[actual.ProcessGuid] = append(actualsByProcessGuid[actual.ProcessGuid], actual)
-
-					dirsToKeep[processDir.Key] = struct{}{}
-					dirsToKeep[indexDir.Key] = struct{}{}
-				} else {
-					bbs.logger.Info("detected-actual-with-missing-executor", lager.Data{
-						"actual":      actual,
-						"executor-id": actual.ExecutorID,
-					})
-					keysToDelete = append(keysToDelete, shared.ActualLRPSchemaPath(actual.ProcessGuid, actual.Index, actual.InstanceGuid))
-
-					processDirsToPossiblyDelete[processDir.Key] = struct{}{}
-					indexDirsToPossiblyDelete[indexDir.Key] = struct{}{}
-				}
-			}
-		}
-	}
-
-	indexDirsToDelete := []string{}
-	for key := range indexDirsToPossiblyDelete {
-		if _, ok := dirsToKeep[key]; !ok {
-			indexDirsToDelete = append(indexDirsToDelete, key)
-		}
-	}
-
-	processDirsToDelete := []string{}
-	for key := range processDirsToPossiblyDelete {
-		if _, ok := dirsToKeep[key]; !ok {
-			processDirsToDelete = append(processDirsToDelete, key)
-		}
-	}
-
-	bbs.store.DeleteLeaves(keysToDelete...)
-	bbs.store.DeleteLeaves(indexDirsToDelete...)
-	bbs.store.DeleteLeaves(processDirsToDelete...)
 
 	return actualsByProcessGuid, nil
 }
