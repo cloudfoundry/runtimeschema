@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("LrpFreshness", func() {
+var _ = Describe("LrpFreshness", func() {
 	Describe("CheckFreshness", func() {
 		Describe("initially", func() {
 			It("returns false", func() {
