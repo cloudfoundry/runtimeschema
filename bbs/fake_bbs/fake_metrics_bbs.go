@@ -24,13 +24,12 @@ type FakeMetricsBBS struct {
 		result1 models.ServiceRegistrations
 		result2 error
 	}
-	CheckFreshnessStub        func(domain string) error
-	checkFreshnessMutex       sync.RWMutex
-	checkFreshnessArgsForCall []struct {
-		domain string
-	}
-	checkFreshnessReturns struct {
-		result1 error
+	GetAllFreshnessStub        func() ([]string, error)
+	getAllFreshnessMutex       sync.RWMutex
+	getAllFreshnessArgsForCall []struct{}
+	getAllFreshnessReturns struct {
+		result1 []string
+		result2 error
 	}
 }
 
@@ -82,35 +81,28 @@ func (fake *FakeMetricsBBS) GetServiceRegistrationsReturns(result1 models.Servic
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsBBS) CheckFreshness(domain string) error {
-	fake.checkFreshnessMutex.Lock()
-	defer fake.checkFreshnessMutex.Unlock()
-	fake.checkFreshnessArgsForCall = append(fake.checkFreshnessArgsForCall, struct {
-		domain string
-	}{domain})
-	if fake.CheckFreshnessStub != nil {
-		return fake.CheckFreshnessStub(domain)
+func (fake *FakeMetricsBBS) GetAllFreshness() ([]string, error) {
+	fake.getAllFreshnessMutex.Lock()
+	defer fake.getAllFreshnessMutex.Unlock()
+	fake.getAllFreshnessArgsForCall = append(fake.getAllFreshnessArgsForCall, struct{}{})
+	if fake.GetAllFreshnessStub != nil {
+		return fake.GetAllFreshnessStub()
 	} else {
-		return fake.checkFreshnessReturns.result1
+		return fake.getAllFreshnessReturns.result1, fake.getAllFreshnessReturns.result2
 	}
 }
 
-func (fake *FakeMetricsBBS) CheckFreshnessCallCount() int {
-	fake.checkFreshnessMutex.RLock()
-	defer fake.checkFreshnessMutex.RUnlock()
-	return len(fake.checkFreshnessArgsForCall)
+func (fake *FakeMetricsBBS) GetAllFreshnessCallCount() int {
+	fake.getAllFreshnessMutex.RLock()
+	defer fake.getAllFreshnessMutex.RUnlock()
+	return len(fake.getAllFreshnessArgsForCall)
 }
 
-func (fake *FakeMetricsBBS) CheckFreshnessArgsForCall(i int) string {
-	fake.checkFreshnessMutex.RLock()
-	defer fake.checkFreshnessMutex.RUnlock()
-	return fake.checkFreshnessArgsForCall[i].domain
-}
-
-func (fake *FakeMetricsBBS) CheckFreshnessReturns(result1 error) {
-	fake.checkFreshnessReturns = struct {
-		result1 error
-	}{result1}
+func (fake *FakeMetricsBBS) GetAllFreshnessReturns(result1 []string, result2 error) {
+	fake.getAllFreshnessReturns = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.MetricsBBS = new(FakeMetricsBBS)
