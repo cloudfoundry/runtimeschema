@@ -111,6 +111,9 @@ type MetricsBBS interface {
 
 	//services
 	GetServiceRegistrations() (models.ServiceRegistrations, error)
+
+	//lrps
+	CheckFreshness(domain string) error
 }
 
 type FileServerBBS interface {
