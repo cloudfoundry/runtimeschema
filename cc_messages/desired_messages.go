@@ -8,6 +8,7 @@ type DesireAppRequestFromCC struct {
 	DockerImageUrl  string      `json:"docker_image"`
 	Stack           string      `json:"stack"`
 	StartCommand    string      `json:"start_command"`
+	StagingMetadata string      `json:"staging_metadata"`
 	Environment     Environment `json:"environment"`
 	MemoryMB        int         `json:"memory_mb"`
 	DiskMB          int         `json:"disk_mb"`
