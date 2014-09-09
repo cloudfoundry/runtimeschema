@@ -91,12 +91,17 @@ func (bbs *LRPBBS) RemoveActualLRPForIndex(processGuid string, index int, instan
 	})
 }
 
-func (bbs *LRPBBS) ReportActualLRPAsStarting(lrp models.ActualLRP, executorID string) error {
-	lrp.State = models.ActualLRPStateStarting
-	lrp.Since = bbs.timeProvider.Time().UnixNano()
-	lrp.ExecutorID = executorID
+func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, executorID string, index int) (models.ActualLRP, error) {
+	lrp := models.ActualLRP{
+		ProcessGuid:  processGuid,
+		InstanceGuid: instanceGuid,
+		Index:        index,
+		State:        models.ActualLRPStateStarting,
+		Since:        bbs.timeProvider.Time().UnixNano(),
+		ExecutorID:   executorID,
+	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+	return lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid),
