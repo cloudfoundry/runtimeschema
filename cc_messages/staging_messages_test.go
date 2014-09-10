@@ -84,41 +84,42 @@ var _ = Describe("StagingMessages", func() {
 	})
 
 	Describe("StagingResponseForCC", func() {
-		Context("with a detected buildpack", func() {
-			It("generates valid JSON with the buildpack", func() {
-				stagingResponseForCC := StagingResponseForCC{
-					DetectedBuildpack: "ocaml-buildpack",
-				}
+		var stagingResponseForCC StagingResponseForCC
 
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{"detected_buildpack": "ocaml-buildpack"}`))
-			})
+		BeforeEach(func() {
+			stagingResponseForCC = StagingResponseForCC{
+				AppId:             "the-app-id",
+				TaskId:            "the-task-id",
+				BuildpackKey:      "the-buildpack-key",
+				DetectedBuildpack: "the-detected-buildpack",
+				ExecutionMetadata: "the-execution-metadata",
+			}
 		})
 
-		Context("with an admin buildpack key", func() {
-			It("generates valid JSON with the buildpack key", func() {
-				stagingResponseForCC := StagingResponseForCC{
-					BuildpackKey: "admin-buildpack-key",
-				}
-
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{"buildpack_key": "admin-buildpack-key"}`))
-			})
-		})
-
-		Context("without an admin buildpack key", func() {
-			It("generates valid JSON and omits the buildpack key", func() {
-				stagingResponseForCC := StagingResponseForCC{}
-
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{}`))
+		Context("without an error", func() {
+			It("generates valid JSON", func() {
+				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+					"app_id": "the-app-id",
+					"buildpack_key": "the-buildpack-key",
+					"detected_buildpack": "the-detected-buildpack",
+					"execution_metadata": "the-execution-metadata",
+					"task_id": "the-task-id"
+				}`))
 			})
 		})
 
 		Context("with an error", func() {
 			It("generates valid JSON with the error", func() {
-				stagingResponseForCC := StagingResponseForCC{
-					Error: "FAIL, missing camels!",
-				}
+				stagingResponseForCC.Error = "FAIL, missing camels!"
+				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+					"error": "FAIL, missing camels!",
 
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{"error": "FAIL, missing camels!"}`))
+					"app_id": "the-app-id",
+					"buildpack_key": "the-buildpack-key",
+					"detected_buildpack": "the-detected-buildpack",
+					"execution_metadata": "the-execution-metadata",
+					"task_id": "the-task-id"
+				}`))
 			})
 		})
 	})
