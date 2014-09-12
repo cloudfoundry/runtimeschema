@@ -38,10 +38,10 @@ type FakeMetricsBBS struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	GetRunningActualLRPsStub        func() ([]models.ActualLRP, error)
-	getRunningActualLRPsMutex       sync.RWMutex
-	getRunningActualLRPsArgsForCall []struct{}
-	getRunningActualLRPsReturns struct {
+	GetAllActualLRPsStub        func() ([]models.ActualLRP, error)
+	getAllActualLRPsMutex       sync.RWMutex
+	getAllActualLRPsArgsForCall []struct{}
+	getAllActualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -143,25 +143,25 @@ func (fake *FakeMetricsBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsBBS) GetRunningActualLRPs() ([]models.ActualLRP, error) {
-	fake.getRunningActualLRPsMutex.Lock()
-	defer fake.getRunningActualLRPsMutex.Unlock()
-	fake.getRunningActualLRPsArgsForCall = append(fake.getRunningActualLRPsArgsForCall, struct{}{})
-	if fake.GetRunningActualLRPsStub != nil {
-		return fake.GetRunningActualLRPsStub()
+func (fake *FakeMetricsBBS) GetAllActualLRPs() ([]models.ActualLRP, error) {
+	fake.getAllActualLRPsMutex.Lock()
+	defer fake.getAllActualLRPsMutex.Unlock()
+	fake.getAllActualLRPsArgsForCall = append(fake.getAllActualLRPsArgsForCall, struct{}{})
+	if fake.GetAllActualLRPsStub != nil {
+		return fake.GetAllActualLRPsStub()
 	} else {
-		return fake.getRunningActualLRPsReturns.result1, fake.getRunningActualLRPsReturns.result2
+		return fake.getAllActualLRPsReturns.result1, fake.getAllActualLRPsReturns.result2
 	}
 }
 
-func (fake *FakeMetricsBBS) GetRunningActualLRPsCallCount() int {
-	fake.getRunningActualLRPsMutex.RLock()
-	defer fake.getRunningActualLRPsMutex.RUnlock()
-	return len(fake.getRunningActualLRPsArgsForCall)
+func (fake *FakeMetricsBBS) GetAllActualLRPsCallCount() int {
+	fake.getAllActualLRPsMutex.RLock()
+	defer fake.getAllActualLRPsMutex.RUnlock()
+	return len(fake.getAllActualLRPsArgsForCall)
 }
 
-func (fake *FakeMetricsBBS) GetRunningActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
-	fake.getRunningActualLRPsReturns = struct {
+func (fake *FakeMetricsBBS) GetAllActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
+	fake.getAllActualLRPsReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
