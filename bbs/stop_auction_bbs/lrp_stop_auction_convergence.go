@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
@@ -17,6 +18,7 @@ type compareAndSwappableLRPStopAuction struct {
 }
 
 func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
+	metrics.IncrementCounter("converge-lrp-stop-auction")
 	auctionsToCAS := []compareAndSwappableLRPStopAuction{}
 
 	err := prune.Prune(bbs.store, shared.LRPStopAuctionSchemaRoot, func(auctionNode storeadapter.StoreNode) (shouldKeep bool) {
@@ -26,6 +28,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 				"error":   err.Error(),
 				"payload": auctionNode.Value,
 			})
+			metrics.IncrementCounter("prune-invalid-lrp-stop-auction")
 			return false
 		}
 
@@ -51,6 +54,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 					"auction":             auction,
 					"expiration-duration": expireClaimedDuration,
 				})
+				metrics.IncrementCounter("prune-claimed-lrp-stop-auction")
 				return false
 			}
 		}
@@ -59,10 +63,12 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 	})
 
 	if err != nil {
+		metrics.IncrementCounter("prune-stop-auction-failed")
 		bbs.logger.Error("failed-to-prune-stop-auctions", err)
 		return
 	}
 
+	metrics.AddToCounter("compare-and-swap-lrp-stop-auction", uint64(len(auctionsToCAS)))
 	bbs.batchCompareAndSwapLRPStopAuctions(auctionsToCAS)
 }
 

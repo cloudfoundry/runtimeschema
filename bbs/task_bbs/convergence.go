@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
@@ -36,6 +37,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 		return
 	}
 
+	metrics.IncrementCounter("converge-tasks")
 	taskLog := bbs.logger.Session("converge-tasks")
 
 	logError := func(task models.Task, message string) {
@@ -102,7 +104,10 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 		}
 	}
 
+	metrics.AddToCounter("compare-and-swap-task", uint64(len(tasksToCAS)))
 	bbs.batchCompareAndSwapTasks(tasksToCAS)
+
+	metrics.AddToCounter("prune-task", uint64(len(tasksToCAS)))
 	bbs.store.Delete(keysToDelete...)
 }
 
