@@ -116,6 +116,8 @@ type MetricsBBS interface {
 
 	//lrps
 	GetAllFreshness() ([]string, error)
+	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
+	GetRunningActualLRPs() ([]models.ActualLRP, error)
 }
 
 type FileServerBBS interface {
