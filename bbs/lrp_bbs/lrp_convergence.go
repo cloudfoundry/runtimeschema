@@ -6,10 +6,17 @@ import (
 	"github.com/cloudfoundry-incubator/delta_force/delta_force"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/dropsonde/autowire/metrics"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
+)
+
+const (
+	convergeLrpsCounter = metric.Counter("converge-lrps")
+	deleteLrpCounter    = metric.Counter("convergence-delete-lrp")
+	casLrpCounter       = metric.Counter("convergence-compare-and-swap-lrp")
+	stopLrpCounter      = metric.Counter("convergence-stop-lrp")
 )
 
 type compareAndSwappableDesiredLRP struct {
@@ -18,7 +25,7 @@ type compareAndSwappableDesiredLRP struct {
 }
 
 func (bbs *LRPBBS) ConvergeLRPs() {
-	metrics.IncrementCounter("converge-lrps")
+	convergeLrpsCounter.Increment()
 
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingExecutors()
 	if err != nil {
@@ -61,13 +68,14 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 
 	stopLRPInstances := bbs.instancesToStop(knownDesiredProcessGuids, actualsByProcessGuid)
 
-	metrics.AddToCounter("convergence-delete-lrp", uint64(len(keysToDelete)))
+	deleteLrpCounter.Add(uint64(len(keysToDelete)))
+
 	bbs.store.Delete(keysToDelete...)
 
-	metrics.AddToCounter("convergence-compare-and-swap-lrp", uint64(len(desiredLRPsToCAS)))
+	casLrpCounter.Add(uint64(len(desiredLRPsToCAS)))
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
-	metrics.AddToCounter("convergence-stop-lrp", uint64(len(desiredLRPsToCAS)))
+	stopLrpCounter.Add(uint64(len(desiredLRPsToCAS)))
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
 	if err != nil {
 		bbs.logger.Error("failed-to-request-stops", err)
