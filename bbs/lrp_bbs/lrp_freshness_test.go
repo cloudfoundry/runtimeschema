@@ -9,13 +9,6 @@ import (
 
 var _ = Describe("LrpFreshness", func() {
 	Describe("initially", func() {
-		Describe("CheckFreshness", func() {
-			It("returns false", func() {
-				err := bbs.CheckFreshness("some-domain")
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-
 		Describe("GetAllFreshness", func() {
 			It("is an empty set", func() {
 				Ω(bbs.GetAllFreshness()).Should(BeEmpty())
@@ -29,13 +22,6 @@ var _ = Describe("LrpFreshness", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		Describe("CheckFreshness", func() {
-			It("returns true", func() {
-				err := bbs.CheckFreshness("some-domain")
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-		})
-
 		Describe("GetAllFreshness", func() {
 			It("includes the fresh domain", func() {
 				Ω(bbs.GetAllFreshness()).Should(ConsistOf([]string{"some-domain"}))
@@ -45,13 +31,6 @@ var _ = Describe("LrpFreshness", func() {
 		Context("and then expires", func() {
 			BeforeEach(func() {
 				time.Sleep(2 * time.Second)
-			})
-
-			Describe("CheckFreshness", func() {
-				It("becomes false", func() {
-					err := bbs.CheckFreshness("some-domain")
-					Ω(err).Should(HaveOccurred())
-				})
 			})
 
 			Describe("GetAllFreshness", func() {
