@@ -17,11 +17,6 @@ func (bbs *LRPBBS) BumpFreshness(domain string, ttl time.Duration) error {
 	})
 }
 
-func (bbs *LRPBBS) CheckFreshness(domain string) error {
-	_, err := bbs.store.Get(shared.FreshnessSchemaPath(domain))
-	return err
-}
-
 func (bbs *LRPBBS) GetAllFreshness() ([]string, error) {
 	node, err := bbs.store.ListRecursively(shared.FreshnessSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {

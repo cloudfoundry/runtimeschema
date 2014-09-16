@@ -1,13 +1,23 @@
 package metric
 
-import drop "github.com/cloudfoundry/dropsonde/autowire/metrics"
+import (
+	"time"
+
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
+)
 
 type Counter string
 
 func (c Counter) Increment() {
-	drop.IncrementCounter(string(c))
+	metrics.IncrementCounter(string(c))
 }
 
 func (c Counter) Add(i uint64) {
-	drop.AddToCounter(string(c), i)
+	metrics.AddToCounter(string(c), i)
+}
+
+type Duration string
+
+func (name Duration) Send(duration time.Duration) {
+	metrics.SendValue(string(name), float64(duration), "nanos")
 }
