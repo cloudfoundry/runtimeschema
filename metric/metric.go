@@ -30,6 +30,6 @@ func (name Mebibytes) Send(mebibytes int) {
 
 type Metric string
 
-func (name Metric) Send(mebibytes int) {
-  metrics.SendValue(string(name), float64(mebibytes), "Metric")
+func (name Metric) Send(value int) {
+  metrics.SendValue(string(name), float64(value), "Metric")
 }
