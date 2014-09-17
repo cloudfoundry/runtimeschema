@@ -16,7 +16,7 @@ const (
 	convergeLrpStartCounter     = metric.Counter("converge-lrp-start-auction")
 	pruneInvalidLrpStartCounter = metric.Counter("prune-invalid-lrp-start-auction")
 	pruneClaimedLrpStartCounter = metric.Counter("prune-claimed-lrp-start-auction")
-	pruneStartCounter           = metric.Counter("prune-start-auction-failed")
+	pruneStartFailedCounter     = metric.Counter("prune-start-auction-failed")
 	casLrpStartCounter          = metric.Counter("compare-and-swap-lrp-start-auction")
 )
 
@@ -71,7 +71,7 @@ func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Du
 	})
 
 	if err != nil {
-		pruneStartCounter.Increment()
+		pruneStartFailedCounter.Increment()
 		bbs.logger.Error("failed-to-prune-start-auction", err)
 		return
 	}

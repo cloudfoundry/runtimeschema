@@ -31,6 +31,9 @@ type compareAndSwappableTask struct {
 // 5. Mark as failed any run-onces that have been in the pending state for > timeToClaim
 // 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration) {
+	convergeTasksCounter.Increment()
+	taskLog := bbs.logger.Session("converge-tasks")
+
 	taskState, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err != nil {
 		return
@@ -42,9 +45,6 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 	} else if err != nil {
 		return
 	}
-
-	convergeTasksCounter.Increment()
-	taskLog := bbs.logger.Session("converge-tasks")
 
 	logError := func(task models.Task, message string) {
 		taskLog.Error(message, nil, lager.Data{
@@ -113,7 +113,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 	casTaskCounter.Add(uint64(len(tasksToCAS)))
 	bbs.batchCompareAndSwapTasks(tasksToCAS)
 
-	pruneTaskCounter.Add(uint64(len(tasksToCAS)))
+	pruneTaskCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
 }
 

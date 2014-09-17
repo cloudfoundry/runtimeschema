@@ -69,13 +69,12 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	stopLRPInstances := bbs.instancesToStop(knownDesiredProcessGuids, actualsByProcessGuid)
 
 	deleteLrpCounter.Add(uint64(len(keysToDelete)))
-
 	bbs.store.Delete(keysToDelete...)
 
 	casLrpCounter.Add(uint64(len(desiredLRPsToCAS)))
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
-	stopLrpCounter.Add(uint64(len(desiredLRPsToCAS)))
+	stopLrpCounter.Add(uint64(len(stopLRPInstances)))
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
 	if err != nil {
 		bbs.logger.Error("failed-to-request-stops", err)
