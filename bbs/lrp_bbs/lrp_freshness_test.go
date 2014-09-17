@@ -33,7 +33,7 @@ var _ = Describe("LrpFreshness", func() {
 				time.Sleep(2 * time.Second)
 			})
 
-rake			Describe("GetAllFreshness", func() {
+			Describe("GetAllFreshness", func() {
 				It("becomes empty", func() {
 					Ω(bbs.GetAllFreshness()).Should(BeEmpty())
 				})
