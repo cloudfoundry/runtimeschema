@@ -38,10 +38,11 @@ type Buildpack struct {
 }
 
 type StagingResponseForCC struct {
-	AppId             string `json:"app_id"`
-	TaskId            string `json:"task_id"`
-	BuildpackKey      string `json:"buildpack_key"`
-	DetectedBuildpack string `json:"detected_buildpack"`
-	ExecutionMetadata string `json:"execution_metadata"`
-	Error             string `json:"error,omitempty"`
+	AppId                string            `json:"app_id"`
+	TaskId               string            `json:"task_id"`
+	BuildpackKey         string            `json:"buildpack_key"`
+	DetectedBuildpack    string            `json:"detected_buildpack"`
+	ExecutionMetadata    string            `json:"execution_metadata"`
+	DetectedStartCommand map[string]string `json:"detected_start_command"`
+	Error                string            `json:"error,omitempty"`
 }
