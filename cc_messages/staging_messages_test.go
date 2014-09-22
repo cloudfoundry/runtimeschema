@@ -88,11 +88,12 @@ var _ = Describe("StagingMessages", func() {
 
 		BeforeEach(func() {
 			stagingResponseForCC = StagingResponseForCC{
-				AppId:             "the-app-id",
-				TaskId:            "the-task-id",
-				BuildpackKey:      "the-buildpack-key",
-				DetectedBuildpack: "the-detected-buildpack",
-				ExecutionMetadata: "the-execution-metadata",
+				AppId:                "the-app-id",
+				TaskId:               "the-task-id",
+				BuildpackKey:         "the-buildpack-key",
+				DetectedBuildpack:    "the-detected-buildpack",
+				ExecutionMetadata:    "the-execution-metadata",
+				DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
 			}
 		})
 
@@ -103,6 +104,7 @@ var _ = Describe("StagingMessages", func() {
 					"buildpack_key": "the-buildpack-key",
 					"detected_buildpack": "the-detected-buildpack",
 					"execution_metadata": "the-execution-metadata",
+					"detected_start_command":{"web":"the-detected-start-command"},
 					"task_id": "the-task-id"
 				}`))
 			})
@@ -118,6 +120,7 @@ var _ = Describe("StagingMessages", func() {
 					"buildpack_key": "the-buildpack-key",
 					"detected_buildpack": "the-detected-buildpack",
 					"execution_metadata": "the-execution-metadata",
+					"detected_start_command":{"web":"the-detected-start-command"},
 					"task_id": "the-task-id"
 				}`))
 			})
