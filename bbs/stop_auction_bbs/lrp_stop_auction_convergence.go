@@ -16,7 +16,6 @@ const (
 	convergeLrpStopCounter     = metric.Counter("converge-lrp-stop-auction")
 	pruneInvalidLrpStopCounter = metric.Counter("prune-invalid-lrp-stop-auction")
 	pruneClaimedLrpStopCounter = metric.Counter("prune-claimed-lrp-stop-auction")
-	pruneStopFailedCounter     = metric.Counter("prune-stop-auction-failed")
 	casLrpStopCounter          = metric.Counter("compare-and-swap-lrp-stop-auction")
 )
 
@@ -71,7 +70,6 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 	})
 
 	if err != nil {
-		pruneStopFailedCounter.Increment()
 		bbs.logger.Error("failed-to-prune-stop-auctions", err)
 		return
 	}
