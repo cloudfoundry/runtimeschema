@@ -16,7 +16,6 @@ const (
 	convergeLrpStartCounter     = metric.Counter("converge-lrp-start-auction")
 	pruneInvalidLrpStartCounter = metric.Counter("prune-invalid-lrp-start-auction")
 	pruneClaimedLrpStartCounter = metric.Counter("prune-claimed-lrp-start-auction")
-	pruneStartFailedCounter     = metric.Counter("prune-start-auction-failed")
 	casLrpStartCounter          = metric.Counter("compare-and-swap-lrp-start-auction")
 )
 
@@ -27,6 +26,7 @@ type compareAndSwappableLRPStartAuction struct {
 
 func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
 	convergeLrpStartCounter.Increment()
+
 	auctionsToCAS := []compareAndSwappableLRPStartAuction{}
 
 	err := prune.Prune(bbs.store, shared.LRPStartAuctionSchemaRoot, func(auctionNode storeadapter.StoreNode) (shouldKeep bool) {
@@ -71,7 +71,6 @@ func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Du
 	})
 
 	if err != nil {
-		pruneStartFailedCounter.Increment()
 		bbs.logger.Error("failed-to-prune-start-auction", err)
 		return
 	}

@@ -7,6 +7,8 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/models/factories"
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
+	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
@@ -20,11 +22,24 @@ const (
 )
 
 var _ = Describe("LRPStartAuction Convergence", func() {
-	var startAuctionEvents <-chan models.LRPStartAuction
+	var (
+		sender *fake.FakeMetricSender
+
+		startAuctionEvents <-chan models.LRPStartAuction
+	)
+
+	BeforeEach(func() {
+		sender = fake.NewFakeMetricSender()
+		metrics.Initialize(sender)
+	})
 
 	JustBeforeEach(func() {
 		startAuctionEvents, _, _ = bbs.WatchForLRPStartAuction()
 		bbs.ConvergeLRPStartAuctions(pendingKickDuration, claimedExpirationDuration)
+	})
+
+	It("bumps the convergence counter", func() {
+		Ω(sender.GetCounter("converge-lrp-start-auction")).Should(Equal(uint64(1)))
 	})
 
 	Context("when the LRPAuction has invalid JSON", func() {
@@ -40,6 +55,10 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 		It("should be removed", func() {
 			_, err := etcdClient.Get(key)
 			Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+		})
+
+		It("bumps the pruned counter", func() {
+			Ω(sender.GetCounter("prune-invalid-lrp-start-auction")).Should(Equal(uint64(1)))
 		})
 	})
 
@@ -70,6 +89,10 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 				Ω(noticedOnce.Index).Should(Equal(auction.Index))
 
 				Consistently(startAuctionEvents).ShouldNot(Receive())
+			})
+
+			It("bumps the convergence compare-and-swap counter", func() {
+				Ω(sender.GetCounter("compare-and-swap-lrp-start-auction")).Should(Equal(uint64(1)))
 			})
 		})
 	})
@@ -104,6 +127,10 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 				startedAuctionRoot, err := etcdClient.ListRecursively(shared.LRPStartAuctionSchemaRoot)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(startedAuctionRoot.ChildNodes).Should(HaveLen(2))
+			})
+
+			It("bumps the pruned counter", func() {
+				Ω(sender.GetCounter("prune-claimed-lrp-start-auction")).Should(Equal(uint64(3)))
 			})
 		})
 	})
