@@ -17,6 +17,7 @@ const (
 	pruneInvalidLrpStartCounter = metric.Counter("prune-invalid-lrp-start-auction")
 	pruneClaimedLrpStartCounter = metric.Counter("prune-claimed-lrp-start-auction")
 	casLrpStartCounter          = metric.Counter("compare-and-swap-lrp-start-auction")
+	convergenceDuration         = metric.Duration("lrp-start-auction-convergence-duration")
 )
 
 type compareAndSwappableLRPStartAuction struct {
@@ -26,6 +27,13 @@ type compareAndSwappableLRPStartAuction struct {
 
 func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
 	convergeLrpStartCounter.Increment()
+
+	convergeStart := time.Now()
+
+	// make sure to get funcy here otherwise the time will be precomputed
+	defer func() {
+		convergenceDuration.Send(time.Since(convergeStart))
+	}()
 
 	auctionsToCAS := []compareAndSwappableLRPStartAuction{}
 

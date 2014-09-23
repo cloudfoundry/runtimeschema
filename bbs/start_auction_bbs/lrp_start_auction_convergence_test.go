@@ -42,6 +42,12 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 		Ω(sender.GetCounter("converge-lrp-start-auction")).Should(Equal(uint64(1)))
 	})
 
+	It("reports the duration that it took to converge", func() {
+		reportedDuration := sender.GetValue("lrp-start-auction-convergence-duration")
+		Ω(reportedDuration.Unit).Should(Equal("nanos"))
+		Ω(reportedDuration.Value).ShouldNot(BeZero())
+	})
+
 	Context("when the LRPAuction has invalid JSON", func() {
 		var key = path.Join(shared.LRPStartAuctionSchemaRoot, "process-guid", "1")
 

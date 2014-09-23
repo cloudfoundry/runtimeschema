@@ -2,6 +2,7 @@ package lrp_bbs
 
 import (
 	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/delta_force/delta_force"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
@@ -17,6 +18,7 @@ const (
 	deleteLrpCounter    = metric.Counter("convergence-delete-lrp")
 	casLrpCounter       = metric.Counter("convergence-compare-and-swap-lrp")
 	stopLrpCounter      = metric.Counter("convergence-stop-lrp")
+	convergenceDuration = metric.Duration("lrp-convergence-duration")
 )
 
 type compareAndSwappableDesiredLRP struct {
@@ -26,6 +28,13 @@ type compareAndSwappableDesiredLRP struct {
 
 func (bbs *LRPBBS) ConvergeLRPs() {
 	convergeLrpsCounter.Increment()
+
+	convergeStart := time.Now()
+
+	// make sure to get funcy here otherwise the time will be precomputed
+	defer func() {
+		convergenceDuration.Send(time.Since(convergeStart))
+	}()
 
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingExecutors()
 	if err != nil {

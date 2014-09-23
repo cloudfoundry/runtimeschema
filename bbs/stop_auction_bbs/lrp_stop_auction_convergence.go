@@ -17,6 +17,7 @@ const (
 	pruneInvalidLrpStopCounter = metric.Counter("prune-invalid-lrp-stop-auction")
 	pruneClaimedLrpStopCounter = metric.Counter("prune-claimed-lrp-stop-auction")
 	casLrpStopCounter          = metric.Counter("compare-and-swap-lrp-stop-auction")
+	convergenceDuration        = metric.Duration("lrp-stop-auction-convergence-duration")
 )
 
 type compareAndSwappableLRPStopAuction struct {
@@ -26,6 +27,14 @@ type compareAndSwappableLRPStopAuction struct {
 
 func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
 	convergeLrpStopCounter.Increment()
+
+	convergeStart := time.Now()
+
+	// make sure to get funcy here otherwise the time will be precomputed
+	defer func() {
+		convergenceDuration.Send(time.Since(convergeStart))
+	}()
+
 	auctionsToCAS := []compareAndSwappableLRPStopAuction{}
 
 	err := prune.Prune(bbs.store, shared.LRPStopAuctionSchemaRoot, func(auctionNode storeadapter.StoreNode) (shouldKeep bool) {

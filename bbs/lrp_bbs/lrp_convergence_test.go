@@ -44,6 +44,14 @@ var _ = Describe("LrpConvergence", func() {
 		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(2)))
 	})
 
+	It("reports the duration that it took to converge", func() {
+		bbs.ConvergeLRPs()
+
+		reportedDuration := sender.GetValue("lrp-convergence-duration")
+		Ω(reportedDuration.Unit).Should(Equal("nanos"))
+		Ω(reportedDuration.Value).ShouldNot(BeZero())
+	})
+
 	Describe("pruning LRPs by executor", func() {
 		JustBeforeEach(func() {
 			bbs.ConvergeLRPs()
