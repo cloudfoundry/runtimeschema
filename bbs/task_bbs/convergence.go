@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	convergeTasksCounter = metric.Counter("converge-tasks")
-	casTaskCounter       = metric.Counter("compare-and-swap-task")
-	pruneTaskCounter     = metric.Counter("prune-task")
-	convergenceDuration  = metric.Duration("task-convergence-duration")
+	convergeTaskRunsCounter = metric.Counter("ConvergenceTaskRuns")
+	convergeTaskDuration    = metric.Duration("ConvergenceTaskDuration")
+
+	tasksKickedCounter = metric.Counter("ConvergenceTasksKicked")
+	tasksPrunedCounter = metric.Counter("ConvergenceTasksPruned")
 )
 
 type compareAndSwappableTask struct {
@@ -32,13 +33,13 @@ type compareAndSwappableTask struct {
 // 5. Mark as failed any run-onces that have been in the pending state for > timeToClaim
 // 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration) {
-	convergeTasksCounter.Increment()
+	convergeTaskRunsCounter.Increment()
 
 	convergeStart := time.Now()
 
 	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
-		convergenceDuration.Send(time.Since(convergeStart))
+		convergeTaskDuration.Send(time.Since(convergeStart))
 	}()
 
 	taskLog := bbs.logger.Session("converge-tasks")
@@ -119,10 +120,10 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 		}
 	}
 
-	casTaskCounter.Add(uint64(len(tasksToCAS)))
+	tasksKickedCounter.Add(uint64(len(tasksToCAS)))
 	bbs.batchCompareAndSwapTasks(tasksToCAS)
 
-	pruneTaskCounter.Add(uint64(len(keysToDelete)))
+	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
 }
 

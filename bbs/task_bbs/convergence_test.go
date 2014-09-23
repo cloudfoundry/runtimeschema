@@ -72,11 +72,11 @@ var _ = Describe("Convergence of Tasks", func() {
 		})
 
 		It("bumps the convergence counter", func() {
-			Ω(sender.GetCounter("converge-tasks")).Should(Equal(uint64(1)))
+			Ω(sender.GetCounter("ConvergenceTaskRuns")).Should(Equal(uint64(1)))
 		})
 
 		It("reports the duration that it took to converge", func() {
-			reportedDuration := sender.GetValue("task-convergence-duration")
+			reportedDuration := sender.GetValue("ConvergenceTaskDuration")
 			Ω(reportedDuration.Unit).Should(Equal("nanos"))
 			Ω(reportedDuration.Value).ShouldNot(BeZero())
 		})
@@ -103,7 +103,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("bumps the pruned counter", func() {
-				Ω(sender.GetCounter("prune-task")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceTasksPruned")).Should(Equal(uint64(1)))
 			})
 		})
 
@@ -138,7 +138,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 
@@ -158,7 +158,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -209,7 +209,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -260,7 +260,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -298,7 +298,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 
@@ -352,7 +352,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
 		})

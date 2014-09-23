@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	convergeLrpsCounter = metric.Counter("converge-lrps")
-	deleteLrpCounter    = metric.Counter("convergence-delete-lrp")
-	casLrpCounter       = metric.Counter("convergence-compare-and-swap-lrp")
-	stopLrpCounter      = metric.Counter("convergence-stop-lrp")
-	convergenceDuration = metric.Duration("lrp-convergence-duration")
+	convergeLRPRunsCounter = metric.Counter("ConvergenceLRPRuns")
+	convergeLRPDuration    = metric.Duration("ConvergenceLRPDuration")
+
+	lrpsDeletedCounter = metric.Counter("ConvergenceLRPsDeleted")
+	lrpsKickedCounter  = metric.Counter("ConvergenceLRPsKicked")
+	lrpsStoppedCounter = metric.Counter("ConvergenceLRPsStopped")
 )
 
 type compareAndSwappableDesiredLRP struct {
@@ -27,13 +28,13 @@ type compareAndSwappableDesiredLRP struct {
 }
 
 func (bbs *LRPBBS) ConvergeLRPs() {
-	convergeLrpsCounter.Increment()
+	convergeLRPRunsCounter.Increment()
 
 	convergeStart := time.Now()
 
 	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
-		convergenceDuration.Send(time.Since(convergeStart))
+		convergeLRPDuration.Send(time.Since(convergeStart))
 	}()
 
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingExecutors()
@@ -77,13 +78,13 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 
 	stopLRPInstances := bbs.instancesToStop(knownDesiredProcessGuids, actualsByProcessGuid)
 
-	deleteLrpCounter.Add(uint64(len(keysToDelete)))
+	lrpsDeletedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
 
-	casLrpCounter.Add(uint64(len(desiredLRPsToCAS)))
+	lrpsKickedCounter.Add(uint64(len(desiredLRPsToCAS)))
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
-	stopLrpCounter.Add(uint64(len(stopLRPInstances)))
+	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
 	if err != nil {
 		bbs.logger.Error("failed-to-request-stops", err)

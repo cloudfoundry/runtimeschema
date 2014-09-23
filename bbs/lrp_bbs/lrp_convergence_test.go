@@ -37,17 +37,17 @@ var _ = Describe("LrpConvergence", func() {
 	})
 
 	It("bumps the convergence counter", func() {
-		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(0)))
+		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
 		bbs.ConvergeLRPs()
-		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(1)))
+		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
 		bbs.ConvergeLRPs()
-		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(2)))
+		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
 	})
 
 	It("reports the duration that it took to converge", func() {
 		bbs.ConvergeLRPs()
 
-		reportedDuration := sender.GetValue("lrp-convergence-duration")
+		reportedDuration := sender.GetValue("ConvergenceLRPDuration")
 		Ω(reportedDuration.Unit).Should(Equal("nanos"))
 		Ω(reportedDuration.Value).ShouldNot(BeZero())
 	})
@@ -124,9 +124,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("bumps the deleted LRPs convergence counter", func() {
-				Ω(sender.GetCounter("convergence-delete-lrp")).Should(Equal(uint64(0)))
+				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(0)))
 				bbs.ConvergeLRPs()
-				Ω(sender.GetCounter("convergence-delete-lrp")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
 			})
 		})
 
@@ -159,9 +159,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
 				bbs.ConvergeLRPs()
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
 		})
 
@@ -181,9 +181,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
 				bbs.ConvergeLRPs()
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
 		})
 
@@ -203,9 +203,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
 				bbs.ConvergeLRPs()
-				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
 		})
 	})
@@ -231,9 +231,9 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("bumps the stopped LRPs convergence counter", func() {
-			Ω(sender.GetCounter("convergence-stop-lrp")).Should(Equal(uint64(0)))
+			Ω(sender.GetCounter("ConvergenceLRPsStopped")).Should(Equal(uint64(0)))
 			bbs.ConvergeLRPs()
-			Ω(sender.GetCounter("convergence-stop-lrp")).Should(Equal(uint64(2)))
+			Ω(sender.GetCounter("ConvergenceLRPsStopped")).Should(Equal(uint64(2)))
 		})
 	})
 })

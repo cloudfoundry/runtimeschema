@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	convergeLrpStopCounter     = metric.Counter("converge-lrp-stop-auction")
-	pruneInvalidLrpStopCounter = metric.Counter("prune-invalid-lrp-stop-auction")
-	pruneClaimedLrpStopCounter = metric.Counter("prune-claimed-lrp-stop-auction")
-	casLrpStopCounter          = metric.Counter("compare-and-swap-lrp-stop-auction")
-	convergenceDuration        = metric.Duration("lrp-stop-auction-convergence-duration")
+	convergeLRPStopAuctionRunsCounter = metric.Counter("ConvergenceLRPStopAuctionRuns")
+	convergeLRPStopAuctionDuration    = metric.Duration("ConvergenceLRPStopAuctionDuration")
+
+	lrpStopAuctionsPrunedInvalidCounter = metric.Counter("ConvergenceLRPStopAuctionsPrunedInvalid")
+	lrpStopAuctionsPrunedExpiredCounter = metric.Counter("ConvergenceLRPStopAuctionsPrunedExpired")
+	lrpStopAuctionsKickedCounter        = metric.Counter("ConvergenceLRPStopAuctionsKicked")
 )
 
 type compareAndSwappableLRPStopAuction struct {
@@ -26,13 +27,13 @@ type compareAndSwappableLRPStopAuction struct {
 }
 
 func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
-	convergeLrpStopCounter.Increment()
+	convergeLRPStopAuctionRunsCounter.Increment()
 
 	convergeStart := time.Now()
 
 	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
-		convergenceDuration.Send(time.Since(convergeStart))
+		convergeLRPStopAuctionDuration.Send(time.Since(convergeStart))
 	}()
 
 	auctionsToCAS := []compareAndSwappableLRPStopAuction{}
@@ -44,7 +45,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 				"error":   err.Error(),
 				"payload": auctionNode.Value,
 			})
-			pruneInvalidLrpStopCounter.Increment()
+			lrpStopAuctionsPrunedInvalidCounter.Increment()
 			return false
 		}
 
@@ -70,7 +71,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 					"auction":             auction,
 					"expiration-duration": expireClaimedDuration,
 				})
-				pruneClaimedLrpStopCounter.Increment()
+				lrpStopAuctionsPrunedExpiredCounter.Increment()
 				return false
 			}
 		}
@@ -83,7 +84,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 		return
 	}
 
-	casLrpStopCounter.Add(uint64(len(auctionsToCAS)))
+	lrpStopAuctionsKickedCounter.Add(uint64(len(auctionsToCAS)))
 	bbs.batchCompareAndSwapLRPStopAuctions(auctionsToCAS)
 }
 

@@ -39,11 +39,11 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 	})
 
 	It("bumps the convergence counter", func() {
-		Ω(sender.GetCounter("converge-lrp-start-auction")).Should(Equal(uint64(1)))
+		Ω(sender.GetCounter("ConvergenceLRPStartAuctionRuns")).Should(Equal(uint64(1)))
 	})
 
 	It("reports the duration that it took to converge", func() {
-		reportedDuration := sender.GetValue("lrp-start-auction-convergence-duration")
+		reportedDuration := sender.GetValue("ConvergenceLRPStartAuctionDuration")
 		Ω(reportedDuration.Unit).Should(Equal("nanos"))
 		Ω(reportedDuration.Value).ShouldNot(BeZero())
 	})
@@ -64,7 +64,7 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 		})
 
 		It("bumps the pruned counter", func() {
-			Ω(sender.GetCounter("prune-invalid-lrp-start-auction")).Should(Equal(uint64(1)))
+			Ω(sender.GetCounter("ConvergenceLRPStartAuctionsPrunedInvalid")).Should(Equal(uint64(1)))
 		})
 	})
 
@@ -98,7 +98,7 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 			})
 
 			It("bumps the convergence compare-and-swap counter", func() {
-				Ω(sender.GetCounter("compare-and-swap-lrp-start-auction")).Should(Equal(uint64(1)))
+				Ω(sender.GetCounter("ConvergenceLRPStartAuctionsKicked")).Should(Equal(uint64(1)))
 			})
 		})
 	})
@@ -136,7 +136,7 @@ var _ = Describe("LRPStartAuction Convergence", func() {
 			})
 
 			It("bumps the pruned counter", func() {
-				Ω(sender.GetCounter("prune-claimed-lrp-start-auction")).Should(Equal(uint64(3)))
+				Ω(sender.GetCounter("ConvergenceLRPStartAuctionsPrunedExpired")).Should(Equal(uint64(3)))
 			})
 		})
 	})
