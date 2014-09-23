@@ -9,6 +9,8 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
+	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
@@ -18,15 +20,23 @@ import (
 )
 
 var _ = Describe("Convergence of Tasks", func() {
-	var bbs *TaskBBS
-	var task models.Task
-	var timeToClaimInSeconds, convergenceIntervalInSeconds uint64
-	var timeToClaim, convergenceInterval time.Duration
-	var timeProvider *faketimeprovider.FakeTimeProvider
-	var err error
-	var servicesBBS *services_bbs.ServicesBBS
+	var (
+		sender *fake.FakeMetricSender
+
+		bbs                              *TaskBBS
+		task                             models.Task
+		timeToClaimInSeconds             uint64
+		convergenceIntervalInSeconds     uint64
+		timeToClaim, convergenceInterval time.Duration
+		timeProvider                     *faketimeprovider.FakeTimeProvider
+		err                              error
+		servicesBBS                      *services_bbs.ServicesBBS
+	)
 
 	BeforeEach(func() {
+		sender = fake.NewFakeMetricSender()
+		metrics.Initialize(sender)
+
 		err = nil
 
 		timeToClaimInSeconds = 30
@@ -54,14 +64,22 @@ var _ = Describe("Convergence of Tasks", func() {
 		var desiredEvents <-chan models.Task
 		var completedEvents <-chan models.Task
 
-		commenceWatching := func() {
+		JustBeforeEach(func() {
 			desiredEvents, _, _ = bbs.WatchForDesiredTask()
 			completedEvents, _, _ = bbs.WatchForCompletedTask()
-		}
+
+			bbs.ConvergeTask(timeToClaim, convergenceInterval)
+		})
+
+		It("bumps the convergence counter", func() {
+			Ω(sender.GetCounter("converge-tasks")).Should(Equal(uint64(1)))
+		})
 
 		Context("when a Task is malformed", func() {
-			It("should delete it", func() {
-				nodeKey := path.Join(shared.TaskSchemaRoot, "some-guid")
+			var nodeKey string
+
+			BeforeEach(func() {
+				nodeKey = path.Join(shared.TaskSchemaRoot, "some-guid")
 
 				err := etcdClient.Create(storeadapter.StoreNode{
 					Key:   nodeKey,
@@ -71,11 +89,15 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				_, err = etcdClient.Get(nodeKey)
 				Ω(err).ShouldNot(HaveOccurred())
+			})
 
-				bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
+			It("should delete it", func() {
 				_, err = etcdClient.Get(nodeKey)
 				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+			})
+
+			It("bumps the pruned counter", func() {
+				Ω(sender.GetCounter("prune-task")).Should(Equal(uint64(1)))
 			})
 		})
 
@@ -88,19 +110,17 @@ var _ = Describe("Convergence of Tasks", func() {
 			Context("when the Task has *not* been pending for too long", func() {
 				It("should not kick the Task", func() {
 					timeProvider.IncrementBySeconds(1)
-					commenceWatching()
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
 
 					Consistently(desiredEvents).ShouldNot(Receive())
 				})
 			})
 
 			Context("when the Task has been pending for longer than the convergence interval", func() {
-				It("should kick the Task", func() {
+				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
-					commenceWatching()
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
+				})
 
+				It("should kick the Task", func() {
 					var noticedOnce models.Task
 					Eventually(desiredEvents).Should(Receive(&noticedOnce))
 
@@ -108,14 +128,18 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.State).Should(Equal(models.TaskStatePending))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+				})
 			})
 
 			Context("when the Task has been pending for longer than the timeToClaim", func() {
-				It("should mark the Task as completed & failed", func() {
+				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(timeToClaimInSeconds + 1)
-					commenceWatching()
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
+				})
 
+				It("should mark the Task as completed & failed", func() {
 					Consistently(desiredEvents).ShouldNot(Receive())
 
 					var noticedOnce models.Task
@@ -123,6 +147,10 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(ContainSubstring("time limit"))
+				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -149,10 +177,6 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("should do nothing", func() {
-				commenceWatching()
-
-				bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
 				Consistently(desiredEvents).ShouldNot(Receive())
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
@@ -161,14 +185,11 @@ var _ = Describe("Convergence of Tasks", func() {
 				BeforeEach(func() {
 					heartbeat.Signal(os.Interrupt)
 					Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
+
+					timeProvider.IncrementBySeconds(1)
 				})
 
 				It("should mark the Task as completed & failed", func() {
-					timeProvider.IncrementBySeconds(1)
-					commenceWatching()
-
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
 					Consistently(desiredEvents).ShouldNot(Receive())
 
 					var noticedOnce models.Task
@@ -177,6 +198,10 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(ContainSubstring("executor"))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -204,10 +229,6 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("should do nothing", func() {
-				commenceWatching()
-
-				bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
 				Consistently(desiredEvents).ShouldNot(Receive())
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
@@ -215,14 +236,11 @@ var _ = Describe("Convergence of Tasks", func() {
 			Context("when the associated executor is missing", func() {
 				BeforeEach(func() {
 					heartbeater.Signal(os.Interrupt)
+
+					timeProvider.IncrementBySeconds(1)
 				})
 
 				It("should mark the Task as completed & failed", func() {
-					timeProvider.IncrementBySeconds(1)
-					commenceWatching()
-
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
 					Consistently(desiredEvents).ShouldNot(Receive())
 
 					var noticedOnce models.Task
@@ -231,6 +249,10 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(ContainSubstring("executor"))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
 				})
 			})
 		})
@@ -251,12 +273,11 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			Context("when the task has been completed for > the convergence interval", func() {
-				It("should kick the Task", func() {
+				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
-					commenceWatching()
+				})
 
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
+				It("should kick the Task", func() {
 					Consistently(desiredEvents).ShouldNot(Receive())
 
 					var noticedOnce models.Task
@@ -267,15 +288,18 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.Result).Should(Equal("a magical result"))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
+				})
 			})
 
 			Context("when the task has been completed for < the convergence interval", func() {
-				It("should kick the Task", func() {
+				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(1)
-					commenceWatching()
+				})
 
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
+				It("should NOT kick the Task", func() {
 					Consistently(desiredEvents).ShouldNot(Receive())
 					Consistently(completedEvents).ShouldNot(Receive())
 				})
@@ -301,27 +325,26 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("should do nothing", func() {
-				commenceWatching()
-
-				bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
 				Consistently(desiredEvents).ShouldNot(Receive())
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
 
 			Context("when the run once has been resolving for > 30 seconds", func() {
-				It("should put the Task back into the completed state", func() {
+				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds)
-					commenceWatching()
+				})
 
-					bbs.ConvergeTask(timeToClaim, convergenceInterval)
-
+				It("should put the Task back into the completed state", func() {
 					var noticedOnce models.Task
 					Eventually(completedEvents).Should(Receive(&noticedOnce))
 
 					Ω(noticedOnce.Guid).Should(Equal(task.Guid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				})
+
+				It("bumps the compare-and-swap counter", func() {
+					Ω(sender.GetCounter("compare-and-swap-task")).Should(Equal(uint64(1)))
 				})
 			})
 		})

@@ -32,6 +32,7 @@ type compareAndSwappableTask struct {
 // 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration) {
 	convergeTasksCounter.Increment()
+
 	taskLog := bbs.logger.Session("converge-tasks")
 
 	taskState, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
