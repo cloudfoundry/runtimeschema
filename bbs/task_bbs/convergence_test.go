@@ -75,6 +75,12 @@ var _ = Describe("Convergence of Tasks", func() {
 			Ω(sender.GetCounter("converge-tasks")).Should(Equal(uint64(1)))
 		})
 
+		It("reports the duration that it took to converge", func() {
+			reportedDuration := sender.GetValue("task-convergence-duration")
+			Ω(reportedDuration.Unit).Should(Equal("nanos"))
+			Ω(reportedDuration.Value).ShouldNot(BeZero())
+		})
+
 		Context("when a Task is malformed", func() {
 			var nodeKey string
 
@@ -108,9 +114,11 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			Context("when the Task has *not* been pending for too long", func() {
-				It("should not kick the Task", func() {
-					timeProvider.IncrementBySeconds(1)
+				BeforeEach(func() {
+					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds - 1)
+				})
 
+				It("should not kick the Task", func() {
 					Consistently(desiredEvents).ShouldNot(Receive())
 				})
 			})

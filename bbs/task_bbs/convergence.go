@@ -15,6 +15,7 @@ const (
 	convergeTasksCounter = metric.Counter("converge-tasks")
 	casTaskCounter       = metric.Counter("compare-and-swap-task")
 	pruneTaskCounter     = metric.Counter("prune-task")
+	convergenceDuration  = metric.Duration("task-convergence-duration")
 )
 
 type compareAndSwappableTask struct {
@@ -32,6 +33,13 @@ type compareAndSwappableTask struct {
 // 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration) {
 	convergeTasksCounter.Increment()
+
+	convergeStart := time.Now()
+
+	// make sure to get funcy here otherwise the time will be precomputed
+	defer func() {
+		convergenceDuration.Send(time.Since(convergeStart))
+	}()
 
 	taskLog := bbs.logger.Session("converge-tasks")
 
