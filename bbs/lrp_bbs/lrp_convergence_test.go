@@ -3,6 +3,8 @@ package lrp_bbs_test
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/dropsonde/autowire/metrics"
+	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
@@ -10,10 +12,18 @@ import (
 )
 
 var _ = Describe("LrpConvergence", func() {
-	var executorID string
+	var (
+		sender *fake.FakeMetricSender
+
+		executorID string
+	)
+
 	processGuid := "process-guid"
 
 	BeforeEach(func() {
+		sender = fake.NewFakeMetricSender()
+		metrics.Initialize(sender)
+
 		executorID = "the-executor-id"
 		etcdClient.Create(storeadapter.StoreNode{
 			Key:   shared.ExecutorSchemaPath(executorID),
@@ -24,6 +34,14 @@ var _ = Describe("LrpConvergence", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", executorID, 1)
 		Ω(err).ShouldNot(HaveOccurred())
+	})
+
+	It("bumps the convergence counter", func() {
+		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(0)))
+		bbs.ConvergeLRPs()
+		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(1)))
+		bbs.ConvergeLRPs()
+		Ω(sender.GetCounter("converge-lrps")).Should(Equal(uint64(2)))
 	})
 
 	Describe("pruning LRPs by executor", func() {
@@ -96,6 +114,12 @@ var _ = Describe("LrpConvergence", func() {
 				_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid("bogus-desired"))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
+
+			It("bumps the deleted LRPs convergence counter", func() {
+				Ω(sender.GetCounter("convergence-delete-lrp")).Should(Equal(uint64(0)))
+				bbs.ConvergeLRPs()
+				Ω(sender.GetCounter("convergence-delete-lrp")).Should(Equal(uint64(1)))
+			})
 		})
 
 		Context("when the desired LRP has all its actual LRPs, and there are no extras", func() {
@@ -125,6 +149,12 @@ var _ = Describe("LrpConvergence", func() {
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
 				Ω(*noticedOnce.After).Should(Equal(desiredLRP))
 			})
+
+			It("bumps the compare-and-swapped LRPs convergence counter", func() {
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				bbs.ConvergeLRPs()
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
+			})
 		})
 
 		Context("when there are extra actual LRPs", func() {
@@ -141,6 +171,12 @@ var _ = Describe("LrpConvergence", func() {
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
 				Ω(*noticedOnce.After).Should(Equal(desiredLRP))
 			})
+
+			It("bumps the compare-and-swapped LRPs convergence counter", func() {
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				bbs.ConvergeLRPs()
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
+			})
 		})
 
 		Context("when there are duplicate actual LRPs", func() {
@@ -156,6 +192,12 @@ var _ = Describe("LrpConvergence", func() {
 				var noticedOnce models.DesiredLRPChange
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
 				Ω(*noticedOnce.After).Should(Equal(desiredLRP))
+			})
+
+			It("bumps the compare-and-swapped LRPs convergence counter", func() {
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(0)))
+				bbs.ConvergeLRPs()
+				Ω(sender.GetCounter("convergence-compare-and-swap-lrp")).Should(Equal(uint64(1)))
 			})
 		})
 	})
@@ -178,6 +220,12 @@ var _ = Describe("LrpConvergence", func() {
 				InstanceGuid: "instance-guid-2",
 				Index:        1,
 			}))
+		})
+
+		It("bumps the stopped LRPs convergence counter", func() {
+			Ω(sender.GetCounter("convergence-stop-lrp")).Should(Equal(uint64(0)))
+			bbs.ConvergeLRPs()
+			Ω(sender.GetCounter("convergence-stop-lrp")).Should(Equal(uint64(2)))
 		})
 	})
 })
