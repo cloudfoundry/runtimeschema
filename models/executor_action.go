@@ -18,7 +18,6 @@ type DownloadAction struct {
 type UploadAction struct {
 	To       string `json:"to"`
 	From     string `json:"from"`
-	Compress bool   `json:"compress"`
 }
 
 type RunAction struct {
