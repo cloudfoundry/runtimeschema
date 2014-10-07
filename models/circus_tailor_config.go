@@ -17,27 +17,30 @@ type CircusTailorConfig struct {
 	appDir         *string
 	ExecutablePath string
 
-	buildArtifactsCacheDir *string
-	outputDropletDir       *string
-	outputMetadataDir      *string
-	buildpackOrder         *string
+	buildArtifactsCacheDir    *string
+	outputDropletDir          *string
+	outputMetadataDir         *string
+	outputBuildArtifactsCache *string
+	buildpackOrder            *string
 }
 
 const (
-	circusTailorAppDirFlag                 = "appDir"
-	circusTailorOutputDropletDirFlag       = "outputDropletDir"
-	circusTailorOutputMetadataDirFlag      = "outputMetadataDir"
-	circusTailorBuildpacksDirFlag          = "buildpacksDir"
-	circusTailorBuildArtifactsCacheDirFlag = "buildArtifactsCacheDir"
-	circusTailorBuildpackOrderFlag         = "buildpackOrder"
+	circusTailorAppDirFlag                    = "appDir"
+	circusTailorOutputDropletDirFlag          = "outputDropletDir"
+	circusTailorOutputMetadataDirFlag         = "outputMetadataDir"
+	circusTailorOutputBuildArtifactsCacheFlag = "outputBuildArtifactsCache"
+	circusTailorBuildpacksDirFlag             = "buildpacksDir"
+	circusTailorBuildArtifactsCacheDirFlag    = "buildArtifactsCacheDir"
+	circusTailorBuildpackOrderFlag            = "buildpackOrder"
 )
 
 var circusTailorDefaults = map[string]string{
-	circusTailorAppDirFlag:                 "/app",
-	circusTailorOutputDropletDirFlag:       "/tmp/droplet",
-	circusTailorOutputMetadataDirFlag:      "/tmp/result",
-	circusTailorBuildpacksDirFlag:          "/tmp/buildpacks",
-	circusTailorBuildArtifactsCacheDirFlag: "/tmp/cache",
+	circusTailorAppDirFlag:                    "/app",
+	circusTailorOutputDropletDirFlag:          "/tmp/droplet",
+	circusTailorOutputMetadataDirFlag:         "/tmp/result",
+	circusTailorOutputBuildArtifactsCacheFlag: "/tmp/output-cache",
+	circusTailorBuildpacksDirFlag:             "/tmp/buildpacks",
+	circusTailorBuildArtifactsCacheDirFlag:    "/tmp/cache",
 }
 
 func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
@@ -61,6 +64,12 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 		"directory in which to write the app metadata",
 	)
 
+	outputBuildArtifactsCache := flagSet.String(
+		circusTailorOutputBuildArtifactsCacheFlag,
+		circusTailorDefaults[circusTailorOutputBuildArtifactsCacheFlag],
+		"file where compressed contents of new cached build artifacts should be written",
+	)
+
 	buildpacksDir := flagSet.String(
 		circusTailorBuildpacksDirFlag,
 		circusTailorDefaults[circusTailorBuildpacksDirFlag],
@@ -70,7 +79,7 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 	buildArtifactsCacheDir := flagSet.String(
 		circusTailorBuildArtifactsCacheDirFlag,
 		circusTailorDefaults[circusTailorBuildArtifactsCacheDirFlag],
-		"directory to store cached artifacts to buildpacks",
+		"directory where previous cached build artifacts should be extracted",
 	)
 
 	buildpackOrder := flagSet.String(
@@ -82,21 +91,23 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 	return CircusTailorConfig{
 		FlagSet: flagSet,
 
-		ExecutablePath:         "/tmp/circus/tailor",
-		appDir:                 appDir,
-		outputDropletDir:       outputDropletDir,
-		outputMetadataDir:      outputMetadataDir,
-		buildpacksDir:          buildpacksDir,
-		buildArtifactsCacheDir: buildArtifactsCacheDir,
-		buildpackOrder:         buildpackOrder,
+		ExecutablePath:            "/tmp/circus/tailor",
+		appDir:                    appDir,
+		outputDropletDir:          outputDropletDir,
+		outputMetadataDir:         outputMetadataDir,
+		outputBuildArtifactsCache: outputBuildArtifactsCache,
+		buildpacksDir:             buildpacksDir,
+		buildArtifactsCacheDir:    buildArtifactsCacheDir,
+		buildpackOrder:            buildpackOrder,
 
 		values: map[string]*string{
-			circusTailorAppDirFlag:                 appDir,
-			circusTailorOutputDropletDirFlag:       outputDropletDir,
-			circusTailorOutputMetadataDirFlag:      outputMetadataDir,
-			circusTailorBuildpacksDirFlag:          buildpacksDir,
-			circusTailorBuildArtifactsCacheDirFlag: buildArtifactsCacheDir,
-			circusTailorBuildpackOrderFlag:         buildpackOrder,
+			circusTailorAppDirFlag:                    appDir,
+			circusTailorOutputDropletDirFlag:          outputDropletDir,
+			circusTailorOutputMetadataDirFlag:         outputMetadataDir,
+			circusTailorOutputBuildArtifactsCacheFlag: outputBuildArtifactsCache,
+			circusTailorBuildpacksDirFlag:             buildpacksDir,
+			circusTailorBuildArtifactsCacheDirFlag:    buildArtifactsCacheDir,
+			circusTailorBuildpackOrderFlag:            buildpackOrder,
 		},
 	}
 }
@@ -167,4 +178,8 @@ func (s CircusTailorConfig) OutputMetadataDir() string {
 
 func (s CircusTailorConfig) OutputMetadataPath() string {
 	return path.Join(s.OutputMetadataDir(), "result.json")
+}
+
+func (s CircusTailorConfig) OutputBuildArtifactsCache() string {
+	return *s.outputBuildArtifactsCache
 }

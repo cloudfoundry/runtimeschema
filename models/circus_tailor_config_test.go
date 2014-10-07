@@ -22,6 +22,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildArtifactsCacheDir=/tmp/cache",
 				"-outputDropletDir=/tmp/droplet",
 				"-outputMetadataDir=/tmp/result",
+				"-outputBuildArtifactsCache=/tmp/output-cache",
 			}
 
 			Ω(tailorConfig.Path()).Should(Equal("/tmp/circus/tailor"))
@@ -36,6 +37,7 @@ var _ = Describe("CircusTailorConfig", func() {
 			tailorConfig.Set("outputMetadataDir", "/some/result/dir")
 			tailorConfig.Set("buildpacksDir", "/some/buildpacks/dir")
 			tailorConfig.Set("buildArtifactsCacheDir", "/some/cache/dir")
+			tailorConfig.Set("outputBuildArtifactsCache", "/some/cache-file")
 		})
 
 		It("generates a script for running its tailor", func() {
@@ -46,6 +48,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildArtifactsCacheDir=/some/cache/dir",
 				"-outputDropletDir=/some/droplet/dir",
 				"-outputMetadataDir=/some/result/dir",
+				"-outputBuildArtifactsCache=/some/cache-file",
 			}
 
 			Ω(tailorConfig.Path()).Should(Equal("/tmp/circus/tailor"))
