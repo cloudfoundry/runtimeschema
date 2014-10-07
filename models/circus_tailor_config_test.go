@@ -20,7 +20,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildpackOrder=ocaml-buildpack,haskell-buildpack,bash-buildpack",
 				"-buildpacksDir=/tmp/buildpacks",
 				"-buildArtifactsCacheDir=/tmp/cache",
-				"-outputDropletDir=/tmp/droplet",
+				"-outputDroplet=/tmp/droplet",
 				"-outputMetadataDir=/tmp/result",
 				"-outputBuildArtifactsCache=/tmp/output-cache",
 			}
@@ -33,7 +33,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	Context("with overrides", func() {
 		BeforeEach(func() {
 			tailorConfig.Set("appDir", "/some/app/dir")
-			tailorConfig.Set("outputDropletDir", "/some/droplet/dir")
+			tailorConfig.Set("outputDroplet", "/some/droplet")
 			tailorConfig.Set("outputMetadataDir", "/some/result/dir")
 			tailorConfig.Set("buildpacksDir", "/some/buildpacks/dir")
 			tailorConfig.Set("buildArtifactsCacheDir", "/some/cache/dir")
@@ -46,7 +46,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildpackOrder=ocaml-buildpack,haskell-buildpack,bash-buildpack",
 				"-buildpacksDir=/some/buildpacks/dir",
 				"-buildArtifactsCacheDir=/some/cache/dir",
-				"-outputDropletDir=/some/droplet/dir",
+				"-outputDroplet=/some/droplet",
 				"-outputMetadataDir=/some/result/dir",
 				"-outputBuildArtifactsCache=/some/cache-file",
 			}

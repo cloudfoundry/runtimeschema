@@ -18,7 +18,7 @@ type CircusTailorConfig struct {
 	ExecutablePath string
 
 	buildArtifactsCacheDir    *string
-	outputDropletDir          *string
+	outputDroplet             *string
 	outputMetadataDir         *string
 	outputBuildArtifactsCache *string
 	buildpackOrder            *string
@@ -26,7 +26,7 @@ type CircusTailorConfig struct {
 
 const (
 	circusTailorAppDirFlag                    = "appDir"
-	circusTailorOutputDropletDirFlag          = "outputDropletDir"
+	circusTailorOutputDropletFlag             = "outputDroplet"
 	circusTailorOutputMetadataDirFlag         = "outputMetadataDir"
 	circusTailorOutputBuildArtifactsCacheFlag = "outputBuildArtifactsCache"
 	circusTailorBuildpacksDirFlag             = "buildpacksDir"
@@ -36,7 +36,7 @@ const (
 
 var circusTailorDefaults = map[string]string{
 	circusTailorAppDirFlag:                    "/app",
-	circusTailorOutputDropletDirFlag:          "/tmp/droplet",
+	circusTailorOutputDropletFlag:             "/tmp/droplet",
 	circusTailorOutputMetadataDirFlag:         "/tmp/result",
 	circusTailorOutputBuildArtifactsCacheFlag: "/tmp/output-cache",
 	circusTailorBuildpacksDirFlag:             "/tmp/buildpacks",
@@ -52,10 +52,10 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 		"directory containing raw app bits",
 	)
 
-	outputDropletDir := flagSet.String(
-		circusTailorOutputDropletDirFlag,
-		circusTailorDefaults[circusTailorOutputDropletDirFlag],
-		"directory in which to write the droplet",
+	outputDroplet := flagSet.String(
+		circusTailorOutputDropletFlag,
+		circusTailorDefaults[circusTailorOutputDropletFlag],
+		"file where compressed droplet should be written",
 	)
 
 	outputMetadataDir := flagSet.String(
@@ -93,7 +93,7 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 
 		ExecutablePath:            "/tmp/circus/tailor",
 		appDir:                    appDir,
-		outputDropletDir:          outputDropletDir,
+		outputDroplet:             outputDroplet,
 		outputMetadataDir:         outputMetadataDir,
 		outputBuildArtifactsCache: outputBuildArtifactsCache,
 		buildpacksDir:             buildpacksDir,
@@ -102,7 +102,7 @@ func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
 
 		values: map[string]*string{
 			circusTailorAppDirFlag:                    appDir,
-			circusTailorOutputDropletDirFlag:          outputDropletDir,
+			circusTailorOutputDropletFlag:             outputDroplet,
 			circusTailorOutputMetadataDirFlag:         outputMetadataDir,
 			circusTailorOutputBuildArtifactsCacheFlag: outputBuildArtifactsCache,
 			circusTailorBuildpacksDirFlag:             buildpacksDir,
@@ -168,8 +168,8 @@ func (s CircusTailorConfig) BuildArtifactsCacheDir() string {
 	return *s.buildArtifactsCacheDir
 }
 
-func (s CircusTailorConfig) OutputDropletDir() string {
-	return *s.outputDropletDir
+func (s CircusTailorConfig) OutputDroplet() string {
+	return *s.outputDroplet
 }
 
 func (s CircusTailorConfig) OutputMetadataDir() string {
