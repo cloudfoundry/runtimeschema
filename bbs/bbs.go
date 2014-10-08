@@ -136,6 +136,9 @@ type RouteEmitterBBS interface {
 	GetRunningActualLRPs() ([]models.ActualLRP, error)
 	GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
 	GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
+
+	//lock
+	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner
 }
 
 type VeritasBBS interface {
