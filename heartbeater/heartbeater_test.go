@@ -99,7 +99,7 @@ var _ = Describe("Heartbeater", func() {
 		var heartBeat ifrit.Process
 
 		BeforeEach(func() {
-			heartBeat = ifrit.Envoke(heart)
+			heartBeat = ifrit.Invoke(heart)
 			err := etcdClient.Delete(heartbeatKey)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -138,7 +138,7 @@ var _ = Describe("Heartbeater", func() {
 			})
 		})
 
-		Describe("when someone else acquires the lock first", func() {
+		Describe("when someone else acquires the lock after us", func() {
 			var doppelNode storeadapter.StoreNode
 
 			BeforeEach(func() {
@@ -200,9 +200,9 @@ var _ = Describe("Heartbeater", func() {
 		})
 	})
 
-	Context("when someone else already has the lock", func() {
+	Context("when someone else already has the lock first", func() {
 		var doppelNode storeadapter.StoreNode
-		var heartbeatChan chan ifrit.Process
+		var heartbeat ifrit.Process
 
 		BeforeEach(func() {
 			doppelNode = storeadapter.StoreNode{
@@ -215,24 +215,29 @@ var _ = Describe("Heartbeater", func() {
 		})
 
 		JustBeforeEach(func() {
-			heartbeatChan = make(chan ifrit.Process)
-			go func() {
-				heartbeatChan <- ifrit.Envoke(heart)
-			}()
+			heartbeat = ifrit.Background(heart)
 		})
 
 		AfterEach(func() {
 			err := etcdClient.Delete(heartbeatKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			heartBeat := <-heartbeatChan
-			heartBeat.Signal(os.Kill)
-			Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+			heartbeat.Signal(os.Kill)
+			Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
 		})
 
 		Context("and the other maintainer does not go away", func() {
 			It("does not overwrite the existing value", func() {
 				Consistently(matchtHeartbeatNode(doppelNode), 2*heartbeatInterval).Should(BeNil())
+			})
+
+			It("exits when signalled", func() {
+				heartbeat.Signal(os.Kill)
+				Eventually(heartbeat.Wait()).Should(Receive())
+			})
+
+			It("never signals ready", func() {
+				Consistently(heartbeat.Ready()).ShouldNot(Receive())
 			})
 		})
 

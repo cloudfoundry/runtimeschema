@@ -31,3 +31,7 @@ func (bbs *LockBBS) NewAuctioneerLock(auctioneerID string, interval time.Duratio
 func (bbs *LockBBS) NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner {
 	return heartbeater.New(bbs.store, shared.LockSchemaPath("converge_lock"), convergerID, interval, bbs.logger)
 }
+
+func (bbs *LockBBS) NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner {
+	return heartbeater.New(bbs.store, shared.LockSchemaPath("nsync_bulker_lock"), bulkerID, interval, bbs.logger)
+}

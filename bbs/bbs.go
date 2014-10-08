@@ -76,6 +76,9 @@ type NsyncBBS interface {
 	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	ChangeDesiredLRP(change models.DesiredLRPChange) error
 	BumpFreshness(domain string, ttl time.Duration) error
+
+	//lock
+	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
 }
 
 type AuctioneerBBS interface {

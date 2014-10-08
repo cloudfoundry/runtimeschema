@@ -55,7 +55,11 @@ func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 				break
 			}
 			logger.Info("create-failed", lager.Data{"error": err.Error()})
-			time.Sleep(h.Interval)
+			select {
+			case <-signals:
+				return nil
+			case <-time.After(h.Interval):
+			}
 		}
 	}
 
