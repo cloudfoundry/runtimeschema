@@ -14,7 +14,7 @@ type FakeRouteEmitterBBS struct {
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns struct {
+	watchForDesiredLRPChangesReturns     struct {
 		result1 <-chan models.DesiredLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -22,7 +22,7 @@ type FakeRouteEmitterBBS struct {
 	WatchForActualLRPChangesStub        func() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 	watchForActualLRPChangesMutex       sync.RWMutex
 	watchForActualLRPChangesArgsForCall []struct{}
-	watchForActualLRPChangesReturns struct {
+	watchForActualLRPChangesReturns     struct {
 		result1 <-chan models.ActualLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -30,14 +30,14 @@ type FakeRouteEmitterBBS struct {
 	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
-	getAllDesiredLRPsReturns struct {
+	getAllDesiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	GetRunningActualLRPsStub        func() ([]models.ActualLRP, error)
 	getRunningActualLRPsMutex       sync.RWMutex
 	getRunningActualLRPsArgsForCall []struct{}
-	getRunningActualLRPsReturns struct {
+	getRunningActualLRPsReturns     struct {
 		result1 []models.ActualLRP
 		result2 error
 	}

@@ -25,11 +25,11 @@ func (name Duration) Send(duration time.Duration) {
 type Mebibytes string
 
 func (name Mebibytes) Send(mebibytes int) {
-  metrics.SendValue(string(name), float64(mebibytes), "MiB")
+	metrics.SendValue(string(name), float64(mebibytes), "MiB")
 }
 
 type Metric string
 
 func (name Metric) Send(value int) {
-  metrics.SendValue(string(name), float64(value), "Metric")
+	metrics.SendValue(string(name), float64(value), "Metric")
 }
