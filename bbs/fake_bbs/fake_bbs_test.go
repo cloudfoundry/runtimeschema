@@ -31,7 +31,7 @@ var _ = Describe("FakeBbs", func() {
 		Ω(metricsBBS).ShouldNot(BeNil())
 
 		var routeEmitterBBS bbs.RouteEmitterBBS
-		routeEmitterBBS = NewFakeRouteEmitterBBS()
+		routeEmitterBBS = new(FakeRouteEmitterBBS)
 		Ω(routeEmitterBBS).ShouldNot(BeNil())
 
 		var nsyncBBS bbs.NsyncBBS
