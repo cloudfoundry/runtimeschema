@@ -79,6 +79,7 @@ type NsyncBBS interface {
 
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
+	NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner
 }
 
 type AuctioneerBBS interface {

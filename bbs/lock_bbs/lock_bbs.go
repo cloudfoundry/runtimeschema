@@ -36,6 +36,10 @@ func (bbs *LockBBS) NewNsyncBulkerLock(bulkerID string, interval time.Duration) 
 	return heartbeater.New(bbs.store, shared.LockSchemaPath("nsync_bulker_lock"), bulkerID, interval, bbs.logger)
 }
 
+func (bbs *LockBBS) NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner {
+	return heartbeater.New(bbs.store, shared.LockSchemaPath("nsync_listener_lock"), listenerID, interval, bbs.logger)
+}
+
 func (bbs *LockBBS) NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner {
 	return heartbeater.New(bbs.store, shared.LockSchemaPath("route_emitter_lock"), emitterID, interval, bbs.logger)
 }

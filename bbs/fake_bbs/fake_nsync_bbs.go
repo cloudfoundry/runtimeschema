@@ -62,6 +62,15 @@ type FakeNsyncBBS struct {
 	newNsyncBulkerLockReturns struct {
 		result1 ifrit.Runner
 	}
+	NewNsyncListenerLockStub        func(listenerID string, interval time.Duration) ifrit.Runner
+	newNsyncListenerLockMutex       sync.RWMutex
+	newNsyncListenerLockArgsForCall []struct {
+		listenerID string
+		interval   time.Duration
+	}
+	newNsyncListenerLockReturns struct {
+		result1 ifrit.Runner
+	}
 }
 
 func (fake *FakeNsyncBBS) DesireLRP(arg1 models.DesiredLRP) error {
@@ -255,6 +264,39 @@ func (fake *FakeNsyncBBS) NewNsyncBulkerLockArgsForCall(i int) (string, time.Dur
 func (fake *FakeNsyncBBS) NewNsyncBulkerLockReturns(result1 ifrit.Runner) {
 	fake.NewNsyncBulkerLockStub = nil
 	fake.newNsyncBulkerLockReturns = struct {
+		result1 ifrit.Runner
+	}{result1}
+}
+
+func (fake *FakeNsyncBBS) NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner {
+	fake.newNsyncListenerLockMutex.Lock()
+	fake.newNsyncListenerLockArgsForCall = append(fake.newNsyncListenerLockArgsForCall, struct {
+		listenerID string
+		interval   time.Duration
+	}{listenerID, interval})
+	fake.newNsyncListenerLockMutex.Unlock()
+	if fake.NewNsyncListenerLockStub != nil {
+		return fake.NewNsyncListenerLockStub(listenerID, interval)
+	} else {
+		return fake.newNsyncListenerLockReturns.result1
+	}
+}
+
+func (fake *FakeNsyncBBS) NewNsyncListenerLockCallCount() int {
+	fake.newNsyncListenerLockMutex.RLock()
+	defer fake.newNsyncListenerLockMutex.RUnlock()
+	return len(fake.newNsyncListenerLockArgsForCall)
+}
+
+func (fake *FakeNsyncBBS) NewNsyncListenerLockArgsForCall(i int) (string, time.Duration) {
+	fake.newNsyncListenerLockMutex.RLock()
+	defer fake.newNsyncListenerLockMutex.RUnlock()
+	return fake.newNsyncListenerLockArgsForCall[i].listenerID, fake.newNsyncListenerLockArgsForCall[i].interval
+}
+
+func (fake *FakeNsyncBBS) NewNsyncListenerLockReturns(result1 ifrit.Runner) {
+	fake.NewNsyncListenerLockStub = nil
+	fake.newNsyncListenerLockReturns = struct {
 		result1 ifrit.Runner
 	}{result1}
 }
