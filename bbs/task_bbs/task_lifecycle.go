@@ -136,6 +136,31 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	})
 }
 
+// The stager calls this when it has claimed a completed task but failed to deliver the resolution
+// status to the appropriate parties.  This function will move the task back to the completed state so
+// it can be retried.
+func (bbs *TaskBBS) FailedToResolveTask(taskGuid string) error {
+	task, index, err := bbs.getTask(taskGuid)
+
+	if err != nil {
+		return fmt.Errorf("cannot fail to resolve non-existing task: %s", err.Error())
+	}
+
+	if task.State != models.TaskStateResolving {
+		return errors.New("cannot fail to resolve task in non-resolving state")
+	}
+
+	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	task.State = models.TaskStateCompleted
+
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.TaskSchemaPath(taskGuid),
+			Value: task.ToJSON(),
+		})
+	})
+}
+
 // The stager calls this when it wants to signal that it has received a completion and is handling it
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should assume that someone else is handling the completion and should bail

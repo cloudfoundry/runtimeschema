@@ -2,9 +2,10 @@
 package fake_bbs
 
 import (
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"sync"
+
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
 type FakeStagerBBS struct {
@@ -27,7 +28,7 @@ type FakeStagerBBS struct {
 	ResolvingTaskStub        func(taskGuid string) error
 	resolvingTaskMutex       sync.RWMutex
 	resolvingTaskArgsForCall []struct {
-		arg1 string
+		taskGuid string
 	}
 	resolvingTaskReturns struct {
 		result1 error
@@ -35,9 +36,17 @@ type FakeStagerBBS struct {
 	ResolveTaskStub        func(taskGuid string) error
 	resolveTaskMutex       sync.RWMutex
 	resolveTaskArgsForCall []struct {
-		arg1 string
+		taskGuid string
 	}
 	resolveTaskReturns struct {
+		result1 error
+	}
+	FailedToResolveTaskStub        func(taskGuid string) error
+	failedToResolveTaskMutex       sync.RWMutex
+	failedToResolveTaskArgsForCall []struct {
+		taskGuid string
+	}
+	failedToResolveTaskReturns struct {
 		result1 error
 	}
 	GetAvailableFileServerStub        func() (string, error)
@@ -51,8 +60,8 @@ type FakeStagerBBS struct {
 
 func (fake *FakeStagerBBS) WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error) {
 	fake.watchForCompletedTaskMutex.Lock()
-	defer fake.watchForCompletedTaskMutex.Unlock()
 	fake.watchForCompletedTaskArgsForCall = append(fake.watchForCompletedTaskArgsForCall, struct{}{})
+	fake.watchForCompletedTaskMutex.Unlock()
 	if fake.WatchForCompletedTaskStub != nil {
 		return fake.WatchForCompletedTaskStub()
 	} else {
@@ -67,6 +76,7 @@ func (fake *FakeStagerBBS) WatchForCompletedTaskCallCount() int {
 }
 
 func (fake *FakeStagerBBS) WatchForCompletedTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
+	fake.WatchForCompletedTaskStub = nil
 	fake.watchForCompletedTaskReturns = struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
@@ -76,10 +86,10 @@ func (fake *FakeStagerBBS) WatchForCompletedTaskReturns(result1 <-chan models.Ta
 
 func (fake *FakeStagerBBS) DesireTask(arg1 models.Task) error {
 	fake.desireTaskMutex.Lock()
-	defer fake.desireTaskMutex.Unlock()
 	fake.desireTaskArgsForCall = append(fake.desireTaskArgsForCall, struct {
 		arg1 models.Task
 	}{arg1})
+	fake.desireTaskMutex.Unlock()
 	if fake.DesireTaskStub != nil {
 		return fake.DesireTaskStub(arg1)
 	} else {
@@ -100,19 +110,20 @@ func (fake *FakeStagerBBS) DesireTaskArgsForCall(i int) models.Task {
 }
 
 func (fake *FakeStagerBBS) DesireTaskReturns(result1 error) {
+	fake.DesireTaskStub = nil
 	fake.desireTaskReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeStagerBBS) ResolvingTask(arg1 string) error {
+func (fake *FakeStagerBBS) ResolvingTask(taskGuid string) error {
 	fake.resolvingTaskMutex.Lock()
-	defer fake.resolvingTaskMutex.Unlock()
 	fake.resolvingTaskArgsForCall = append(fake.resolvingTaskArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		taskGuid string
+	}{taskGuid})
+	fake.resolvingTaskMutex.Unlock()
 	if fake.ResolvingTaskStub != nil {
-		return fake.ResolvingTaskStub(arg1)
+		return fake.ResolvingTaskStub(taskGuid)
 	} else {
 		return fake.resolvingTaskReturns.result1
 	}
@@ -127,23 +138,24 @@ func (fake *FakeStagerBBS) ResolvingTaskCallCount() int {
 func (fake *FakeStagerBBS) ResolvingTaskArgsForCall(i int) string {
 	fake.resolvingTaskMutex.RLock()
 	defer fake.resolvingTaskMutex.RUnlock()
-	return fake.resolvingTaskArgsForCall[i].arg1
+	return fake.resolvingTaskArgsForCall[i].taskGuid
 }
 
 func (fake *FakeStagerBBS) ResolvingTaskReturns(result1 error) {
+	fake.ResolvingTaskStub = nil
 	fake.resolvingTaskReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeStagerBBS) ResolveTask(arg1 string) error {
+func (fake *FakeStagerBBS) ResolveTask(taskGuid string) error {
 	fake.resolveTaskMutex.Lock()
-	defer fake.resolveTaskMutex.Unlock()
 	fake.resolveTaskArgsForCall = append(fake.resolveTaskArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		taskGuid string
+	}{taskGuid})
+	fake.resolveTaskMutex.Unlock()
 	if fake.ResolveTaskStub != nil {
-		return fake.ResolveTaskStub(arg1)
+		return fake.ResolveTaskStub(taskGuid)
 	} else {
 		return fake.resolveTaskReturns.result1
 	}
@@ -158,19 +170,52 @@ func (fake *FakeStagerBBS) ResolveTaskCallCount() int {
 func (fake *FakeStagerBBS) ResolveTaskArgsForCall(i int) string {
 	fake.resolveTaskMutex.RLock()
 	defer fake.resolveTaskMutex.RUnlock()
-	return fake.resolveTaskArgsForCall[i].arg1
+	return fake.resolveTaskArgsForCall[i].taskGuid
 }
 
 func (fake *FakeStagerBBS) ResolveTaskReturns(result1 error) {
+	fake.ResolveTaskStub = nil
 	fake.resolveTaskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeStagerBBS) FailedToResolveTask(taskGuid string) error {
+	fake.failedToResolveTaskMutex.Lock()
+	fake.failedToResolveTaskArgsForCall = append(fake.failedToResolveTaskArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.failedToResolveTaskMutex.Unlock()
+	if fake.FailedToResolveTaskStub != nil {
+		return fake.FailedToResolveTaskStub(taskGuid)
+	} else {
+		return fake.failedToResolveTaskReturns.result1
+	}
+}
+
+func (fake *FakeStagerBBS) FailedToResolveTaskCallCount() int {
+	fake.failedToResolveTaskMutex.RLock()
+	defer fake.failedToResolveTaskMutex.RUnlock()
+	return len(fake.failedToResolveTaskArgsForCall)
+}
+
+func (fake *FakeStagerBBS) FailedToResolveTaskArgsForCall(i int) string {
+	fake.failedToResolveTaskMutex.RLock()
+	defer fake.failedToResolveTaskMutex.RUnlock()
+	return fake.failedToResolveTaskArgsForCall[i].taskGuid
+}
+
+func (fake *FakeStagerBBS) FailedToResolveTaskReturns(result1 error) {
+	fake.FailedToResolveTaskStub = nil
+	fake.failedToResolveTaskReturns = struct {
 		result1 error
 	}{result1}
 }
 
 func (fake *FakeStagerBBS) GetAvailableFileServer() (string, error) {
 	fake.getAvailableFileServerMutex.Lock()
-	defer fake.getAvailableFileServerMutex.Unlock()
 	fake.getAvailableFileServerArgsForCall = append(fake.getAvailableFileServerArgsForCall, struct{}{})
+	fake.getAvailableFileServerMutex.Unlock()
 	if fake.GetAvailableFileServerStub != nil {
 		return fake.GetAvailableFileServerStub()
 	} else {
@@ -185,10 +230,11 @@ func (fake *FakeStagerBBS) GetAvailableFileServerCallCount() int {
 }
 
 func (fake *FakeStagerBBS) GetAvailableFileServerReturns(result1 string, result2 error) {
+	fake.GetAvailableFileServerStub = nil
 	fake.getAvailableFileServerReturns = struct {
 		result1 string
 		result2 error
 	}{result1, result2}
 }
 
-var _ StagerBBS = new(FakeStagerBBS)
+var _ bbs.StagerBBS = new(FakeStagerBBS)

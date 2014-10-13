@@ -423,4 +423,110 @@ var _ = Describe("Task BBS", func() {
 			})
 		})
 	})
+
+	Describe("FailedToResolveTask", func() {
+		BeforeEach(func() {
+			err = bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.ClaimTask(task.Guid, "some-executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.StartTask(task.Guid, "some-executor-id", "some-container-handle")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when the task is not resolving", func() {
+			BeforeEach(func() {
+				err = bbs.CompleteTask(task.Guid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("should fail", func() {
+				err = bbs.ResolveTask(task.Guid)
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+
+		Context("when the task is resolving", func() {
+			BeforeEach(func() {
+				err = bbs.CompleteTask(task.Guid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.ResolvingTask(task.Guid)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("should return the task to the completed state", func() {
+				err = bbs.FailedToResolveTask(task.Guid)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.GetAllCompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			})
+
+			It("should bump UpdatedAt", func() {
+				timeProvider.IncrementBySeconds(1)
+
+				err = bbs.FailedToResolveTask(task.Guid)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.GetAllCompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+			})
+
+			Context("when the store is out of commission", func() {
+				itRetriesUntilStoreComesBack(func() error {
+					return bbs.ResolveTask(task.Guid)
+				})
+			})
+		})
+
+		Describe("preserving success or failure status of task and reason", func() {
+			Context("when the task completed as a failure", func() {
+				BeforeEach(func() {
+					err = bbs.CompleteTask(task.Guid, true, "because i said so", "a result")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.ResolvingTask(task.Guid)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("should preserve the original task failure mode and reason", func() {
+					err = bbs.FailedToResolveTask(task.Guid)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					tasks, err := bbs.GetAllCompletedTasks()
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(tasks[0].Failed).Should(BeTrue())
+					Ω(tasks[0].FailureReason).Should(Equal("because i said so"))
+				})
+			})
+
+			Context("when the task completed successfully", func() {
+				BeforeEach(func() {
+					err = bbs.CompleteTask(task.Guid, false, "", "a result")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.ResolvingTask(task.Guid)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("should preserve the original task success", func() {
+					err = bbs.FailedToResolveTask(task.Guid)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					tasks, err := bbs.GetAllCompletedTasks()
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(tasks[0].Failed).Should(BeFalse())
+				})
+			})
+		})
+	})
 })
