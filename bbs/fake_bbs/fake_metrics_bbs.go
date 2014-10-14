@@ -2,11 +2,12 @@
 package fake_bbs
 
 import (
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
-
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
-
 	"sync"
+	"time"
+
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/tedsuo/ifrit"
 )
 
 type FakeMetricsBBS struct {
@@ -45,12 +46,21 @@ type FakeMetricsBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
+	NewRuntimeMetricsLockStub        func(runtimeMetricsID string, interval time.Duration) ifrit.Runner
+	newRuntimeMetricsLockMutex       sync.RWMutex
+	newRuntimeMetricsLockArgsForCall []struct {
+		runtimeMetricsID string
+		interval         time.Duration
+	}
+	newRuntimeMetricsLockReturns struct {
+		result1 ifrit.Runner
+	}
 }
 
 func (fake *FakeMetricsBBS) GetAllTasks() ([]models.Task, error) {
 	fake.getAllTasksMutex.Lock()
-	defer fake.getAllTasksMutex.Unlock()
 	fake.getAllTasksArgsForCall = append(fake.getAllTasksArgsForCall, struct{}{})
+	fake.getAllTasksMutex.Unlock()
 	if fake.GetAllTasksStub != nil {
 		return fake.GetAllTasksStub()
 	} else {
@@ -65,6 +75,7 @@ func (fake *FakeMetricsBBS) GetAllTasksCallCount() int {
 }
 
 func (fake *FakeMetricsBBS) GetAllTasksReturns(result1 []models.Task, result2 error) {
+	fake.GetAllTasksStub = nil
 	fake.getAllTasksReturns = struct {
 		result1 []models.Task
 		result2 error
@@ -73,8 +84,8 @@ func (fake *FakeMetricsBBS) GetAllTasksReturns(result1 []models.Task, result2 er
 
 func (fake *FakeMetricsBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {
 	fake.getServiceRegistrationsMutex.Lock()
-	defer fake.getServiceRegistrationsMutex.Unlock()
 	fake.getServiceRegistrationsArgsForCall = append(fake.getServiceRegistrationsArgsForCall, struct{}{})
+	fake.getServiceRegistrationsMutex.Unlock()
 	if fake.GetServiceRegistrationsStub != nil {
 		return fake.GetServiceRegistrationsStub()
 	} else {
@@ -89,6 +100,7 @@ func (fake *FakeMetricsBBS) GetServiceRegistrationsCallCount() int {
 }
 
 func (fake *FakeMetricsBBS) GetServiceRegistrationsReturns(result1 models.ServiceRegistrations, result2 error) {
+	fake.GetServiceRegistrationsStub = nil
 	fake.getServiceRegistrationsReturns = struct {
 		result1 models.ServiceRegistrations
 		result2 error
@@ -97,8 +109,8 @@ func (fake *FakeMetricsBBS) GetServiceRegistrationsReturns(result1 models.Servic
 
 func (fake *FakeMetricsBBS) GetAllFreshness() ([]string, error) {
 	fake.getAllFreshnessMutex.Lock()
-	defer fake.getAllFreshnessMutex.Unlock()
 	fake.getAllFreshnessArgsForCall = append(fake.getAllFreshnessArgsForCall, struct{}{})
+	fake.getAllFreshnessMutex.Unlock()
 	if fake.GetAllFreshnessStub != nil {
 		return fake.GetAllFreshnessStub()
 	} else {
@@ -113,6 +125,7 @@ func (fake *FakeMetricsBBS) GetAllFreshnessCallCount() int {
 }
 
 func (fake *FakeMetricsBBS) GetAllFreshnessReturns(result1 []string, result2 error) {
+	fake.GetAllFreshnessStub = nil
 	fake.getAllFreshnessReturns = struct {
 		result1 []string
 		result2 error
@@ -121,8 +134,8 @@ func (fake *FakeMetricsBBS) GetAllFreshnessReturns(result1 []string, result2 err
 
 func (fake *FakeMetricsBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
 	fake.getAllDesiredLRPsMutex.Lock()
-	defer fake.getAllDesiredLRPsMutex.Unlock()
 	fake.getAllDesiredLRPsArgsForCall = append(fake.getAllDesiredLRPsArgsForCall, struct{}{})
+	fake.getAllDesiredLRPsMutex.Unlock()
 	if fake.GetAllDesiredLRPsStub != nil {
 		return fake.GetAllDesiredLRPsStub()
 	} else {
@@ -137,6 +150,7 @@ func (fake *FakeMetricsBBS) GetAllDesiredLRPsCallCount() int {
 }
 
 func (fake *FakeMetricsBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.GetAllDesiredLRPsStub = nil
 	fake.getAllDesiredLRPsReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
@@ -145,8 +159,8 @@ func (fake *FakeMetricsBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP
 
 func (fake *FakeMetricsBBS) GetAllActualLRPs() ([]models.ActualLRP, error) {
 	fake.getAllActualLRPsMutex.Lock()
-	defer fake.getAllActualLRPsMutex.Unlock()
 	fake.getAllActualLRPsArgsForCall = append(fake.getAllActualLRPsArgsForCall, struct{}{})
+	fake.getAllActualLRPsMutex.Unlock()
 	if fake.GetAllActualLRPsStub != nil {
 		return fake.GetAllActualLRPsStub()
 	} else {
@@ -161,10 +175,44 @@ func (fake *FakeMetricsBBS) GetAllActualLRPsCallCount() int {
 }
 
 func (fake *FakeMetricsBBS) GetAllActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
+	fake.GetAllActualLRPsStub = nil
 	fake.getAllActualLRPsReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner {
+	fake.newRuntimeMetricsLockMutex.Lock()
+	fake.newRuntimeMetricsLockArgsForCall = append(fake.newRuntimeMetricsLockArgsForCall, struct {
+		runtimeMetricsID string
+		interval         time.Duration
+	}{runtimeMetricsID, interval})
+	fake.newRuntimeMetricsLockMutex.Unlock()
+	if fake.NewRuntimeMetricsLockStub != nil {
+		return fake.NewRuntimeMetricsLockStub(runtimeMetricsID, interval)
+	} else {
+		return fake.newRuntimeMetricsLockReturns.result1
+	}
+}
+
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLockCallCount() int {
+	fake.newRuntimeMetricsLockMutex.RLock()
+	defer fake.newRuntimeMetricsLockMutex.RUnlock()
+	return len(fake.newRuntimeMetricsLockArgsForCall)
+}
+
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLockArgsForCall(i int) (string, time.Duration) {
+	fake.newRuntimeMetricsLockMutex.RLock()
+	defer fake.newRuntimeMetricsLockMutex.RUnlock()
+	return fake.newRuntimeMetricsLockArgsForCall[i].runtimeMetricsID, fake.newRuntimeMetricsLockArgsForCall[i].interval
+}
+
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLockReturns(result1 ifrit.Runner) {
+	fake.NewRuntimeMetricsLockStub = nil
+	fake.newRuntimeMetricsLockReturns = struct {
+		result1 ifrit.Runner
+	}{result1}
 }
 
 var _ bbs.MetricsBBS = new(FakeMetricsBBS)

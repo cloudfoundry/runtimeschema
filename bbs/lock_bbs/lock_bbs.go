@@ -43,3 +43,7 @@ func (bbs *LockBBS) NewNsyncListenerLock(listenerID string, interval time.Durati
 func (bbs *LockBBS) NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner {
 	return heartbeater.New(bbs.store, shared.LockSchemaPath("route_emitter_lock"), emitterID, interval, bbs.logger)
 }
+
+func (bbs *LockBBS) NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner {
+	return heartbeater.New(bbs.store, shared.LockSchemaPath("runtime_metrics_lock"), runtimeMetricsID, interval, bbs.logger)
+}

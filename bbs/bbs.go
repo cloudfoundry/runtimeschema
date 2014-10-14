@@ -123,6 +123,9 @@ type MetricsBBS interface {
 	GetAllFreshness() ([]string, error)
 	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
 	GetAllActualLRPs() ([]models.ActualLRP, error)
+
+	//lock
+	NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner
 }
 
 type FileServerBBS interface {
