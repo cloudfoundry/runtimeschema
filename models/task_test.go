@@ -14,7 +14,7 @@ var _ = Describe("Task", func() {
 
 	taskPayload := `{
 		"domain":"some-domain",
-		"guid":"some-guid",
+		"task_guid":"some-guid",
 		"stack":"some-stack",
 		"executor_id":"executor",
 		"actions":[
@@ -46,9 +46,9 @@ var _ = Describe("Task", func() {
 
 	BeforeEach(func() {
 		task = Task{
-			Domain: "some-domain",
-			Guid:   "some-guid",
-			Stack:  "some-stack",
+			Domain:   "some-domain",
+			TaskGuid: "some-guid",
+			Stack:    "some-stack",
 			Actions: []ExecutorAction{
 				{
 					Action: DownloadAction{
@@ -102,10 +102,10 @@ var _ = Describe("Task", func() {
 		})
 
 		for field, payload := range map[string]string{
-			"guid":    `{"domain": "some-domain", "stack": "some-stack", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
-			"actions": `{"domain": "some-domain", "guid": "process-guid", "stack": "some-stack"}`,
-			"stack":   `{"domain": "some-domain", "guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
-			"domain":  `{"stack": "some-stack", "guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
+			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
+			"actions":   `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
+			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
+			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
 		} {
 			json := payload
 			missingField := field

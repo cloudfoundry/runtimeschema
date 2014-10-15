@@ -23,10 +23,10 @@ var _ = Describe("Task BBS", func() {
 
 		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 		task = models.Task{
-			Domain:  "tests",
-			Guid:    "some-guid",
-			Stack:   "pancakes",
-			Actions: dummyActions,
+			Domain:   "tests",
+			TaskGuid: "some-guid",
+			Stack:    "pancakes",
+			Actions:  dummyActions,
 		}
 	})
 
@@ -40,7 +40,7 @@ var _ = Describe("Task BBS", func() {
 			tasks, err := bbs.GetAllPendingTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
@@ -49,7 +49,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -57,7 +57,7 @@ var _ = Describe("Task BBS", func() {
 			tasks, err := bbs.GetAllClaimedTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
@@ -66,10 +66,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.Guid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -77,7 +77,7 @@ var _ = Describe("Task BBS", func() {
 			tasks, err := bbs.GetAllRunningTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
@@ -86,13 +86,13 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.Guid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.Guid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -100,7 +100,7 @@ var _ = Describe("Task BBS", func() {
 			tasks, err := bbs.GetAllCompletedTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
@@ -109,16 +109,16 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.Guid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.Guid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ResolvingTask(task.Guid)
+			err = bbs.ResolvingTask(task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -126,7 +126,7 @@ var _ = Describe("Task BBS", func() {
 			tasks, err := bbs.GetAllResolvingTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].Guid).Should(Equal(task.Guid))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 })

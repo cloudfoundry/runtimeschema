@@ -20,7 +20,7 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 		task.UpdatedAt = s.timeProvider.Time().UnixNano()
 		task.State = models.TaskStatePending
 		return s.store.Create(storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(task.Guid),
+			Key:   shared.TaskSchemaPath(task.TaskGuid),
 			Value: task.ToJSON(),
 		})
 	})

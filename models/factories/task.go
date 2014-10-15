@@ -17,7 +17,7 @@ func GenerateGuid() string {
 func BuildTaskWithRunAction(domain string, stack string, memoryMB int, diskMB int, path string, args []string) models.Task {
 	return models.Task{
 		Domain:   domain,
-		Guid:     GenerateGuid(),
+		TaskGuid: GenerateGuid(),
 		MemoryMB: memoryMB,
 		DiskMB:   diskMB,
 		Actions: []models.ExecutorAction{

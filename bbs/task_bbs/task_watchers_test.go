@@ -24,10 +24,10 @@ var _ = Describe("Task BBS", func() {
 
 		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 		task = models.Task{
-			Domain:  "tests",
-			Guid:    "some-guid",
-			Stack:   "waffles",
-			Actions: dummyActions,
+			Domain:   "tests",
+			TaskGuid: "some-guid",
+			Stack:    "waffles",
+			Actions:  dummyActions,
 		}
 	})
 
@@ -53,7 +53,7 @@ var _ = Describe("Task BBS", func() {
 			var receivedTask models.Task
 			Eventually(events).Should(Receive(&receivedTask))
 
-			Ω(receivedTask.Guid).Should(Equal(task.Guid))
+			Ω(receivedTask.TaskGuid).Should(Equal(task.TaskGuid))
 			Ω(receivedTask.State).Should(Equal(models.TaskStatePending))
 		})
 
@@ -75,19 +75,19 @@ var _ = Describe("Task BBS", func() {
 
 			Eventually(events).Should(Receive())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.Guid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.Guid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ResolvingTask(task.Guid)
+			err = bbs.ResolvingTask(task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ResolveTask(task.Guid)
+			err = bbs.ResolveTask(task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Consistently(events).ShouldNot(Receive())
@@ -107,10 +107,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.Guid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.Guid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -123,26 +123,26 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should send an event down the pipe for completed run onces", func() {
-			err = bbs.CompleteTask(task.Guid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var receivedTask models.Task
 			Eventually(events).Should(Receive(&receivedTask))
-			Ω(receivedTask.Guid).Should(Equal(task.Guid))
+			Ω(receivedTask.TaskGuid).Should(Equal(task.TaskGuid))
 			Ω(receivedTask.State).Should(Equal(models.TaskStateCompleted))
 			Ω(receivedTask.FailureReason).Should(Equal("a reason"))
 		})
 
 		It("should not send an event down the pipe when resolved", func() {
-			err = bbs.CompleteTask(task.Guid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
 
-			err = bbs.ResolvingTask(task.Guid)
+			err = bbs.ResolvingTask(task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ResolveTask(task.Guid)
+			err = bbs.ResolveTask(task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Consistently(events).ShouldNot(Receive())

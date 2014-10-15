@@ -16,7 +16,7 @@ const (
 )
 
 type Task struct {
-	Guid       string           `json:"guid"`
+	TaskGuid   string           `json:"task_guid"`
 	Domain     string           `json:"domain"`
 	Actions    []ExecutorAction `json:"actions"`
 	Stack      string           `json:"stack"`
@@ -69,8 +69,8 @@ func NewTaskFromJSON(payload []byte) (Task, error) {
 		return Task{}, ErrInvalidJSONMessage{"domain"}
 	}
 
-	if task.Guid == "" {
-		return Task{}, ErrInvalidJSONMessage{"guid"}
+	if task.TaskGuid == "" {
+		return Task{}, ErrInvalidJSONMessage{"task_guid"}
 	}
 
 	if len(task.Actions) == 0 {

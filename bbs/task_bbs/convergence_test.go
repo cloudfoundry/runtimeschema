@@ -47,10 +47,10 @@ var _ = Describe("Convergence of Tasks", func() {
 		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
 
 		task = models.Task{
-			Domain:  "tests",
-			Guid:    "some-guid",
-			Stack:   "pancakes",
-			Actions: dummyActions,
+			Domain:   "tests",
+			TaskGuid: "some-guid",
+			Stack:    "pancakes",
+			Actions:  dummyActions,
 		}
 
 		logger := lagertest.NewTestLogger("test")
@@ -132,7 +132,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					var noticedOnce models.Task
 					Eventually(desiredEvents).Should(Receive(&noticedOnce))
 
-					Ω(noticedOnce.Guid).Should(Equal(task.Guid))
+					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStatePending))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
@@ -170,7 +170,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.Guid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				executorPresence := models.ExecutorPresence{
@@ -221,10 +221,10 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.Guid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.Guid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				heartbeater = ifrit.Envoke(servicesBBS.NewExecutorHeartbeat(models.ExecutorPresence{
@@ -270,13 +270,13 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.Guid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.Guid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.Guid, true, "'cause I said so", "a magical result")
+				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -319,16 +319,16 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.Guid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.Guid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.Guid, true, "'cause I said so", "a result")
+				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ResolvingTask(task.Guid)
+				err = bbs.ResolvingTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -346,7 +346,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					var noticedOnce models.Task
 					Eventually(completedEvents).Should(Receive(&noticedOnce))
 
-					Ω(noticedOnce.Guid).Should(Equal(task.Guid))
+					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
