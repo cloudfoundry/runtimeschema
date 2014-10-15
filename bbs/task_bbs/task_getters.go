@@ -33,6 +33,11 @@ func (bbs *TaskBBS) GetAllTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
+func (bbs *TaskBBS) GetTaskByGuid(guid string) (models.Task, error) {
+	task, _, err := bbs.getTask(guid)
+	return task, err
+}
+
 func (bbs *TaskBBS) GetAllPendingTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
 	return filterTasks(all, models.TaskStatePending), err
@@ -66,4 +71,21 @@ func filterTasks(tasks []models.Task, state models.TaskState) []models.Task {
 		}
 	}
 	return result
+}
+
+func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
+	var node storeadapter.StoreNode
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		var err error
+		node, err = bbs.store.Get(shared.TaskSchemaPath(taskGuid))
+		return err
+	})
+
+	if err != nil {
+		return models.Task{}, 0, err
+	}
+
+	task, err := models.NewTaskFromJSON(node.Value)
+
+	return task, node.Index, err
 }

@@ -23,7 +23,7 @@ type FakeRepBBS struct {
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns     struct {
+	watchForDesiredTaskReturns struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -46,6 +46,15 @@ type FakeRepBBS struct {
 	}
 	startTaskReturns struct {
 		result1 error
+	}
+	GetTaskByGuidStub        func(taskGuid string) (models.Task, error)
+	getTaskByGuidMutex       sync.RWMutex
+	getTaskByGuidArgsForCall []struct {
+		taskGuid string
+	}
+	getTaskByGuidReturns struct {
+		result1 models.Task
+		result2 error
 	}
 	CompleteTaskStub        func(taskGuid string, failed bool, failureReason string, result string) error
 	completeTaskMutex       sync.RWMutex
@@ -118,7 +127,7 @@ type FakeRepBBS struct {
 	WatchForStopLRPInstanceStub        func() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
 	watchForStopLRPInstanceMutex       sync.RWMutex
 	watchForStopLRPInstanceArgsForCall []struct{}
-	watchForStopLRPInstanceReturns     struct {
+	watchForStopLRPInstanceReturns struct {
 		result1 <-chan models.StopLRPInstance
 		result2 chan<- bool
 		result3 <-chan error
@@ -257,6 +266,39 @@ func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
 	fake.startTaskReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeRepBBS) GetTaskByGuid(taskGuid string) (models.Task, error) {
+	fake.getTaskByGuidMutex.Lock()
+	fake.getTaskByGuidArgsForCall = append(fake.getTaskByGuidArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.getTaskByGuidMutex.Unlock()
+	if fake.GetTaskByGuidStub != nil {
+		return fake.GetTaskByGuidStub(taskGuid)
+	} else {
+		return fake.getTaskByGuidReturns.result1, fake.getTaskByGuidReturns.result2
+	}
+}
+
+func (fake *FakeRepBBS) GetTaskByGuidCallCount() int {
+	fake.getTaskByGuidMutex.RLock()
+	defer fake.getTaskByGuidMutex.RUnlock()
+	return len(fake.getTaskByGuidArgsForCall)
+}
+
+func (fake *FakeRepBBS) GetTaskByGuidArgsForCall(i int) string {
+	fake.getTaskByGuidMutex.RLock()
+	defer fake.getTaskByGuidMutex.RUnlock()
+	return fake.getTaskByGuidArgsForCall[i].taskGuid
+}
+
+func (fake *FakeRepBBS) GetTaskByGuidReturns(result1 models.Task, result2 error) {
+	fake.GetTaskByGuidStub = nil
+	fake.getTaskByGuidReturns = struct {
+		result1 models.Task
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {

@@ -30,6 +30,50 @@ var _ = Describe("Task BBS", func() {
 		}
 	})
 
+	Describe("GetTaskByGuid", func() {
+		var guid string
+		var receivedTask models.Task
+
+		BeforeEach(func() {
+			err := bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			receivedTask, err = bbs.GetTaskByGuid(guid)
+		})
+
+		Context("When there is a task with the given guid", func() {
+			BeforeEach(func() {
+				guid = "some-guid"
+			})
+
+			It("does not an error", func() {
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns the task", func() {
+				Ω(receivedTask.Guid).Should(Equal(guid))
+			})
+
+			It("is consistent with collection getters", func() {
+				pendingTasks, err := bbs.GetAllPendingTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(pendingTasks).Should(Equal([]models.Task{receivedTask}))
+			})
+		})
+
+		Context("When there is no task with the given guid", func() {
+			BeforeEach(func() {
+				guid = "not-some-guid"
+			})
+
+			It("returns an error", func() {
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("GetAllPendingTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)

@@ -26,6 +26,7 @@ type RepBBS interface {
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
 	ClaimTask(taskGuid string, executorID string) error
 	StartTask(taskGuid string, executorID string, containerHandle string) error
+	GetTaskByGuid(taskGuid string) (models.Task, error)
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	///lrp
