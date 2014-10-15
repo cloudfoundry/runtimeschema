@@ -26,6 +26,7 @@ type Task struct {
 	Log        LogConfig        `json:"log"`
 	CreatedAt  int64            `json:"created_at"` //  the number of nanoseconds elapsed since January 1, 1970 UTC
 	UpdatedAt  int64            `json:"updated_at"`
+	ResultFile string           `json:"result_file"`
 
 	State TaskState `json:"state"`
 

@@ -28,6 +28,7 @@ var _ = Describe("Task", func() {
 			}
 		],
 		"container_handle":"17fgsafdfcvc",
+		"result_file":"some-file.txt",
 		"result": "turboencabulated",
 		"failed":true,
 		"failure_reason":"because i said so",
@@ -64,6 +65,7 @@ var _ = Describe("Task", func() {
 			},
 			ExecutorID:      "executor",
 			ContainerHandle: "17fgsafdfcvc",
+			ResultFile:      "some-file.txt",
 			Result:          "turboencabulated",
 			Failed:          true,
 			FailureReason:   "because i said so",
