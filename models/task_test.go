@@ -1,9 +1,10 @@
 package models_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
@@ -22,8 +23,7 @@ var _ = Describe("Task", func() {
 				"args":{
 					"from":"old_location",
 					"to":"new_location",
-					"cache_key":"the-cache-key",
-					"extract":true
+					"cache_key":"the-cache-key"
 				}
 			}
 		],
@@ -55,7 +55,6 @@ var _ = Describe("Task", func() {
 						From:     "old_location",
 						To:       "new_location",
 						CacheKey: "the-cache-key",
-						Extract:  true,
 					},
 				},
 			},

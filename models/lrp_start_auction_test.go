@@ -23,7 +23,6 @@ var _ = Describe("LRPStartAuction", func() {
           "args": {
             "from": "http://example.com",
             "to": "/tmp/internet",
-            "extract": false,
             "cache_key": ""
           }
         }

@@ -22,7 +22,6 @@ var _ = Describe("DesiredLRP", func() {
 	      "args": {
 	        "from": "http://example.com",
 	        "to": "/tmp/internet",
-	        "extract": false,
 	        "cache_key": ""
 	      }
 	    }
@@ -102,7 +101,7 @@ var _ = Describe("DesiredLRP", func() {
 			"process_guid": `{
 				"domain": "some-domain",
 				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","extract":false,"cache_key":""}}
+					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 				],
 				"stack": "some-stack"
 			}`,
@@ -115,14 +114,14 @@ var _ = Describe("DesiredLRP", func() {
 				"domain": "some-domain",
 				"process_guid": "process_guid",
 				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","extract":false,"cache_key":""}}
+					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 				]
 			}`,
 			"domain": `{
 				"stack": "some-stack",
 				"process_guid": "process_guid",
 				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","extract":false,"cache_key":""}}
+					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 				]
 			}`,
 		} {
