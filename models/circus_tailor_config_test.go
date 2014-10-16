@@ -21,7 +21,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildpacksDir=/tmp/buildpacks",
 				"-buildArtifactsCacheDir=/tmp/cache",
 				"-outputDroplet=/tmp/droplet",
-				"-outputMetadataDir=/tmp/result",
+				"-outputMetadata=/tmp/result.json",
 				"-outputBuildArtifactsCache=/tmp/output-cache",
 			}
 
@@ -34,7 +34,7 @@ var _ = Describe("CircusTailorConfig", func() {
 		BeforeEach(func() {
 			tailorConfig.Set("appDir", "/some/app/dir")
 			tailorConfig.Set("outputDroplet", "/some/droplet")
-			tailorConfig.Set("outputMetadataDir", "/some/result/dir")
+			tailorConfig.Set("outputMetadata", "/some/result/dir")
 			tailorConfig.Set("buildpacksDir", "/some/buildpacks/dir")
 			tailorConfig.Set("buildArtifactsCacheDir", "/some/cache/dir")
 			tailorConfig.Set("outputBuildArtifactsCache", "/some/cache-file")
@@ -47,7 +47,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-buildpacksDir=/some/buildpacks/dir",
 				"-buildArtifactsCacheDir=/some/cache/dir",
 				"-outputDroplet=/some/droplet",
-				"-outputMetadataDir=/some/result/dir",
+				"-outputMetadata=/some/result/dir",
 				"-outputBuildArtifactsCache=/some/cache-file",
 			}
 
@@ -66,6 +66,6 @@ var _ = Describe("CircusTailorConfig", func() {
 	})
 
 	It("returns the path to the staging metadata", func() {
-		Ω(tailorConfig.OutputMetadataPath()).To(Equal("/tmp/result/result.json"))
+		Ω(tailorConfig.OutputMetadata()).To(Equal("/tmp/result.json"))
 	})
 })
