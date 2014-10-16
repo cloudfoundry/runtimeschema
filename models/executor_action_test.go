@@ -115,22 +115,6 @@ var _ = Describe("ExecutorAction", func() {
 		)
 	})
 
-	Describe("FetchResult", func() {
-		itSerializesAndDeserializes(
-			`{
-				"action": "fetch_result",
-				"args": {
-					"file": "/tmp/foo"
-				}
-			}`,
-			ExecutorAction{
-				FetchResultAction{
-					File: "/tmp/foo",
-				},
-			},
-		)
-	})
-
 	Describe("EmitProgressAction", func() {
 		itSerializesAndDeserializes(
 			`{

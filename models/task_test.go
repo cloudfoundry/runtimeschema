@@ -104,10 +104,10 @@ var _ = Describe("Task", func() {
 		})
 
 		for field, payload := range map[string]string{
-			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
+			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
 			"actions":   `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
-			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
-			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "actions": [{"action": "fetch_result", "args": {"file": "file"}}]}`,
+			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
+			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
 		} {
 			json := payload
 			missingField := field

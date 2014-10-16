@@ -53,7 +53,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns the task", func() {
-				Ω(receivedTask.Guid).Should(Equal(guid))
+				Ω(receivedTask.TaskGuid).Should(Equal(guid))
 			})
 
 			It("is consistent with collection getters", func() {

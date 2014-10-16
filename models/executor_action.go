@@ -36,10 +36,6 @@ type ResourceLimits struct {
 	Nofile *uint64 `json:"nofile,omitempty"`
 }
 
-type FetchResultAction struct {
-	File string `json:"file"`
-}
-
 type TryAction struct {
 	Action ExecutorAction `json:"action"`
 }
@@ -120,8 +116,6 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "run"
 	case UploadAction:
 		envelope.Name = "upload"
-	case FetchResultAction:
-		envelope.Name = "fetch_result"
 	case EmitProgressAction:
 		envelope.Name = "emit_progress"
 	case TryAction:
@@ -158,10 +152,6 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		a.Action = action
 	case "upload":
 		action := UploadAction{}
-		err = json.Unmarshal(*envelope.ActionPayload, &action)
-		a.Action = action
-	case "fetch_result":
-		action := FetchResultAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
 	case "emit_progress":
