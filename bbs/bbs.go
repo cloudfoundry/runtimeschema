@@ -18,6 +18,10 @@ import (
 
 //Bulletin Board System/Store
 
+type ReceptorBBS interface {
+	DesireTask(models.Task) error
+}
+
 type RepBBS interface {
 	//services
 	NewExecutorHeartbeat(executorPresence models.ExecutorPresence, interval time.Duration) ifrit.Runner
@@ -168,6 +172,10 @@ type VeritasBBS interface {
 	//services
 	GetAllExecutors() ([]models.ExecutorPresence, error)
 	GetAllFileServers() ([]string, error)
+}
+
+func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {
+	return NewBBS(store, timeProvider, logger)
 }
 
 func NewRepBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) RepBBS {
