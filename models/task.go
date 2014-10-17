@@ -65,24 +65,31 @@ func NewTaskFromJSON(payload []byte) (Task, error) {
 	if err != nil {
 		return Task{}, err
 	}
+	err = task.Validate()
+	if err != nil {
+		return Task{}, err
+	}
+	return task, nil
+}
 
+func (task Task) Validate() error {
 	if task.Domain == "" {
-		return Task{}, ErrInvalidJSONMessage{"domain"}
+		return ErrInvalidJSONMessage{"domain"}
 	}
 
 	if task.TaskGuid == "" {
-		return Task{}, ErrInvalidJSONMessage{"task_guid"}
+		return ErrInvalidJSONMessage{"task_guid"}
 	}
 
 	if len(task.Actions) == 0 {
-		return Task{}, ErrInvalidJSONMessage{"actions"}
+		return ErrInvalidJSONMessage{"actions"}
 	}
 
 	if task.Stack == "" {
-		return Task{}, ErrInvalidJSONMessage{"stack"}
+		return ErrInvalidJSONMessage{"stack"}
 	}
 
-	return task, nil
+	return nil
 }
 
 func (task Task) ToJSON() []byte {
