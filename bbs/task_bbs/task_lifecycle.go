@@ -98,11 +98,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 		return errors.New("cannot complete task in non-running/non-claimed state")
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
-	task.State = models.TaskStateCompleted
-	task.Failed = failed
-	task.FailureReason = failureReason
-	task.Result = result
+	task = bbs.markTaskCompleted(task, failed, failureReason, result)
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{

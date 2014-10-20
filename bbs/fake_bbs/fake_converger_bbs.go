@@ -26,6 +26,7 @@ type FakeConvergerBBS struct {
 
 	convergeTimeToClaimTasks time.Duration
 	taskConvergenceInterval  time.Duration
+	timeToResolve            time.Duration
 
 	FileServerGetter
 
@@ -113,12 +114,13 @@ func (fakeBBS *FakeConvergerBBS) CallsToConvergeLRPStopAuctions() int {
 	return fakeBBS.callsToConvergeLRPStopAuctions
 }
 
-func (fakeBBS *FakeConvergerBBS) ConvergeTask(timeToClaim time.Duration, taskConvergenceInterval time.Duration) {
+func (fakeBBS *FakeConvergerBBS) ConvergeTask(timeToClaim, taskConvergenceInterval, timeToResolve time.Duration) {
 	fakeBBS.Lock()
 	defer fakeBBS.Unlock()
 
 	fakeBBS.convergeTimeToClaimTasks = timeToClaim
 	fakeBBS.taskConvergenceInterval = taskConvergenceInterval
+	fakeBBS.timeToResolve = timeToResolve
 	fakeBBS.callsToConvergeTasks++
 }
 

@@ -254,6 +254,18 @@ var _ = Describe("Task BBS", func() {
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 
+			It("sets FirstCompletedAt", func() {
+				timeProvider.IncrementBySeconds(1)
+
+				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.GetAllCompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Time().UnixNano()))
+			})
+
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
 					return bbs.CompleteTask(task.TaskGuid, false, "", "a result")

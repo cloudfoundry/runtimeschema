@@ -64,7 +64,7 @@ var _ = Describe("Task BBS", func() {
 			Eventually(events).Should(Receive())
 
 			timeProvider.IncrementBySeconds(2)
-			bbs.ConvergeTask(5*time.Second, time.Second)
+			bbs.ConvergeTask(5*time.Second, time.Second, 2*time.Second)
 
 			Eventually(events).Should(Receive())
 		})

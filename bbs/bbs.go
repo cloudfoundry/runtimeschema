@@ -60,7 +60,7 @@ type ConvergerBBS interface {
 	RequestLRPStopAuction(models.LRPStopAuction) error
 
 	//task
-	ConvergeTask(timeToClaim time.Duration, converganceInterval time.Duration)
+	ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration)
 
 	//lock
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner

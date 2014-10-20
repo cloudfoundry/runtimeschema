@@ -28,6 +28,7 @@ var _ = Describe("Convergence of Tasks", func() {
 		timeToClaimInSeconds             uint64
 		convergenceIntervalInSeconds     uint64
 		timeToClaim, convergenceInterval time.Duration
+		timeToResolveInterval            time.Duration
 		timeProvider                     *faketimeprovider.FakeTimeProvider
 		err                              error
 		servicesBBS                      *services_bbs.ServicesBBS
@@ -43,6 +44,7 @@ var _ = Describe("Convergence of Tasks", func() {
 		timeToClaim = time.Duration(timeToClaimInSeconds) * time.Second
 		convergenceIntervalInSeconds = 10
 		convergenceInterval = time.Duration(convergenceIntervalInSeconds) * time.Second
+		timeToResolveInterval = time.Hour
 
 		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
 
@@ -68,7 +70,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			desiredEvents, _, _ = bbs.WatchForDesiredTask()
 			completedEvents, _, _ = bbs.WatchForCompletedTask()
 
-			bbs.ConvergeTask(timeToClaim, convergenceInterval)
+			bbs.ConvergeTask(timeToClaim, convergenceInterval, timeToResolveInterval)
 		})
 
 		It("bumps the convergence counter", func() {
@@ -302,6 +304,17 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 			})
 
+			Context("when the task has been completed for > the time to resolve interval", func() {
+				BeforeEach(func() {
+					timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+				})
+
+				It("should delete the task", func() {
+					_, err := bbs.GetTaskByGuid(task.TaskGuid)
+					Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+				})
+			})
+
 			Context("when the task has been completed for < the convergence interval", func() {
 				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(1)
@@ -354,6 +367,17 @@ var _ = Describe("Convergence of Tasks", func() {
 				It("bumps the compare-and-swap counter", func() {
 					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
+			})
+		})
+
+		Context("when the resolving task has been completed for > the time to resolve interval", func() {
+			BeforeEach(func() {
+				timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+			})
+
+			It("should delete the task", func() {
+				_, err := bbs.GetTaskByGuid(task.TaskGuid)
+				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 			})
 		})
 	})

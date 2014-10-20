@@ -28,11 +28,12 @@ type compareAndSwappableTask struct {
 // Converge will:
 // 1. Kick (by setting) any run-onces that are still pending (and have been for > convergence interval)
 // 2. Kick (by setting) any run-onces that are completed (and have been for > convergence interval)
-// 3. Demote to pending any claimed run-onces that have been claimed for > 30s
-// 4. Demote to completed any resolving run-onces that have been resolving for > 30s
-// 5. Mark as failed any run-onces that have been in the pending state for > timeToClaim
-// 6. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
-func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration) {
+// 3. Delete any run-onces that are completed (and have been for > timeToResolve interval)
+// 4. Demote to pending any claimed run-onces that have been claimed for > 30s
+// 5. Demote to completed any resolving run-onces that have been resolving for > 30s
+// 6. Mark as failed any run-onces that have been in the pending state for > timeToClaim
+// 7. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
+func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
 	convergeStart := time.Now()
@@ -91,7 +92,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= timeToClaim
 			if shouldMarkAsFailed {
 				logError(task, "failed-to-claim")
-				scheduleForCASByIndex(node.Index, markTaskFailed(task, "not claimed within time limit"))
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not claimed within time limit"))
 			} else if shouldKickTask {
 				scheduleForCASByIndex(node.Index, task)
 			}
@@ -99,21 +100,28 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval 
 			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
 			if !executorIsAlive {
 				logError(task, "executor-disappeared")
-				scheduleForCASByIndex(node.Index, markTaskFailed(task, "executor disappeared before completion"))
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "executor disappeared before completion"))
 			}
 		case models.TaskStateRunning:
 			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
-
 			if !executorIsAlive {
 				logError(task, "executor-disappeared")
-				scheduleForCASByIndex(node.Index, markTaskFailed(task, "executor disappeared before completion"))
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "executor disappeared before completion"))
 			}
 		case models.TaskStateCompleted:
-			if shouldKickTask {
+			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
+			if shouldDeleteTask {
+				logError(task, "resolution-expired")
+				keysToDelete = append(keysToDelete, node.Key)
+			} else if shouldKickTask {
 				scheduleForCASByIndex(node.Index, task)
 			}
 		case models.TaskStateResolving:
-			if shouldKickTask {
+			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
+			if shouldDeleteTask {
+				logError(task, "resolution-expired")
+				keysToDelete = append(keysToDelete, node.Key)
+			} else if shouldKickTask {
 				logError(task, "failed-to-resolve")
 				scheduleForCASByIndex(node.Index, demoteToCompleted(task))
 			}
@@ -135,10 +143,29 @@ func (bbs *TaskBBS) durationSinceTaskUpdated(task models.Task) time.Duration {
 	return bbs.timeProvider.Time().Sub(time.Unix(0, task.UpdatedAt))
 }
 
-func markTaskFailed(task models.Task, reason string) models.Task {
+func (bbs *TaskBBS) durationSinceTaskFirstCompleted(task models.Task) time.Duration {
+	if task.FirstCompletedAt == 0 {
+		return 0
+	}
+	return bbs.timeProvider.Time().Sub(time.Unix(0, task.FirstCompletedAt))
+}
+
+func (bbs *TaskBBS) markTaskFailed(task models.Task, reason string) models.Task {
+	return bbs.markTaskCompleted(task, true, reason, "")
+}
+
+func (bbs *TaskBBS) markTaskCompleted(task models.Task, failed bool, failureReason string, result string) models.Task {
+	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	task.FirstCompletedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateCompleted
-	task.Failed = true
-	task.FailureReason = reason
+	task.Failed = failed
+	task.FailureReason = failureReason
+	task.Result = result
+	return task
+}
+
+func demoteToCompleted(task models.Task) models.Task {
+	task.State = models.TaskStateCompleted
 	return task
 }
 
@@ -164,9 +191,4 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 	}
 
 	waitGroup.Wait()
-}
-
-func demoteToCompleted(task models.Task) models.Task {
-	task.State = models.TaskStateCompleted
-	return task
 }
