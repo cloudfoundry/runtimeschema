@@ -20,6 +20,7 @@ import (
 
 type ReceptorBBS interface {
 	DesireTask(models.Task) error
+	GetAllTasks() ([]models.Task, error)
 }
 
 type RepBBS interface {
