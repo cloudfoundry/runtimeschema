@@ -63,6 +63,13 @@ func (bbs *TaskBBS) GetAllResolvingTasks() ([]models.Task, error) {
 	return filterTasksByState(all, models.TaskStateResolving), err
 }
 
+func (bbs *TaskBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
+	all, err := bbs.GetAllTasks()
+	return filterTasks(all, func(task models.Task) bool {
+		return task.Domain == domain
+	}), err
+}
+
 func filterTasks(tasks []models.Task, filterFunc func(models.Task) bool) []models.Task {
 	result := make([]models.Task, 0)
 	for _, task := range tasks {

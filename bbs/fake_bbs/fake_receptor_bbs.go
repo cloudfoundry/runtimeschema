@@ -24,6 +24,15 @@ type FakeReceptorBBS struct {
 		result1 []models.Task
 		result2 error
 	}
+	GetAllTasksByDomainStub        func(domain string) ([]models.Task, error)
+	getAllTasksByDomainMutex       sync.RWMutex
+	getAllTasksByDomainArgsForCall []struct {
+		domain string
+	}
+	getAllTasksByDomainReturns struct {
+		result1 []models.Task
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -78,6 +87,39 @@ func (fake *FakeReceptorBBS) GetAllTasksCallCount() int {
 func (fake *FakeReceptorBBS) GetAllTasksReturns(result1 []models.Task, result2 error) {
 	fake.GetAllTasksStub = nil
 	fake.getAllTasksReturns = struct {
+		result1 []models.Task
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
+	fake.getAllTasksByDomainMutex.Lock()
+	fake.getAllTasksByDomainArgsForCall = append(fake.getAllTasksByDomainArgsForCall, struct {
+		domain string
+	}{domain})
+	fake.getAllTasksByDomainMutex.Unlock()
+	if fake.GetAllTasksByDomainStub != nil {
+		return fake.GetAllTasksByDomainStub(domain)
+	} else {
+		return fake.getAllTasksByDomainReturns.result1, fake.getAllTasksByDomainReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetAllTasksByDomainCallCount() int {
+	fake.getAllTasksByDomainMutex.RLock()
+	defer fake.getAllTasksByDomainMutex.RUnlock()
+	return len(fake.getAllTasksByDomainArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetAllTasksByDomainArgsForCall(i int) string {
+	fake.getAllTasksByDomainMutex.RLock()
+	defer fake.getAllTasksByDomainMutex.RUnlock()
+	return fake.getAllTasksByDomainArgsForCall[i].domain
+}
+
+func (fake *FakeReceptorBBS) GetAllTasksByDomainReturns(result1 []models.Task, result2 error) {
+	fake.GetAllTasksByDomainStub = nil
+	fake.getAllTasksByDomainReturns = struct {
 		result1 []models.Task
 		result2 error
 	}{result1, result2}

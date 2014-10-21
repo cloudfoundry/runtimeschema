@@ -173,4 +173,34 @@ var _ = Describe("Task BBS", func() {
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
+
+	Describe("GetAllTasksByDomain", func() {
+		BeforeEach(func() {
+			task.TaskGuid = "guid-1"
+			err = bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			task.TaskGuid = "guid-2"
+			task.Domain = "other-domain"
+			err = bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			task.TaskGuid = "guid-3"
+			task.Domain = "tests"
+			err = bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("returns all Tasks in the given domain", func() {
+			tasks, err := bbs.GetAllTasksByDomain("tests")
+
+			guids := []string{}
+			for _, task := range tasks {
+				guids = append(guids, task.TaskGuid)
+			}
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(guids).Should(ConsistOf([]string{"guid-1", "guid-3"}))
+		})
+	})
 })
