@@ -40,37 +40,43 @@ func (bbs *TaskBBS) GetTaskByGuid(guid string) (models.Task, error) {
 
 func (bbs *TaskBBS) GetAllPendingTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
-	return filterTasks(all, models.TaskStatePending), err
+	return filterTasksByState(all, models.TaskStatePending), err
 }
 
 func (bbs *TaskBBS) GetAllClaimedTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
-	return filterTasks(all, models.TaskStateClaimed), err
+	return filterTasksByState(all, models.TaskStateClaimed), err
 }
 
 func (bbs *TaskBBS) GetAllRunningTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
-	return filterTasks(all, models.TaskStateRunning), err
+	return filterTasksByState(all, models.TaskStateRunning), err
 }
 
 func (bbs *TaskBBS) GetAllCompletedTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
-	return filterTasks(all, models.TaskStateCompleted), err
+	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
 func (bbs *TaskBBS) GetAllResolvingTasks() ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
-	return filterTasks(all, models.TaskStateResolving), err
+	return filterTasksByState(all, models.TaskStateResolving), err
 }
 
-func filterTasks(tasks []models.Task, state models.TaskState) []models.Task {
+func filterTasks(tasks []models.Task, filterFunc func(models.Task) bool) []models.Task {
 	result := make([]models.Task, 0)
-	for _, model := range tasks {
-		if model.State == state {
-			result = append(result, model)
+	for _, task := range tasks {
+		if filterFunc(task) {
+			result = append(result, task)
 		}
 	}
 	return result
+}
+
+func filterTasksByState(tasks []models.Task, state models.TaskState) []models.Task {
+	return filterTasks(tasks, func(task models.Task) bool {
+		return task.State == state
+	})
 }
 
 func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
