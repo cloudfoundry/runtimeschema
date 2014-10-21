@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/etcdstoreadapter"
-	"github.com/cloudfoundry/storeadapter/workerpool"
 
 	"github.com/pivotal-golang/lager"
 	"github.com/pivotal-golang/lager/lagertest"
@@ -41,7 +41,7 @@ var _ = Describe("Heartbeater", func() {
 		etcdRunner.Start()
 		etcdProxy = ifrit.Envoke(proxyRunner)
 
-		etcdClient = etcdstoreadapter.NewETCDStoreAdapter([]string{proxyUrl}, workerpool.NewWorkerPool(10))
+		etcdClient = etcdstoreadapter.NewETCDStoreAdapter([]string{proxyUrl}, workpool.NewWorkPool(10))
 		etcdClient.Connect()
 
 		logger = lagertest.NewTestLogger("test")
