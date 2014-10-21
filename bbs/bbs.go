@@ -111,7 +111,6 @@ type StagerBBS interface {
 	DesireTask(models.Task) error
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
-	FailedToResolveTask(taskGuid string) error
 
 	//services
 	GetAvailableFileServer() (string, error)

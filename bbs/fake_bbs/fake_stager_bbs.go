@@ -12,7 +12,7 @@ type FakeStagerBBS struct {
 	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForCompletedTaskMutex       sync.RWMutex
 	watchForCompletedTaskArgsForCall []struct{}
-	watchForCompletedTaskReturns     struct {
+	watchForCompletedTaskReturns struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -41,18 +41,10 @@ type FakeStagerBBS struct {
 	resolveTaskReturns struct {
 		result1 error
 	}
-	FailedToResolveTaskStub        func(taskGuid string) error
-	failedToResolveTaskMutex       sync.RWMutex
-	failedToResolveTaskArgsForCall []struct {
-		taskGuid string
-	}
-	failedToResolveTaskReturns struct {
-		result1 error
-	}
 	GetAvailableFileServerStub        func() (string, error)
 	getAvailableFileServerMutex       sync.RWMutex
 	getAvailableFileServerArgsForCall []struct{}
-	getAvailableFileServerReturns     struct {
+	getAvailableFileServerReturns struct {
 		result1 string
 		result2 error
 	}
@@ -176,38 +168,6 @@ func (fake *FakeStagerBBS) ResolveTaskArgsForCall(i int) string {
 func (fake *FakeStagerBBS) ResolveTaskReturns(result1 error) {
 	fake.ResolveTaskStub = nil
 	fake.resolveTaskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeStagerBBS) FailedToResolveTask(taskGuid string) error {
-	fake.failedToResolveTaskMutex.Lock()
-	fake.failedToResolveTaskArgsForCall = append(fake.failedToResolveTaskArgsForCall, struct {
-		taskGuid string
-	}{taskGuid})
-	fake.failedToResolveTaskMutex.Unlock()
-	if fake.FailedToResolveTaskStub != nil {
-		return fake.FailedToResolveTaskStub(taskGuid)
-	} else {
-		return fake.failedToResolveTaskReturns.result1
-	}
-}
-
-func (fake *FakeStagerBBS) FailedToResolveTaskCallCount() int {
-	fake.failedToResolveTaskMutex.RLock()
-	defer fake.failedToResolveTaskMutex.RUnlock()
-	return len(fake.failedToResolveTaskArgsForCall)
-}
-
-func (fake *FakeStagerBBS) FailedToResolveTaskArgsForCall(i int) string {
-	fake.failedToResolveTaskMutex.RLock()
-	defer fake.failedToResolveTaskMutex.RUnlock()
-	return fake.failedToResolveTaskArgsForCall[i].taskGuid
-}
-
-func (fake *FakeStagerBBS) FailedToResolveTaskReturns(result1 error) {
-	fake.FailedToResolveTaskStub = nil
-	fake.failedToResolveTaskReturns = struct {
 		result1 error
 	}{result1}
 }
