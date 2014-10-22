@@ -33,6 +33,15 @@ type FakeReceptorBBS struct {
 		result1 []models.Task
 		result2 error
 	}
+	GetTaskByGuidStub        func(taskGuid string) (models.Task, error)
+	getTaskByGuidMutex       sync.RWMutex
+	getTaskByGuidArgsForCall []struct {
+		taskGuid string
+	}
+	getTaskByGuidReturns struct {
+		result1 models.Task
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -121,6 +130,39 @@ func (fake *FakeReceptorBBS) GetAllTasksByDomainReturns(result1 []models.Task, r
 	fake.GetAllTasksByDomainStub = nil
 	fake.getAllTasksByDomainReturns = struct {
 		result1 []models.Task
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetTaskByGuid(taskGuid string) (models.Task, error) {
+	fake.getTaskByGuidMutex.Lock()
+	fake.getTaskByGuidArgsForCall = append(fake.getTaskByGuidArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.getTaskByGuidMutex.Unlock()
+	if fake.GetTaskByGuidStub != nil {
+		return fake.GetTaskByGuidStub(taskGuid)
+	} else {
+		return fake.getTaskByGuidReturns.result1, fake.getTaskByGuidReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetTaskByGuidCallCount() int {
+	fake.getTaskByGuidMutex.RLock()
+	defer fake.getTaskByGuidMutex.RUnlock()
+	return len(fake.getTaskByGuidArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetTaskByGuidArgsForCall(i int) string {
+	fake.getTaskByGuidMutex.RLock()
+	defer fake.getTaskByGuidMutex.RUnlock()
+	return fake.getTaskByGuidArgsForCall[i].taskGuid
+}
+
+func (fake *FakeReceptorBBS) GetTaskByGuidReturns(result1 models.Task, result2 error) {
+	fake.GetTaskByGuidStub = nil
+	fake.getTaskByGuidReturns = struct {
+		result1 models.Task
 		result2 error
 	}{result1, result2}
 }

@@ -22,6 +22,7 @@ type ReceptorBBS interface {
 	DesireTask(models.Task) error
 	GetAllTasks() ([]models.Task, error)
 	GetAllTasksByDomain(domain string) ([]models.Task, error)
+	GetTaskByGuid(taskGuid string) (models.Task, error)
 }
 
 type RepBBS interface {
