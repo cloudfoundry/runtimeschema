@@ -91,7 +91,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return fmt.Errorf("cannot complete non-existing task: %s", err.Error())
+		return ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStateRunning && task.State != models.TaskStateClaimed {
@@ -114,11 +114,11 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return fmt.Errorf("cannot start resolving non-existing task: %s", err.Error())
+		return ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStateCompleted {
-		return errors.New("cannot start resolving task in non-completed state")
+		return ErrTaskNotResolvable
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()

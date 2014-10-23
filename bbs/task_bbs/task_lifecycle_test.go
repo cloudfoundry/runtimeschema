@@ -369,12 +369,11 @@ var _ = Describe("Task BBS", func() {
 
 				err = bbs.StartTask(task.TaskGuid, "some-executor-id", "some-container-handle")
 				Ω(err).ShouldNot(HaveOccurred())
-
 			})
 
 			It("should fail", func() {
 				err := bbs.ResolvingTask(task.TaskGuid)
-				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(Equal(ErrTaskNotResolvable))
 			})
 		})
 	})
@@ -435,5 +434,4 @@ var _ = Describe("Task BBS", func() {
 			})
 		})
 	})
-
 })
