@@ -23,6 +23,8 @@ type ReceptorBBS interface {
 	GetAllTasks() ([]models.Task, error)
 	GetAllTasksByDomain(domain string) ([]models.Task, error)
 	GetTaskByGuid(taskGuid string) (models.Task, error)
+	ResolvingTask(taskGuid string) error
+	ResolveTask(taskGuid string) error
 }
 
 type RepBBS interface {

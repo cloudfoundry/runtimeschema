@@ -42,6 +42,22 @@ type FakeReceptorBBS struct {
 		result1 models.Task
 		result2 error
 	}
+	ResolvingTaskStub        func(taskGuid string) error
+	resolvingTaskMutex       sync.RWMutex
+	resolvingTaskArgsForCall []struct {
+		taskGuid string
+	}
+	resolvingTaskReturns struct {
+		result1 error
+	}
+	ResolveTaskStub        func(taskGuid string) error
+	resolveTaskMutex       sync.RWMutex
+	resolveTaskArgsForCall []struct {
+		taskGuid string
+	}
+	resolveTaskReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -165,6 +181,70 @@ func (fake *FakeReceptorBBS) GetTaskByGuidReturns(result1 models.Task, result2 e
 		result1 models.Task
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) ResolvingTask(taskGuid string) error {
+	fake.resolvingTaskMutex.Lock()
+	fake.resolvingTaskArgsForCall = append(fake.resolvingTaskArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.resolvingTaskMutex.Unlock()
+	if fake.ResolvingTaskStub != nil {
+		return fake.ResolvingTaskStub(taskGuid)
+	} else {
+		return fake.resolvingTaskReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) ResolvingTaskCallCount() int {
+	fake.resolvingTaskMutex.RLock()
+	defer fake.resolvingTaskMutex.RUnlock()
+	return len(fake.resolvingTaskArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) ResolvingTaskArgsForCall(i int) string {
+	fake.resolvingTaskMutex.RLock()
+	defer fake.resolvingTaskMutex.RUnlock()
+	return fake.resolvingTaskArgsForCall[i].taskGuid
+}
+
+func (fake *FakeReceptorBBS) ResolvingTaskReturns(result1 error) {
+	fake.ResolvingTaskStub = nil
+	fake.resolvingTaskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeReceptorBBS) ResolveTask(taskGuid string) error {
+	fake.resolveTaskMutex.Lock()
+	fake.resolveTaskArgsForCall = append(fake.resolveTaskArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.resolveTaskMutex.Unlock()
+	if fake.ResolveTaskStub != nil {
+		return fake.ResolveTaskStub(taskGuid)
+	} else {
+		return fake.resolveTaskReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) ResolveTaskCallCount() int {
+	fake.resolveTaskMutex.RLock()
+	defer fake.resolveTaskMutex.RUnlock()
+	return len(fake.resolveTaskArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) ResolveTaskArgsForCall(i int) string {
+	fake.resolveTaskMutex.RLock()
+	defer fake.resolveTaskMutex.RUnlock()
+	return fake.resolveTaskArgsForCall[i].taskGuid
+}
+
+func (fake *FakeReceptorBBS) ResolveTaskReturns(result1 error) {
+	fake.ResolveTaskStub = nil
+	fake.resolveTaskReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
