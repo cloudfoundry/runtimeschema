@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"net/url"
 	"regexp"
 )
 
@@ -42,7 +43,8 @@ type Task struct {
 	Failed        bool   `json:"failed"`
 	FailureReason string `json:"failure_reason"`
 
-	Annotation string `json:"annotation,omitempty"`
+	CompletionCallbackURL *url.URL `json:"completion_callback_url,omitempty"`
+	Annotation            string   `json:"annotation,omitempty"`
 }
 
 type StagingResult struct {
