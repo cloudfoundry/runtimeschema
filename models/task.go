@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"regexp"
 )
 
 type TaskState int
@@ -14,6 +15,8 @@ const (
 	TaskStateCompleted
 	TaskStateResolving
 )
+
+var taskGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type Task struct {
 	TaskGuid         string           `json:"task_guid"`
@@ -78,7 +81,7 @@ func (task Task) Validate() error {
 		return ErrInvalidJSONMessage{"domain"}
 	}
 
-	if task.TaskGuid == "" {
+	if !taskGuidPattern.MatchString(task.TaskGuid) {
 		return ErrInvalidJSONMessage{"task_guid"}
 	}
 

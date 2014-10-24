@@ -124,5 +124,17 @@ var _ = Describe("Task", func() {
 				})
 			})
 		}
+
+		Context("when the task GUID is present but invalid", func() {
+			json := `{"domain": "some-domain", "task_guid": "invalid/guid", "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`
+
+			It("returns an error indicating so", func() {
+				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(Equal("JSON has missing/invalid field: task_guid"))
+
+				Ω(decodedStartAuction).Should(BeZero())
+			})
+		})
 	})
 })
