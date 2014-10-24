@@ -58,6 +58,14 @@ type FakeReceptorBBS struct {
 	resolveTaskReturns struct {
 		result1 error
 	}
+	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
+	watchForCompletedTaskMutex       sync.RWMutex
+	watchForCompletedTaskArgsForCall []struct{}
+	watchForCompletedTaskReturns struct {
+		result1 <-chan models.Task
+		result2 chan<- bool
+		result3 <-chan error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -245,6 +253,32 @@ func (fake *FakeReceptorBBS) ResolveTaskReturns(result1 error) {
 	fake.resolveTaskReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeReceptorBBS) WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error) {
+	fake.watchForCompletedTaskMutex.Lock()
+	fake.watchForCompletedTaskArgsForCall = append(fake.watchForCompletedTaskArgsForCall, struct{}{})
+	fake.watchForCompletedTaskMutex.Unlock()
+	if fake.WatchForCompletedTaskStub != nil {
+		return fake.WatchForCompletedTaskStub()
+	} else {
+		return fake.watchForCompletedTaskReturns.result1, fake.watchForCompletedTaskReturns.result2, fake.watchForCompletedTaskReturns.result3
+	}
+}
+
+func (fake *FakeReceptorBBS) WatchForCompletedTaskCallCount() int {
+	fake.watchForCompletedTaskMutex.RLock()
+	defer fake.watchForCompletedTaskMutex.RUnlock()
+	return len(fake.watchForCompletedTaskArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) WatchForCompletedTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
+	fake.WatchForCompletedTaskStub = nil
+	fake.watchForCompletedTaskReturns = struct {
+		result1 <-chan models.Task
+		result2 chan<- bool
+		result3 <-chan error
+	}{result1, result2, result3}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
