@@ -21,7 +21,9 @@ var _ = Describe("StagingMessages", func() {
            "stack" : "fake-stack",
            "app_bits_download_uri" : "http://fake-download_uri",
            "build_artifacts_cache_download_uri" : "http://a-nice-place-to-get-valuable-artifacts.com",
-           "buildpacks" : [{"name":"fake-buildpack-name", "key":"fake-buildpack-key" ,"url":"fake-buildpack-url"}]
+           "build_artifacts_cache_upload_uri" : "http://a-nice-place-to-upload-valuable-artifacts.com",
+           "buildpacks" : [{"name":"fake-buildpack-name", "key":"fake-buildpack-key" ,"url":"fake-buildpack-url"}],
+           "droplet_upload_uri" : "http://droplet-upload-uri"
         }`
 
 		It("should be mapped to the CC's staging request JSON", func() {
@@ -35,6 +37,7 @@ var _ = Describe("StagingMessages", func() {
 				Stack:                          "fake-stack",
 				AppBitsDownloadUri:             "http://fake-download_uri",
 				BuildArtifactsCacheDownloadUri: "http://a-nice-place-to-get-valuable-artifacts.com",
+				BuildArtifactsCacheUploadUri:   "http://a-nice-place-to-upload-valuable-artifacts.com",
 				MemoryMB:                       1024,
 				FileDescriptors:                3,
 				DiskMB:                         10000,
@@ -48,6 +51,7 @@ var _ = Describe("StagingMessages", func() {
 				Environment: Environment{
 					{Name: "FOO", Value: "BAR"},
 				},
+				DropletUploadUri: "http://droplet-upload-uri",
 			}))
 		})
 	})
