@@ -26,7 +26,7 @@ type Task struct {
 	Stack            string           `json:"stack"`
 	MemoryMB         int              `json:"memory_mb"`
 	DiskMB           int              `json:"disk_mb"`
-	CpuPercent       float64          `json:"cpu_percent"`
+	CPUWeight        uint             `json:"cpu_weight"`
 	Log              LogConfig        `json:"log"`
 	CreatedAt        int64            `json:"created_at"` //  the number of nanoseconds elapsed since January 1, 1970 UTC
 	UpdatedAt        int64            `json:"updated_at"`

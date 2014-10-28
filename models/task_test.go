@@ -34,7 +34,7 @@ var _ = Describe("Task", func() {
 		"failure_reason":"because i said so",
 		"memory_mb":256,
 		"disk_mb":1024,
-		"cpu_percent": 42.25,
+		"cpu_weight": 42,
 		"log": {
 			"guid": "123",
 			"source_name": "APP"
@@ -72,7 +72,7 @@ var _ = Describe("Task", func() {
 			FailureReason:    "because i said so",
 			MemoryMB:         256,
 			DiskMB:           1024,
-			CpuPercent:       42.25,
+			CPUWeight:        42,
 			CreatedAt:        time.Date(2014, time.February, 25, 23, 46, 11, 00, time.UTC).UnixNano(),
 			UpdatedAt:        time.Date(2014, time.February, 25, 23, 46, 11, 10, time.UTC).UnixNano(),
 			FirstCompletedAt: time.Date(2014, time.February, 25, 23, 46, 11, 30, time.UTC).UnixNano(),
