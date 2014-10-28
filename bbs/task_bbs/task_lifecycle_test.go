@@ -170,7 +170,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("sets the state to running", func() {
-				err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.GetAllRunningTasks()
@@ -178,13 +178,12 @@ var _ = Describe("Task BBS", func() {
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 				Ω(tasks[0].State).Should(Equal(models.TaskStateRunning))
-				Ω(tasks[0].ContainerHandle).Should(Equal("container-handle"))
 			})
 
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.GetAllRunningTasks()
@@ -195,7 +194,7 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+					return bbs.StartTask(task.TaskGuid, "executor-ID")
 				})
 			})
 		})
@@ -205,14 +204,14 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-ID")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		Context("When starting a Task that was claimed by a different executor", func() {
 			It("returns an error", func() {
-				err = bbs.StartTask(task.TaskGuid, "some-other-executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "some-other-executor-ID")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -227,7 +226,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -300,7 +299,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
@@ -318,7 +317,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-executor-id", "some-container-handle")
+				err = bbs.StartTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
@@ -367,7 +366,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-executor-id", "some-container-handle")
+				err = bbs.StartTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -387,7 +386,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-executor-id", "some-container-handle")
+				err = bbs.StartTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
@@ -421,7 +420,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-executor-id", "some-container-handle")
+				err = bbs.StartTask(task.TaskGuid, "some-executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")

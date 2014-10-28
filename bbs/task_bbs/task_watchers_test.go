@@ -78,7 +78,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
@@ -110,7 +110,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID", "container-handle")
+			err = bbs.StartTask(task.TaskGuid, "executor-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

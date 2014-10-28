@@ -226,7 +226,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				heartbeater = ifrit.Envoke(servicesBBS.NewExecutorHeartbeat(models.ExecutorPresence{
@@ -275,7 +275,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
@@ -335,7 +335,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id", "container-handle")
+				err = bbs.StartTask(task.TaskGuid, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a result")

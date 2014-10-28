@@ -56,7 +56,7 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, executorID string) error {
 // The executor calls this when it is about to run the task in the claimed container
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the executor should assume that someone else is running and should clean up and bail
-func (bbs *TaskBBS) StartTask(taskGuid string, executorID string, containerHandle string) error {
+func (bbs *TaskBBS) StartTask(taskGuid string, executorID string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -73,7 +73,6 @@ func (bbs *TaskBBS) StartTask(taskGuid string, executorID string, containerHandl
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateRunning
-	task.ContainerHandle = containerHandle
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{

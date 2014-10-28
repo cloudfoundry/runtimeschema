@@ -37,12 +37,11 @@ type FakeRepBBS struct {
 	claimTaskReturns struct {
 		result1 error
 	}
-	StartTaskStub        func(taskGuid string, executorID string, containerHandle string) error
+	StartTaskStub        func(taskGuid string, executorID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
-		taskGuid        string
-		executorID      string
-		containerHandle string
+		taskGuid   string
+		executorID string
 	}
 	startTaskReturns struct {
 		result1 error
@@ -234,16 +233,15 @@ func (fake *FakeRepBBS) ClaimTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) StartTask(taskGuid string, executorID string, containerHandle string) error {
+func (fake *FakeRepBBS) StartTask(taskGuid string, executorID string) error {
 	fake.startTaskMutex.Lock()
 	fake.startTaskArgsForCall = append(fake.startTaskArgsForCall, struct {
-		taskGuid        string
-		executorID      string
-		containerHandle string
-	}{taskGuid, executorID, containerHandle})
+		taskGuid   string
+		executorID string
+	}{taskGuid, executorID})
 	fake.startTaskMutex.Unlock()
 	if fake.StartTaskStub != nil {
-		return fake.StartTaskStub(taskGuid, executorID, containerHandle)
+		return fake.StartTaskStub(taskGuid, executorID)
 	} else {
 		return fake.startTaskReturns.result1
 	}
@@ -255,10 +253,10 @@ func (fake *FakeRepBBS) StartTaskCallCount() int {
 	return len(fake.startTaskArgsForCall)
 }
 
-func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (string, string, string) {
+func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (string, string) {
 	fake.startTaskMutex.RLock()
 	defer fake.startTaskMutex.RUnlock()
-	return fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].executorID, fake.startTaskArgsForCall[i].containerHandle
+	return fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].executorID
 }
 
 func (fake *FakeRepBBS) StartTaskReturns(result1 error) {

@@ -37,8 +37,6 @@ type Task struct {
 
 	ExecutorID string `json:"executor_id"`
 
-	ContainerHandle string `json:"container_handle"`
-
 	Result        string `json:"result"`
 	Failed        bool   `json:"failed"`
 	FailureReason string `json:"failure_reason"`

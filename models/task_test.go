@@ -27,7 +27,6 @@ var _ = Describe("Task", func() {
 				}
 			}
 		],
-		"container_handle":"17fgsafdfcvc",
 		"result_file":"some-file.txt",
 		"result": "turboencabulated",
 		"failed":true,
@@ -65,7 +64,6 @@ var _ = Describe("Task", func() {
 				SourceName: "APP",
 			},
 			ExecutorID:       "executor",
-			ContainerHandle:  "17fgsafdfcvc",
 			ResultFile:       "some-file.txt",
 			Result:           "turboencabulated",
 			Failed:           true,
