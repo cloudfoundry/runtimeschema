@@ -11,6 +11,7 @@ type DesiredLRP struct {
 	Actions     []ExecutorAction `json:"actions"`
 	DiskMB      int              `json:"disk_mb"`
 	MemoryMB    int              `json:"memory_mb"`
+	CPUWeight   uint             `json:"cpu_weight"`
 	Ports       []PortMapping    `json:"ports"`
 	Routes      []string         `json:"routes"`
 	Log         LogConfig        `json:"log"`

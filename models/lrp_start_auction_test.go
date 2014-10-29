@@ -29,6 +29,7 @@ var _ = Describe("LRPStartAuction", func() {
       ],
       "disk_mb": 512,
       "memory_mb": 1024,
+      "cpu_weight": 42,
       "ports": [
         {
           "container_port": 5678,
@@ -64,6 +65,7 @@ var _ = Describe("LRPStartAuction", func() {
 				Stack:      "some-stack",
 				MemoryMB:   1024,
 				DiskMB:     512,
+				CPUWeight:  42,
 				Routes:     []string{"route-1", "route-2"},
 				Ports: []PortMapping{
 					{HostPort: 1234, ContainerPort: 5678},
