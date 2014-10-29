@@ -13,8 +13,9 @@ var _ = Describe("Task", func() {
 	var task Task
 
 	taskPayload := `{
-		"domain":"some-domain",
 		"task_guid":"some-guid",
+		"domain":"some-domain",
+		"root_fs": "docker:///docker.com/docker",
 		"stack":"some-stack",
 		"executor_id":"executor",
 		"actions":[
@@ -47,9 +48,10 @@ var _ = Describe("Task", func() {
 
 	BeforeEach(func() {
 		task = Task{
-			Domain:   "some-domain",
-			TaskGuid: "some-guid",
-			Stack:    "some-stack",
+			TaskGuid:   "some-guid",
+			Domain:     "some-domain",
+			RootFSPath: "docker:///docker.com/docker",
+			Stack:      "some-stack",
 			Actions: []ExecutorAction{
 				{
 					Action: DownloadAction{
