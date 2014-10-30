@@ -94,6 +94,58 @@ var _ = Describe("DesiredLRP", func() {
 		})
 	})
 
+	Describe("Validate", func() {
+		var validationErr error
+
+		JustBeforeEach(func() {
+			validationErr = lrp.Validate()
+		})
+
+		Context("Domain", func() {
+			BeforeEach(func() {
+				lrp.Domain = ""
+			})
+
+			It("requires a domain", func() {
+				Ω(validationErr).Should(HaveOccurred())
+				Ω(validationErr.Error()).Should(ContainSubstring("domain"))
+			})
+		})
+
+		Context("ProcessGuid", func() {
+			BeforeEach(func() {
+				lrp.ProcessGuid = ""
+			})
+
+			It("requires a process guid", func() {
+				Ω(validationErr).Should(HaveOccurred())
+				Ω(validationErr.Error()).Should(ContainSubstring("process_guid"))
+			})
+		})
+
+		Context("Stack", func() {
+			BeforeEach(func() {
+				lrp.Stack = ""
+			})
+
+			It("requires a stack", func() {
+				Ω(validationErr).Should(HaveOccurred())
+				Ω(validationErr.Error()).Should(ContainSubstring("stack"))
+			})
+		})
+
+		Context("Actions", func() {
+			BeforeEach(func() {
+				lrp.Actions = nil
+			})
+
+			It("requires actions", func() {
+				Ω(validationErr).Should(HaveOccurred())
+				Ω(validationErr.Error()).Should(ContainSubstring("actions"))
+			})
+		})
+	})
+
 	Describe("NewDesiredLRPFromJSON", func() {
 		It("returns a LRP with correct fields", func() {
 			decodedStartAuction, err := NewDesiredLRPFromJSON([]byte(lrpPayload))

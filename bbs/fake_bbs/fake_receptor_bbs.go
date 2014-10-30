@@ -66,6 +66,14 @@ type FakeReceptorBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
+	DesireLRPStub        func(models.DesiredLRP) error
+	desireLRPMutex       sync.RWMutex
+	desireLRPArgsForCall []struct {
+		arg1 models.DesiredLRP
+	}
+	desireLRPReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -279,6 +287,38 @@ func (fake *FakeReceptorBBS) WatchForCompletedTaskReturns(result1 <-chan models.
 		result2 chan<- bool
 		result3 <-chan error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeReceptorBBS) DesireLRP(arg1 models.DesiredLRP) error {
+	fake.desireLRPMutex.Lock()
+	fake.desireLRPArgsForCall = append(fake.desireLRPArgsForCall, struct {
+		arg1 models.DesiredLRP
+	}{arg1})
+	fake.desireLRPMutex.Unlock()
+	if fake.DesireLRPStub != nil {
+		return fake.DesireLRPStub(arg1)
+	} else {
+		return fake.desireLRPReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) DesireLRPCallCount() int {
+	fake.desireLRPMutex.RLock()
+	defer fake.desireLRPMutex.RUnlock()
+	return len(fake.desireLRPArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) DesireLRPArgsForCall(i int) models.DesiredLRP {
+	fake.desireLRPMutex.RLock()
+	defer fake.desireLRPMutex.RUnlock()
+	return fake.desireLRPArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
+	fake.DesireLRPStub = nil
+	fake.desireLRPReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)

@@ -23,6 +23,26 @@ type DesiredLRPChange struct {
 	After  *DesiredLRP
 }
 
+func (desired DesiredLRP) Validate() error {
+	if desired.Domain == "" {
+		return ErrInvalidJSONMessage{"domain"}
+	}
+
+	if desired.ProcessGuid == "" {
+		return ErrInvalidJSONMessage{"process_guid"}
+	}
+
+	if desired.Stack == "" {
+		return ErrInvalidJSONMessage{"stack"}
+	}
+
+	if len(desired.Actions) == 0 {
+		return ErrInvalidJSONMessage{"actions"}
+	}
+
+	return nil
+}
+
 func NewDesiredLRPFromJSON(payload []byte) (DesiredLRP, error) {
 	var lrp DesiredLRP
 
@@ -31,20 +51,9 @@ func NewDesiredLRPFromJSON(payload []byte) (DesiredLRP, error) {
 		return DesiredLRP{}, err
 	}
 
-	if lrp.Domain == "" {
-		return DesiredLRP{}, ErrInvalidJSONMessage{"domain"}
-	}
-
-	if lrp.ProcessGuid == "" {
-		return DesiredLRP{}, ErrInvalidJSONMessage{"process_guid"}
-	}
-
-	if lrp.Stack == "" {
-		return DesiredLRP{}, ErrInvalidJSONMessage{"stack"}
-	}
-
-	if len(lrp.Actions) == 0 {
-		return DesiredLRP{}, ErrInvalidJSONMessage{"actions"}
+	err = lrp.Validate()
+	if err != nil {
+		return DesiredLRP{}, err
 	}
 
 	return lrp, nil

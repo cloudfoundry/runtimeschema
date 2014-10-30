@@ -19,6 +19,7 @@ import (
 //Bulletin Board System/Store
 
 type ReceptorBBS interface {
+	//task
 	DesireTask(models.Task) error
 	GetAllTasks() ([]models.Task, error)
 	GetAllTasksByDomain(domain string) ([]models.Task, error)
@@ -26,6 +27,9 @@ type ReceptorBBS interface {
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
 	WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error)
+
+	//lrp
+	DesireLRP(models.DesiredLRP) error
 }
 
 type RepBBS interface {
