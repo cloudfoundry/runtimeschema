@@ -20,19 +20,20 @@ const (
 var taskGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type Task struct {
-	TaskGuid         string           `json:"task_guid"`
-	Domain           string           `json:"domain"`
-	RootFSPath       string           `json:"root_fs"`
-	Actions          []ExecutorAction `json:"actions"`
-	Stack            string           `json:"stack"`
-	MemoryMB         int              `json:"memory_mb"`
-	DiskMB           int              `json:"disk_mb"`
-	CPUWeight        uint             `json:"cpu_weight"`
-	Log              LogConfig        `json:"log"`
-	CreatedAt        int64            `json:"created_at"` //  the number of nanoseconds elapsed since January 1, 1970 UTC
-	UpdatedAt        int64            `json:"updated_at"`
-	FirstCompletedAt int64            `json:"first_completed_at"`
-	ResultFile       string           `json:"result_file"`
+	TaskGuid             string                `json:"task_guid"`
+	Domain               string                `json:"domain"`
+	RootFSPath           string                `json:"root_fs"`
+	Stack                string                `json:"stack"`
+	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
+	Actions              []ExecutorAction      `json:"actions"`
+	MemoryMB             int                   `json:"memory_mb"`
+	DiskMB               int                   `json:"disk_mb"`
+	CPUWeight            uint                  `json:"cpu_weight"`
+	Log                  LogConfig             `json:"log"`
+	CreatedAt            int64                 `json:"created_at"` //  the number of nanoseconds elapsed since January 1, 1970 UTC
+	UpdatedAt            int64                 `json:"updated_at"`
+	FirstCompletedAt     int64                 `json:"first_completed_at"`
+	ResultFile           string                `json:"result_file"`
 
 	State TaskState `json:"state"`
 

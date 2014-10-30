@@ -17,6 +17,12 @@ var _ = Describe("Task", func() {
 		"domain":"some-domain",
 		"root_fs": "docker:///docker.com/docker",
 		"stack":"some-stack",
+		"env":[
+			{
+				"name":"ENV_VAR_NAME",
+				"value":"an environmment value"
+			}
+		],
 		"executor_id":"executor",
 		"actions":[
 			{
@@ -52,6 +58,12 @@ var _ = Describe("Task", func() {
 			Domain:     "some-domain",
 			RootFSPath: "docker:///docker.com/docker",
 			Stack:      "some-stack",
+			EnvironmentVariables: []EnvironmentVariable{
+				{
+					Name:  "ENV_VAR_NAME",
+					Value: "an environmment value",
+				},
+			},
 			Actions: []ExecutorAction{
 				{
 					Action: DownloadAction{
