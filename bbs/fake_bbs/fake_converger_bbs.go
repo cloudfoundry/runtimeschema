@@ -28,8 +28,6 @@ type FakeConvergerBBS struct {
 	taskConvergenceInterval  time.Duration
 	timeToResolve            time.Duration
 
-	FileServerGetter
-
 	DesiredLRPChangeChan chan models.DesiredLRPChange
 	DesiredLRPStopChan   chan bool
 	DesiredLRPErrChan    chan error

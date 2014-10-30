@@ -74,9 +74,6 @@ type ConvergerBBS interface {
 
 	//lock
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
-
-	//services
-	GetAvailableFileServer() (string, error)
 }
 
 type TPSBBS interface {
@@ -121,9 +118,6 @@ type StagerBBS interface {
 	DesireTask(models.Task) error
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
-
-	//services
-	GetAvailableFileServer() (string, error)
 }
 
 type MetricsBBS interface {
@@ -140,11 +134,6 @@ type MetricsBBS interface {
 
 	//lock
 	NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner
-}
-
-type FileServerBBS interface {
-	//services
-	NewFileServerHeartbeat(fileserverURL, fileserverId string, interval time.Duration) ifrit.Runner
 }
 
 type RouteEmitterBBS interface {
@@ -180,7 +169,6 @@ type VeritasBBS interface {
 
 	//services
 	GetAllExecutors() ([]models.ExecutorPresence, error)
-	GetAllFileServers() ([]string, error)
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {
@@ -208,10 +196,6 @@ func NewStagerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Tim
 }
 
 func NewMetricsBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) MetricsBBS {
-	return NewBBS(store, timeProvider, logger)
-}
-
-func NewFileServerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) FileServerBBS {
 	return NewBBS(store, timeProvider, logger)
 }
 

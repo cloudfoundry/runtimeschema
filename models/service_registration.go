@@ -1,8 +1,7 @@
 package models
 
 const (
-	ExecutorServiceName   = "Executor"
-	FileServerServiceName = "FileServer"
+	ExecutorServiceName = "Executor"
 )
 
 type ServiceRegistration struct {

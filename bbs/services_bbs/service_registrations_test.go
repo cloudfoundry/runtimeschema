@@ -59,12 +59,6 @@ var _ = Context("Getting Generic Services", func() {
 					Name: models.ExecutorServiceName, Id: "guid-1",
 				}))
 			})
-
-			It("returns the file-server service registrations", func() {
-				Ω(registrations.FilterByName(models.FileServerServiceName)).Should(Equal(models.ServiceRegistrations{
-					{Name: models.FileServerServiceName, Id: "guid-0"},
-				}))
-			})
 		})
 
 		Context("when etcd comes up empty", func() {

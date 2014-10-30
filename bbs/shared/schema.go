@@ -9,7 +9,6 @@ import (
 
 const SchemaRoot = "/v1/"
 const ExecutorSchemaRoot = SchemaRoot + "executor"
-const FileServerSchemaRoot = SchemaRoot + "file_server"
 const LRPStartAuctionSchemaRoot = SchemaRoot + "start"
 const LRPStopAuctionSchemaRoot = SchemaRoot + "stop"
 const StopLRPInstanceSchemaRoot = SchemaRoot + "stop-instance"
@@ -21,10 +20,6 @@ const FreshnessSchemaRoot = SchemaRoot + "freshness"
 
 func ExecutorSchemaPath(executorID string) string {
 	return path.Join(ExecutorSchemaRoot, executorID)
-}
-
-func FileServerSchemaPath(segments ...string) string {
-	return path.Join(append([]string{FileServerSchemaRoot}, segments...)...)
 }
 
 func LRPStartAuctionProcessDir(lrp models.LRPStartAuction) string {

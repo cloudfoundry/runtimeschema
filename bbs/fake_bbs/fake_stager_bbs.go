@@ -12,7 +12,7 @@ type FakeStagerBBS struct {
 	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForCompletedTaskMutex       sync.RWMutex
 	watchForCompletedTaskArgsForCall []struct{}
-	watchForCompletedTaskReturns struct {
+	watchForCompletedTaskReturns     struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -40,13 +40,6 @@ type FakeStagerBBS struct {
 	}
 	resolveTaskReturns struct {
 		result1 error
-	}
-	GetAvailableFileServerStub        func() (string, error)
-	getAvailableFileServerMutex       sync.RWMutex
-	getAvailableFileServerArgsForCall []struct{}
-	getAvailableFileServerReturns struct {
-		result1 string
-		result2 error
 	}
 }
 
@@ -170,31 +163,6 @@ func (fake *FakeStagerBBS) ResolveTaskReturns(result1 error) {
 	fake.resolveTaskReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeStagerBBS) GetAvailableFileServer() (string, error) {
-	fake.getAvailableFileServerMutex.Lock()
-	fake.getAvailableFileServerArgsForCall = append(fake.getAvailableFileServerArgsForCall, struct{}{})
-	fake.getAvailableFileServerMutex.Unlock()
-	if fake.GetAvailableFileServerStub != nil {
-		return fake.GetAvailableFileServerStub()
-	} else {
-		return fake.getAvailableFileServerReturns.result1, fake.getAvailableFileServerReturns.result2
-	}
-}
-
-func (fake *FakeStagerBBS) GetAvailableFileServerCallCount() int {
-	fake.getAvailableFileServerMutex.RLock()
-	defer fake.getAvailableFileServerMutex.RUnlock()
-	return len(fake.getAvailableFileServerArgsForCall)
-}
-
-func (fake *FakeStagerBBS) GetAvailableFileServerReturns(result1 string, result2 error) {
-	fake.GetAvailableFileServerStub = nil
-	fake.getAvailableFileServerReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
 }
 
 var _ bbs.StagerBBS = new(FakeStagerBBS)

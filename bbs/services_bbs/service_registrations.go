@@ -9,8 +9,7 @@ import (
 )
 
 var serviceSchemas = map[string]string{
-	models.ExecutorServiceName:   shared.ExecutorSchemaRoot,
-	models.FileServerServiceName: shared.FileServerSchemaRoot,
+	models.ExecutorServiceName: shared.ExecutorSchemaRoot,
 }
 
 func (bbs *ServicesBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {
