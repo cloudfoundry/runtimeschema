@@ -12,10 +12,16 @@ var _ = Describe("DesiredLRP", func() {
 
 	lrpPayload := `{
 	  "process_guid": "some-guid",
-		"domain": "some-domain",
+	  "domain": "some-domain",
+	  "root_fs": "docker:///docker.com/docker",
 	  "instances": 1,
 	  "stack": "some-stack",
-	  "root_fs": "docker:///docker.com/docker",
+	  "env":[
+	    {
+	      "name": "ENV_VAR_NAME",
+	      "value": "some environment variable value"
+	    }
+	  ],
 	  "actions": [
 	    {
 	      "action": "download",
@@ -63,6 +69,12 @@ var _ = Describe("DesiredLRP", func() {
 			Log: LogConfig{
 				Guid:       "log-guid",
 				SourceName: "the cloud",
+			},
+			EnvironmentVariables: []EnvironmentVariable{
+				{
+					Name:  "ENV_VAR_NAME",
+					Value: "some environment variable value",
+				},
 			},
 			Actions: []ExecutorAction{
 				{
