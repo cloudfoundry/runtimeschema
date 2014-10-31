@@ -1,6 +1,9 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"regexp"
+)
 
 type DesiredLRP struct {
 	ProcessGuid          string                `json:"process_guid"`
@@ -23,12 +26,14 @@ type DesiredLRPChange struct {
 	After  *DesiredLRP
 }
 
+var processGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
 func (desired DesiredLRP) Validate() error {
 	if desired.Domain == "" {
 		return ErrInvalidJSONMessage{"domain"}
 	}
 
-	if desired.ProcessGuid == "" {
+	if !processGuidPattern.MatchString(desired.ProcessGuid) {
 		return ErrInvalidJSONMessage{"process_guid"}
 	}
 
@@ -38,6 +43,10 @@ func (desired DesiredLRP) Validate() error {
 
 	if len(desired.Actions) == 0 {
 		return ErrInvalidJSONMessage{"actions"}
+	}
+
+	if desired.Instances < 1 {
+		return ErrInvalidJSONMessage{"instances"}
 	}
 
 	return nil

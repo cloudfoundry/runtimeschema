@@ -19,6 +19,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:      "tests",
 			ProcessGuid: "guidA",
 			Stack:       "stack",
+			Instances:   1,
 			Actions: []models.ExecutorAction{
 				{
 					Action: models.DownloadAction{
@@ -33,6 +34,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:      "tests",
 			ProcessGuid: "guidB",
 			Stack:       "stack",
+			Instances:   1,
 			Actions: []models.ExecutorAction{
 				{
 					Action: models.DownloadAction{
@@ -47,6 +49,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:      "tests",
 			ProcessGuid: "guidC",
 			Stack:       "stack",
+			Instances:   1,
 			Actions: []models.ExecutorAction{
 				{
 					Action: models.DownloadAction{
