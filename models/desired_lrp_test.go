@@ -1,6 +1,8 @@
 package models_test
 
 import (
+	"fmt"
+
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -95,54 +97,53 @@ var _ = Describe("DesiredLRP", func() {
 	})
 
 	Describe("Validate", func() {
-		var validationErr error
+		var assertDesiredLRPValidationFailsWithMessage = func(lrp DesiredLRP, substring string) {
+			validationErr := lrp.Validate()
+			Ω(validationErr).Should(HaveOccurred())
+			Ω(validationErr.Error()).Should(ContainSubstring(substring))
+		}
 
-		JustBeforeEach(func() {
-			validationErr = lrp.Validate()
+		Context("process_guid only contains `A-Z`, `a-z`, `0-9`, `-`, and `_`", func() {
+			validGuids := []string{"a", "A", "0", "-", "_", "-aaaa", "_-aaa", "09a87aaa-_aASKDn"}
+			for _, validGuid := range validGuids {
+				func(validGuid string) {
+					It(fmt.Sprintf("'%s' is a valid process_guid", validGuid), func() {
+						lrp.ProcessGuid = validGuid
+						err := lrp.Validate()
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				}(validGuid)
+			}
+
+			invalidGuids := []string{"", "bang!", "!!!", "\\slash", "star*", "params()", "invalid/key", "with.dots"}
+			for _, invalidGuid := range invalidGuids {
+				func(invalidGuid string) {
+					It(fmt.Sprintf("'%s' is an invalid process_guid", invalidGuid), func() {
+						lrp.ProcessGuid = invalidGuid
+						assertDesiredLRPValidationFailsWithMessage(lrp, "process_guid")
+					})
+				}(invalidGuid)
+			}
 		})
 
-		Context("Domain", func() {
-			BeforeEach(func() {
-				lrp.Domain = ""
-			})
-
-			It("requires a domain", func() {
-				Ω(validationErr).Should(HaveOccurred())
-				Ω(validationErr.Error()).Should(ContainSubstring("domain"))
-			})
+		It("requires a positive number of instances", func() {
+			lrp.Instances = 0
+			assertDesiredLRPValidationFailsWithMessage(lrp, "instances")
 		})
 
-		Context("ProcessGuid", func() {
-			BeforeEach(func() {
-				lrp.ProcessGuid = ""
-			})
-
-			It("requires a process guid", func() {
-				Ω(validationErr).Should(HaveOccurred())
-				Ω(validationErr.Error()).Should(ContainSubstring("process_guid"))
-			})
+		It("requires a domain", func() {
+			lrp.Domain = ""
+			assertDesiredLRPValidationFailsWithMessage(lrp, "domain")
 		})
 
-		Context("Stack", func() {
-			BeforeEach(func() {
-				lrp.Stack = ""
-			})
-
-			It("requires a stack", func() {
-				Ω(validationErr).Should(HaveOccurred())
-				Ω(validationErr.Error()).Should(ContainSubstring("stack"))
-			})
+		It("requires a stack", func() {
+			lrp.Stack = ""
+			assertDesiredLRPValidationFailsWithMessage(lrp, "stack")
 		})
 
-		Context("Actions", func() {
-			BeforeEach(func() {
-				lrp.Actions = nil
-			})
-
-			It("requires actions", func() {
-				Ω(validationErr).Should(HaveOccurred())
-				Ω(validationErr.Error()).Should(ContainSubstring("actions"))
-			})
+		It("requires actions", func() {
+			lrp.Actions = nil
+			assertDesiredLRPValidationFailsWithMessage(lrp, "actions")
 		})
 	})
 
