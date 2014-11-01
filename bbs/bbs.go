@@ -30,6 +30,7 @@ type ReceptorBBS interface {
 
 	//lrp
 	DesireLRP(models.DesiredLRP) error
+	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
 }
 
 type RepBBS interface {

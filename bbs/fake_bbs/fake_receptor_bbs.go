@@ -74,6 +74,13 @@ type FakeReceptorBBS struct {
 	desireLRPReturns struct {
 		result1 error
 	}
+	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
+	getAllDesiredLRPsMutex       sync.RWMutex
+	getAllDesiredLRPsArgsForCall []struct{}
+	getAllDesiredLRPsReturns struct {
+		result1 []models.DesiredLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -319,6 +326,31 @@ func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
 	fake.desireLRPReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
+	fake.getAllDesiredLRPsMutex.Lock()
+	fake.getAllDesiredLRPsArgsForCall = append(fake.getAllDesiredLRPsArgsForCall, struct{}{})
+	fake.getAllDesiredLRPsMutex.Unlock()
+	if fake.GetAllDesiredLRPsStub != nil {
+		return fake.GetAllDesiredLRPsStub()
+	} else {
+		return fake.getAllDesiredLRPsReturns.result1, fake.getAllDesiredLRPsReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsCallCount() int {
+	fake.getAllDesiredLRPsMutex.RLock()
+	defer fake.getAllDesiredLRPsMutex.RUnlock()
+	return len(fake.getAllDesiredLRPsArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.GetAllDesiredLRPsStub = nil
+	fake.getAllDesiredLRPsReturns = struct {
+		result1 []models.DesiredLRP
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
