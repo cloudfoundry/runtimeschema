@@ -22,10 +22,6 @@ var _ = Describe("FakeBbs", func() {
 		auctioneerBBS = NewFakeAuctioneerBBS()
 		Ω(auctioneerBBS).ShouldNot(BeNil())
 
-		var stagerBBS bbs.StagerBBS
-		stagerBBS = &FakeStagerBBS{}
-		Ω(stagerBBS).ShouldNot(BeNil())
-
 		var metricsBBS bbs.MetricsBBS
 		metricsBBS = new(FakeMetricsBBS)
 		Ω(metricsBBS).ShouldNot(BeNil())

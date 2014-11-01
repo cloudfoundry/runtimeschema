@@ -112,14 +112,6 @@ type AuctioneerBBS interface {
 	NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner
 }
 
-type StagerBBS interface {
-	//task
-	WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error)
-	DesireTask(models.Task) error
-	ResolvingTask(taskGuid string) error
-	ResolveTask(taskGuid string) error
-}
-
 type MetricsBBS interface {
 	//task
 	GetAllTasks() ([]models.Task, error)
@@ -188,10 +180,6 @@ func NewNsyncBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Time
 }
 
 func NewAuctioneerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) AuctioneerBBS {
-	return NewBBS(store, timeProvider, logger)
-}
-
-func NewStagerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) StagerBBS {
 	return NewBBS(store, timeProvider, logger)
 }
 
