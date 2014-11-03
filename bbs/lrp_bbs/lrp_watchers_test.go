@@ -14,27 +14,31 @@ var _ = Describe("LrpWatchers", func() {
 			events <-chan models.DesiredLRPChange
 			stop   chan<- bool
 			errors <-chan error
+			lrp    models.DesiredLRP
 		)
 
-		lrp := models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "some-process-guid",
-			Instances:   5,
-			Stack:       "some-stack",
-			MemoryMB:    1024,
-			DiskMB:      512,
-			Routes:      []string{"route-1", "route-2"},
-			Actions: []models.ExecutorAction{
-				{
-					Action: models.DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
+		newLRP := func() models.DesiredLRP {
+			return models.DesiredLRP{
+				Domain:      "tests",
+				ProcessGuid: "some-process-guid",
+				Instances:   5,
+				Stack:       "some-stack",
+				MemoryMB:    1024,
+				DiskMB:      512,
+				Routes:      []string{"route-1", "route-2"},
+				Actions: []models.ExecutorAction{
+					{
+						Action: models.DownloadAction{
+							From: "http://example.com",
+							To:   "/tmp/internet",
+						},
 					},
 				},
-			},
+			}
 		}
 
 		BeforeEach(func() {
+			lrp = newLRP()
 			events, stop, errors = bbs.WatchForDesiredLRPChanges()
 		})
 
@@ -58,10 +62,13 @@ var _ = Describe("LrpWatchers", func() {
 
 			Eventually(events).Should(Receive())
 
-			changedLRP := lrp
+			changedLRP := newLRP()
 			changedLRP.Instances++
 
-			err = bbs.DesireLRP(changedLRP)
+			err = bbs.ChangeDesiredLRP(models.DesiredLRPChange{
+				Before: &lrp,
+				After:  &changedLRP,
+			})
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
