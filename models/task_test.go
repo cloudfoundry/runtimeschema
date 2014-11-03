@@ -148,5 +148,18 @@ var _ = Describe("Task", func() {
 				Ω(decodedStartAuction).Should(BeZero())
 			})
 		})
+
+		Context("with an invalid CPU weight", func() {
+			json := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`
+
+			It("returns an error", func() {
+				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(Equal("JSON has missing/invalid field: cpu_weight"))
+
+				Ω(decodedStartAuction).Should(BeZero())
+
+			})
+		})
 	})
 })

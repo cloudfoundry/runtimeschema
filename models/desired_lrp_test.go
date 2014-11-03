@@ -145,6 +145,11 @@ var _ = Describe("DesiredLRP", func() {
 			lrp.Actions = nil
 			assertDesiredLRPValidationFailsWithMessage(lrp, "actions")
 		})
+
+		It("requires a valid CPU weight", func() {
+			lrp.CPUWeight = 101
+			assertDesiredLRPValidationFailsWithMessage(lrp, "cpu_weight")
+		})
 	})
 
 	Describe("NewDesiredLRPFromJSON", func() {

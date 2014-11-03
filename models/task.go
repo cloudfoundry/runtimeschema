@@ -95,6 +95,10 @@ func (task Task) Validate() error {
 		return ErrInvalidJSONMessage{"stack"}
 	}
 
+	if task.CPUWeight > 100 {
+		return ErrInvalidJSONMessage{"cpu_weight"}
+	}
+
 	return nil
 }
 

@@ -50,6 +50,10 @@ func (desired DesiredLRP) Validate() error {
 		return ErrInvalidJSONMessage{"instances"}
 	}
 
+	if desired.CPUWeight > 100 {
+		return ErrInvalidJSONMessage{"cpu_weight"}
+	}
+
 	return nil
 }
 
