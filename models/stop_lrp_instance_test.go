@@ -65,14 +65,4 @@ var _ = Describe("StopLrpInstance", func() {
 			})
 		}
 	})
-
-	Describe("LRPIdentifier", func() {
-		It("should return a valid LRPIdentifier", func() {
-			Ω(stopInstance.LRPIdentifier()).Should(Equal(LRPIdentifier{
-				ProcessGuid:  "some-process-guid",
-				InstanceGuid: "some-instance-guid",
-				Index:        1234,
-			}))
-		})
-	})
 })

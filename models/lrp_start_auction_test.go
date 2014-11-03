@@ -130,14 +130,4 @@ var _ = Describe("LRPStartAuction", func() {
 			})
 		}
 	})
-
-	Describe("LRPIdentifier", func() {
-		It("should return a valid LRPIdentifier", func() {
-			Ω(startAuction.LRPIdentifier()).Should(Equal(LRPIdentifier{
-				ProcessGuid:  "some-guid",
-				InstanceGuid: "some-instance-guid",
-				Index:        2,
-			}))
-		})
-	})
 })
