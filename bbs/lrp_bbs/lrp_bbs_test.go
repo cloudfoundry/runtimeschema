@@ -10,31 +10,31 @@ import (
 )
 
 var _ = Describe("LRP", func() {
-	executorID := "some-executor-id"
+	const executorID = "some-executor-id"
 
-	Describe("Adding and removing DesireLRP", func() {
-		var lrp models.DesiredLRP
+	var lrp models.DesiredLRP
 
-		BeforeEach(func() {
-			lrp = models.DesiredLRP{
-				Domain:      "tests",
-				ProcessGuid: "some-process-guid",
-				Instances:   5,
-				Stack:       "some-stack",
-				MemoryMB:    1024,
-				DiskMB:      512,
-				Routes:      []string{"route-1", "route-2"},
-				Actions: []models.ExecutorAction{
-					{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+	BeforeEach(func() {
+		lrp = models.DesiredLRP{
+			Domain:      "tests",
+			ProcessGuid: "some-process-guid",
+			Instances:   5,
+			Stack:       "some-stack",
+			MemoryMB:    1024,
+			DiskMB:      512,
+			Routes:      []string{"route-1", "route-2"},
+			Actions: []models.ExecutorAction{
+				{
+					Action: models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
-			}
-		})
+			},
+		}
+	})
 
+	Describe("Adding and removing DesireLRP", func() {
 		Context("when the LRP does not yet exist", func() {
 			It("creates /v1/desired/<process-guid>/<index>", func() {
 				err := bbs.DesireLRP(lrp)
@@ -400,6 +400,54 @@ var _ = Describe("LRP", func() {
 
 					Ω(current).Should(Equal(prevValue))
 				})
+			})
+		})
+	})
+
+	Describe("modifying DesireLRP", func() {
+		BeforeEach(func() {
+			err := bbs.DesireLRP(lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("When the updates are valid", func() {
+			It("updates an existing DesireLRP", func() {
+				routes := []string{"new-route-1", "new-route-2"}
+				annotation := "new-annotation"
+				instances := 16
+				update := models.DesiredLRPUpdate{
+					Routes:     routes,
+					Annotation: &annotation,
+					Instances:  &instances,
+				}
+
+				err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				updated, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(updated.Routes).Should(Equal(routes))
+				Ω(updated.Annotation).Should(Equal(annotation))
+				Ω(updated.Instances).Should(Equal(instances))
+			})
+		})
+
+		Context("When the updates are invalid", func() {
+			It("instances cannot be set to zero", func() {
+				instances := 0
+
+				update := models.DesiredLRPUpdate{
+					Instances: &instances,
+				}
+
+				err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("instances"))
+
+				updated, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(updated).Should(Equal(lrp))
 			})
 		})
 	})

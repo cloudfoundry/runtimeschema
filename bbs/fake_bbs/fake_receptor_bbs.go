@@ -74,6 +74,15 @@ type FakeReceptorBBS struct {
 	desireLRPReturns struct {
 		result1 error
 	}
+	UpdateDesiredLRPStub        func(processGuid string, update models.DesiredLRPUpdate) error
+	updateDesiredLRPMutex       sync.RWMutex
+	updateDesiredLRPArgsForCall []struct {
+		processGuid string
+		update      models.DesiredLRPUpdate
+	}
+	updateDesiredLRPReturns struct {
+		result1 error
+	}
 	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
@@ -324,6 +333,39 @@ func (fake *FakeReceptorBBS) DesireLRPArgsForCall(i int) models.DesiredLRP {
 func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
 	fake.DesireLRPStub = nil
 	fake.desireLRPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeReceptorBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
+	fake.updateDesiredLRPMutex.Lock()
+	fake.updateDesiredLRPArgsForCall = append(fake.updateDesiredLRPArgsForCall, struct {
+		processGuid string
+		update      models.DesiredLRPUpdate
+	}{processGuid, update})
+	fake.updateDesiredLRPMutex.Unlock()
+	if fake.UpdateDesiredLRPStub != nil {
+		return fake.UpdateDesiredLRPStub(processGuid, update)
+	} else {
+		return fake.updateDesiredLRPReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) UpdateDesiredLRPCallCount() int {
+	fake.updateDesiredLRPMutex.RLock()
+	defer fake.updateDesiredLRPMutex.RUnlock()
+	return len(fake.updateDesiredLRPArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) UpdateDesiredLRPArgsForCall(i int) (string, models.DesiredLRPUpdate) {
+	fake.updateDesiredLRPMutex.RLock()
+	defer fake.updateDesiredLRPMutex.RUnlock()
+	return fake.updateDesiredLRPArgsForCall[i].processGuid, fake.updateDesiredLRPArgsForCall[i].update
+}
+
+func (fake *FakeReceptorBBS) UpdateDesiredLRPReturns(result1 error) {
+	fake.UpdateDesiredLRPStub = nil
+	fake.updateDesiredLRPReturns = struct {
 		result1 error
 	}{result1}
 }

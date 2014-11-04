@@ -18,6 +18,7 @@ var _ = Describe("DesiredLRP", func() {
 	  "root_fs": "docker:///docker.com/docker",
 	  "instances": 1,
 	  "stack": "some-stack",
+		"annotation": "some-annotation",
 	  "env":[
 	    {
 	      "name": "ENV_VAR_NAME",
@@ -65,6 +66,7 @@ var _ = Describe("DesiredLRP", func() {
 			DiskMB:     512,
 			CPUWeight:  42,
 			Routes:     []string{"route-1", "route-2"},
+			Annotation: "some-annotation",
 			Ports: []PortMapping{
 				{HostPort: 1234, ContainerPort: 5678},
 			},
@@ -93,6 +95,69 @@ var _ = Describe("DesiredLRP", func() {
 		It("should JSONify", func() {
 			json := lrp.ToJSON()
 			Ω(string(json)).Should(MatchJSON(lrpPayload))
+		})
+	})
+
+	Describe("ApplyUpdate", func() {
+		It("updates instances", func() {
+			instances := 100
+			update := DesiredLRPUpdate{Instances: &instances}
+
+			expectedLRP := lrp
+			expectedLRP.Instances = instances
+
+			updatedLRP := lrp.ApplyUpdate(update)
+			Ω(updatedLRP).Should(Equal(expectedLRP))
+		})
+
+		It("allows empty routes to be set", func() {
+			update := DesiredLRPUpdate{
+				Routes: []string{},
+			}
+
+			expectedLRP := lrp
+			expectedLRP.Routes = []string{}
+
+			updatedLRP := lrp.ApplyUpdate(update)
+			Ω(updatedLRP).Should(Equal(expectedLRP))
+		})
+
+		It("allows annotation to be set", func() {
+			annotation := "new-annotation"
+			update := DesiredLRPUpdate{
+				Annotation: &annotation,
+			}
+
+			expectedLRP := lrp
+			expectedLRP.Annotation = annotation
+
+			updatedLRP := lrp.ApplyUpdate(update)
+			Ω(updatedLRP).Should(Equal(expectedLRP))
+		})
+
+		It("allows empty annotation to be set", func() {
+			emptyAnnotation := ""
+			update := DesiredLRPUpdate{
+				Annotation: &emptyAnnotation,
+			}
+
+			expectedLRP := lrp
+			expectedLRP.Annotation = emptyAnnotation
+
+			updatedLRP := lrp.ApplyUpdate(update)
+			Ω(updatedLRP).Should(Equal(expectedLRP))
+		})
+
+		It("updates routes", func() {
+			update := DesiredLRPUpdate{
+				Routes: []string{"new-route-1", "new-route-2"},
+			}
+
+			expectedLRP := lrp
+			expectedLRP.Routes = []string{"new-route-1", "new-route-2"}
+
+			updatedLRP := lrp.ApplyUpdate(update)
+			Ω(updatedLRP).Should(Equal(expectedLRP))
 		})
 	})
 

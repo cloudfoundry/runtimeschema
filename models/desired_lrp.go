@@ -28,6 +28,25 @@ type DesiredLRPChange struct {
 	After  *DesiredLRP
 }
 
+type DesiredLRPUpdate struct {
+	Instances  *int
+	Routes     []string
+	Annotation *string
+}
+
+func (desired DesiredLRP) ApplyUpdate(update DesiredLRPUpdate) DesiredLRP {
+	if update.Instances != nil {
+		desired.Instances = *update.Instances
+	}
+	if update.Routes != nil {
+		desired.Routes = update.Routes
+	}
+	if update.Annotation != nil {
+		desired.Annotation = *update.Annotation
+	}
+	return desired
+}
+
 var processGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 func (desired DesiredLRP) Validate() error {

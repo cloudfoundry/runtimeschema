@@ -105,6 +105,28 @@ func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
 	})
 }
 
+func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
+	existing, err := bbs.GetDesiredLRPByProcessGuid(processGuid)
+	if err != nil {
+		return err
+	}
+
+	updatedLRP := existing.ApplyUpdate(update)
+	err = updatedLRP.Validate()
+	if err != nil {
+		return err
+	}
+
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.SetMulti([]storeadapter.StoreNode{
+			{
+				Key:   shared.DesiredLRPSchemaPath(updatedLRP),
+				Value: updatedLRP.ToJSON(),
+			},
+		})
+	})
+}
+
 func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
 	return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid)
 }
