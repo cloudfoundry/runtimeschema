@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"reflect"
 	"regexp"
 )
 
@@ -52,6 +53,54 @@ func (desired DesiredLRP) Validate() error {
 
 	if desired.CPUWeight > 100 {
 		return ErrInvalidJSONMessage{"cpu_weight"}
+	}
+
+	return nil
+}
+
+func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
+	if desired.ProcessGuid != updatedModel.ProcessGuid {
+		return ErrInvalidModification{"process_guid"}
+	}
+
+	if desired.Domain != updatedModel.Domain {
+		return ErrInvalidModification{"domain"}
+	}
+
+	if desired.RootFSPath != updatedModel.RootFSPath {
+		return ErrInvalidModification{"root_fs"}
+	}
+
+	if desired.Stack != updatedModel.Stack {
+		return ErrInvalidModification{"stack"}
+	}
+
+	if !reflect.DeepEqual(desired.EnvironmentVariables, updatedModel.EnvironmentVariables) {
+		return ErrInvalidModification{"env"}
+	}
+
+	if !reflect.DeepEqual(desired.Actions, updatedModel.Actions) {
+		return ErrInvalidModification{"actions"}
+	}
+
+	if desired.DiskMB != updatedModel.DiskMB {
+		return ErrInvalidModification{"disk_mb"}
+	}
+
+	if desired.MemoryMB != updatedModel.MemoryMB {
+		return ErrInvalidModification{"memory_mb"}
+	}
+
+	if desired.CPUWeight != updatedModel.CPUWeight {
+		return ErrInvalidModification{"cpu_weight"}
+	}
+
+	if !reflect.DeepEqual(desired.Ports, updatedModel.Ports) {
+		return ErrInvalidModification{"ports"}
+	}
+
+	if !reflect.DeepEqual(desired.Log, updatedModel.Log) {
+		return ErrInvalidModification{"log"}
 	}
 
 	return nil

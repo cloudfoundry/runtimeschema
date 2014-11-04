@@ -23,14 +23,38 @@ func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider
 }
 
 func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.SetMulti([]storeadapter.StoreNode{
-			{
-				Key:   shared.DesiredLRPSchemaPath(lrp),
-				Value: lrp.ToJSON(),
-			},
+
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.Create(storeadapter.StoreNode{
+			Key:   shared.DesiredLRPSchemaPath(lrp),
+			Value: lrp.ToJSON(),
 		})
 	})
+
+	switch err {
+	case storeadapter.ErrorKeyExists:
+		existingLRP, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+		if err != nil {
+			return err
+		}
+
+		err = existingLRP.ValidateModifications(lrp)
+		if err != nil {
+			return err
+		}
+
+		return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+			return bbs.store.SetMulti([]storeadapter.StoreNode{
+				{
+					Key:   shared.DesiredLRPSchemaPath(lrp),
+					Value: lrp.ToJSON(),
+				},
+			})
+		})
+
+	default:
+		return err
+	}
 }
 
 func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {

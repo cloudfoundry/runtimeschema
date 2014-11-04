@@ -35,13 +35,15 @@ var _ = Describe("LRP", func() {
 			}
 		})
 
-		It("creates /v1/desired/<process-guid>/<index>", func() {
-			err := bbs.DesireLRP(lrp)
-			Ω(err).ShouldNot(HaveOccurred())
+		Context("when the LRP does not yet exist", func() {
+			It("creates /v1/desired/<process-guid>/<index>", func() {
+				err := bbs.DesireLRP(lrp)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			node, err := etcdClient.Get("/v1/desired/some-process-guid")
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(node.Value).Should(Equal(lrp.ToJSON()))
+				node, err := etcdClient.Get("/v1/desired/some-process-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(node.Value).Should(Equal(lrp.ToJSON()))
+			})
 		})
 
 		Context("when deleting the DesiredLRP", func() {
@@ -196,6 +198,55 @@ var _ = Describe("LRP", func() {
 					return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid)
 				})
 			})
+		})
+	})
+
+	Describe("upsert desired LRPs", func() {
+		value := models.DesiredLRP{
+			Domain:      "tests",
+			ProcessGuid: "some-guid",
+			Stack:       "some-stack",
+			Instances:   1,
+			Actions: []models.ExecutorAction{
+				{
+					Action: models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
+					},
+				},
+			},
+		}
+
+		BeforeEach(func() {
+			err := bbs.DesireLRP(value)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("updates the desired lrp if the modifications are valid", func() {
+			newValue := value
+			newValue.Instances = 2
+			newValue.Routes = []string{"example.com", "foobar"}
+
+			err := bbs.DesireLRP(newValue)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(current).Should(Equal(newValue))
+		})
+
+		It("fails to update the desired lrp if the modifications are invalid", func() {
+			newValue := value
+			newValue.Stack = "foo"
+
+			err := bbs.DesireLRP(newValue)
+			Ω(err).Should(HaveOccurred())
+
+			current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(current).Should(Equal(value))
 		})
 	})
 
