@@ -99,6 +99,15 @@ type FakeReceptorBBS struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
+	GetDesiredLRPByProcessGuidStub        func(processGuid string) (models.DesiredLRP, error)
+	getDesiredLRPByProcessGuidMutex       sync.RWMutex
+	getDesiredLRPByProcessGuidArgsForCall []struct {
+		processGuid string
+	}
+	getDesiredLRPByProcessGuidReturns struct {
+		result1 models.DesiredLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -433,6 +442,39 @@ func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainReturns(result1 []models.D
 	fake.GetAllDesiredLRPsByDomainStub = nil
 	fake.getAllDesiredLRPsByDomainReturns = struct {
 		result1 []models.DesiredLRP
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+	fake.getDesiredLRPByProcessGuidMutex.Lock()
+	fake.getDesiredLRPByProcessGuidArgsForCall = append(fake.getDesiredLRPByProcessGuidArgsForCall, struct {
+		processGuid string
+	}{processGuid})
+	fake.getDesiredLRPByProcessGuidMutex.Unlock()
+	if fake.GetDesiredLRPByProcessGuidStub != nil {
+		return fake.GetDesiredLRPByProcessGuidStub(processGuid)
+	} else {
+		return fake.getDesiredLRPByProcessGuidReturns.result1, fake.getDesiredLRPByProcessGuidReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidCallCount() int {
+	fake.getDesiredLRPByProcessGuidMutex.RLock()
+	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
+	return len(fake.getDesiredLRPByProcessGuidArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidArgsForCall(i int) string {
+	fake.getDesiredLRPByProcessGuidMutex.RLock()
+	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
+	return fake.getDesiredLRPByProcessGuidArgsForCall[i].processGuid
+}
+
+func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
+	fake.GetDesiredLRPByProcessGuidStub = nil
+	fake.getDesiredLRPByProcessGuidReturns = struct {
+		result1 models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
