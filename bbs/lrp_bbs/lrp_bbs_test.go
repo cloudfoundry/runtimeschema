@@ -404,7 +404,7 @@ var _ = Describe("LRP", func() {
 		})
 	})
 
-	Describe("modifying DesireLRP", func() {
+	Describe("Updating DesireLRP", func() {
 		BeforeEach(func() {
 			err := bbs.DesireLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -448,6 +448,17 @@ var _ = Describe("LRP", func() {
 				updated, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(updated).Should(Equal(lrp))
+			})
+		})
+
+		Context("When the LRP does not exist", func() {
+			It("returns an ErrorKeyNotFound", func() {
+				instances := 0
+
+				err := bbs.UpdateDesiredLRP("garbage-guid", models.DesiredLRPUpdate{
+					Instances: &instances,
+				})
+				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 			})
 		})
 	})
