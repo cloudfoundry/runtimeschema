@@ -31,6 +31,7 @@ type ReceptorBBS interface {
 	//lrp
 	DesireLRP(models.DesiredLRP) error
 	UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error
+	RemoveDesiredLRPByProcessGuid(processGuid string) error
 	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
 	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)

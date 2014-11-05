@@ -83,6 +83,14 @@ type FakeReceptorBBS struct {
 	updateDesiredLRPReturns struct {
 		result1 error
 	}
+	RemoveDesiredLRPByProcessGuidStub        func(processGuid string) error
+	removeDesiredLRPByProcessGuidMutex       sync.RWMutex
+	removeDesiredLRPByProcessGuidArgsForCall []struct {
+		processGuid string
+	}
+	removeDesiredLRPByProcessGuidReturns struct {
+		result1 error
+	}
 	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
@@ -384,6 +392,38 @@ func (fake *FakeReceptorBBS) UpdateDesiredLRPArgsForCall(i int) (string, models.
 func (fake *FakeReceptorBBS) UpdateDesiredLRPReturns(result1 error) {
 	fake.UpdateDesiredLRPStub = nil
 	fake.updateDesiredLRPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
+	fake.removeDesiredLRPByProcessGuidMutex.Lock()
+	fake.removeDesiredLRPByProcessGuidArgsForCall = append(fake.removeDesiredLRPByProcessGuidArgsForCall, struct {
+		processGuid string
+	}{processGuid})
+	fake.removeDesiredLRPByProcessGuidMutex.Unlock()
+	if fake.RemoveDesiredLRPByProcessGuidStub != nil {
+		return fake.RemoveDesiredLRPByProcessGuidStub(processGuid)
+	} else {
+		return fake.removeDesiredLRPByProcessGuidReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidCallCount() int {
+	fake.removeDesiredLRPByProcessGuidMutex.RLock()
+	defer fake.removeDesiredLRPByProcessGuidMutex.RUnlock()
+	return len(fake.removeDesiredLRPByProcessGuidArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidArgsForCall(i int) string {
+	fake.removeDesiredLRPByProcessGuidMutex.RLock()
+	defer fake.removeDesiredLRPByProcessGuidMutex.RUnlock()
+	return fake.removeDesiredLRPByProcessGuidArgsForCall[i].processGuid
+}
+
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error) {
+	fake.RemoveDesiredLRPByProcessGuidStub = nil
+	fake.removeDesiredLRPByProcessGuidReturns = struct {
 		result1 error
 	}{result1}
 }
