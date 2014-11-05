@@ -90,6 +90,15 @@ type FakeReceptorBBS struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
+	GetAllDesiredLRPsByDomainStub        func(domain string) ([]models.DesiredLRP, error)
+	getAllDesiredLRPsByDomainMutex       sync.RWMutex
+	getAllDesiredLRPsByDomainArgsForCall []struct {
+		domain string
+	}
+	getAllDesiredLRPsByDomainReturns struct {
+		result1 []models.DesiredLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -390,6 +399,39 @@ func (fake *FakeReceptorBBS) GetAllDesiredLRPsCallCount() int {
 func (fake *FakeReceptorBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
 	fake.GetAllDesiredLRPsStub = nil
 	fake.getAllDesiredLRPsReturns = struct {
+		result1 []models.DesiredLRP
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
+	fake.getAllDesiredLRPsByDomainMutex.Lock()
+	fake.getAllDesiredLRPsByDomainArgsForCall = append(fake.getAllDesiredLRPsByDomainArgsForCall, struct {
+		domain string
+	}{domain})
+	fake.getAllDesiredLRPsByDomainMutex.Unlock()
+	if fake.GetAllDesiredLRPsByDomainStub != nil {
+		return fake.GetAllDesiredLRPsByDomainStub(domain)
+	} else {
+		return fake.getAllDesiredLRPsByDomainReturns.result1, fake.getAllDesiredLRPsByDomainReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainCallCount() int {
+	fake.getAllDesiredLRPsByDomainMutex.RLock()
+	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
+	return len(fake.getAllDesiredLRPsByDomainArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainArgsForCall(i int) string {
+	fake.getAllDesiredLRPsByDomainMutex.RLock()
+	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
+	return fake.getAllDesiredLRPsByDomainArgsForCall[i].domain
+}
+
+func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.GetAllDesiredLRPsByDomainStub = nil
+	fake.getAllDesiredLRPsByDomainReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}{result1, result2}
