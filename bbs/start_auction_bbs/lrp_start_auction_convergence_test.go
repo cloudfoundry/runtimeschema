@@ -7,8 +7,8 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/models/factories"
-	"github.com/cloudfoundry/dropsonde/autowire/metrics"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
+	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"

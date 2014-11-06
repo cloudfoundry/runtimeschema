@@ -3,7 +3,7 @@ package metric
 import (
 	"time"
 
-	"github.com/cloudfoundry/dropsonde/autowire/metrics"
+	"github.com/cloudfoundry/dropsonde/metrics"
 )
 
 type Counter string
