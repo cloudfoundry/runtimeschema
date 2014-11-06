@@ -28,13 +28,16 @@ type ReceptorBBS interface {
 	ResolveTask(taskGuid string) error
 	WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error)
 
-	//lrp
+	//desired lrp
 	DesireLRP(models.DesiredLRP) error
 	UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error
 	RemoveDesiredLRPByProcessGuid(processGuid string) error
 	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
 	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+
+	//actual lrp
+	GetAllActualLRPs() ([]models.ActualLRP, error)
 }
 
 type RepBBS interface {
