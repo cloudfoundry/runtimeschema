@@ -59,13 +59,8 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 
 func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		err := bbs.store.Delete(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
-		if err == storeadapter.ErrorKeyNotFound {
-			return nil
-		}
-		return err
+		return bbs.store.Delete(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
 	})
-	return nil
 }
 
 func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {

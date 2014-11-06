@@ -61,9 +61,9 @@ var _ = Describe("LRP", func() {
 			})
 
 			Context("when the desired LRP does not exist", func() {
-				It("should not error", func() {
+				It("returns an ErrorKeyNotFound", func() {
 					err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
-					Ω(err).ShouldNot(HaveOccurred())
+					Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 				})
 			})
 		})

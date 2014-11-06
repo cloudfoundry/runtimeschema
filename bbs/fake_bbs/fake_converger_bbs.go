@@ -217,13 +217,6 @@ func (fakeBBS *FakeConvergerBBS) GetActualLRPsByProcessGuid(string) ([]models.Ac
 	return fakeBBS.ActualLRPs, fakeBBS.ActualLRPsErr
 }
 
-func (fakeBBS *FakeConvergerBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
-	fakeBBS.Lock()
-	defer fakeBBS.Unlock()
-	fakeBBS.removeDesiredLRPProcessGuids = append(fakeBBS.removeDesiredLRPProcessGuids, processGuid)
-	return fakeBBS.removeDesiredLRPProcessGuidsErr
-}
-
 func (fakeBBS *FakeConvergerBBS) GetRemovedDesiredLRPProcessGuids() []string {
 	fakeBBS.RLock()
 	defer fakeBBS.RUnlock()
