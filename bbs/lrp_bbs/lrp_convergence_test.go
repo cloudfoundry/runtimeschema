@@ -30,9 +30,9 @@ var _ = Describe("LrpConvergence", func() {
 			Value: []byte{},
 		})
 
-		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", executorID, 0)
+		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", executorID, "domain", 0)
 		Ω(err).ShouldNot(HaveOccurred())
-		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", executorID, 1)
+		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", executorID, "domain", 1)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -189,7 +189,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when there are duplicate actual LRPs", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", executorID, 0)
+				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", executorID, "domain", 0)
 				bbs.DesireLRP(desiredLRP)
 			})
 

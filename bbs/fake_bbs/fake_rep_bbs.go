@@ -84,12 +84,13 @@ type FakeRepBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ReportActualLRPAsStartingStub        func(processGuid, instanceGuid, executorID string, index int) (models.ActualLRP, error)
+	ReportActualLRPAsStartingStub        func(processGuid, instanceGuid, executorID, domain string, index int) (models.ActualLRP, error)
 	reportActualLRPAsStartingMutex       sync.RWMutex
 	reportActualLRPAsStartingArgsForCall []struct {
 		processGuid  string
 		instanceGuid string
 		executorID   string
+		domain       string
 		index        int
 	}
 	reportActualLRPAsStartingReturns struct {
@@ -400,17 +401,18 @@ func (fake *FakeRepBBS) GetAllActualLRPsByExecutorIDReturns(result1 []models.Act
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGuid string, executorID string, index int) (models.ActualLRP, error) {
+func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGuid string, executorID string, domain string, index int) (models.ActualLRP, error) {
 	fake.reportActualLRPAsStartingMutex.Lock()
 	fake.reportActualLRPAsStartingArgsForCall = append(fake.reportActualLRPAsStartingArgsForCall, struct {
 		processGuid  string
 		instanceGuid string
 		executorID   string
+		domain       string
 		index        int
-	}{processGuid, instanceGuid, executorID, index})
+	}{processGuid, instanceGuid, executorID, domain, index})
 	fake.reportActualLRPAsStartingMutex.Unlock()
 	if fake.ReportActualLRPAsStartingStub != nil {
-		return fake.ReportActualLRPAsStartingStub(processGuid, instanceGuid, executorID, index)
+		return fake.ReportActualLRPAsStartingStub(processGuid, instanceGuid, executorID, domain, index)
 	} else {
 		return fake.reportActualLRPAsStartingReturns.result1, fake.reportActualLRPAsStartingReturns.result2
 	}
@@ -422,10 +424,10 @@ func (fake *FakeRepBBS) ReportActualLRPAsStartingCallCount() int {
 	return len(fake.reportActualLRPAsStartingArgsForCall)
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStartingArgsForCall(i int) (string, string, string, int) {
+func (fake *FakeRepBBS) ReportActualLRPAsStartingArgsForCall(i int) (string, string, string, string, int) {
 	fake.reportActualLRPAsStartingMutex.RLock()
 	defer fake.reportActualLRPAsStartingMutex.RUnlock()
-	return fake.reportActualLRPAsStartingArgsForCall[i].processGuid, fake.reportActualLRPAsStartingArgsForCall[i].instanceGuid, fake.reportActualLRPAsStartingArgsForCall[i].executorID, fake.reportActualLRPAsStartingArgsForCall[i].index
+	return fake.reportActualLRPAsStartingArgsForCall[i].processGuid, fake.reportActualLRPAsStartingArgsForCall[i].instanceGuid, fake.reportActualLRPAsStartingArgsForCall[i].executorID, fake.reportActualLRPAsStartingArgsForCall[i].domain, fake.reportActualLRPAsStartingArgsForCall[i].index
 }
 
 func (fake *FakeRepBBS) ReportActualLRPAsStartingReturns(result1 models.ActualLRP, result2 error) {

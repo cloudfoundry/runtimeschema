@@ -76,18 +76,19 @@ var _ = Describe("LRP", func() {
 	})
 
 	Describe("Adding and removing actual LRPs", func() {
-		var processGuid, instanceGuid string
+		var processGuid, instanceGuid, domain string
 		var index int
 
 		BeforeEach(func() {
 			processGuid = "some-process-guid"
 			instanceGuid = "some-instance-guid"
+			domain = "some-domain"
 			index = 1
 		})
 
 		Describe("ReportActualLRPAsStarting", func() {
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, index)
+				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
@@ -102,7 +103,7 @@ var _ = Describe("LRP", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					_, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, index)
+					_, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
 					return err
 				})
 			})
@@ -116,6 +117,7 @@ var _ = Describe("LRP", func() {
 					InstanceGuid: instanceGuid,
 					ProcessGuid:  processGuid,
 					ExecutorID:   executorID,
+					Domain:       domain,
 					Index:        index,
 					Since:        timeProvider.Time().UnixNano(),
 				}
@@ -143,16 +145,17 @@ var _ = Describe("LRP", func() {
 		})
 
 		Describe("RemoveActualLRP", func() {
-			var processGuid, instanceGuid string
+			var processGuid, instanceGuid, domain string
 			var index int
 			var lrp models.ActualLRP
 
 			BeforeEach(func() {
 				processGuid = "some-process-guid"
 				instanceGuid = "some-instance-guid"
+				domain = "some-domain"
 				index = 1
 				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, index)
+				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -172,16 +175,17 @@ var _ = Describe("LRP", func() {
 		})
 
 		Describe("RemoveActualLRPForIndex", func() {
-			var processGuid, instanceGuid string
+			var processGuid, instanceGuid, domain string
 			var index int
 			var lrp models.ActualLRP
 
 			BeforeEach(func() {
 				processGuid = "some-process-guid"
 				instanceGuid = "some-instance-guid"
+				domain = "some-domain"
 				index = 1
 				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, index)
+				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

@@ -132,8 +132,8 @@ func (bbs *LRPBBS) RemoveActualLRPForIndex(processGuid string, index int, instan
 	})
 }
 
-func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, executorID string, index int) (models.ActualLRP, error) {
-	lrp, err := models.NewActualLRP(processGuid, instanceGuid, executorID, index, models.ActualLRPStateStarting, bbs.timeProvider.Time().UnixNano())
+func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain string, index int) (models.ActualLRP, error) {
+	lrp, err := models.NewActualLRP(processGuid, instanceGuid, executorID, domain, index, models.ActualLRPStateStarting, bbs.timeProvider.Time().UnixNano())
 	if err != nil {
 		return lrp, err
 	}

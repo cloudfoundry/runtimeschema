@@ -125,6 +125,7 @@ var _ = Describe("StopLRPInstance", func() {
 					ProcessGuid:  stopInstance.ProcessGuid,
 					InstanceGuid: stopInstance.InstanceGuid,
 					Index:        stopInstance.Index,
+					Domain:       "the-domain",
 				}, "executor-id")
 				Ω(err).ShouldNot(HaveOccurred())
 

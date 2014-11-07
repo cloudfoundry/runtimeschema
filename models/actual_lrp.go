@@ -22,6 +22,7 @@ type ActualLRP struct {
 	ProcessGuid  string `json:"process_guid"`
 	InstanceGuid string `json:"instance_guid"`
 	ExecutorID   string `json:"executor_id"`
+	Domain       string `json:"domain"`
 
 	Index int `json:"index"`
 
@@ -32,23 +33,36 @@ type ActualLRP struct {
 	Since int64          `json:"since"`
 }
 
-func NewActualLRP(processGuid, instanceGuid, executorID string, index int, state ActualLRPState, since int64) (ActualLRP, error) {
+func NewActualLRP(
+	processGuid string,
+	instanceGuid string,
+	executorID string,
+	domain string,
+	index int,
+	state ActualLRPState,
+	since int64,
+) (ActualLRP, error) {
 	if processGuid == "" {
-		return ActualLRP{}, errors.New("Cannot construct Acutal LRP with empty process guid")
+		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty process guid")
 	}
 
 	if instanceGuid == "" {
-		return ActualLRP{}, errors.New("Cannot construct Acutal LRP with empty instance guid")
+		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty instance guid")
 	}
 
 	if executorID == "" {
-		return ActualLRP{}, errors.New("Cannot construct Acutal LRP with empty executor ID")
+		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty executor ID")
+	}
+
+	if domain == "" {
+		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty domain")
 	}
 
 	return ActualLRP{
 		ProcessGuid:  processGuid,
 		InstanceGuid: instanceGuid,
 		ExecutorID:   executorID,
+		Domain:       domain,
 
 		Index: index,
 
@@ -58,26 +72,30 @@ func NewActualLRP(processGuid, instanceGuid, executorID string, index int, state
 }
 
 func NewActualLRPFromJSON(payload []byte) (ActualLRP, error) {
-	var task ActualLRP
+	var actualLRP ActualLRP
 
-	err := json.Unmarshal(payload, &task)
+	err := json.Unmarshal(payload, &actualLRP)
 	if err != nil {
 		return ActualLRP{}, err
 	}
 
-	if task.ProcessGuid == "" {
+	if actualLRP.ProcessGuid == "" {
 		return ActualLRP{}, ErrInvalidJSONMessage{"process_guid"}
 	}
 
-	if task.InstanceGuid == "" {
+	if actualLRP.InstanceGuid == "" {
 		return ActualLRP{}, ErrInvalidJSONMessage{"instance_guid"}
 	}
 
-	if task.ExecutorID == "" {
+	if actualLRP.ExecutorID == "" {
 		return ActualLRP{}, ErrInvalidJSONMessage{"executor_id"}
 	}
 
-	return task, nil
+	if actualLRP.Domain == "" {
+		return ActualLRP{}, ErrInvalidJSONMessage{"domain"}
+	}
+
+	return actualLRP, nil
 }
 
 func (actual ActualLRP) ToJSON() []byte {

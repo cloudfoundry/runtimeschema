@@ -100,6 +100,7 @@ var _ = Describe("LrpWatchers", func() {
 			errors                                         <-chan error
 			lrp                                            models.ActualLRP
 			lrpProcessGuid, lrpInstanceGuid, lrpExecutorId string
+			lrpDomain                                      string
 			lrpIndex                                       int
 		)
 
@@ -107,12 +108,13 @@ var _ = Describe("LrpWatchers", func() {
 			lrpProcessGuid = "some-process-guid"
 			lrpInstanceGuid = "some-instance-guid"
 			lrpExecutorId = "executor-id"
+			lrpDomain = "lrp-domain"
 			lrpIndex = 0
 
 			events, stop, errors = bbs.WatchForActualLRPChanges()
 
 			var err error
-			lrp, err = bbs.ReportActualLRPAsStarting(lrpProcessGuid, lrpInstanceGuid, lrpExecutorId, lrpIndex)
+			lrp, err = bbs.ReportActualLRPAsStarting(lrpProcessGuid, lrpInstanceGuid, lrpExecutorId, lrpDomain, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

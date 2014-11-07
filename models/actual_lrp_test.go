@@ -21,7 +21,8 @@ var _ = Describe("ActualLRP", func() {
     "index": 2,
     "state": 0,
     "since": 1138,
-    "executor_id":"some-executor-id"
+    "executor_id":"some-executor-id",
+    "domain":"some-domain"
   }`
 
 	BeforeEach(func() {
@@ -36,6 +37,7 @@ var _ = Describe("ActualLRP", func() {
 			Index:      2,
 			Since:      1138,
 			ExecutorID: "some-executor-id",
+			Domain:     "some-domain",
 		}
 	})
 
@@ -64,9 +66,10 @@ var _ = Describe("ActualLRP", func() {
 		})
 
 		for field, payload := range map[string]string{
-			"process_guid":  `{"instance_guid": "instance_guid", "executor_id": "executor_id"}`,
-			"instance_guid": `{"process_guid": "process-guid", "executor_id": "executor_id"}`,
-			"executor_id":   `{"process_guid": "process-guid", "instance_guid": "instance_guid"}`,
+			"process_guid":  `{"instance_guid": "instance_guid", "executor_id": "executor_id", "domain": "domain"}`,
+			"instance_guid": `{"process_guid": "process-guid", "executor_id": "executor_id", "domain": "domain"}`,
+			"executor_id":   `{"process_guid": "process-guid", "instance_guid": "instance_guid", "domain": "domain"}`,
+			"domain":        `{"process_guid": "process-guid", "executor_id": "executor_id", "instance_guid": "instance_guid"}`,
 		} {
 			missingField := field
 			json := payload
@@ -85,12 +88,21 @@ var _ = Describe("ActualLRP", func() {
 
 	Describe("NewActualLRP", func() {
 		It("returns a LRP with correct fields", func() {
-			actualLrp, err := NewActualLRP("processGuid", "instanceGuid", "executorID", 0, ActualLRPStateStarting, 1138)
+			actualLrp, err := NewActualLRP(
+				"processGuid",
+				"instanceGuid",
+				"executorID",
+				"domain",
+				0,
+				ActualLRPStateStarting,
+				1138,
+			)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(actualLrp.ProcessGuid).Should(Equal("processGuid"))
 			Ω(actualLrp.InstanceGuid).Should(Equal("instanceGuid"))
 			Ω(actualLrp.ExecutorID).Should(Equal("executorID"))
+			Ω(actualLrp.Domain).Should(Equal("domain"))
 			Ω(actualLrp.Index).Should(BeZero())
 			Ω(actualLrp.State).Should(Equal(ActualLRPStateStarting))
 			Ω(actualLrp.Since).Should(Equal(int64(1138)))
@@ -98,25 +110,33 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("When given a blank process guid", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("", "instanceGuid", "executorID", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("", "instanceGuid", "executorID", "domain", 0, ActualLRPStateStarting, 1138)
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Acutal LRP with empty process guid"))
+				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty process guid"))
 			})
 		})
 
 		Context("When given a blank instance guid", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "", "executorID", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("processGuid", "", "executorID", "domain", 0, ActualLRPStateStarting, 1138)
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Acutal LRP with empty instance guid"))
+				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty instance guid"))
 			})
 		})
 
 		Context("When given a blank executor ID", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "instanceGuid", "", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("processGuid", "instanceGuid", "", "domain", 0, ActualLRPStateStarting, 1138)
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Acutal LRP with empty executor ID"))
+				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty executor ID"))
+			})
+		})
+
+		Context("When given a blank domain", func() {
+			It("returns an error indicating so", func() {
+				_, err := NewActualLRP("processGuid", "instanceGuid", "executorID", "", 0, ActualLRPStateStarting, 1138)
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty domain"))
 			})
 		})
 	})
