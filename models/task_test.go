@@ -24,16 +24,14 @@ var _ = Describe("Task", func() {
 			}
 		],
 		"executor_id":"executor",
-		"actions":[
-			{
-				"action":"download",
-				"args":{
-					"from":"old_location",
-					"to":"new_location",
-					"cache_key":"the-cache-key"
-				}
+		"action": {
+			"action":"download",
+			"args":{
+				"from":"old_location",
+				"to":"new_location",
+				"cache_key":"the-cache-key"
 			}
-		],
+		},
 		"result_file":"some-file.txt",
 		"result": "turboencabulated",
 		"failed":true,
@@ -62,13 +60,11 @@ var _ = Describe("Task", func() {
 					Value: "an environmment value",
 				},
 			},
-			Actions: []ExecutorAction{
-				{
-					Action: DownloadAction{
-						From:     "old_location",
-						To:       "new_location",
-						CacheKey: "the-cache-key",
-					},
+			Action: ExecutorAction{
+				Action: DownloadAction{
+					From:     "old_location",
+					To:       "new_location",
+					CacheKey: "the-cache-key",
 				},
 			},
 			LogGuid:          "123",
@@ -114,10 +110,10 @@ var _ = Describe("Task", func() {
 		})
 
 		for field, payload := range map[string]string{
-			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
-			"actions":   `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
-			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
-			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "actions": [{"action": "run", "args": {"path": "date"}}]}`,
+			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "action": {"action": "run", "args": {"path": "date"}}}`,
+			"action":    `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
+			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
+			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
 		} {
 			json := payload
 			missingField := field
@@ -126,7 +122,7 @@ var _ = Describe("Task", func() {
 				It("returns an error indicating so", func() {
 					decodedStartAuction, err := NewTaskFromJSON([]byte(json))
 					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(ContainSubstring(missingField))
 
 					Ω(decodedStartAuction).Should(BeZero())
 				})
@@ -139,19 +135,19 @@ var _ = Describe("Task", func() {
 			It("returns an error indicating so", func() {
 				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("JSON has missing/invalid field: task_guid"))
+				Ω(err.Error()).Should(ContainSubstring("task_guid"))
 
 				Ω(decodedStartAuction).Should(BeZero())
 			})
 		})
 
 		Context("with an invalid CPU weight", func() {
-			json := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`
+			json := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "action": {"action": "run", "args": {"path": "date"}}}`
 
 			It("returns an error", func() {
 				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("JSON has missing/invalid field: cpu_weight"))
+				Ω(err.Error()).Should(ContainSubstring("cpu_weight"))
 
 				Ω(decodedStartAuction).Should(BeZero())
 

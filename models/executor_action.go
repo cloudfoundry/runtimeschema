@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var InvalidActionConversion = errors.New("Invalid Action Conversion")
+var ErrInvalidActionType = errors.New("invalid action type")
 
 type DownloadAction struct {
 	From     string `json:"from"`
@@ -49,22 +49,13 @@ type TryAction struct {
 	LogSource string `json:"log_source,omitempty"`
 }
 
-type MonitorAction struct {
-	Action             ExecutorAction `json:"action"`
-	HealthyHook        HealthRequest  `json:"healthy_hook"`
-	UnhealthyHook      HealthRequest  `json:"unhealthy_hook"`
-	HealthyThreshold   uint           `json:"healthy_threshold"`
-	UnhealthyThreshold uint           `json:"unhealthy_threshold"`
+type ParallelAction struct {
+	Actions []ExecutorAction `json:"actions"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
 
-type HealthRequest struct {
-	Method string `json:"method"`
-	URL    string `json:"url"`
-}
-
-type ParallelAction struct {
+type SerialAction struct {
 	Actions []ExecutorAction `json:"actions"`
 
 	LogSource string `json:"log_source,omitempty"`
@@ -106,6 +97,14 @@ func Parallel(actions ...ExecutorAction) ExecutorAction {
 	}
 }
 
+func Serial(actions ...ExecutorAction) ExecutorAction {
+	return ExecutorAction{
+		SerialAction{
+			Actions: actions,
+		},
+	}
+}
+
 type executorActionEnvelope struct {
 	Name          string           `json:"action"`
 	ActionPayload *json.RawMessage `json:"args"`
@@ -113,6 +112,15 @@ type executorActionEnvelope struct {
 
 type ExecutorAction struct {
 	Action interface{} `json:"-"`
+}
+
+func (a ExecutorAction) Validate() error {
+	switch a.Action.(type) {
+	case DownloadAction, RunAction, UploadAction, EmitProgressAction, TryAction, ParallelAction, SerialAction:
+		return nil
+	default:
+		return ErrInvalidActionType
+	}
 }
 
 func (a ExecutorAction) MarshalJSON() ([]byte, error) {
@@ -135,12 +143,10 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "emit_progress"
 	case TryAction:
 		envelope.Name = "try"
-	case MonitorAction:
-		envelope.Name = "monitor"
 	case ParallelAction:
 		envelope.Name = "parallel"
-	default:
-		return nil, InvalidActionConversion
+	case SerialAction:
+		envelope.Name = "serial"
 	}
 
 	envelope.ActionPayload = (*json.RawMessage)(&payload)
@@ -177,16 +183,14 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		action := TryAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
-	case "monitor":
-		action := MonitorAction{}
-		err = json.Unmarshal(*envelope.ActionPayload, &action)
-		a.Action = action
 	case "parallel":
 		action := ParallelAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
-	default:
-		err = InvalidActionConversion
+	case "serial":
+		action := SerialAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &action)
+		a.Action = action
 	}
 
 	return err

@@ -26,7 +26,7 @@ var _ = Describe("Task BBS", func() {
 			Domain:   "tests",
 			TaskGuid: "some-guid",
 			Stack:    "pancakes",
-			Actions:  dummyActions,
+			Action:   dummyAction,
 		}
 	})
 
@@ -94,7 +94,7 @@ var _ = Describe("Task BBS", func() {
 				ExecutorID: "executor-id",
 				Domain:     "tests",
 				Stack:      "pancakes",
-				Actions:    dummyActions,
+				Action:     dummyAction,
 			}
 			var task1 models.Task
 			var task2Request = models.Task{
@@ -102,7 +102,7 @@ var _ = Describe("Task BBS", func() {
 				ExecutorID: "executor-id",
 				Domain:     "tests",
 				Stack:      "pancakes",
-				Actions:    dummyActions,
+				Action:     dummyAction,
 			}
 			var task2 models.Task
 

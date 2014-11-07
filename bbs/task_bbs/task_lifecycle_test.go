@@ -26,7 +26,7 @@ var _ = Describe("Task BBS", func() {
 			Domain:   "tests",
 			TaskGuid: "some-guid",
 			Stack:    "pancakes",
-			Actions:  dummyActions,
+			Action:   dummyAction,
 		}
 	})
 

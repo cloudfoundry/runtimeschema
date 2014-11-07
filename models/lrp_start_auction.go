@@ -21,18 +21,21 @@ type LRPStartAuction struct {
 }
 
 func NewLRPStartAuctionFromJSON(payload []byte) (LRPStartAuction, error) {
-	var task LRPStartAuction
+	auction := LRPStartAuction{}
 
-	err := json.Unmarshal(payload, &task)
+	err := json.Unmarshal(payload, &auction)
 	if err != nil {
 		return LRPStartAuction{}, err
 	}
 
-	if task.InstanceGuid == "" {
-		return LRPStartAuction{}, ErrInvalidJSONMessage{"instance_guid"}
-	}
+	return auction, auction.Validate()
+}
 
-	return task, nil
+func (auction LRPStartAuction) Validate() error {
+	if auction.InstanceGuid == "" {
+		return ErrInvalidJSONMessage{"instance_guid"}
+	}
+	return auction.DesiredLRP.Validate()
 }
 
 func (auction LRPStartAuction) ToJSON() []byte {

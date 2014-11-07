@@ -9,6 +9,11 @@ import (
 )
 
 func (bbs *StartAuctionBBS) RequestLRPStartAuction(lrp models.LRPStartAuction) error {
+	err := lrp.Validate()
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		lrp.State = models.LRPStartAuctionStatePending
 		lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()

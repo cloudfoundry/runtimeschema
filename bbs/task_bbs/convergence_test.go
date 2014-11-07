@@ -52,7 +52,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			Domain:   "tests",
 			TaskGuid: "some-guid",
 			Stack:    "pancakes",
-			Actions:  dummyActions,
+			Action:   dummyAction,
 		}
 
 		logger := lagertest.NewTestLogger("test")

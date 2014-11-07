@@ -11,19 +11,14 @@ import (
 )
 
 var _ = Describe("ExecutorAction", func() {
-	Describe("With an invalid action", func() {
-		It("should fail to marshal", func() {
-			invalidAction := []string{"aliens", "from", "mars"}
-			payload, err := json.Marshal(&ExecutorAction{Action: invalidAction})
-			Ω(payload).Should(BeZero())
-			Ω(err.(*json.MarshalerError).Err).Should(Equal(InvalidActionConversion))
-		})
-
-		It("should fail to unmarshal", func() {
-			var unmarshalledAction *ExecutorAction
-			actionPayload := `{"action":"alienz","args":{"from":"space"}}`
-			err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
-			Ω(err).Should(Equal(InvalidActionConversion))
+	Describe("Validate", func() {
+		Context("With an invalid action", func() {
+			It("should fail to marshal", func() {
+				invalidAction := []string{"aliens", "from", "mars"}
+				executorAction := ExecutorAction{Action: invalidAction}
+				err := executorAction.Validate()
+				Ω(err).Should(Equal(ErrInvalidActionType))
+			})
 		})
 	})
 
@@ -169,79 +164,76 @@ var _ = Describe("ExecutorAction", func() {
 		)
 	})
 
-	Describe("Monitor", func() {
-		itSerializesAndDeserializes(
-			`{
-				"action": "monitor",
-				"args": {
-					"action": {
-						"action": "run",
-						"args": {
-							"resource_limits": {},
-							"env": null,
-							"timeout": 0,
-							"path": "echo",
-							"args": null
-						}
-					},
-					"healthy_hook": {
-						"method": "POST",
-						"url": "bogus_healthy_hook"
-					},
-					"unhealthy_hook": {
-						"method": "DELETE",
-						"url": "bogus_unhealthy_hook"
-					},
-					"healthy_threshold": 2,
-					"unhealthy_threshold": 5
-				}
-			}`,
-			ExecutorAction{
-				MonitorAction{
-					Action: ExecutorAction{RunAction{Path: "echo"}},
-					HealthyHook: HealthRequest{
-						Method: "POST",
-						URL:    "bogus_healthy_hook",
-					},
-					UnhealthyHook: HealthRequest{
-						Method: "DELETE",
-						URL:    "bogus_unhealthy_hook",
-					},
-					HealthyThreshold:   2,
-					UnhealthyThreshold: 5,
-				},
-			},
-		)
-	})
-
 	Describe("Parallel", func() {
 		itSerializesAndDeserializes(
 			`{
-        "action": "parallel",
-        "args": {
-          "actions": [
-            {
-              "action": "download",
-              "args": {
-                "cache_key": "elephant",
-                "to": "local_location",
-                "from": "web_location"
-              }
-            },
-            {
-              "action": "run",
-              "args": {
-                "resource_limits": {},
-                "env": null,
-                "timeout": 0,
-                "path": "echo",
-                "args": null
-              }
-            }
-          ]
-        }
-      }`,
+				"action": "parallel",
+				"args": {
+					"actions": [
+						{
+							"action": "download",
+							"args": {
+								"cache_key": "elephant",
+								"to": "local_location",
+								"from": "web_location"
+							}
+						},
+						{
+							"action": "run",
+							"args": {
+								"resource_limits": {},
+								"env": null,
+								"timeout": 0,
+								"path": "echo",
+								"args": null
+							}
+						}
+					]
+				}
+			}`,
 			Parallel(
+				ExecutorAction{
+					DownloadAction{
+						From:     "web_location",
+						To:       "local_location",
+						CacheKey: "elephant",
+					},
+				},
+				ExecutorAction{
+					RunAction{Path: "echo"},
+				},
+			),
+		)
+	})
+
+	Describe("Serial", func() {
+		itSerializesAndDeserializes(
+			`{
+				"action": "serial",
+				"args": {
+					"actions": [
+						{
+							"action": "download",
+							"args": {
+								"cache_key": "elephant",
+								"to": "local_location",
+								"from": "web_location"
+							}
+						},
+						{
+							"action": "run",
+							"args": {
+								"resource_limits": {},
+								"env": null,
+								"timeout": 0,
+								"path": "echo",
+								"args": null
+							}
+						}
+					]
+				}
+			}`,
+			Serial(
 				ExecutorAction{
 					DownloadAction{
 						From:     "web_location",

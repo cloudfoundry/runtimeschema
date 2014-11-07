@@ -26,12 +26,10 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Actions: []models.ExecutorAction{
-						{
-							Action: models.DownloadAction{
-								From: "http://example.com",
-								To:   "/tmp/internet",
-							},
+					Action: models.ExecutorAction{
+						Action: models.DownloadAction{
+							From: "http://example.com",
+							To:   "/tmp/internet",
 						},
 					},
 				},
@@ -85,12 +83,10 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Actions: []models.ExecutorAction{
-						{
-							Action: models.DownloadAction{
-								From: "http://example.com",
-								To:   "/tmp/internet",
-							},
+					Action: models.ExecutorAction{
+						Action: models.DownloadAction{
+							From: "http://example.com",
+							To:   "/tmp/internet",
 						},
 					},
 				},
@@ -159,12 +155,10 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Actions: []models.ExecutorAction{
-						{
-							Action: models.DownloadAction{
-								From: "http://example.com",
-								To:   "/tmp/internet",
-							},
+					Action: models.ExecutorAction{
+						Action: models.DownloadAction{
+							From: "http://example.com",
+							To:   "/tmp/internet",
 						},
 					},
 				},
@@ -229,12 +223,10 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Actions: []models.ExecutorAction{
-						{
-							Action: models.DownloadAction{
-								From: "http://example.com",
-								To:   "/tmp/internet",
-							},
+					Action: models.ExecutorAction{
+						Action: models.DownloadAction{
+							From: "http://example.com",
+							To:   "/tmp/internet",
 						},
 					},
 				},

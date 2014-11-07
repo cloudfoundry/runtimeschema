@@ -13,7 +13,9 @@ type DesiredLRP struct {
 	Instances            int                   `json:"instances"`
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
-	Actions              []ExecutorAction      `json:"actions"`
+	Setup                *ExecutorAction       `json:"setup,omitempty"`
+	Action               ExecutorAction        `json:"action"`
+	Monitor              *ExecutorAction       `json:"monitor,omitempty"`
 	DiskMB               int                   `json:"disk_mb"`
 	MemoryMB             int                   `json:"memory_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
@@ -63,8 +65,8 @@ func (desired DesiredLRP) Validate() error {
 		return ErrInvalidJSONMessage{"stack"}
 	}
 
-	if len(desired.Actions) == 0 {
-		return ErrInvalidJSONMessage{"actions"}
+	if err := desired.Action.Validate(); err != nil {
+		return err
 	}
 
 	if desired.Instances < 1 {
@@ -99,8 +101,8 @@ func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
 		return ErrInvalidModification{"env"}
 	}
 
-	if !reflect.DeepEqual(desired.Actions, updatedModel.Actions) {
-		return ErrInvalidModification{"actions"}
+	if !reflect.DeepEqual(desired.Action, updatedModel.Action) {
+		return ErrInvalidModification{"action"}
 	}
 
 	if desired.DiskMB != updatedModel.DiskMB {

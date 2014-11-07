@@ -32,12 +32,10 @@ var _ = Describe("LrpGetters", func() {
 			ProcessGuid: "guidA",
 			Stack:       "stack",
 			Instances:   1,
-			Actions: []models.ExecutorAction{
-				{
-					Action: models.DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
-					},
+			Action: models.ExecutorAction{
+				Action: models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
 				},
 			},
 		}
@@ -47,12 +45,10 @@ var _ = Describe("LrpGetters", func() {
 			ProcessGuid: "guidB",
 			Stack:       "stack",
 			Instances:   1,
-			Actions: []models.ExecutorAction{
-				{
-					Action: models.DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
-					},
+			Action: models.ExecutorAction{
+				Action: models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
 				},
 			},
 		}
@@ -62,12 +58,10 @@ var _ = Describe("LrpGetters", func() {
 			ProcessGuid: "guidC",
 			Stack:       "stack",
 			Instances:   1,
-			Actions: []models.ExecutorAction{
-				{
-					Action: models.DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
-					},
+			Action: models.ExecutorAction{
+				Action: models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
 				},
 			},
 		}

@@ -94,12 +94,10 @@ var _ = Describe("LrpConvergence", func() {
 				ProcessGuid: processGuid,
 				Instances:   2,
 				Stack:       "pancake",
-				Actions: []models.ExecutorAction{
-					{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+				Action: models.ExecutorAction{
+					Action: models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}
