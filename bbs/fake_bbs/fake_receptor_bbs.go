@@ -123,6 +123,15 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
+	GetAllActualLRPsByDomainStub        func(domain string) ([]models.ActualLRP, error)
+	getAllActualLRPsByDomainMutex       sync.RWMutex
+	getAllActualLRPsByDomainArgsForCall []struct {
+		domain string
+	}
+	getAllActualLRPsByDomainReturns struct {
+		result1 []models.ActualLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -546,6 +555,39 @@ func (fake *FakeReceptorBBS) GetAllActualLRPsCallCount() int {
 func (fake *FakeReceptorBBS) GetAllActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
 	fake.GetAllActualLRPsStub = nil
 	fake.getAllActualLRPsReturns = struct {
+		result1 []models.ActualLRP
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
+	fake.getAllActualLRPsByDomainMutex.Lock()
+	fake.getAllActualLRPsByDomainArgsForCall = append(fake.getAllActualLRPsByDomainArgsForCall, struct {
+		domain string
+	}{domain})
+	fake.getAllActualLRPsByDomainMutex.Unlock()
+	if fake.GetAllActualLRPsByDomainStub != nil {
+		return fake.GetAllActualLRPsByDomainStub(domain)
+	} else {
+		return fake.getAllActualLRPsByDomainReturns.result1, fake.getAllActualLRPsByDomainReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainCallCount() int {
+	fake.getAllActualLRPsByDomainMutex.RLock()
+	defer fake.getAllActualLRPsByDomainMutex.RUnlock()
+	return len(fake.getAllActualLRPsByDomainArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainArgsForCall(i int) string {
+	fake.getAllActualLRPsByDomainMutex.RLock()
+	defer fake.getAllActualLRPsByDomainMutex.RUnlock()
+	return fake.getAllActualLRPsByDomainArgsForCall[i].domain
+}
+
+func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainReturns(result1 []models.ActualLRP, result2 error) {
+	fake.GetAllActualLRPsByDomainStub = nil
+	fake.getAllActualLRPsByDomainReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
