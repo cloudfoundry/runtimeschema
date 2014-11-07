@@ -34,6 +34,8 @@ type StagingRequestFromCC struct {
 	DropletUploadUri               string      `json:"droplet_upload_uri"`
 }
 
+const CUSTOM_BUILDPACK = "custom"
+
 type Buildpack struct {
 	Name string `json:"name"`
 	Key  string `json:"key"`
