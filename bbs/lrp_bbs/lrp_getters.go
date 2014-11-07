@@ -174,6 +174,34 @@ func (bbs *LRPBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]mode
 	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
 }
 
+func (bbs *LRPBBS) GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
+	lrps := []models.ActualLRP{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return lrps, nil
+	}
+
+	if err != nil {
+		return lrps, err
+	}
+
+	for _, node := range node.ChildNodes {
+		for _, indexNode := range node.ChildNodes {
+			for _, instanceNode := range indexNode.ChildNodes {
+				lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+				if err != nil {
+					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+				} else if lrp.Domain == domain {
+					lrps = append(lrps, lrp)
+				}
+			}
+		}
+	}
+
+	return lrps, nil
+}
+
 func filterActualLRPs(lrps []models.ActualLRP, state models.ActualLRPState) []models.ActualLRP {
 	filteredLRPs := []models.ActualLRP{}
 	for _, lrp := range lrps {

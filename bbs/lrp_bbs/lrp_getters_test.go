@@ -9,11 +9,22 @@ import (
 )
 
 var _ = Describe("LrpGetters", func() {
-	var runningLrp1, newLrp, runningLrp2 models.ActualLRP
-	var newLrpProcessGuid, newLrpInstanceGuid, newLrpExecutorId string
-	var newLrpDomain string
-	var newLrpIndex int
-	var desiredLrp1, desiredLrp2, desiredLrp3 models.DesiredLRP
+	var (
+		desiredLrp1 models.DesiredLRP
+		desiredLrp2 models.DesiredLRP
+		desiredLrp3 models.DesiredLRP
+
+		runningLrp1 models.ActualLRP
+		runningLrp2 models.ActualLRP
+		runningLrp3 models.ActualLRP
+		newLrp      models.ActualLRP
+
+		newLrpProcessGuid  string
+		newLrpInstanceGuid string
+		newLrpExecutorId   string
+		newLrpDomain       string
+		newLrpIndex        int
+	)
 
 	BeforeEach(func() {
 		desiredLrp1 = models.DesiredLRP{
@@ -70,7 +81,7 @@ var _ = Describe("LrpGetters", func() {
 		runningLrp1 = models.ActualLRP{
 			ProcessGuid:  "guidA",
 			Index:        1,
-			InstanceGuid: "some-instance-guid",
+			InstanceGuid: "some-instance-guid-1",
 			Domain:       "domain-a",
 			State:        models.ActualLRPStateRunning,
 			Since:        timeProvider.Time().UnixNano(),
@@ -80,7 +91,17 @@ var _ = Describe("LrpGetters", func() {
 		runningLrp2 = models.ActualLRP{
 			ProcessGuid:  "guidB",
 			Index:        2,
-			InstanceGuid: "some-instance-guid",
+			InstanceGuid: "some-instance-guid-2",
+			Domain:       "domain-b",
+			State:        models.ActualLRPStateRunning,
+			Since:        timeProvider.Time().UnixNano(),
+			ExecutorID:   "executor-id",
+		}
+
+		runningLrp3 = models.ActualLRP{
+			ProcessGuid:  "guidC",
+			Index:        3,
+			InstanceGuid: "some-instance-guid-3",
 			Domain:       "domain-b",
 			State:        models.ActualLRPStateRunning,
 			Since:        timeProvider.Time().UnixNano(),
@@ -274,6 +295,42 @@ var _ = Describe("LrpGetters", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(lrps).Should(HaveLen(1))
 			Ω(lrps).Should(ContainElement(runningLrp1))
+		})
+	})
+
+	Describe("GetAllActualLRPsByDomain", func() {
+		BeforeEach(func() {
+			err := bbs.ReportActualLRPAsRunning(runningLrp1, "executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			newLrp, err = bbs.ReportActualLRPAsStarting(newLrpProcessGuid, newLrpInstanceGuid, newLrpExecutorId, newLrpDomain, newLrpIndex)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.ReportActualLRPAsRunning(runningLrp2, "executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.ReportActualLRPAsRunning(runningLrp3, "executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("should fetch all LRPs for the specified guid", func() {
+			lrps, err := bbs.GetAllActualLRPsByDomain("domain-b")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(lrps).Should(HaveLen(2))
+			Ω(lrps).ShouldNot(ContainElement(runningLrp1))
+			Ω(lrps).Should(ContainElement(runningLrp2))
+			Ω(lrps).Should(ContainElement(runningLrp3))
+		})
+
+		Context("when there are no actual LRPs in the requested domain", func() {
+			It("returns an empty list", func() {
+				lrps, err := bbs.GetAllActualLRPsByDomain("bogus-domain")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrps).ShouldNot(BeNil())
+				Ω(lrps).Should(HaveLen(0))
+			})
 		})
 	})
 })
