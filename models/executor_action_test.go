@@ -167,51 +167,6 @@ var _ = Describe("ExecutorAction", func() {
 		)
 	})
 
-	Describe("Monitor", func() {
-		itSerializesAndDeserializes(
-			`{
-				"action": "monitor",
-				"args": {
-					"action": {
-						"action": "run",
-						"args": {
-							"resource_limits": {},
-							"env": null,
-							"timeout": 0,
-							"path": "echo",
-							"args": null
-						}
-					},
-					"healthy_hook": {
-						"method": "POST",
-						"url": "bogus_healthy_hook"
-					},
-					"unhealthy_hook": {
-						"method": "DELETE",
-						"url": "bogus_unhealthy_hook"
-					},
-					"healthy_threshold": 2,
-					"unhealthy_threshold": 5
-				}
-			}`,
-			ExecutorAction{
-				MonitorAction{
-					Action: ExecutorAction{RunAction{Path: "echo"}},
-					HealthyHook: HealthRequest{
-						Method: "POST",
-						URL:    "bogus_healthy_hook",
-					},
-					UnhealthyHook: HealthRequest{
-						Method: "DELETE",
-						URL:    "bogus_unhealthy_hook",
-					},
-					HealthyThreshold:   2,
-					UnhealthyThreshold: 5,
-				},
-			},
-		)
-	})
-
 	Describe("Parallel", func() {
 		itSerializesAndDeserializes(
 			`{

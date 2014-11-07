@@ -40,19 +40,6 @@ type TryAction struct {
 	Action ExecutorAction `json:"action"`
 }
 
-type MonitorAction struct {
-	Action             ExecutorAction `json:"action"`
-	HealthyHook        HealthRequest  `json:"healthy_hook"`
-	UnhealthyHook      HealthRequest  `json:"unhealthy_hook"`
-	HealthyThreshold   uint           `json:"healthy_threshold"`
-	UnhealthyThreshold uint           `json:"unhealthy_threshold"`
-}
-
-type HealthRequest struct {
-	Method string `json:"method"`
-	URL    string `json:"url"`
-}
-
 type ParallelAction struct {
 	Actions []ExecutorAction `json:"actions"`
 }
@@ -132,8 +119,6 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "emit_progress"
 	case TryAction:
 		envelope.Name = "try"
-	case MonitorAction:
-		envelope.Name = "monitor"
 	case ParallelAction:
 		envelope.Name = "parallel"
 	default:
@@ -172,10 +157,6 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		a.Action = action
 	case "try":
 		action := TryAction{}
-		err = json.Unmarshal(*envelope.ActionPayload, &action)
-		a.Action = action
-	case "monitor":
-		action := MonitorAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
 	case "parallel":
