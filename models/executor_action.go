@@ -57,6 +57,10 @@ type ParallelAction struct {
 	Actions []ExecutorAction `json:"actions"`
 }
 
+type SerialAction struct {
+	Actions []ExecutorAction `json:"actions"`
+}
+
 type EmitProgressAction struct {
 	Action         ExecutorAction `json:"action"`
 	StartMessage   string         `json:"start_message"`
@@ -86,6 +90,14 @@ func Try(action ExecutorAction) ExecutorAction {
 func Parallel(actions ...ExecutorAction) ExecutorAction {
 	return ExecutorAction{
 		ParallelAction{
+			Actions: actions,
+		},
+	}
+}
+
+func Serial(actions ...ExecutorAction) ExecutorAction {
+	return ExecutorAction{
+		SerialAction{
 			Actions: actions,
 		},
 	}

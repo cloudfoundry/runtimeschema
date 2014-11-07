@@ -215,31 +215,73 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Parallel", func() {
 		itSerializesAndDeserializes(
 			`{
-        "action": "parallel",
-        "args": {
-          "actions": [
-            {
-              "action": "download",
-              "args": {
-                "cache_key": "elephant",
-                "to": "local_location",
-                "from": "web_location"
-              }
-            },
-            {
-              "action": "run",
-              "args": {
-                "resource_limits": {},
-                "env": null,
-                "timeout": 0,
-                "path": "echo",
-                "args": null
-              }
-            }
-          ]
-        }
-      }`,
+				"action": "parallel",
+				"args": {
+					"actions": [
+						{
+							"action": "download",
+							"args": {
+								"cache_key": "elephant",
+								"to": "local_location",
+								"from": "web_location"
+							}
+						},
+						{
+							"action": "run",
+							"args": {
+								"resource_limits": {},
+								"env": null,
+								"timeout": 0,
+								"path": "echo",
+								"args": null
+							}
+						}
+					]
+				}
+			}`,
 			Parallel(
+				ExecutorAction{
+					DownloadAction{
+						From:     "web_location",
+						To:       "local_location",
+						CacheKey: "elephant",
+					},
+				},
+				ExecutorAction{
+					RunAction{Path: "echo"},
+				},
+			),
+		)
+	})
+
+	Describe("Serial", func() {
+		itSerializesAndDeserializes(
+			`{
+				"action": "serial",
+				"args": {
+					"actions": [
+						{
+							"action": "download",
+							"args": {
+								"cache_key": "elephant",
+								"to": "local_location",
+								"from": "web_location"
+							}
+						},
+						{
+							"action": "run",
+							"args": {
+								"resource_limits": {},
+								"env": null,
+								"timeout": 0,
+								"path": "echo",
+								"args": null
+							}
+						}
+					]
+				}
+			}`,
+			Serial(
 				ExecutorAction{
 					DownloadAction{
 						From:     "web_location",
