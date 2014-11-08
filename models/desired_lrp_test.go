@@ -35,6 +35,7 @@ var _ = Describe("DesiredLRP", func() {
 	      }
 	    }
 	  ],
+	  "privileged": true,
 	  "disk_mb": 512,
 	  "memory_mb": 1024,
 	  "cpu_weight": 42,
@@ -67,6 +68,7 @@ var _ = Describe("DesiredLRP", func() {
 			CPUWeight:  42,
 			Routes:     []string{"route-1", "route-2"},
 			Annotation: "some-annotation",
+			Privileged: true,
 			Ports: []PortMapping{
 				{HostPort: 1234, ContainerPort: 5678},
 			},

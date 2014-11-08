@@ -34,6 +34,7 @@ var _ = Describe("Task", func() {
 				}
 			}
 		],
+		"privileged":true,
 		"result_file":"some-file.txt",
 		"result": "turboencabulated",
 		"failed":true,
@@ -77,6 +78,7 @@ var _ = Describe("Task", func() {
 				Guid:       "123",
 				SourceName: "APP",
 			},
+			Privileged:       true,
 			ExecutorID:       "executor",
 			ResultFile:       "some-file.txt",
 			Result:           "turboencabulated",
