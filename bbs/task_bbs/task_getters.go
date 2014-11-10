@@ -70,6 +70,13 @@ func (bbs *TaskBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
 	}), err
 }
 
+func (bbs *TaskBBS) GetAllTasksByExecutorID(executorId string) ([]models.Task, error) {
+	all, err := bbs.GetAllTasks()
+	return filterTasks(all, func(task models.Task) bool {
+		return task.ExecutorID == executorId
+	}), err
+}
+
 func filterTasks(tasks []models.Task, filterFunc func(models.Task) bool) []models.Task {
 	result := make([]models.Task, 0)
 	for _, task := range tasks {

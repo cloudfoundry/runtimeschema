@@ -50,6 +50,7 @@ type RepBBS interface {
 	ClaimTask(taskGuid string, executorID string) error
 	StartTask(taskGuid string, executorID string) error
 	GetTaskByGuid(taskGuid string) (models.Task, error)
+	GetAllTasksByExecutorID(executorID string) ([]models.Task, error)
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lrp

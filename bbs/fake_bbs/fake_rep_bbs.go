@@ -55,6 +55,15 @@ type FakeRepBBS struct {
 		result1 models.Task
 		result2 error
 	}
+	GetAllTasksByExecutorIDStub        func(executorID string) ([]models.Task, error)
+	getAllTasksByExecutorIDMutex       sync.RWMutex
+	getAllTasksByExecutorIDArgsForCall []struct {
+		executorID string
+	}
+	getAllTasksByExecutorIDReturns struct {
+		result1 []models.Task
+		result2 error
+	}
 	CompleteTaskStub        func(taskGuid string, failed bool, failureReason string, result string) error
 	completeTaskMutex       sync.RWMutex
 	completeTaskArgsForCall []struct {
@@ -296,6 +305,39 @@ func (fake *FakeRepBBS) GetTaskByGuidReturns(result1 models.Task, result2 error)
 	fake.GetTaskByGuidStub = nil
 	fake.getTaskByGuidReturns = struct {
 		result1 models.Task
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRepBBS) GetAllTasksByExecutorID(executorID string) ([]models.Task, error) {
+	fake.getAllTasksByExecutorIDMutex.Lock()
+	fake.getAllTasksByExecutorIDArgsForCall = append(fake.getAllTasksByExecutorIDArgsForCall, struct {
+		executorID string
+	}{executorID})
+	fake.getAllTasksByExecutorIDMutex.Unlock()
+	if fake.GetAllTasksByExecutorIDStub != nil {
+		return fake.GetAllTasksByExecutorIDStub(executorID)
+	} else {
+		return fake.getAllTasksByExecutorIDReturns.result1, fake.getAllTasksByExecutorIDReturns.result2
+	}
+}
+
+func (fake *FakeRepBBS) GetAllTasksByExecutorIDCallCount() int {
+	fake.getAllTasksByExecutorIDMutex.RLock()
+	defer fake.getAllTasksByExecutorIDMutex.RUnlock()
+	return len(fake.getAllTasksByExecutorIDArgsForCall)
+}
+
+func (fake *FakeRepBBS) GetAllTasksByExecutorIDArgsForCall(i int) string {
+	fake.getAllTasksByExecutorIDMutex.RLock()
+	defer fake.getAllTasksByExecutorIDMutex.RUnlock()
+	return fake.getAllTasksByExecutorIDArgsForCall[i].executorID
+}
+
+func (fake *FakeRepBBS) GetAllTasksByExecutorIDReturns(result1 []models.Task, result2 error) {
+	fake.GetAllTasksByExecutorIDStub = nil
+	fake.getAllTasksByExecutorIDReturns = struct {
+		result1 []models.Task
 		result2 error
 	}{result1, result2}
 }

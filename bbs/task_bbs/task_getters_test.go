@@ -74,6 +74,58 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
+	Describe("GetAllTasksByExecutorID", func() {
+		BeforeEach(func() {
+			task.ExecutorID = "some-other-executor-id"
+			err = bbs.DesireTask(task)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+		Context("when there are no tasks for the given executor ID", func() {
+			It("returns an empty list", func() {
+				tasks, err := bbs.GetAllTasksByExecutorID("executor-id")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(tasks).Should(BeEmpty())
+			})
+		})
+
+		Context("when there are tasks for the given executor ID", func() {
+			var task1Request = models.Task{
+				TaskGuid:   "some-guid-1",
+				ExecutorID: "executor-id",
+				Domain:     "tests",
+				Stack:      "pancakes",
+				Actions:    dummyActions,
+			}
+			var task1 models.Task
+			var task2Request = models.Task{
+				TaskGuid:   "some-guid-2",
+				ExecutorID: "executor-id",
+				Domain:     "tests",
+				Stack:      "pancakes",
+				Actions:    dummyActions,
+			}
+			var task2 models.Task
+
+			BeforeEach(func() {
+				err = bbs.DesireTask(task1Request)
+				Ω(err).ShouldNot(HaveOccurred())
+				task1, err = bbs.GetTaskByGuid("some-guid-1")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.DesireTask(task2Request)
+				Ω(err).ShouldNot(HaveOccurred())
+				task2, err = bbs.GetTaskByGuid("some-guid-2")
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns only those tasks", func() {
+				tasks, err := bbs.GetAllTasksByExecutorID("executor-id")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(tasks).Should(ConsistOf(task1, task2))
+			})
+		})
+	})
+
 	Describe("GetAllPendingTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
