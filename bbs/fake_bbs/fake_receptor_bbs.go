@@ -132,6 +132,15 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
+	GetActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	getActualLRPsByProcessGuidMutex       sync.RWMutex
+	getActualLRPsByProcessGuidArgsForCall []struct {
+		arg1 string
+	}
+	getActualLRPsByProcessGuidReturns struct {
+		result1 []models.ActualLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -588,6 +597,39 @@ func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainArgsForCall(i int) string {
 func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainReturns(result1 []models.ActualLRP, result2 error) {
 	fake.GetAllActualLRPsByDomainStub = nil
 	fake.getAllActualLRPsByDomainReturns = struct {
+		result1 []models.ActualLRP
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+	fake.getActualLRPsByProcessGuidMutex.Lock()
+	fake.getActualLRPsByProcessGuidArgsForCall = append(fake.getActualLRPsByProcessGuidArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.getActualLRPsByProcessGuidMutex.Unlock()
+	if fake.GetActualLRPsByProcessGuidStub != nil {
+		return fake.GetActualLRPsByProcessGuidStub(arg1)
+	} else {
+		return fake.getActualLRPsByProcessGuidReturns.result1, fake.getActualLRPsByProcessGuidReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidCallCount() int {
+	fake.getActualLRPsByProcessGuidMutex.RLock()
+	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
+	return len(fake.getActualLRPsByProcessGuidArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidArgsForCall(i int) string {
+	fake.getActualLRPsByProcessGuidMutex.RLock()
+	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
+	return fake.getActualLRPsByProcessGuidArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+	fake.GetActualLRPsByProcessGuidStub = nil
+	fake.getActualLRPsByProcessGuidReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
