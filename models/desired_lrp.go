@@ -19,7 +19,8 @@ type DesiredLRP struct {
 	CPUWeight            uint                  `json:"cpu_weight"`
 	Ports                []PortMapping         `json:"ports"`
 	Routes               []string              `json:"routes"`
-	Log                  LogConfig             `json:"log"`
+	LogSource            string                `json:"log_source"`
+	LogGuid              string                `json:"log_guid"`
 	Annotation           string                `json:"annotation,omitempty"`
 }
 
@@ -118,8 +119,12 @@ func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
 		return ErrInvalidModification{"ports"}
 	}
 
-	if !reflect.DeepEqual(desired.Log, updatedModel.Log) {
-		return ErrInvalidModification{"log"}
+	if desired.LogSource != updatedModel.LogSource {
+		return ErrInvalidModification{"log_source"}
+	}
+
+	if desired.LogGuid != updatedModel.LogGuid {
+		return ErrInvalidModification{"log_guid"}
 	}
 
 	return nil

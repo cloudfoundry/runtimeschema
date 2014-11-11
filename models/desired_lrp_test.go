@@ -48,10 +48,8 @@ var _ = Describe("DesiredLRP", func() {
 	    "route-1",
 	    "route-2"
 	  ],
-	  "log": {
-	    "guid": "log-guid",
-	    "source_name": "the cloud"
-	  }
+	  "log_guid": "log-guid",
+	  "log_source": "the cloud"
 	}`
 
 	BeforeEach(func() {
@@ -70,10 +68,8 @@ var _ = Describe("DesiredLRP", func() {
 			Ports: []PortMapping{
 				{HostPort: 1234, ContainerPort: 5678},
 			},
-			Log: LogConfig{
-				Guid:       "log-guid",
-				SourceName: "the cloud",
-			},
+			LogGuid:   "log-guid",
+			LogSource: "the cloud",
 			EnvironmentVariables: []EnvironmentVariable{
 				{
 					Name:  "ENV_VAR_NAME",
@@ -324,11 +320,15 @@ var _ = Describe("DesiredLRP", func() {
 			Ω(err.Error()).Should(ContainSubstring("ports"))
 		})
 
-		It("does not allow the log config to change", func() {
-			newLrp.Log = LogConfig{
-				Guid:       "new-guid",
-				SourceName: "cloud-9",
-			}
+		It("does not allow the log guid to change", func() {
+			newLrp.LogGuid = "new-guid"
+			err := lrp.ValidateModifications(newLrp)
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("log"))
+		})
+
+		It("does not allow the log source to change", func() {
+			newLrp.LogSource = "new-source"
 			err := lrp.ValidateModifications(newLrp)
 			Ω(err).Should(HaveOccurred())
 			Ω(err.Error()).Should(ContainSubstring("log"))

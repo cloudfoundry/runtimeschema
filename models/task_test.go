@@ -41,10 +41,8 @@ var _ = Describe("Task", func() {
 		"memory_mb":256,
 		"disk_mb":1024,
 		"cpu_weight": 42,
-		"log": {
-			"guid": "123",
-			"source_name": "APP"
-		},
+		"log_guid": "123",
+		"log_source": "APP",
 		"created_at": 1393371971000000000,
 		"updated_at": 1393371971000000010,
 		"first_completed_at": 1393371971000000030,
@@ -73,10 +71,8 @@ var _ = Describe("Task", func() {
 					},
 				},
 			},
-			Log: LogConfig{
-				Guid:       "123",
-				SourceName: "APP",
-			},
+			LogGuid:          "123",
+			LogSource:        "APP",
 			ExecutorID:       "executor",
 			ResultFile:       "some-file.txt",
 			Result:           "turboencabulated",

@@ -40,10 +40,8 @@ var _ = Describe("LRPStartAuction", func() {
         "route-1",
         "route-2"
       ],
-      "log": {
-        "guid": "log-guid",
-        "source_name": "the cloud"
-      }
+      "log_guid": "log-guid",
+      "log_source": "the cloud"
     },
     "instance_guid": "some-instance-guid",
     "index": 2,
@@ -70,10 +68,8 @@ var _ = Describe("LRPStartAuction", func() {
 				Ports: []PortMapping{
 					{HostPort: 1234, ContainerPort: 5678},
 				},
-				Log: LogConfig{
-					Guid:       "log-guid",
-					SourceName: "the cloud",
-				},
+				LogGuid:   "log-guid",
+				LogSource: "the cloud",
 				Actions: []ExecutorAction{
 					{
 						Action: DownloadAction{
