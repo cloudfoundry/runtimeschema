@@ -14,7 +14,6 @@ type DesiredLRP struct {
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
 	Actions              []ExecutorAction      `json:"actions"`
-	Privileged           bool                  `json:"privileged"`
 	DiskMB               int                   `json:"disk_mb"`
 	MemoryMB             int                   `json:"memory_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`

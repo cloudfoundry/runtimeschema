@@ -13,11 +13,10 @@ var _ = Describe("LRPStartAuction", func() {
 	startAuctionPayload := `{
     "desired_lrp": {
       "process_guid": "some-guid",
-      "domain": "tests",
+			"domain": "tests",
       "instances": 1,
       "stack": "some-stack",
       "root_fs": "docker:///docker.com/docker",
-      "privileged": true,
       "actions": [
         {
           "action": "download",
@@ -75,7 +74,6 @@ var _ = Describe("LRPStartAuction", func() {
 					Guid:       "log-guid",
 					SourceName: "the cloud",
 				},
-				Privileged: true,
 				Actions: []ExecutorAction{
 					{
 						Action: DownloadAction{
