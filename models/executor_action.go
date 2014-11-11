@@ -25,6 +25,7 @@ type RunAction struct {
 	Env            []EnvironmentVariable `json:"env"`
 	Timeout        time.Duration         `json:"timeout"`
 	ResourceLimits ResourceLimits        `json:"resource_limits"`
+	Privileged     bool                  `json:"privileged,omitempty"`
 }
 
 type EnvironmentVariable struct {

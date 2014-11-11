@@ -98,7 +98,8 @@ var _ = Describe("ExecutorAction", func() {
 						{"name":"FOO", "value":"1"},
 						{"name":"BAR", "value":"2"}
 					],
-					"resource_limits":{}
+					"resource_limits":{},
+					"privileged": true
 				}
 			}`,
 			ExecutorAction{
@@ -110,6 +111,7 @@ var _ = Describe("ExecutorAction", func() {
 						{"FOO", "1"},
 						{"BAR", "2"},
 					},
+					Privileged: true,
 				},
 			},
 		)
