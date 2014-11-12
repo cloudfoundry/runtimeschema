@@ -26,12 +26,10 @@ var _ = Describe("LrpWatchers", func() {
 				MemoryMB:    1024,
 				DiskMB:      512,
 				Routes:      []string{"route-1", "route-2"},
-				Actions: []models.ExecutorAction{
-					{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+				Action: models.ExecutorAction{
+					Action: models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}

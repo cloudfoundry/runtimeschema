@@ -25,16 +25,34 @@ var _ = Describe("DesiredLRP", func() {
 	      "value": "some environment variable value"
 	    }
 	  ],
-	  "actions": [
-	    {
-	      "action": "download",
-	      "args": {
-	        "from": "http://example.com",
-	        "to": "/tmp/internet",
-	        "cache_key": ""
-	      }
-	    }
-	  ],
+		"setup": {
+			"action": "download",
+			"args": {
+				"from": "http://example.com",
+				"to": "/tmp/internet",
+				"cache_key": ""
+			}
+		},
+		"action": {
+			"action": "run",
+			"args": {
+				"path": "ls",
+				"args": null,
+				"timeout": 0,
+				"env": null,
+				"resource_limits":{}
+			}
+		},
+		"monitor": {
+			"action": "run",
+			"args": {
+				"path": "reboot",
+				"args": null,
+				"timeout": 0,
+				"env": null,
+				"resource_limits":{}
+			}
+		},
 	  "disk_mb": 512,
 	  "memory_mb": 1024,
 	  "cpu_weight": 42,
@@ -80,12 +98,20 @@ var _ = Describe("DesiredLRP", func() {
 					Value: "some environment variable value",
 				},
 			},
-			Actions: []ExecutorAction{
-				{
-					Action: DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
-					},
+			Setup: &ExecutorAction{
+				DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			},
+			Action: ExecutorAction{
+				RunAction{
+					Path: "ls",
+				},
+			},
+			Monitor: &ExecutorAction{
+				RunAction{
+					Path: "reboot",
 				},
 			},
 		}
@@ -206,9 +232,9 @@ var _ = Describe("DesiredLRP", func() {
 			assertDesiredLRPValidationFailsWithMessage(lrp, "stack")
 		})
 
-		It("requires actions", func() {
-			lrp.Actions = nil
-			assertDesiredLRPValidationFailsWithMessage(lrp, "actions")
+		It("requires an action", func() {
+			lrp.Action.Action = nil
+			assertDesiredLRPValidationFailsWithMessage(lrp, "action")
 		})
 
 		It("requires a valid CPU weight", func() {
@@ -283,15 +309,16 @@ var _ = Describe("DesiredLRP", func() {
 		})
 
 		It("does not allow the actions to change", func() {
-			newLrp.Actions = []ExecutorAction{
-				{UploadAction{
+			newLrp.Action = ExecutorAction{
+				UploadAction{
 					To:   "new-destination",
 					From: "new-source",
-				}},
+				},
 			}
+
 			err := lrp.ValidateModifications(newLrp)
 			Ω(err).Should(HaveOccurred())
-			Ω(err.Error()).Should(ContainSubstring("actions"))
+			Ω(err.Error()).Should(ContainSubstring("action"))
 		})
 
 		It("does not allow the disk size to change", func() {
@@ -355,12 +382,13 @@ var _ = Describe("DesiredLRP", func() {
 		for field, payload := range map[string]string{
 			"process_guid": `{
 				"domain": "some-domain",
-				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
-				],
+				"action": {
+					"action":"download",
+					"args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+				},
 				"stack": "some-stack"
 			}`,
-			"actions": `{
+			"action": `{
 				"domain": "some-domain",
 				"process_guid": "process_guid",
 				"stack": "some-stack"
@@ -387,7 +415,7 @@ var _ = Describe("DesiredLRP", func() {
 				It("returns an error indicating so", func() {
 					decodedStartAuction, err := NewDesiredLRPFromJSON([]byte(json))
 					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(ContainSubstring(missingField))
 
 					Ω(decodedStartAuction).Should(BeZero())
 				})

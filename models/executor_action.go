@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var InvalidActionConversion = errors.New("Invalid Action Conversion")
+var ErrInvalidActionType = errors.New("invalid action type")
 
 type DownloadAction struct {
 	From     string `json:"from"`
@@ -99,6 +99,15 @@ type ExecutorAction struct {
 	Action interface{} `json:"-"`
 }
 
+func (a ExecutorAction) Validate() error {
+	switch a.Action.(type) {
+	case DownloadAction, RunAction, UploadAction, EmitProgressAction, TryAction, ParallelAction, SerialAction:
+		return nil
+	default:
+		return ErrInvalidActionType
+	}
+}
+
 func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 	var envelope executorActionEnvelope
 
@@ -121,8 +130,8 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "try"
 	case ParallelAction:
 		envelope.Name = "parallel"
-	default:
-		return nil, InvalidActionConversion
+	case SerialAction:
+		envelope.Name = "serial"
 	}
 
 	envelope.ActionPayload = (*json.RawMessage)(&payload)
@@ -163,8 +172,10 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		action := ParallelAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
-	default:
-		err = InvalidActionConversion
+	case "serial":
+		action := SerialAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &action)
+		a.Action = action
 	}
 
 	return err

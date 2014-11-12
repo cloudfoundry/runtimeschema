@@ -94,8 +94,6 @@ var _ = Describe("ActualLRP", func() {
 				"executorID",
 				"domain",
 				0,
-				ActualLRPStateStarting,
-				1138,
 			)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -104,13 +102,11 @@ var _ = Describe("ActualLRP", func() {
 			Ω(actualLrp.ExecutorID).Should(Equal("executorID"))
 			Ω(actualLrp.Domain).Should(Equal("domain"))
 			Ω(actualLrp.Index).Should(BeZero())
-			Ω(actualLrp.State).Should(Equal(ActualLRPStateStarting))
-			Ω(actualLrp.Since).Should(Equal(int64(1138)))
 		})
 
 		Context("When given a blank process guid", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("", "instanceGuid", "executorID", "domain", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("", "instanceGuid", "executorID", "domain", 0)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty process guid"))
 			})
@@ -118,7 +114,7 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("When given a blank instance guid", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "", "executorID", "domain", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("processGuid", "", "executorID", "domain", 0)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty instance guid"))
 			})
@@ -126,7 +122,7 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("When given a blank executor ID", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "instanceGuid", "", "domain", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("processGuid", "instanceGuid", "", "domain", 0)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty executor ID"))
 			})
@@ -134,7 +130,7 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("When given a blank domain", func() {
 			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "instanceGuid", "executorID", "", 0, ActualLRPStateStarting, 1138)
+				_, err := NewActualLRP("processGuid", "instanceGuid", "executorID", "", 0)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty domain"))
 			})

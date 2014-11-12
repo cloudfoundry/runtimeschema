@@ -11,19 +11,14 @@ import (
 )
 
 var _ = Describe("ExecutorAction", func() {
-	Describe("With an invalid action", func() {
-		It("should fail to marshal", func() {
-			invalidAction := []string{"aliens", "from", "mars"}
-			payload, err := json.Marshal(&ExecutorAction{Action: invalidAction})
-			Ω(payload).Should(BeZero())
-			Ω(err.(*json.MarshalerError).Err).Should(Equal(InvalidActionConversion))
-		})
-
-		It("should fail to unmarshal", func() {
-			var unmarshalledAction *ExecutorAction
-			actionPayload := `{"action":"alienz","args":{"from":"space"}}`
-			err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
-			Ω(err).Should(Equal(InvalidActionConversion))
+	Describe("Validate", func() {
+		Context("With an invalid action", func() {
+			It("should fail to marshal", func() {
+				invalidAction := []string{"aliens", "from", "mars"}
+				executorAction := ExecutorAction{Action: invalidAction}
+				err := executorAction.Validate()
+				Ω(err).Should(Equal(ErrInvalidActionType))
+			})
 		})
 	})
 

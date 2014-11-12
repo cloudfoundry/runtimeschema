@@ -20,11 +20,11 @@ func BuildTaskWithRunAction(domain string, stack string, memoryMB int, diskMB in
 		TaskGuid: GenerateGuid(),
 		MemoryMB: memoryMB,
 		DiskMB:   diskMB,
-		Actions: []models.ExecutorAction{
-			{Action: models.RunAction{
+		Action: models.ExecutorAction{
+			Action: models.RunAction{
 				Path: path,
 				Args: args,
-			}},
+			},
 		},
 		Stack: stack,
 	}

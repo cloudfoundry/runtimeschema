@@ -15,12 +15,10 @@ import (
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 
-var dummyActions = []models.ExecutorAction{
-	{
-		Action: models.RunAction{
-			Path: "cat",
-			Args: []string{"/tmp/file"},
-		},
+var dummyAction = models.ExecutorAction{
+	Action: models.RunAction{
+		Path: "cat",
+		Args: []string{"/tmp/file"},
 	},
 }
 

@@ -1,6 +1,8 @@
 package models_test
 
 import (
+	"encoding/json"
+
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -17,16 +19,14 @@ var _ = Describe("LRPStartAuction", func() {
       "instances": 1,
       "stack": "some-stack",
       "root_fs": "docker:///docker.com/docker",
-      "actions": [
-        {
-          "action": "download",
-          "args": {
-            "from": "http://example.com",
-            "to": "/tmp/internet",
-            "cache_key": ""
-          }
+      "action": {
+        "action": "download",
+        "args": {
+          "from": "http://example.com",
+          "to": "/tmp/internet",
+          "cache_key": ""
         }
-      ],
+      },
       "disk_mb": 512,
       "memory_mb": 1024,
       "cpu_weight": 42,
@@ -74,12 +74,10 @@ var _ = Describe("LRPStartAuction", func() {
 					Guid:       "log-guid",
 					SourceName: "the cloud",
 				},
-				Actions: []ExecutorAction{
-					{
-						Action: DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+				Action: ExecutorAction{
+					Action: DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			},
@@ -90,9 +88,23 @@ var _ = Describe("LRPStartAuction", func() {
 	})
 
 	Describe("ToJSON", func() {
+
 		It("should JSONify", func() {
 			json := startAuction.ToJSON()
 			Ω(string(json)).Should(MatchJSON(startAuctionPayload))
+		})
+	})
+
+	Describe("JSON", func() {
+		It("should not error with a blank auction", func() {
+			blankAuction := LRPStartAuction{}
+			jsonBytes, err := json.Marshal(blankAuction)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = json.Unmarshal(jsonBytes, &blankAuction)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(blankAuction).Should(BeZero())
 		})
 	})
 

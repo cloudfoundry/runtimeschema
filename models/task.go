@@ -25,7 +25,7 @@ type Task struct {
 	RootFSPath           string                `json:"root_fs"`
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
-	Actions              []ExecutorAction      `json:"actions"`
+	Action               ExecutorAction        `json:"action"`
 	MemoryMB             int                   `json:"memory_mb"`
 	DiskMB               int                   `json:"disk_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
@@ -71,10 +71,12 @@ func NewTaskFromJSON(payload []byte) (Task, error) {
 	if err != nil {
 		return Task{}, err
 	}
+
 	err = task.Validate()
 	if err != nil {
 		return Task{}, err
 	}
+
 	return task, nil
 }
 
@@ -87,12 +89,12 @@ func (task Task) Validate() error {
 		return ErrInvalidJSONMessage{"task_guid"}
 	}
 
-	if len(task.Actions) == 0 {
-		return ErrInvalidJSONMessage{"actions"}
-	}
-
 	if task.Stack == "" {
 		return ErrInvalidJSONMessage{"stack"}
+	}
+
+	if err := task.Action.Validate(); err != nil {
+		return err
 	}
 
 	if task.CPUWeight > 100 {

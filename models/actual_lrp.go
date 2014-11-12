@@ -39,8 +39,6 @@ func NewActualLRP(
 	executorID string,
 	domain string,
 	index int,
-	state ActualLRPState,
-	since int64,
 ) (ActualLRP, error) {
 	if processGuid == "" {
 		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty process guid")
@@ -65,9 +63,6 @@ func NewActualLRP(
 		Domain:       domain,
 
 		Index: index,
-
-		State: state,
-		Since: since,
 	}, nil
 }
 
