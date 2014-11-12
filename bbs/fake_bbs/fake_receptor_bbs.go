@@ -151,6 +151,14 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
+	RequestStopLRPInstancesStub        func(stopInstances []models.StopLRPInstance) error
+	requestStopLRPInstancesMutex       sync.RWMutex
+	requestStopLRPInstancesArgsForCall []struct {
+		stopInstances []models.StopLRPInstance
+	}
+	requestStopLRPInstancesReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -677,6 +685,38 @@ func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexReturns(result1 [
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error {
+	fake.requestStopLRPInstancesMutex.Lock()
+	fake.requestStopLRPInstancesArgsForCall = append(fake.requestStopLRPInstancesArgsForCall, struct {
+		stopInstances []models.StopLRPInstance
+	}{stopInstances})
+	fake.requestStopLRPInstancesMutex.Unlock()
+	if fake.RequestStopLRPInstancesStub != nil {
+		return fake.RequestStopLRPInstancesStub(stopInstances)
+	} else {
+		return fake.requestStopLRPInstancesReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) RequestStopLRPInstancesCallCount() int {
+	fake.requestStopLRPInstancesMutex.RLock()
+	defer fake.requestStopLRPInstancesMutex.RUnlock()
+	return len(fake.requestStopLRPInstancesArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) RequestStopLRPInstancesArgsForCall(i int) []models.StopLRPInstance {
+	fake.requestStopLRPInstancesMutex.RLock()
+	defer fake.requestStopLRPInstancesMutex.RUnlock()
+	return fake.requestStopLRPInstancesArgsForCall[i].stopInstances
+}
+
+func (fake *FakeReceptorBBS) RequestStopLRPInstancesReturns(result1 error) {
+	fake.RequestStopLRPInstancesStub = nil
+	fake.requestStopLRPInstancesReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
