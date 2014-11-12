@@ -159,6 +159,13 @@ type FakeReceptorBBS struct {
 	requestStopLRPInstancesReturns struct {
 		result1 error
 	}
+	GetAllExecutorsStub        func() ([]models.ExecutorPresence, error)
+	getAllExecutorsMutex       sync.RWMutex
+	getAllExecutorsArgsForCall []struct{}
+	getAllExecutorsReturns struct {
+		result1 []models.ExecutorPresence
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -717,6 +724,31 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstancesReturns(result1 error) {
 	fake.requestStopLRPInstancesReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeReceptorBBS) GetAllExecutors() ([]models.ExecutorPresence, error) {
+	fake.getAllExecutorsMutex.Lock()
+	fake.getAllExecutorsArgsForCall = append(fake.getAllExecutorsArgsForCall, struct{}{})
+	fake.getAllExecutorsMutex.Unlock()
+	if fake.GetAllExecutorsStub != nil {
+		return fake.GetAllExecutorsStub()
+	} else {
+		return fake.getAllExecutorsReturns.result1, fake.getAllExecutorsReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetAllExecutorsCallCount() int {
+	fake.getAllExecutorsMutex.RLock()
+	defer fake.getAllExecutorsMutex.RUnlock()
+	return len(fake.getAllExecutorsArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetAllExecutorsReturns(result1 []models.ExecutorPresence, result2 error) {
+	fake.GetAllExecutorsStub = nil
+	fake.getAllExecutorsReturns = struct {
+		result1 []models.ExecutorPresence
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)

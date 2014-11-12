@@ -42,6 +42,9 @@ type ReceptorBBS interface {
 	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	GetActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
 	RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error
+
+	// cells
+	GetAllExecutors() ([]models.ExecutorPresence, error)
 }
 
 type RepBBS interface {
