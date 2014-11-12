@@ -3,7 +3,6 @@ package lrp_bbs
 import (
 	"errors"
 	"fmt"
-	"path"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -142,7 +141,7 @@ func (bbs *LRPBBS) GetRunningActualLRPs() ([]models.ActualLRP, error) {
 func (bbs *LRPBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
-	node, err := bbs.store.ListRecursively(path.Join(shared.ActualLRPSchemaRoot, processGuid))
+	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
 	}
@@ -159,6 +158,30 @@ func (bbs *LRPBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.Actu
 			} else {
 				lrps = append(lrps, lrp)
 			}
+		}
+	}
+
+	return lrps, nil
+}
+
+func (bbs *LRPBBS) GetActualLRPsByProcessGuidAndIndex(processGuid string, index int) ([]models.ActualLRP, error) {
+	lrps := []models.ActualLRP{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPIndexDir(processGuid, index))
+	if err == storeadapter.ErrorKeyNotFound {
+		return lrps, nil
+	}
+
+	if err != nil {
+		return lrps, err
+	}
+
+	for _, instanceNode := range node.ChildNodes {
+		lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+		if err != nil {
+			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+		} else {
+			lrps = append(lrps, lrp)
 		}
 	}
 

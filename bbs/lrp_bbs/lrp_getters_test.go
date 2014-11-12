@@ -278,6 +278,26 @@ var _ = Describe("LrpGetters", func() {
 		})
 	})
 
+	Describe("GetActualLRPsByProcessGuidAndIndex", func() {
+		BeforeEach(func() {
+			err := bbs.ReportActualLRPAsRunning(runningLrp1, "executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			newLrp, err = bbs.ReportActualLRPAsStarting(newLrpProcessGuid, newLrpInstanceGuid, newLrpExecutorId, newLrpDomain, newLrpIndex)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.ReportActualLRPAsRunning(runningLrp2, "executor-id")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("should fetch all LRPs for the specified guid", func() {
+			lrps, err := bbs.GetActualLRPsByProcessGuidAndIndex("guidA", 1)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(lrps).Should(HaveLen(1))
+			Ω(lrps).Should(ContainElement(runningLrp1))
+		})
+	})
+
 	Describe("GetRunningActualLRPsByProcessGuid", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "executor-id")

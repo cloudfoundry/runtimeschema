@@ -40,6 +40,7 @@ type ReceptorBBS interface {
 	GetAllActualLRPs() ([]models.ActualLRP, error)
 	GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	GetActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
 }
 
 type RepBBS interface {

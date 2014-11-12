@@ -141,6 +141,16 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
+	GetActualLRPsByProcessGuidAndIndexStub        func(string, int) ([]models.ActualLRP, error)
+	getActualLRPsByProcessGuidAndIndexMutex       sync.RWMutex
+	getActualLRPsByProcessGuidAndIndexArgsForCall []struct {
+		arg1 string
+		arg2 int
+	}
+	getActualLRPsByProcessGuidAndIndexReturns struct {
+		result1 []models.ActualLRP
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -630,6 +640,40 @@ func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidArgsForCall(i int) string
 func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
 	fake.GetActualLRPsByProcessGuidStub = nil
 	fake.getActualLRPsByProcessGuidReturns = struct {
+		result1 []models.ActualLRP
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndex(arg1 string, arg2 int) ([]models.ActualLRP, error) {
+	fake.getActualLRPsByProcessGuidAndIndexMutex.Lock()
+	fake.getActualLRPsByProcessGuidAndIndexArgsForCall = append(fake.getActualLRPsByProcessGuidAndIndexArgsForCall, struct {
+		arg1 string
+		arg2 int
+	}{arg1, arg2})
+	fake.getActualLRPsByProcessGuidAndIndexMutex.Unlock()
+	if fake.GetActualLRPsByProcessGuidAndIndexStub != nil {
+		return fake.GetActualLRPsByProcessGuidAndIndexStub(arg1, arg2)
+	} else {
+		return fake.getActualLRPsByProcessGuidAndIndexReturns.result1, fake.getActualLRPsByProcessGuidAndIndexReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexCallCount() int {
+	fake.getActualLRPsByProcessGuidAndIndexMutex.RLock()
+	defer fake.getActualLRPsByProcessGuidAndIndexMutex.RUnlock()
+	return len(fake.getActualLRPsByProcessGuidAndIndexArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexArgsForCall(i int) (string, int) {
+	fake.getActualLRPsByProcessGuidAndIndexMutex.RLock()
+	defer fake.getActualLRPsByProcessGuidAndIndexMutex.RUnlock()
+	return fake.getActualLRPsByProcessGuidAndIndexArgsForCall[i].arg1, fake.getActualLRPsByProcessGuidAndIndexArgsForCall[i].arg2
+}
+
+func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexReturns(result1 []models.ActualLRP, result2 error) {
+	fake.GetActualLRPsByProcessGuidAndIndexStub = nil
+	fake.getActualLRPsByProcessGuidAndIndexReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
