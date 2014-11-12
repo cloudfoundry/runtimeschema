@@ -11,17 +11,7 @@ import (
 type CircusTailorConfig struct {
 	*flag.FlagSet
 
-	values map[string]*string
-
-	buildpacksDir  *string
-	appDir         *string
 	ExecutablePath string
-
-	buildArtifactsCacheDir    *string
-	outputDroplet             *string
-	outputMetadata            *string
-	outputBuildArtifactsCache *string
-	buildpackOrder            *string
 }
 
 const (
@@ -32,6 +22,7 @@ const (
 	circusTailorBuildpacksDirFlag             = "buildpacksDir"
 	circusTailorBuildArtifactsCacheDirFlag    = "buildArtifactsCacheDir"
 	circusTailorBuildpackOrderFlag            = "buildpackOrder"
+	circusTailorSkipCertVerify                = "skipCertVerify"
 )
 
 var circusTailorDefaults = map[string]string{
@@ -43,72 +34,61 @@ var circusTailorDefaults = map[string]string{
 	circusTailorBuildArtifactsCacheDirFlag:    "/tmp/cache",
 }
 
-func NewCircusTailorConfig(buildpacks []string) CircusTailorConfig {
+func NewCircusTailorConfig(buildpacks []string, skipCertVerify bool) CircusTailorConfig {
 	flagSet := flag.NewFlagSet("tailor", flag.ExitOnError)
 
-	appDir := flagSet.String(
+	flagSet.String(
 		circusTailorAppDirFlag,
 		circusTailorDefaults[circusTailorAppDirFlag],
 		"directory containing raw app bits",
 	)
 
-	outputDroplet := flagSet.String(
+	flagSet.String(
 		circusTailorOutputDropletFlag,
 		circusTailorDefaults[circusTailorOutputDropletFlag],
 		"file where compressed droplet should be written",
 	)
 
-	outputMetadata := flagSet.String(
+	flagSet.String(
 		circusTailorOutputMetadataFlag,
 		circusTailorDefaults[circusTailorOutputMetadataFlag],
 		"directory in which to write the app metadata",
 	)
 
-	outputBuildArtifactsCache := flagSet.String(
+	flagSet.String(
 		circusTailorOutputBuildArtifactsCacheFlag,
 		circusTailorDefaults[circusTailorOutputBuildArtifactsCacheFlag],
 		"file where compressed contents of new cached build artifacts should be written",
 	)
 
-	buildpacksDir := flagSet.String(
+	flagSet.String(
 		circusTailorBuildpacksDirFlag,
 		circusTailorDefaults[circusTailorBuildpacksDirFlag],
 		"directory containing the buildpacks to try",
 	)
 
-	buildArtifactsCacheDir := flagSet.String(
+	flagSet.String(
 		circusTailorBuildArtifactsCacheDirFlag,
 		circusTailorDefaults[circusTailorBuildArtifactsCacheDirFlag],
 		"directory where previous cached build artifacts should be extracted",
 	)
 
-	buildpackOrder := flagSet.String(
+	flagSet.String(
 		circusTailorBuildpackOrderFlag,
 		strings.Join(buildpacks, ","),
 		"comma-separated list of buildpacks, to be tried in order",
 	)
 
+	flagSet.Bool(
+		circusTailorSkipCertVerify,
+		skipCertVerify,
+		"skip SSL certificate verification",
+	)
+
 	return CircusTailorConfig{
 		FlagSet: flagSet,
 
-		ExecutablePath:            "/tmp/circus/tailor",
-		appDir:                    appDir,
-		outputDroplet:             outputDroplet,
-		outputMetadata:            outputMetadata,
-		outputBuildArtifactsCache: outputBuildArtifactsCache,
-		buildpacksDir:             buildpacksDir,
-		buildArtifactsCacheDir:    buildArtifactsCacheDir,
-		buildpackOrder:            buildpackOrder,
-
-		values: map[string]*string{
-			circusTailorAppDirFlag:                    appDir,
-			circusTailorOutputDropletFlag:             outputDroplet,
-			circusTailorOutputMetadataFlag:            outputMetadata,
-			circusTailorOutputBuildArtifactsCacheFlag: outputBuildArtifactsCache,
-			circusTailorBuildpacksDirFlag:             buildpacksDir,
-			circusTailorBuildArtifactsCacheDirFlag:    buildArtifactsCacheDir,
-			circusTailorBuildpackOrderFlag:            buildpackOrder,
-		},
+		ExecutablePath: "/tmp/circus/tailor",
 	}
 }
 
@@ -120,7 +100,7 @@ func (s CircusTailorConfig) Args() []string {
 	argv := []string{}
 
 	s.FlagSet.VisitAll(func(flag *flag.Flag) {
-		argv = append(argv, fmt.Sprintf("-%s=%s", flag.Name, *s.values[flag.Name]))
+		argv = append(argv, fmt.Sprintf("-%s=%s", flag.Name, flag.Value.String()))
 	})
 
 	return argv
@@ -130,12 +110,7 @@ func (s CircusTailorConfig) Validate() error {
 	var missingFlags []string
 
 	s.FlagSet.VisitAll(func(flag *flag.Flag) {
-		schemaFlag, ok := s.values[flag.Name]
-		if !ok {
-			return
-		}
-
-		value := *schemaFlag
+		value := flag.Value.String()
 		if value == "" {
 			missingFlags = append(missingFlags, "-"+flag.Name)
 		}
@@ -149,7 +124,7 @@ func (s CircusTailorConfig) Validate() error {
 }
 
 func (s CircusTailorConfig) AppDir() string {
-	return *s.appDir
+	return s.Lookup(circusTailorAppDirFlag).Value.String()
 }
 
 func (s CircusTailorConfig) BuildpackPath(buildpackName string) string {
@@ -157,25 +132,30 @@ func (s CircusTailorConfig) BuildpackPath(buildpackName string) string {
 }
 
 func (s CircusTailorConfig) BuildpackOrder() []string {
-	return strings.Split(*s.buildpackOrder, ",")
+	buildpackOrder := s.Lookup(circusTailorBuildpackOrderFlag).Value.String()
+	return strings.Split(buildpackOrder, ",")
 }
 
 func (s CircusTailorConfig) BuildpacksDir() string {
-	return *s.buildpacksDir
+	return s.Lookup(circusTailorBuildpacksDirFlag).Value.String()
 }
 
 func (s CircusTailorConfig) BuildArtifactsCacheDir() string {
-	return *s.buildArtifactsCacheDir
+	return s.Lookup(circusTailorBuildArtifactsCacheDirFlag).Value.String()
 }
 
 func (s CircusTailorConfig) OutputDroplet() string {
-	return *s.outputDroplet
+	return s.Lookup(circusTailorOutputDropletFlag).Value.String()
 }
 
 func (s CircusTailorConfig) OutputMetadata() string {
-	return *s.outputMetadata
+	return s.Lookup(circusTailorOutputMetadataFlag).Value.String()
 }
 
 func (s CircusTailorConfig) OutputBuildArtifactsCache() string {
-	return *s.outputBuildArtifactsCache
+	return s.Lookup(circusTailorOutputBuildArtifactsCacheFlag).Value.String()
+}
+
+func (s CircusTailorConfig) SkipCertVerify() bool {
+	return s.Lookup(circusTailorSkipCertVerify).Value.String() == "true"
 }

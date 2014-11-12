@@ -10,7 +10,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	var tailorConfig CircusTailorConfig
 
 	BeforeEach(func() {
-		tailorConfig = NewCircusTailorConfig([]string{"ocaml-buildpack", "haskell-buildpack", "bash-buildpack"})
+		tailorConfig = NewCircusTailorConfig([]string{"ocaml-buildpack", "haskell-buildpack", "bash-buildpack"}, false)
 	})
 
 	Context("with defaults", func() {
@@ -23,6 +23,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-outputDroplet=/tmp/droplet",
 				"-outputMetadata=/tmp/result.json",
 				"-outputBuildArtifactsCache=/tmp/output-cache",
+				"-skipCertVerify=false",
 			}
 
 			Ω(tailorConfig.Path()).Should(Equal("/tmp/circus/tailor"))
@@ -38,6 +39,7 @@ var _ = Describe("CircusTailorConfig", func() {
 			tailorConfig.Set("buildpacksDir", "/some/buildpacks/dir")
 			tailorConfig.Set("buildArtifactsCacheDir", "/some/cache/dir")
 			tailorConfig.Set("outputBuildArtifactsCache", "/some/cache-file")
+			tailorConfig.Set("skipCertVerify", "true")
 		})
 
 		It("generates a script for running its tailor", func() {
@@ -49,6 +51,7 @@ var _ = Describe("CircusTailorConfig", func() {
 				"-outputDroplet=/some/droplet",
 				"-outputMetadata=/some/result/dir",
 				"-outputBuildArtifactsCache=/some/cache-file",
+				"-skipCertVerify=true",
 			}
 
 			Ω(tailorConfig.Path()).Should(Equal("/tmp/circus/tailor"))
