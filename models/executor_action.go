@@ -49,6 +49,11 @@ type MonitorAction struct {
 	UnhealthyThreshold uint           `json:"unhealthy_threshold"`
 }
 
+type TimeoutAction struct {
+	Actions []ExecutorAction `json:"actions"`
+	Timeout time.Duration    `json:"timeout"`
+}
+
 type HealthRequest struct {
 	Method string `json:"method"`
 	URL    string `json:"url"`
@@ -92,6 +97,15 @@ func Parallel(actions ...ExecutorAction) ExecutorAction {
 	}
 }
 
+func WithTimeout(timeout time.Duration, actions ...ExecutorAction) ExecutorAction {
+	return ExecutorAction{
+		TimeoutAction{
+			Actions: actions,
+			Timeout: timeout,
+		},
+	}
+}
+
 type executorActionEnvelope struct {
 	Name          string           `json:"action"`
 	ActionPayload *json.RawMessage `json:"args"`
@@ -125,6 +139,8 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "monitor"
 	case ParallelAction:
 		envelope.Name = "parallel"
+	case TimeoutAction:
+		envelope.Name = "timeout"
 	default:
 		return nil, InvalidActionConversion
 	}
@@ -169,6 +185,10 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		a.Action = action
 	case "parallel":
 		action := ParallelAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &action)
+		a.Action = action
+	case "timeout":
+		action := TimeoutAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
 	default:
