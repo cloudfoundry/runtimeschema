@@ -12,11 +12,15 @@ type DownloadAction struct {
 	From     string `json:"from"`
 	To       string `json:"to"`
 	CacheKey string `json:"cache_key"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type UploadAction struct {
 	To   string `json:"to"`
 	From string `json:"from"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type RunAction struct {
@@ -26,6 +30,8 @@ type RunAction struct {
 	Timeout        time.Duration         `json:"timeout"`
 	ResourceLimits ResourceLimits        `json:"resource_limits"`
 	Privileged     bool                  `json:"privileged,omitempty"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type EnvironmentVariable struct {
@@ -39,6 +45,8 @@ type ResourceLimits struct {
 
 type TryAction struct {
 	Action ExecutorAction `json:"action"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type MonitorAction struct {
@@ -47,6 +55,8 @@ type MonitorAction struct {
 	UnhealthyHook      HealthRequest  `json:"unhealthy_hook"`
 	HealthyThreshold   uint           `json:"healthy_threshold"`
 	UnhealthyThreshold uint           `json:"unhealthy_threshold"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type HealthRequest struct {
@@ -56,6 +66,8 @@ type HealthRequest struct {
 
 type ParallelAction struct {
 	Actions []ExecutorAction `json:"actions"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type EmitProgressAction struct {
@@ -63,6 +75,8 @@ type EmitProgressAction struct {
 	StartMessage   string         `json:"start_message"`
 	SuccessMessage string         `json:"success_message"`
 	FailureMessage string         `json:"failure_message"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 func EmitProgressFor(action ExecutorAction, startMessage string, successMessage string, failureMessage string) ExecutorAction {
