@@ -37,7 +37,7 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 		convergeLRPDuration.Send(time.Since(convergeStart))
 	}()
 
-	actualsByProcessGuid, err := bbs.pruneActualsWithMissingExecutors()
+	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells()
 	if err != nil {
 		bbs.logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
 		return
@@ -152,14 +152,14 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 	return !result.Empty()
 }
 
-func (bbs *LRPBBS) pruneActualsWithMissingExecutors() (map[string][]models.ActualLRP, error) {
+func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP, error) {
 	actualsByProcessGuid := map[string][]models.ActualLRP{}
 
-	executorRoot, err := bbs.store.ListRecursively(shared.ExecutorSchemaRoot)
+	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		executorRoot = storeadapter.StoreNode{}
+		cellRoot = storeadapter.StoreNode{}
 	} else if err != nil {
-		bbs.logger.Error("failed-to-get-executors", err)
+		bbs.logger.Error("failed-to-get-cells", err)
 		return nil, err
 	}
 
@@ -169,10 +169,10 @@ func (bbs *LRPBBS) pruneActualsWithMissingExecutors() (map[string][]models.Actua
 			return false
 		}
 
-		if _, ok := executorRoot.Lookup(actual.ExecutorID); !ok {
-			bbs.logger.Info("detected-actual-with-missing-executor", lager.Data{
+		if _, ok := cellRoot.Lookup(actual.CellID); !ok {
+			bbs.logger.Info("detected-actual-with-missing-cell", lager.Data{
 				"actual":      actual,
-				"executor-id": actual.ExecutorID,
+				"cell-id": actual.CellID,
 			})
 			return false
 		}

@@ -70,10 +70,10 @@ func (bbs *TaskBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
 	}), err
 }
 
-func (bbs *TaskBBS) GetAllTasksByExecutorID(executorId string) ([]models.Task, error) {
+func (bbs *TaskBBS) GetAllTasksByCellID(cellId string) ([]models.Task, error) {
 	all, err := bbs.GetAllTasks()
 	return filterTasks(all, func(task models.Task) bool {
-		return task.ExecutorID == executorId
+		return task.CellID == cellId
 	}), err
 }
 

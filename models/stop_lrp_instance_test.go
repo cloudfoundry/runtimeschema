@@ -48,8 +48,8 @@ var _ = Describe("StopLrpInstance", func() {
 		})
 
 		for field, payload := range map[string]string{
-			"process_guid":  `{"instance_guid": "instance_guid", "executor_id": "executor_id"}`,
-			"instance_guid": `{"process_guid": "process-guid", "executor_id": "executor_id"}`,
+			"process_guid":  `{"instance_guid": "instance_guid", "cell_id": "cell_id"}`,
+			"instance_guid": `{"process_guid": "process-guid", "cell_id": "cell_id"}`,
 		} {
 			json := payload
 			missingField := field

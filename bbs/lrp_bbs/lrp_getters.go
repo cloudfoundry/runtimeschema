@@ -73,7 +73,7 @@ func (bbs *LRPBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.Desire
 	return models.NewDesiredLRPFromJSON(node.Value)
 }
 
-func (bbs *LRPBBS) GetAllActualLRPsByExecutorID(executorID string) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
@@ -91,7 +91,7 @@ func (bbs *LRPBBS) GetAllActualLRPsByExecutorID(executorID string) ([]models.Act
 				lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
 				if err != nil {
 					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.ExecutorID == executorID {
+				} else if lrp.CellID == cellID {
 					lrps = append(lrps, lrp)
 				}
 			}

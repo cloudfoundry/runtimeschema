@@ -23,7 +23,7 @@ var _ = Describe("Task", func() {
 				"value":"an environmment value"
 			}
 		],
-		"executor_id":"executor",
+		"cell_id":"cell",
 		"action": {
 			"action":"download",
 			"args":{
@@ -69,7 +69,7 @@ var _ = Describe("Task", func() {
 			},
 			LogGuid:          "123",
 			LogSource:        "APP",
-			ExecutorID:       "executor",
+			CellID:       "cell",
 			ResultFile:       "some-file.txt",
 			Result:           "turboencabulated",
 			Failed:           true,

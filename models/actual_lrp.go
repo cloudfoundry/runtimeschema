@@ -21,7 +21,7 @@ type ActualLRPChange struct {
 type ActualLRP struct {
 	ProcessGuid  string `json:"process_guid"`
 	InstanceGuid string `json:"instance_guid"`
-	ExecutorID   string `json:"executor_id"`
+	CellID   string `json:"cell_id"`
 	Domain       string `json:"domain"`
 
 	Index int `json:"index"`
@@ -36,7 +36,7 @@ type ActualLRP struct {
 func NewActualLRP(
 	processGuid string,
 	instanceGuid string,
-	executorID string,
+	cellID string,
 	domain string,
 	index int,
 ) (ActualLRP, error) {
@@ -48,8 +48,8 @@ func NewActualLRP(
 		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty instance guid")
 	}
 
-	if executorID == "" {
-		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty executor ID")
+	if cellID == "" {
+		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty cell ID")
 	}
 
 	if domain == "" {
@@ -59,7 +59,7 @@ func NewActualLRP(
 	return ActualLRP{
 		ProcessGuid:  processGuid,
 		InstanceGuid: instanceGuid,
-		ExecutorID:   executorID,
+		CellID:   cellID,
 		Domain:       domain,
 
 		Index: index,
@@ -82,8 +82,8 @@ func NewActualLRPFromJSON(payload []byte) (ActualLRP, error) {
 		return ActualLRP{}, ErrInvalidJSONMessage{"instance_guid"}
 	}
 
-	if actualLRP.ExecutorID == "" {
-		return ActualLRP{}, ErrInvalidJSONMessage{"executor_id"}
+	if actualLRP.CellID == "" {
+		return ActualLRP{}, ErrInvalidJSONMessage{"cell_id"}
 	}
 
 	if actualLRP.Domain == "" {

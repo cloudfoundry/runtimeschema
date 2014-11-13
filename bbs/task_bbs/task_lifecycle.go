@@ -27,10 +27,10 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 	return err
 }
 
-// The executor calls this when it wants to claim a task
+// The cell calls this when it wants to claim a task
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
-// If this fails, the executor should assume that someone else is handling the claim and should bail
-func (bbs *TaskBBS) ClaimTask(taskGuid string, executorID string) error {
+// If this fails, the cell should assume that someone else is handling the claim and should bail
+func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -43,7 +43,7 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, executorID string) error {
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateClaimed
-	task.ExecutorID = executorID
+	task.CellID = cellID
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
@@ -53,10 +53,10 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, executorID string) error {
 	})
 }
 
-// The executor calls this when it is about to run the task in the claimed container
+// The cell calls this when it is about to run the task in the claimed container
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
-// If this fails, the executor should assume that someone else is running and should clean up and bail
-func (bbs *TaskBBS) StartTask(taskGuid string, executorID string) error {
+// If this fails, the cell should assume that someone else is running and should clean up and bail
+func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -67,8 +67,8 @@ func (bbs *TaskBBS) StartTask(taskGuid string, executorID string) error {
 		return errors.New("cannot start task in non-claimed state")
 	}
 
-	if task.ExecutorID != executorID {
-		return errors.New("cannot start task claimed by another executor")
+	if task.CellID != cellID {
+		return errors.New("cannot start task claimed by another cell")
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
@@ -82,7 +82,7 @@ func (bbs *TaskBBS) StartTask(taskGuid string, executorID string) error {
 	})
 }
 
-// The executor calls this when it has finished running the task (be it success or failure)
+// The cell calls this when it has finished running the task (be it success or failure)
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.

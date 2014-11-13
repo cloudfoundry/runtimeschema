@@ -97,7 +97,7 @@ var _ = Describe("LrpWatchers", func() {
 			stop                                           chan<- bool
 			errors                                         <-chan error
 			lrp                                            models.ActualLRP
-			lrpProcessGuid, lrpInstanceGuid, lrpExecutorId string
+			lrpProcessGuid, lrpInstanceGuid, lrpCellId string
 			lrpDomain                                      string
 			lrpIndex                                       int
 		)
@@ -105,14 +105,14 @@ var _ = Describe("LrpWatchers", func() {
 		BeforeEach(func() {
 			lrpProcessGuid = "some-process-guid"
 			lrpInstanceGuid = "some-instance-guid"
-			lrpExecutorId = "executor-id"
+			lrpCellId = "cell-id"
 			lrpDomain = "lrp-domain"
 			lrpIndex = 0
 
 			events, stop, errors = bbs.WatchForActualLRPChanges()
 
 			var err error
-			lrp, err = bbs.ReportActualLRPAsStarting(lrpProcessGuid, lrpInstanceGuid, lrpExecutorId, lrpDomain, lrpIndex)
+			lrp, err = bbs.ReportActualLRPAsStarting(lrpProcessGuid, lrpInstanceGuid, lrpCellId, lrpDomain, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -132,9 +132,9 @@ var _ = Describe("LrpWatchers", func() {
 
 			changedLRP := lrp
 			changedLRP.State = models.ActualLRPStateRunning
-			changedLRP.ExecutorID = "executor-id"
+			changedLRP.CellID = "cell-id"
 
-			err := bbs.ReportActualLRPAsRunning(changedLRP, "executor-id")
+			err := bbs.ReportActualLRPAsRunning(changedLRP, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{

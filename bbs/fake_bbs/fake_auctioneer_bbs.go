@@ -36,7 +36,7 @@ type FakeAuctioneerBBS struct {
 	ResolvedLRPStopAuction     models.LRPStopAuction
 	ResolveLRPStopAuctionError error
 
-	Executors []models.ExecutorPresence
+	Cells []models.CellPresence
 }
 
 func NewFakeAuctioneerBBS() *FakeAuctioneerBBS {
@@ -58,10 +58,10 @@ func (bbs *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerID string, interval ti
 	return new(fake_runner.FakeRunner)
 }
 
-func (bbs *FakeAuctioneerBBS) GetAllExecutors() ([]models.ExecutorPresence, error) {
+func (bbs *FakeAuctioneerBBS) GetAllCells() ([]models.CellPresence, error) {
 	bbs.Lock()
 	defer bbs.Unlock()
-	return bbs.Executors, nil
+	return bbs.Cells, nil
 }
 
 func (bbs *FakeAuctioneerBBS) WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error) {

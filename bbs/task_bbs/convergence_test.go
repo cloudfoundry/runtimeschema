@@ -172,13 +172,13 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				executorPresence := models.ExecutorPresence{
-					ExecutorID: "executor-id",
+				cellPresence := models.CellPresence{
+					CellID: "cell-id",
 				}
-				heartbeat = ifrit.Envoke(servicesBBS.NewExecutorHeartbeat(executorPresence, time.Minute))
+				heartbeat = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
 			})
 
 			AfterEach(func() {
@@ -191,7 +191,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
 
-			Context("when the associated executor is missing", func() {
+			Context("when the associated cell is missing", func() {
 				BeforeEach(func() {
 					heartbeat.Signal(os.Interrupt)
 					Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
@@ -206,7 +206,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					Eventually(completedEvents).Should(Receive(&noticedOnce))
 
 					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(ContainSubstring("executor"))
+					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
 
@@ -223,14 +223,14 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id")
+				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				heartbeater = ifrit.Envoke(servicesBBS.NewExecutorHeartbeat(models.ExecutorPresence{
-					ExecutorID: "executor-id",
+				heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(models.CellPresence{
+					CellID: "cell-id",
 				}, time.Minute))
 			})
 
@@ -243,7 +243,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
 
-			Context("when the associated executor is missing", func() {
+			Context("when the associated cell is missing", func() {
 				BeforeEach(func() {
 					heartbeater.Signal(os.Interrupt)
 
@@ -257,7 +257,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					Eventually(completedEvents).Should(Receive(&noticedOnce))
 
 					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(ContainSubstring("executor"))
+					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 				})
 
@@ -272,10 +272,10 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id")
+				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
@@ -332,10 +332,10 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "executor-id")
+				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "executor-id")
+				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a result")

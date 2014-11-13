@@ -126,7 +126,7 @@ var _ = Describe("StopLRPInstance", func() {
 					InstanceGuid: stopInstance.InstanceGuid,
 					Index:        stopInstance.Index,
 					Domain:       "the-domain",
-				}, "executor-id")
+				}, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.ResolveStopLRPInstance(stopInstance)

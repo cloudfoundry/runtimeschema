@@ -24,7 +24,7 @@ type compareAndSwappableTask struct {
 	NewTask  models.Task
 }
 
-// ConvergeTask is run by *one* executor every X seconds (doesn't really matter what X is.. pick something performant)
+// ConvergeTask is run by *one* cell every X seconds (doesn't really matter what X is.. pick something performant)
 // Converge will:
 // 1. Kick (by setting) any run-onces that are still pending (and have been for > convergence interval)
 // 2. Kick (by setting) any run-onces that are completed (and have been for > convergence interval)
@@ -32,7 +32,7 @@ type compareAndSwappableTask struct {
 // 4. Demote to pending any claimed run-onces that have been claimed for > 30s
 // 5. Demote to completed any resolving run-onces that have been resolving for > 30s
 // 6. Mark as failed any run-onces that have been in the pending state for > timeToClaim
-// 7. Mark as failed any claimed or running run-onces whose executor has stopped maintaining presence
+// 7. Mark as failed any claimed or running run-onces whose cell has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
@@ -50,9 +50,9 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve
 		return
 	}
 
-	executorState, err := bbs.store.ListRecursively(shared.ExecutorSchemaRoot)
+	cellState, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		executorState = storeadapter.StoreNode{}
+		cellState = storeadapter.StoreNode{}
 	} else if err != nil {
 		return
 	}
@@ -97,16 +97,16 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve
 				scheduleForCASByIndex(node.Index, task)
 			}
 		case models.TaskStateClaimed:
-			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
-			if !executorIsAlive {
-				logError(task, "executor-disappeared")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "executor disappeared before completion"))
+			_, cellIsAlive := cellState.Lookup(task.CellID)
+			if !cellIsAlive {
+				logError(task, "cell-disappeared")
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))
 			}
 		case models.TaskStateRunning:
-			_, executorIsAlive := executorState.Lookup(task.ExecutorID)
-			if !executorIsAlive {
-				logError(task, "executor-disappeared")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "executor disappeared before completion"))
+			_, cellIsAlive := cellState.Lookup(task.CellID)
+			if !cellIsAlive {
+				logError(task, "cell-disappeared")
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))
 			}
 		case models.TaskStateCompleted:
 			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve

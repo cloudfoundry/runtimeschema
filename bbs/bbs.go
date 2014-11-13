@@ -44,7 +44,7 @@ type ReceptorBBS interface {
 	RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error
 
 	// cells
-	GetAllExecutors() ([]models.ExecutorPresence, error)
+	GetAllCells() ([]models.CellPresence, error)
 
 	// freshness
 	BumpFreshness(models.Freshness) error
@@ -53,21 +53,21 @@ type ReceptorBBS interface {
 
 type RepBBS interface {
 	//services
-	NewExecutorHeartbeat(executorPresence models.ExecutorPresence, interval time.Duration) ifrit.Runner
+	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
 
 	//task
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
-	ClaimTask(taskGuid string, executorID string) error
-	StartTask(taskGuid string, executorID string) error
+	ClaimTask(taskGuid string, cellID string) error
+	StartTask(taskGuid string, cellID string) error
 	GetTaskByGuid(taskGuid string) (models.Task, error)
-	GetAllTasksByExecutorID(executorID string) ([]models.Task, error)
+	GetAllTasksByCellID(cellID string) ([]models.Task, error)
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lrp
 	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	GetAllActualLRPsByExecutorID(executorID string) ([]models.ActualLRP, error)
-	ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain string, index int) (models.ActualLRP, error)
-	ReportActualLRPAsRunning(lrp models.ActualLRP, executorId string) error
+	GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
+	ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
+	ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error
 	RemoveActualLRP(lrp models.ActualLRP) error
 	RemoveActualLRPForIndex(processGuid string, index int, instanceGuid string) error
 	WatchForStopLRPInstance() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
@@ -116,7 +116,7 @@ type NsyncBBS interface {
 
 type AuctioneerBBS interface {
 	//services
-	GetAllExecutors() ([]models.ExecutorPresence, error)
+	GetAllCells() ([]models.CellPresence, error)
 
 	//start auction
 	WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
@@ -180,7 +180,7 @@ type VeritasBBS interface {
 	GetAllLRPStopAuctions() ([]models.LRPStopAuction, error)
 
 	//services
-	GetAllExecutors() ([]models.ExecutorPresence, error)
+	GetAllCells() ([]models.CellPresence, error)
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {

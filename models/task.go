@@ -38,7 +38,7 @@ type Task struct {
 
 	State TaskState `json:"state"`
 
-	ExecutorID string `json:"executor_id"`
+	CellID string `json:"cell_id"`
 
 	Result        string `json:"result"`
 	Failed        bool   `json:"failed"`

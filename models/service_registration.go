@@ -1,7 +1,7 @@
 package models
 
 const (
-	ExecutorServiceName = "Executor"
+	CellServiceName = "Cell"
 )
 
 type ServiceRegistration struct {

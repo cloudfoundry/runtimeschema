@@ -10,7 +10,7 @@ import (
 )
 
 var _ = Describe("LRP", func() {
-	const executorID = "some-executor-id"
+	const cellID = "some-cell-id"
 
 	var lrp models.DesiredLRP
 
@@ -86,7 +86,7 @@ var _ = Describe("LRP", func() {
 
 		Describe("ReportActualLRPAsStarting", func() {
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
+				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
@@ -95,13 +95,13 @@ var _ = Describe("LRP", func() {
 				expectedLRP := lrp
 				expectedLRP.State = models.ActualLRPStateStarting
 				expectedLRP.Since = timeProvider.Time().UnixNano()
-				expectedLRP.ExecutorID = executorID
+				expectedLRP.CellID = cellID
 				Ω(node.Value).Should(MatchJSON(expectedLRP.ToJSON()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					_, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
+					_, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
 					return err
 				})
 			})
@@ -114,7 +114,7 @@ var _ = Describe("LRP", func() {
 				startedLRP = models.ActualLRP{
 					InstanceGuid: instanceGuid,
 					ProcessGuid:  processGuid,
-					ExecutorID:   executorID,
+					CellID:   cellID,
 					Domain:       domain,
 					Index:        index,
 					Since:        timeProvider.Time().UnixNano(),
@@ -122,7 +122,7 @@ var _ = Describe("LRP", func() {
 			})
 
 			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLRPAsRunning(startedLRP, executorID)
+				err := bbs.ReportActualLRPAsRunning(startedLRP, cellID)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
@@ -131,13 +131,13 @@ var _ = Describe("LRP", func() {
 				expectedLRP := startedLRP
 				expectedLRP.State = models.ActualLRPStateRunning
 				expectedLRP.Since = timeProvider.Time().UnixNano()
-				expectedLRP.ExecutorID = executorID
+				expectedLRP.CellID = cellID
 				Ω(node.Value).Should(MatchJSON(expectedLRP.ToJSON()))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ReportActualLRPAsRunning(startedLRP, executorID)
+					return bbs.ReportActualLRPAsRunning(startedLRP, cellID)
 				})
 			})
 		})
@@ -153,7 +153,7 @@ var _ = Describe("LRP", func() {
 				domain = "some-domain"
 				index = 1
 				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
+				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -183,7 +183,7 @@ var _ = Describe("LRP", func() {
 				domain = "some-domain"
 				index = 1
 				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, executorID, domain, index)
+				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

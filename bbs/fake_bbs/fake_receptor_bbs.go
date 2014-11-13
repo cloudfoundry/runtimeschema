@@ -159,11 +159,11 @@ type FakeReceptorBBS struct {
 	requestStopLRPInstancesReturns struct {
 		result1 error
 	}
-	GetAllExecutorsStub        func() ([]models.ExecutorPresence, error)
-	getAllExecutorsMutex       sync.RWMutex
-	getAllExecutorsArgsForCall []struct{}
-	getAllExecutorsReturns struct {
-		result1 []models.ExecutorPresence
+	GetAllCellsStub        func() ([]models.CellPresence, error)
+	getAllCellsMutex       sync.RWMutex
+	getAllCellsArgsForCall []struct{}
+	getAllCellsReturns struct {
+		result1 []models.CellPresence
 		result2 error
 	}
 	BumpFreshnessStub        func(models.Freshness) error
@@ -741,27 +741,27 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstancesReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) GetAllExecutors() ([]models.ExecutorPresence, error) {
-	fake.getAllExecutorsMutex.Lock()
-	fake.getAllExecutorsArgsForCall = append(fake.getAllExecutorsArgsForCall, struct{}{})
-	fake.getAllExecutorsMutex.Unlock()
-	if fake.GetAllExecutorsStub != nil {
-		return fake.GetAllExecutorsStub()
+func (fake *FakeReceptorBBS) GetAllCells() ([]models.CellPresence, error) {
+	fake.getAllCellsMutex.Lock()
+	fake.getAllCellsArgsForCall = append(fake.getAllCellsArgsForCall, struct{}{})
+	fake.getAllCellsMutex.Unlock()
+	if fake.GetAllCellsStub != nil {
+		return fake.GetAllCellsStub()
 	} else {
-		return fake.getAllExecutorsReturns.result1, fake.getAllExecutorsReturns.result2
+		return fake.getAllCellsReturns.result1, fake.getAllCellsReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllExecutorsCallCount() int {
-	fake.getAllExecutorsMutex.RLock()
-	defer fake.getAllExecutorsMutex.RUnlock()
-	return len(fake.getAllExecutorsArgsForCall)
+func (fake *FakeReceptorBBS) GetAllCellsCallCount() int {
+	fake.getAllCellsMutex.RLock()
+	defer fake.getAllCellsMutex.RUnlock()
+	return len(fake.getAllCellsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllExecutorsReturns(result1 []models.ExecutorPresence, result2 error) {
-	fake.GetAllExecutorsStub = nil
-	fake.getAllExecutorsReturns = struct {
-		result1 []models.ExecutorPresence
+func (fake *FakeReceptorBBS) GetAllCellsReturns(result1 []models.CellPresence, result2 error) {
+	fake.GetAllCellsStub = nil
+	fake.getAllCellsReturns = struct {
+		result1 []models.CellPresence
 		result2 error
 	}{result1, result2}
 }

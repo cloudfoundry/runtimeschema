@@ -11,13 +11,13 @@ import (
 )
 
 type FakeRepBBS struct {
-	NewExecutorHeartbeatStub        func(executorPresence models.ExecutorPresence, interval time.Duration) ifrit.Runner
-	newExecutorHeartbeatMutex       sync.RWMutex
-	newExecutorHeartbeatArgsForCall []struct {
-		executorPresence models.ExecutorPresence
+	NewCellHeartbeatStub        func(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
+	newCellHeartbeatMutex       sync.RWMutex
+	newCellHeartbeatArgsForCall []struct {
+		cellPresence models.CellPresence
 		interval         time.Duration
 	}
-	newExecutorHeartbeatReturns struct {
+	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
 	}
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
@@ -28,20 +28,20 @@ type FakeRepBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
-	ClaimTaskStub        func(taskGuid string, executorID string) error
+	ClaimTaskStub        func(taskGuid string, cellID string) error
 	claimTaskMutex       sync.RWMutex
 	claimTaskArgsForCall []struct {
 		taskGuid   string
-		executorID string
+		cellID string
 	}
 	claimTaskReturns struct {
 		result1 error
 	}
-	StartTaskStub        func(taskGuid string, executorID string) error
+	StartTaskStub        func(taskGuid string, cellID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
 		taskGuid   string
-		executorID string
+		cellID string
 	}
 	startTaskReturns struct {
 		result1 error
@@ -55,12 +55,12 @@ type FakeRepBBS struct {
 		result1 models.Task
 		result2 error
 	}
-	GetAllTasksByExecutorIDStub        func(executorID string) ([]models.Task, error)
-	getAllTasksByExecutorIDMutex       sync.RWMutex
-	getAllTasksByExecutorIDArgsForCall []struct {
-		executorID string
+	GetAllTasksByCellIDStub        func(cellID string) ([]models.Task, error)
+	getAllTasksByCellIDMutex       sync.RWMutex
+	getAllTasksByCellIDArgsForCall []struct {
+		cellID string
 	}
-	getAllTasksByExecutorIDReturns struct {
+	getAllTasksByCellIDReturns struct {
 		result1 []models.Task
 		result2 error
 	}
@@ -84,21 +84,21 @@ type FakeRepBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetAllActualLRPsByExecutorIDStub        func(executorID string) ([]models.ActualLRP, error)
-	getAllActualLRPsByExecutorIDMutex       sync.RWMutex
-	getAllActualLRPsByExecutorIDArgsForCall []struct {
-		executorID string
+	GetAllActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
+	getAllActualLRPsByCellIDMutex       sync.RWMutex
+	getAllActualLRPsByCellIDArgsForCall []struct {
+		cellID string
 	}
-	getAllActualLRPsByExecutorIDReturns struct {
+	getAllActualLRPsByCellIDReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ReportActualLRPAsStartingStub        func(processGuid, instanceGuid, executorID, domain string, index int) (models.ActualLRP, error)
+	ReportActualLRPAsStartingStub        func(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
 	reportActualLRPAsStartingMutex       sync.RWMutex
 	reportActualLRPAsStartingArgsForCall []struct {
 		processGuid  string
 		instanceGuid string
-		executorID   string
+		cellID   string
 		domain       string
 		index        int
 	}
@@ -106,11 +106,11 @@ type FakeRepBBS struct {
 		result1 models.ActualLRP
 		result2 error
 	}
-	ReportActualLRPAsRunningStub        func(lrp models.ActualLRP, executorId string) error
+	ReportActualLRPAsRunningStub        func(lrp models.ActualLRP, cellId string) error
 	reportActualLRPAsRunningMutex       sync.RWMutex
 	reportActualLRPAsRunningArgsForCall []struct {
 		lrp        models.ActualLRP
-		executorId string
+		cellId string
 	}
 	reportActualLRPAsRunningReturns struct {
 		result1 error
@@ -151,35 +151,35 @@ type FakeRepBBS struct {
 	}
 }
 
-func (fake *FakeRepBBS) NewExecutorHeartbeat(executorPresence models.ExecutorPresence, interval time.Duration) ifrit.Runner {
-	fake.newExecutorHeartbeatMutex.Lock()
-	fake.newExecutorHeartbeatArgsForCall = append(fake.newExecutorHeartbeatArgsForCall, struct {
-		executorPresence models.ExecutorPresence
+func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
+	fake.newCellHeartbeatMutex.Lock()
+	fake.newCellHeartbeatArgsForCall = append(fake.newCellHeartbeatArgsForCall, struct {
+		cellPresence models.CellPresence
 		interval         time.Duration
-	}{executorPresence, interval})
-	fake.newExecutorHeartbeatMutex.Unlock()
-	if fake.NewExecutorHeartbeatStub != nil {
-		return fake.NewExecutorHeartbeatStub(executorPresence, interval)
+	}{cellPresence, interval})
+	fake.newCellHeartbeatMutex.Unlock()
+	if fake.NewCellHeartbeatStub != nil {
+		return fake.NewCellHeartbeatStub(cellPresence, interval)
 	} else {
-		return fake.newExecutorHeartbeatReturns.result1
+		return fake.newCellHeartbeatReturns.result1
 	}
 }
 
-func (fake *FakeRepBBS) NewExecutorHeartbeatCallCount() int {
-	fake.newExecutorHeartbeatMutex.RLock()
-	defer fake.newExecutorHeartbeatMutex.RUnlock()
-	return len(fake.newExecutorHeartbeatArgsForCall)
+func (fake *FakeRepBBS) NewCellHeartbeatCallCount() int {
+	fake.newCellHeartbeatMutex.RLock()
+	defer fake.newCellHeartbeatMutex.RUnlock()
+	return len(fake.newCellHeartbeatArgsForCall)
 }
 
-func (fake *FakeRepBBS) NewExecutorHeartbeatArgsForCall(i int) (models.ExecutorPresence, time.Duration) {
-	fake.newExecutorHeartbeatMutex.RLock()
-	defer fake.newExecutorHeartbeatMutex.RUnlock()
-	return fake.newExecutorHeartbeatArgsForCall[i].executorPresence, fake.newExecutorHeartbeatArgsForCall[i].interval
+func (fake *FakeRepBBS) NewCellHeartbeatArgsForCall(i int) (models.CellPresence, time.Duration) {
+	fake.newCellHeartbeatMutex.RLock()
+	defer fake.newCellHeartbeatMutex.RUnlock()
+	return fake.newCellHeartbeatArgsForCall[i].cellPresence, fake.newCellHeartbeatArgsForCall[i].interval
 }
 
-func (fake *FakeRepBBS) NewExecutorHeartbeatReturns(result1 ifrit.Runner) {
-	fake.NewExecutorHeartbeatStub = nil
-	fake.newExecutorHeartbeatReturns = struct {
+func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {
+	fake.NewCellHeartbeatStub = nil
+	fake.newCellHeartbeatReturns = struct {
 		result1 ifrit.Runner
 	}{result1}
 }
@@ -210,15 +210,15 @@ func (fake *FakeRepBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, r
 	}{result1, result2, result3}
 }
 
-func (fake *FakeRepBBS) ClaimTask(taskGuid string, executorID string) error {
+func (fake *FakeRepBBS) ClaimTask(taskGuid string, cellID string) error {
 	fake.claimTaskMutex.Lock()
 	fake.claimTaskArgsForCall = append(fake.claimTaskArgsForCall, struct {
 		taskGuid   string
-		executorID string
-	}{taskGuid, executorID})
+		cellID string
+	}{taskGuid, cellID})
 	fake.claimTaskMutex.Unlock()
 	if fake.ClaimTaskStub != nil {
-		return fake.ClaimTaskStub(taskGuid, executorID)
+		return fake.ClaimTaskStub(taskGuid, cellID)
 	} else {
 		return fake.claimTaskReturns.result1
 	}
@@ -233,7 +233,7 @@ func (fake *FakeRepBBS) ClaimTaskCallCount() int {
 func (fake *FakeRepBBS) ClaimTaskArgsForCall(i int) (string, string) {
 	fake.claimTaskMutex.RLock()
 	defer fake.claimTaskMutex.RUnlock()
-	return fake.claimTaskArgsForCall[i].taskGuid, fake.claimTaskArgsForCall[i].executorID
+	return fake.claimTaskArgsForCall[i].taskGuid, fake.claimTaskArgsForCall[i].cellID
 }
 
 func (fake *FakeRepBBS) ClaimTaskReturns(result1 error) {
@@ -243,15 +243,15 @@ func (fake *FakeRepBBS) ClaimTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) StartTask(taskGuid string, executorID string) error {
+func (fake *FakeRepBBS) StartTask(taskGuid string, cellID string) error {
 	fake.startTaskMutex.Lock()
 	fake.startTaskArgsForCall = append(fake.startTaskArgsForCall, struct {
 		taskGuid   string
-		executorID string
-	}{taskGuid, executorID})
+		cellID string
+	}{taskGuid, cellID})
 	fake.startTaskMutex.Unlock()
 	if fake.StartTaskStub != nil {
-		return fake.StartTaskStub(taskGuid, executorID)
+		return fake.StartTaskStub(taskGuid, cellID)
 	} else {
 		return fake.startTaskReturns.result1
 	}
@@ -266,7 +266,7 @@ func (fake *FakeRepBBS) StartTaskCallCount() int {
 func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (string, string) {
 	fake.startTaskMutex.RLock()
 	defer fake.startTaskMutex.RUnlock()
-	return fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].executorID
+	return fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].cellID
 }
 
 func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
@@ -309,34 +309,34 @@ func (fake *FakeRepBBS) GetTaskByGuidReturns(result1 models.Task, result2 error)
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) GetAllTasksByExecutorID(executorID string) ([]models.Task, error) {
-	fake.getAllTasksByExecutorIDMutex.Lock()
-	fake.getAllTasksByExecutorIDArgsForCall = append(fake.getAllTasksByExecutorIDArgsForCall, struct {
-		executorID string
-	}{executorID})
-	fake.getAllTasksByExecutorIDMutex.Unlock()
-	if fake.GetAllTasksByExecutorIDStub != nil {
-		return fake.GetAllTasksByExecutorIDStub(executorID)
+func (fake *FakeRepBBS) GetAllTasksByCellID(cellID string) ([]models.Task, error) {
+	fake.getAllTasksByCellIDMutex.Lock()
+	fake.getAllTasksByCellIDArgsForCall = append(fake.getAllTasksByCellIDArgsForCall, struct {
+		cellID string
+	}{cellID})
+	fake.getAllTasksByCellIDMutex.Unlock()
+	if fake.GetAllTasksByCellIDStub != nil {
+		return fake.GetAllTasksByCellIDStub(cellID)
 	} else {
-		return fake.getAllTasksByExecutorIDReturns.result1, fake.getAllTasksByExecutorIDReturns.result2
+		return fake.getAllTasksByCellIDReturns.result1, fake.getAllTasksByCellIDReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetAllTasksByExecutorIDCallCount() int {
-	fake.getAllTasksByExecutorIDMutex.RLock()
-	defer fake.getAllTasksByExecutorIDMutex.RUnlock()
-	return len(fake.getAllTasksByExecutorIDArgsForCall)
+func (fake *FakeRepBBS) GetAllTasksByCellIDCallCount() int {
+	fake.getAllTasksByCellIDMutex.RLock()
+	defer fake.getAllTasksByCellIDMutex.RUnlock()
+	return len(fake.getAllTasksByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetAllTasksByExecutorIDArgsForCall(i int) string {
-	fake.getAllTasksByExecutorIDMutex.RLock()
-	defer fake.getAllTasksByExecutorIDMutex.RUnlock()
-	return fake.getAllTasksByExecutorIDArgsForCall[i].executorID
+func (fake *FakeRepBBS) GetAllTasksByCellIDArgsForCall(i int) string {
+	fake.getAllTasksByCellIDMutex.RLock()
+	defer fake.getAllTasksByCellIDMutex.RUnlock()
+	return fake.getAllTasksByCellIDArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) GetAllTasksByExecutorIDReturns(result1 []models.Task, result2 error) {
-	fake.GetAllTasksByExecutorIDStub = nil
-	fake.getAllTasksByExecutorIDReturns = struct {
+func (fake *FakeRepBBS) GetAllTasksByCellIDReturns(result1 []models.Task, result2 error) {
+	fake.GetAllTasksByCellIDStub = nil
+	fake.getAllTasksByCellIDReturns = struct {
 		result1 []models.Task
 		result2 error
 	}{result1, result2}
@@ -410,51 +410,51 @@ func (fake *FakeRepBBS) GetActualLRPsByProcessGuidReturns(result1 []models.Actua
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByExecutorID(executorID string) ([]models.ActualLRP, error) {
-	fake.getAllActualLRPsByExecutorIDMutex.Lock()
-	fake.getAllActualLRPsByExecutorIDArgsForCall = append(fake.getAllActualLRPsByExecutorIDArgsForCall, struct {
-		executorID string
-	}{executorID})
-	fake.getAllActualLRPsByExecutorIDMutex.Unlock()
-	if fake.GetAllActualLRPsByExecutorIDStub != nil {
-		return fake.GetAllActualLRPsByExecutorIDStub(executorID)
+func (fake *FakeRepBBS) GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
+	fake.getAllActualLRPsByCellIDMutex.Lock()
+	fake.getAllActualLRPsByCellIDArgsForCall = append(fake.getAllActualLRPsByCellIDArgsForCall, struct {
+		cellID string
+	}{cellID})
+	fake.getAllActualLRPsByCellIDMutex.Unlock()
+	if fake.GetAllActualLRPsByCellIDStub != nil {
+		return fake.GetAllActualLRPsByCellIDStub(cellID)
 	} else {
-		return fake.getAllActualLRPsByExecutorIDReturns.result1, fake.getAllActualLRPsByExecutorIDReturns.result2
+		return fake.getAllActualLRPsByCellIDReturns.result1, fake.getAllActualLRPsByCellIDReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByExecutorIDCallCount() int {
-	fake.getAllActualLRPsByExecutorIDMutex.RLock()
-	defer fake.getAllActualLRPsByExecutorIDMutex.RUnlock()
-	return len(fake.getAllActualLRPsByExecutorIDArgsForCall)
+func (fake *FakeRepBBS) GetAllActualLRPsByCellIDCallCount() int {
+	fake.getAllActualLRPsByCellIDMutex.RLock()
+	defer fake.getAllActualLRPsByCellIDMutex.RUnlock()
+	return len(fake.getAllActualLRPsByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByExecutorIDArgsForCall(i int) string {
-	fake.getAllActualLRPsByExecutorIDMutex.RLock()
-	defer fake.getAllActualLRPsByExecutorIDMutex.RUnlock()
-	return fake.getAllActualLRPsByExecutorIDArgsForCall[i].executorID
+func (fake *FakeRepBBS) GetAllActualLRPsByCellIDArgsForCall(i int) string {
+	fake.getAllActualLRPsByCellIDMutex.RLock()
+	defer fake.getAllActualLRPsByCellIDMutex.RUnlock()
+	return fake.getAllActualLRPsByCellIDArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByExecutorIDReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetAllActualLRPsByExecutorIDStub = nil
-	fake.getAllActualLRPsByExecutorIDReturns = struct {
+func (fake *FakeRepBBS) GetAllActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
+	fake.GetAllActualLRPsByCellIDStub = nil
+	fake.getAllActualLRPsByCellIDReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGuid string, executorID string, domain string, index int) (models.ActualLRP, error) {
+func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGuid string, cellID string, domain string, index int) (models.ActualLRP, error) {
 	fake.reportActualLRPAsStartingMutex.Lock()
 	fake.reportActualLRPAsStartingArgsForCall = append(fake.reportActualLRPAsStartingArgsForCall, struct {
 		processGuid  string
 		instanceGuid string
-		executorID   string
+		cellID   string
 		domain       string
 		index        int
-	}{processGuid, instanceGuid, executorID, domain, index})
+	}{processGuid, instanceGuid, cellID, domain, index})
 	fake.reportActualLRPAsStartingMutex.Unlock()
 	if fake.ReportActualLRPAsStartingStub != nil {
-		return fake.ReportActualLRPAsStartingStub(processGuid, instanceGuid, executorID, domain, index)
+		return fake.ReportActualLRPAsStartingStub(processGuid, instanceGuid, cellID, domain, index)
 	} else {
 		return fake.reportActualLRPAsStartingReturns.result1, fake.reportActualLRPAsStartingReturns.result2
 	}
@@ -469,7 +469,7 @@ func (fake *FakeRepBBS) ReportActualLRPAsStartingCallCount() int {
 func (fake *FakeRepBBS) ReportActualLRPAsStartingArgsForCall(i int) (string, string, string, string, int) {
 	fake.reportActualLRPAsStartingMutex.RLock()
 	defer fake.reportActualLRPAsStartingMutex.RUnlock()
-	return fake.reportActualLRPAsStartingArgsForCall[i].processGuid, fake.reportActualLRPAsStartingArgsForCall[i].instanceGuid, fake.reportActualLRPAsStartingArgsForCall[i].executorID, fake.reportActualLRPAsStartingArgsForCall[i].domain, fake.reportActualLRPAsStartingArgsForCall[i].index
+	return fake.reportActualLRPAsStartingArgsForCall[i].processGuid, fake.reportActualLRPAsStartingArgsForCall[i].instanceGuid, fake.reportActualLRPAsStartingArgsForCall[i].cellID, fake.reportActualLRPAsStartingArgsForCall[i].domain, fake.reportActualLRPAsStartingArgsForCall[i].index
 }
 
 func (fake *FakeRepBBS) ReportActualLRPAsStartingReturns(result1 models.ActualLRP, result2 error) {
@@ -480,15 +480,15 @@ func (fake *FakeRepBBS) ReportActualLRPAsStartingReturns(result1 models.ActualLR
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, executorId string) error {
+func (fake *FakeRepBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error {
 	fake.reportActualLRPAsRunningMutex.Lock()
 	fake.reportActualLRPAsRunningArgsForCall = append(fake.reportActualLRPAsRunningArgsForCall, struct {
 		lrp        models.ActualLRP
-		executorId string
-	}{lrp, executorId})
+		cellId string
+	}{lrp, cellId})
 	fake.reportActualLRPAsRunningMutex.Unlock()
 	if fake.ReportActualLRPAsRunningStub != nil {
-		return fake.ReportActualLRPAsRunningStub(lrp, executorId)
+		return fake.ReportActualLRPAsRunningStub(lrp, cellId)
 	} else {
 		return fake.reportActualLRPAsRunningReturns.result1
 	}
@@ -503,7 +503,7 @@ func (fake *FakeRepBBS) ReportActualLRPAsRunningCallCount() int {
 func (fake *FakeRepBBS) ReportActualLRPAsRunningArgsForCall(i int) (models.ActualLRP, string) {
 	fake.reportActualLRPAsRunningMutex.RLock()
 	defer fake.reportActualLRPAsRunningMutex.RUnlock()
-	return fake.reportActualLRPAsRunningArgsForCall[i].lrp, fake.reportActualLRPAsRunningArgsForCall[i].executorId
+	return fake.reportActualLRPAsRunningArgsForCall[i].lrp, fake.reportActualLRPAsRunningArgsForCall[i].cellId
 }
 
 func (fake *FakeRepBBS) ReportActualLRPAsRunningReturns(result1 error) {

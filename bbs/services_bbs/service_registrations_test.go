@@ -29,11 +29,11 @@ var _ = Context("Getting Generic Services", func() {
 			BeforeEach(func() {
 				serviceNodes := []storeadapter.StoreNode{
 					{
-						Key:   "/v1/executor/guid-0",
+						Key:   "/v1/cell/guid-0",
 						Value: []byte("{}"),
 					},
 					{
-						Key:   "/v1/executor/guid-1",
+						Key:   "/v1/cell/guid-1",
 						Value: []byte("{}"),
 					},
 					{
@@ -49,14 +49,14 @@ var _ = Context("Getting Generic Services", func() {
 				Ω(registrationsErr).ShouldNot(HaveOccurred())
 			})
 
-			It("returns the executor service registrations", func() {
-				executorRegistrations := registrations.FilterByName(models.ExecutorServiceName)
-				Ω(executorRegistrations).Should(HaveLen(2))
-				Ω(executorRegistrations).Should(ContainElement(models.ServiceRegistration{
-					Name: models.ExecutorServiceName, Id: "guid-0",
+			It("returns the cell service registrations", func() {
+				cellRegistrations := registrations.FilterByName(models.CellServiceName)
+				Ω(cellRegistrations).Should(HaveLen(2))
+				Ω(cellRegistrations).Should(ContainElement(models.ServiceRegistration{
+					Name: models.CellServiceName, Id: "guid-0",
 				}))
-				Ω(executorRegistrations).Should(ContainElement(models.ServiceRegistration{
-					Name: models.ExecutorServiceName, Id: "guid-1",
+				Ω(cellRegistrations).Should(ContainElement(models.ServiceRegistration{
+					Name: models.CellServiceName, Id: "guid-1",
 				}))
 			})
 		})

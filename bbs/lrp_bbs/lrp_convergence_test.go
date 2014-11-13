@@ -15,7 +15,7 @@ var _ = Describe("LrpConvergence", func() {
 	var (
 		sender *fake.FakeMetricSender
 
-		executorID string
+		cellID string
 	)
 
 	processGuid := "process-guid"
@@ -24,15 +24,15 @@ var _ = Describe("LrpConvergence", func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
 
-		executorID = "the-executor-id"
+		cellID = "the-cell-id"
 		etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.ExecutorSchemaPath(executorID),
+			Key:   shared.CellSchemaPath(cellID),
 			Value: []byte{},
 		})
 
-		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", executorID, "domain", 0)
+		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", cellID, "domain", 0)
 		Ω(err).ShouldNot(HaveOccurred())
-		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", executorID, "domain", 1)
+		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", cellID, "domain", 1)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -52,23 +52,23 @@ var _ = Describe("LrpConvergence", func() {
 		Ω(reportedDuration.Value).ShouldNot(BeZero())
 	})
 
-	Describe("pruning LRPs by executor", func() {
+	Describe("pruning LRPs by cell", func() {
 		JustBeforeEach(func() {
 			bbs.ConvergeLRPs()
 		})
 
-		Context("when no executor is missing", func() {
+		Context("when no cell is missing", func() {
 			It("should not prune any LRPs", func() {
 				Ω(bbs.GetAllActualLRPs()).Should(HaveLen(2))
 			})
 		})
 
-		Context("when an executor is missing", func() {
+		Context("when an cell is missing", func() {
 			BeforeEach(func() {
-				etcdClient.Delete(shared.ExecutorSchemaPath(executorID))
+				etcdClient.Delete(shared.CellSchemaPath(cellID))
 			})
 
-			It("should delete LRPs associated with said executor", func() {
+			It("should delete LRPs associated with said cell", func() {
 				Ω(bbs.GetAllActualLRPs()).Should(BeEmpty())
 			})
 
@@ -187,7 +187,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when there are duplicate actual LRPs", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", executorID, "domain", 0)
+				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellID, "domain", 0)
 				bbs.DesireLRP(desiredLRP)
 			})
 

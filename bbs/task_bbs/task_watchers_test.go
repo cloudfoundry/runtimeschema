@@ -75,10 +75,10 @@ var _ = Describe("Task BBS", func() {
 
 			Eventually(events).Should(Receive())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID")
+			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
@@ -107,10 +107,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID")
+			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

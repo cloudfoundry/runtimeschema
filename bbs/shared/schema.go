@@ -8,7 +8,7 @@ import (
 )
 
 const SchemaRoot = "/v1/"
-const ExecutorSchemaRoot = SchemaRoot + "executor"
+const CellSchemaRoot = SchemaRoot + "cell"
 const LRPStartAuctionSchemaRoot = SchemaRoot + "start"
 const LRPStopAuctionSchemaRoot = SchemaRoot + "stop"
 const StopLRPInstanceSchemaRoot = SchemaRoot + "stop-instance"
@@ -18,8 +18,8 @@ const TaskSchemaRoot = SchemaRoot + "task"
 const LockSchemaRoot = SchemaRoot + "locks"
 const FreshnessSchemaRoot = SchemaRoot + "freshness"
 
-func ExecutorSchemaPath(executorID string) string {
-	return path.Join(ExecutorSchemaRoot, executorID)
+func CellSchemaPath(cellID string) string {
+	return path.Join(CellSchemaRoot, cellID)
 }
 
 func LRPStartAuctionProcessDir(lrp models.LRPStartAuction) string {

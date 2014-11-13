@@ -74,24 +74,24 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("GetAllTasksByExecutorID", func() {
+	Describe("GetAllTasksByCellID", func() {
 		BeforeEach(func() {
-			task.ExecutorID = "some-other-executor-id"
+			task.CellID = "some-other-cell-id"
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
-		Context("when there are no tasks for the given executor ID", func() {
+		Context("when there are no tasks for the given cell ID", func() {
 			It("returns an empty list", func() {
-				tasks, err := bbs.GetAllTasksByExecutorID("executor-id")
+				tasks, err := bbs.GetAllTasksByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
 			})
 		})
 
-		Context("when there are tasks for the given executor ID", func() {
+		Context("when there are tasks for the given cell ID", func() {
 			var task1Request = models.Task{
 				TaskGuid:   "some-guid-1",
-				ExecutorID: "executor-id",
+				CellID: "cell-id",
 				Domain:     "tests",
 				Stack:      "pancakes",
 				Action:     dummyAction,
@@ -99,7 +99,7 @@ var _ = Describe("Task BBS", func() {
 			var task1 models.Task
 			var task2Request = models.Task{
 				TaskGuid:   "some-guid-2",
-				ExecutorID: "executor-id",
+				CellID: "cell-id",
 				Domain:     "tests",
 				Stack:      "pancakes",
 				Action:     dummyAction,
@@ -119,7 +119,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns only those tasks", func() {
-				tasks, err := bbs.GetAllTasksByExecutorID("executor-id")
+				tasks, err := bbs.GetAllTasksByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(ConsistOf(task1, task2))
 			})
@@ -145,7 +145,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -162,10 +162,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID")
+			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -182,10 +182,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID")
+			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
@@ -205,10 +205,10 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ClaimTask(task.TaskGuid, "executor-ID")
+			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "executor-ID")
+			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")

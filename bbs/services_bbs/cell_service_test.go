@@ -15,33 +15,33 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
-var _ = Describe("Fetching all Executors", func() {
+var _ = Describe("Fetching all Cells", func() {
 	var (
 		bbs                    *ServicesBBS
 		interval               = time.Second
 		heartbeat1             ifrit.Process
 		heartbeat2             ifrit.Process
-		firstExecutorPresence  models.ExecutorPresence
-		secondExecutorPresence models.ExecutorPresence
+		firstCellPresence  models.CellPresence
+		secondCellPresence models.CellPresence
 	)
 
 	BeforeEach(func() {
 		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
 
-		firstExecutorPresence = models.ExecutorPresence{
-			ExecutorID: "first-rep",
+		firstCellPresence = models.CellPresence{
+			CellID: "first-rep",
 			Stack:      "lucid64",
 		}
 
-		secondExecutorPresence = models.ExecutorPresence{
-			ExecutorID: "second-rep",
+		secondCellPresence = models.CellPresence{
+			CellID: "second-rep",
 			Stack:      ".Net",
 		}
 
 		interval = 1 * time.Second
 
-		heartbeat1 = ifrit.Envoke(bbs.NewExecutorHeartbeat(firstExecutorPresence, interval))
-		heartbeat2 = ifrit.Envoke(bbs.NewExecutorHeartbeat(secondExecutorPresence, interval))
+		heartbeat1 = ifrit.Envoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+		heartbeat2 = ifrit.Envoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
 	})
 
 	AfterEach(func() {
@@ -51,39 +51,39 @@ var _ = Describe("Fetching all Executors", func() {
 		Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
 	})
 
-	Describe("MaintainExecutorPresence", func() {
-		It("should put /executor/EXECUTOR_ID in the store with a TTL", func() {
-			node, err := etcdClient.Get("/v1/executor/" + firstExecutorPresence.ExecutorID)
+	Describe("MaintainCellPresence", func() {
+		It("should put /cell/CELL_ID in the store with a TTL", func() {
+			node, err := etcdClient.Get("/v1/cell/" + firstCellPresence.CellID)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(node.TTL).ShouldNot(BeZero())
-			Ω(node.Value).Should(MatchJSON(firstExecutorPresence.ToJSON()))
+			Ω(node.Value).Should(MatchJSON(firstCellPresence.ToJSON()))
 		})
 	})
 
-	Describe("GetAllExecutors", func() {
-		Context("when there are available Executors", func() {
-			It("should get from /v1/executor/", func() {
-				executorPresences, err := bbs.GetAllExecutors()
+	Describe("GetAllCells", func() {
+		Context("when there are available Cells", func() {
+			It("should get from /v1/cell/", func() {
+				cellPresences, err := bbs.GetAllCells()
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(executorPresences).Should(HaveLen(2))
-				Ω(executorPresences).Should(ContainElement(firstExecutorPresence))
-				Ω(executorPresences).Should(ContainElement(secondExecutorPresence))
+				Ω(cellPresences).Should(HaveLen(2))
+				Ω(cellPresences).Should(ContainElement(firstCellPresence))
+				Ω(cellPresences).Should(ContainElement(secondCellPresence))
 			})
 
 			Context("when there is unparsable JSON in there...", func() {
 				BeforeEach(func() {
 					etcdClient.Create(storeadapter.StoreNode{
-						Key:   shared.ExecutorSchemaPath("blah"),
+						Key:   shared.CellSchemaPath("blah"),
 						Value: []byte("ß"),
 					})
 				})
 
 				It("should ignore the unparsable JSON and move on", func() {
-					executorPresences, err := bbs.GetAllExecutors()
+					cellPresences, err := bbs.GetAllCells()
 					Ω(err).ShouldNot(HaveOccurred())
-					Ω(executorPresences).Should(HaveLen(2))
-					Ω(executorPresences).Should(ContainElement(firstExecutorPresence))
-					Ω(executorPresences).Should(ContainElement(secondExecutorPresence))
+					Ω(cellPresences).Should(HaveLen(2))
+					Ω(cellPresences).Should(ContainElement(firstCellPresence))
+					Ω(cellPresences).Should(ContainElement(secondCellPresence))
 				})
 			})
 		})
@@ -97,7 +97,7 @@ var _ = Describe("Fetching all Executors", func() {
 			})
 
 			It("should return empty", func() {
-				reps, err := bbs.GetAllExecutors()
+				reps, err := bbs.GetAllCells()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(reps).Should(BeEmpty())
 			})
