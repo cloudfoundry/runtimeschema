@@ -44,11 +44,10 @@ type FakeNsyncBBS struct {
 	changeDesiredLRPReturns struct {
 		result1 error
 	}
-	BumpFreshnessStub        func(domain string, ttl time.Duration) error
+	BumpFreshnessStub        func(freshness models.Freshness) error
 	bumpFreshnessMutex       sync.RWMutex
 	bumpFreshnessArgsForCall []struct {
-		domain string
-		ttl    time.Duration
+		freshness models.Freshness
 	}
 	bumpFreshnessReturns struct {
 		result1 error
@@ -202,15 +201,14 @@ func (fake *FakeNsyncBBS) ChangeDesiredLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeNsyncBBS) BumpFreshness(domain string, ttl time.Duration) error {
+func (fake *FakeNsyncBBS) BumpFreshness(freshness models.Freshness) error {
 	fake.bumpFreshnessMutex.Lock()
 	fake.bumpFreshnessArgsForCall = append(fake.bumpFreshnessArgsForCall, struct {
-		domain string
-		ttl    time.Duration
-	}{domain, ttl})
+		freshness models.Freshness
+	}{freshness})
 	fake.bumpFreshnessMutex.Unlock()
 	if fake.BumpFreshnessStub != nil {
-		return fake.BumpFreshnessStub(domain, ttl)
+		return fake.BumpFreshnessStub(freshness)
 	} else {
 		return fake.bumpFreshnessReturns.result1
 	}
@@ -222,10 +220,10 @@ func (fake *FakeNsyncBBS) BumpFreshnessCallCount() int {
 	return len(fake.bumpFreshnessArgsForCall)
 }
 
-func (fake *FakeNsyncBBS) BumpFreshnessArgsForCall(i int) (string, time.Duration) {
+func (fake *FakeNsyncBBS) BumpFreshnessArgsForCall(i int) models.Freshness {
 	fake.bumpFreshnessMutex.RLock()
 	defer fake.bumpFreshnessMutex.RUnlock()
-	return fake.bumpFreshnessArgsForCall[i].domain, fake.bumpFreshnessArgsForCall[i].ttl
+	return fake.bumpFreshnessArgsForCall[i].freshness
 }
 
 func (fake *FakeNsyncBBS) BumpFreshnessReturns(result1 error) {

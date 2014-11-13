@@ -45,6 +45,9 @@ type ReceptorBBS interface {
 
 	// cells
 	GetAllExecutors() ([]models.ExecutorPresence, error)
+
+	// freshness
+	BumpFreshness(models.Freshness) error
 }
 
 type RepBBS interface {
@@ -103,7 +106,7 @@ type NsyncBBS interface {
 	RemoveDesiredLRPByProcessGuid(guid string) error
 	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	ChangeDesiredLRP(change models.DesiredLRPChange) error
-	BumpFreshness(domain string, ttl time.Duration) error
+	BumpFreshness(freshness models.Freshness) error
 
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner

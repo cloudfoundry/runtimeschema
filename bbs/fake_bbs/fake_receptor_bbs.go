@@ -166,6 +166,14 @@ type FakeReceptorBBS struct {
 		result1 []models.ExecutorPresence
 		result2 error
 	}
+	BumpFreshnessStub        func(models.Freshness) error
+	bumpFreshnessMutex       sync.RWMutex
+	bumpFreshnessArgsForCall []struct {
+		arg1 models.Freshness
+	}
+	bumpFreshnessReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -749,6 +757,38 @@ func (fake *FakeReceptorBBS) GetAllExecutorsReturns(result1 []models.ExecutorPre
 		result1 []models.ExecutorPresence
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) BumpFreshness(arg1 models.Freshness) error {
+	fake.bumpFreshnessMutex.Lock()
+	fake.bumpFreshnessArgsForCall = append(fake.bumpFreshnessArgsForCall, struct {
+		arg1 models.Freshness
+	}{arg1})
+	fake.bumpFreshnessMutex.Unlock()
+	if fake.BumpFreshnessStub != nil {
+		return fake.BumpFreshnessStub(arg1)
+	} else {
+		return fake.bumpFreshnessReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) BumpFreshnessCallCount() int {
+	fake.bumpFreshnessMutex.RLock()
+	defer fake.bumpFreshnessMutex.RUnlock()
+	return len(fake.bumpFreshnessArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) BumpFreshnessArgsForCall(i int) models.Freshness {
+	fake.bumpFreshnessMutex.RLock()
+	defer fake.bumpFreshnessMutex.RUnlock()
+	return fake.bumpFreshnessArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) BumpFreshnessReturns(result1 error) {
+	fake.BumpFreshnessStub = nil
+	fake.bumpFreshnessReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)

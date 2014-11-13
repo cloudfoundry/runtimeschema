@@ -2,17 +2,22 @@ package lrp_bbs
 
 import (
 	"path"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 )
 
-func (bbs *LRPBBS) BumpFreshness(domain string, ttl time.Duration) error {
+func (bbs *LRPBBS) BumpFreshness(freshness models.Freshness) error {
+	err := freshness.Validate()
+	if err != nil {
+		return err
+	}
+
 	return bbs.store.SetMulti([]storeadapter.StoreNode{
 		{
-			Key: shared.FreshnessSchemaPath(domain),
-			TTL: uint64(ttl.Seconds()),
+			Key: shared.FreshnessSchemaPath(freshness.Domain),
+			TTL: uint64(freshness.TTLInSeconds),
 		},
 	})
 }
