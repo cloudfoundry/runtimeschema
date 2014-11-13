@@ -174,6 +174,13 @@ type FakeReceptorBBS struct {
 	bumpFreshnessReturns struct {
 		result1 error
 	}
+	FreshnessesStub        func() ([]models.Freshness, error)
+	freshnessesMutex       sync.RWMutex
+	freshnessesArgsForCall []struct{}
+	freshnessesReturns struct {
+		result1 []models.Freshness
+		result2 error
+	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
@@ -789,6 +796,31 @@ func (fake *FakeReceptorBBS) BumpFreshnessReturns(result1 error) {
 	fake.bumpFreshnessReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeReceptorBBS) Freshnesses() ([]models.Freshness, error) {
+	fake.freshnessesMutex.Lock()
+	fake.freshnessesArgsForCall = append(fake.freshnessesArgsForCall, struct{}{})
+	fake.freshnessesMutex.Unlock()
+	if fake.FreshnessesStub != nil {
+		return fake.FreshnessesStub()
+	} else {
+		return fake.freshnessesReturns.result1, fake.freshnessesReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) FreshnessesCallCount() int {
+	fake.freshnessesMutex.RLock()
+	defer fake.freshnessesMutex.RUnlock()
+	return len(fake.freshnessesArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) FreshnessesReturns(result1 []models.Freshness, result2 error) {
+	fake.FreshnessesStub = nil
+	fake.freshnessesReturns = struct {
+		result1 []models.Freshness
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)

@@ -48,6 +48,7 @@ type ReceptorBBS interface {
 
 	// freshness
 	BumpFreshness(models.Freshness) error
+	Freshnesses() ([]models.Freshness, error)
 }
 
 type RepBBS interface {
@@ -139,7 +140,7 @@ type MetricsBBS interface {
 	GetServiceRegistrations() (models.ServiceRegistrations, error)
 
 	//lrps
-	GetAllFreshness() ([]string, error)
+	Freshnesses() ([]models.Freshness, error)
 	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
 	GetAllActualLRPs() ([]models.ActualLRP, error)
 
@@ -170,7 +171,7 @@ type VeritasBBS interface {
 	GetAllStopLRPInstances() ([]models.StopLRPInstance, error)
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
-	GetAllFreshness() ([]string, error)
+	Freshnesses() ([]models.Freshness, error)
 
 	//start auctions
 	GetAllLRPStartAuctions() ([]models.LRPStartAuction, error)

@@ -22,16 +22,20 @@ func (bbs *LRPBBS) BumpFreshness(freshness models.Freshness) error {
 	})
 }
 
-func (bbs *LRPBBS) GetAllFreshness() ([]string, error) {
+func (bbs *LRPBBS) Freshnesses() ([]models.Freshness, error) {
 	node, err := bbs.store.ListRecursively(shared.FreshnessSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
 		return nil, err
 	}
 
-	var domains []string
+	freshnesses := make([]models.Freshness, 0, len(node.ChildNodes))
+
 	for _, node := range node.ChildNodes {
-		domains = append(domains, path.Base(node.Key))
+		freshnesses = append(freshnesses, models.Freshness{
+			Domain:       path.Base(node.Key),
+			TTLInSeconds: int(node.TTL),
+		})
 	}
 
-	return domains, nil
+	return freshnesses, nil
 }

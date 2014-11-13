@@ -14,35 +14,35 @@ type FakeMetricsBBS struct {
 	GetAllTasksStub        func() ([]models.Task, error)
 	getAllTasksMutex       sync.RWMutex
 	getAllTasksArgsForCall []struct{}
-	getAllTasksReturns     struct {
+	getAllTasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
 	GetServiceRegistrationsStub        func() (models.ServiceRegistrations, error)
 	getServiceRegistrationsMutex       sync.RWMutex
 	getServiceRegistrationsArgsForCall []struct{}
-	getServiceRegistrationsReturns     struct {
+	getServiceRegistrationsReturns struct {
 		result1 models.ServiceRegistrations
 		result2 error
 	}
-	GetAllFreshnessStub        func() ([]string, error)
-	getAllFreshnessMutex       sync.RWMutex
-	getAllFreshnessArgsForCall []struct{}
-	getAllFreshnessReturns     struct {
-		result1 []string
+	FreshnessesStub        func() ([]models.Freshness, error)
+	freshnessesMutex       sync.RWMutex
+	freshnessesArgsForCall []struct{}
+	freshnessesReturns struct {
+		result1 []models.Freshness
 		result2 error
 	}
 	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
-	getAllDesiredLRPsReturns     struct {
+	getAllDesiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	GetAllActualLRPsStub        func() ([]models.ActualLRP, error)
 	getAllActualLRPsMutex       sync.RWMutex
 	getAllActualLRPsArgsForCall []struct{}
-	getAllActualLRPsReturns     struct {
+	getAllActualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -107,27 +107,27 @@ func (fake *FakeMetricsBBS) GetServiceRegistrationsReturns(result1 models.Servic
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsBBS) GetAllFreshness() ([]string, error) {
-	fake.getAllFreshnessMutex.Lock()
-	fake.getAllFreshnessArgsForCall = append(fake.getAllFreshnessArgsForCall, struct{}{})
-	fake.getAllFreshnessMutex.Unlock()
-	if fake.GetAllFreshnessStub != nil {
-		return fake.GetAllFreshnessStub()
+func (fake *FakeMetricsBBS) Freshnesses() ([]models.Freshness, error) {
+	fake.freshnessesMutex.Lock()
+	fake.freshnessesArgsForCall = append(fake.freshnessesArgsForCall, struct{}{})
+	fake.freshnessesMutex.Unlock()
+	if fake.FreshnessesStub != nil {
+		return fake.FreshnessesStub()
 	} else {
-		return fake.getAllFreshnessReturns.result1, fake.getAllFreshnessReturns.result2
+		return fake.freshnessesReturns.result1, fake.freshnessesReturns.result2
 	}
 }
 
-func (fake *FakeMetricsBBS) GetAllFreshnessCallCount() int {
-	fake.getAllFreshnessMutex.RLock()
-	defer fake.getAllFreshnessMutex.RUnlock()
-	return len(fake.getAllFreshnessArgsForCall)
+func (fake *FakeMetricsBBS) FreshnessesCallCount() int {
+	fake.freshnessesMutex.RLock()
+	defer fake.freshnessesMutex.RUnlock()
+	return len(fake.freshnessesArgsForCall)
 }
 
-func (fake *FakeMetricsBBS) GetAllFreshnessReturns(result1 []string, result2 error) {
-	fake.GetAllFreshnessStub = nil
-	fake.getAllFreshnessReturns = struct {
-		result1 []string
+func (fake *FakeMetricsBBS) FreshnessesReturns(result1 []models.Freshness, result2 error) {
+	fake.FreshnessesStub = nil
+	fake.freshnessesReturns = struct {
+		result1 []models.Freshness
 		result2 error
 	}{result1, result2}
 }
