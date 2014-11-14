@@ -1,11 +1,13 @@
 package task_bbs_test
 
 import (
+	"errors"
 	"time"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
+	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-golang/lager/lagertest"
@@ -213,6 +215,141 @@ var _ = Describe("Task BBS", func() {
 			It("returns an error", func() {
 				err = bbs.StartTask(task.TaskGuid, "some-other-cell-ID")
 				Ω(err).Should(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("CancelTask", func() {
+
+		Context("when the store is reachable", func() {
+			var cancelError error
+			var taskAfterCancel models.Task
+
+			JustBeforeEach(func() {
+				cancelError = bbs.CancelTask(task.TaskGuid)
+				taskAfterCancel, _ = bbs.GetTaskByGuid(task.TaskGuid)
+			})
+
+			itMarksTaskAsCancelled := func() {
+				It("does not error", func() {
+					Ω(cancelError).ShouldNot(HaveOccurred())
+				})
+
+				It("marks the task as completed", func() {
+					Ω(taskAfterCancel.State).Should(Equal(models.TaskStateCompleted))
+				})
+
+				It("marks the task as failed", func() {
+					Ω(taskAfterCancel.Failed).Should(BeTrue())
+				})
+
+				It("sets the failure reason to cancelled", func() {
+					Ω(taskAfterCancel.FailureReason).Should(Equal("task was cancelled"))
+				})
+
+				It("bumps UpdatedAt", func() {
+					Ω(taskAfterCancel.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				})
+			}
+
+			Context("when the task is in pending state", func() {
+				BeforeEach(func() {
+					err = bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				itMarksTaskAsCancelled()
+			})
+
+			Context("when the task is in claimed state", func() {
+				BeforeEach(func() {
+					err = bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				itMarksTaskAsCancelled()
+			})
+
+			Context("when the task is in running state", func() {
+				BeforeEach(func() {
+					err = bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.StartTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				itMarksTaskAsCancelled()
+			})
+
+			Context("when the task is in completed state", func() {
+				BeforeEach(func() {
+					err = bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("returns an error", func() {
+					Ω(cancelError).Should(HaveOccurred())
+					Ω(cancelError).Should(BeAssignableToTypeOf(*new(UnexpectedTaskStateError)))
+				})
+			})
+
+			Context("when the task is in resolving state", func() {
+				BeforeEach(func() {
+					err = bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
+					Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.ResolvingTask(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("returns an error", func() {
+					Ω(cancelError).Should(HaveOccurred())
+					Ω(cancelError).Should(BeAssignableToTypeOf(*new(UnexpectedTaskStateError)))
+				})
+			})
+
+			Context("when the task does not exist", func() {
+				It("returns an error", func() {
+					Ω(cancelError).Should(HaveOccurred())
+					Ω(cancelError).Should(Equal(ErrTaskNotFound))
+				})
+			})
+
+			Context("when the store returns some error other than key not found or timeout", func() {
+				var storeError = errors.New("store error")
+
+				BeforeEach(func() {
+					fakeStoreAdapter := fakestoreadapter.New()
+					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
+
+					bbs = New(fakeStoreAdapter, timeProvider, lagertest.NewTestLogger("test"))
+				})
+				It("returns an error", func() {
+					Ω(cancelError).Should(HaveOccurred())
+					Ω(cancelError).Should(Equal(storeError))
+				})
+			})
+		})
+
+		Context("when the store is out of commission", func() {
+			BeforeEach(func() {
+				err = bbs.DesireTask(task)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			itRetriesUntilStoreComesBack(func() error {
+				return bbs.CancelTask(task.TaskGuid)
 			})
 		})
 	})

@@ -38,7 +38,7 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
 	}
 
 	if task.State != models.TaskStatePending {
-		return errors.New("cannot claim task in non-pending state")
+		return UnexpectedTaskStateError("cannot claim task in non-pending state")
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
@@ -64,7 +64,7 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 	}
 
 	if task.State != models.TaskStateClaimed {
-		return errors.New("cannot start task in non-claimed state")
+		return UnexpectedTaskStateError("cannot start task in non-claimed state")
 	}
 
 	if task.CellID != cellID {
@@ -73,6 +73,32 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateRunning
+
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.TaskSchemaPath(taskGuid),
+			Value: task.ToJSON(),
+		})
+	})
+}
+
+// The cell calls this when the user requested to cancel the task
+// stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
+// Will fail if the task has already been cancelled or completed normally
+func (bbs *TaskBBS) CancelTask(taskGuid string) error {
+	task, index, err := bbs.getTask(taskGuid)
+
+	if err == storeadapter.ErrorKeyNotFound {
+		return ErrTaskNotFound
+	} else if err != nil {
+		return err
+	}
+
+	if task.State != models.TaskStatePending && task.State != models.TaskStateClaimed && task.State != models.TaskStateRunning {
+		return UnexpectedTaskStateError("cannot complete task in non-pending/non-claimed/non-running state")
+	}
+
+	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
@@ -94,7 +120,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 	}
 
 	if task.State != models.TaskStateRunning && task.State != models.TaskStateClaimed {
-		return errors.New("cannot complete task in non-running/non-claimed state")
+		return UnexpectedTaskStateError("cannot complete task in non-running/non-claimed state")
 	}
 
 	task = bbs.markTaskCompleted(task, failed, failureReason, result)
@@ -142,7 +168,7 @@ func (bbs *TaskBBS) ResolveTask(taskGuid string) error {
 	}
 
 	if task.State != models.TaskStateResolving {
-		return errors.New("cannot resolve task in non-resolving state")
+		return UnexpectedTaskStateError("cannot resolve task in non-resolving state")
 	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {

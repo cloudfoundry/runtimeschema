@@ -58,6 +58,14 @@ type FakeReceptorBBS struct {
 	resolveTaskReturns struct {
 		result1 error
 	}
+	CancelTaskStub        func(taskGuid string) error
+	cancelTaskMutex       sync.RWMutex
+	cancelTaskArgsForCall []struct {
+		taskGuid string
+	}
+	cancelTaskReturns struct {
+		result1 error
+	}
 	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForCompletedTaskMutex       sync.RWMutex
 	watchForCompletedTaskArgsForCall []struct{}
@@ -366,6 +374,38 @@ func (fake *FakeReceptorBBS) ResolveTaskArgsForCall(i int) string {
 func (fake *FakeReceptorBBS) ResolveTaskReturns(result1 error) {
 	fake.ResolveTaskStub = nil
 	fake.resolveTaskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeReceptorBBS) CancelTask(taskGuid string) error {
+	fake.cancelTaskMutex.Lock()
+	fake.cancelTaskArgsForCall = append(fake.cancelTaskArgsForCall, struct {
+		taskGuid string
+	}{taskGuid})
+	fake.cancelTaskMutex.Unlock()
+	if fake.CancelTaskStub != nil {
+		return fake.CancelTaskStub(taskGuid)
+	} else {
+		return fake.cancelTaskReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) CancelTaskCallCount() int {
+	fake.cancelTaskMutex.RLock()
+	defer fake.cancelTaskMutex.RUnlock()
+	return len(fake.cancelTaskArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) CancelTaskArgsForCall(i int) string {
+	fake.cancelTaskMutex.RLock()
+	defer fake.cancelTaskMutex.RUnlock()
+	return fake.cancelTaskArgsForCall[i].taskGuid
+}
+
+func (fake *FakeReceptorBBS) CancelTaskReturns(result1 error) {
+	fake.CancelTaskStub = nil
+	fake.cancelTaskReturns = struct {
 		result1 error
 	}{result1}
 }

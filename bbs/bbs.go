@@ -26,6 +26,7 @@ type ReceptorBBS interface {
 	GetTaskByGuid(taskGuid string) (models.Task, error)
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
+	CancelTask(taskGuid string) error
 	WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error)
 
 	//desired lrp
