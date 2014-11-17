@@ -14,7 +14,8 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, 
 		var after *models.DesiredLRP
 
 		if event.Node != nil {
-			aft, err := models.NewDesiredLRPFromJSON(event.Node.Value)
+			var aft models.DesiredLRP
+			err := models.FromJSON(event.Node.Value, &aft)
 			if err != nil {
 				return models.DesiredLRPChange{}, false
 			}
@@ -23,7 +24,8 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, 
 		}
 
 		if event.PrevNode != nil {
-			bef, err := models.NewDesiredLRPFromJSON(event.PrevNode.Value)
+			var bef models.DesiredLRP
+			err := models.FromJSON(event.PrevNode.Value, &bef)
 			if err != nil {
 				return models.DesiredLRPChange{}, false
 			}
@@ -51,7 +53,8 @@ func (bbs *LRPBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, ch
 		var after *models.ActualLRP
 
 		if event.Node != nil {
-			aft, err := models.NewActualLRPFromJSON(event.Node.Value)
+			var aft models.ActualLRP
+			err := models.FromJSON(event.Node.Value, &aft)
 			if err != nil {
 				return models.ActualLRPChange{}, false
 			}
@@ -60,7 +63,8 @@ func (bbs *LRPBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, ch
 		}
 
 		if event.PrevNode != nil {
-			bef, err := models.NewActualLRPFromJSON(event.PrevNode.Value)
+			var bef models.ActualLRP
+			err := models.FromJSON(event.PrevNode.Value, &bef)
 			if err != nil {
 				return models.ActualLRPChange{}, false
 			}

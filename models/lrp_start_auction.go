@@ -1,7 +1,5 @@
 package models
 
-import "encoding/json"
-
 type LRPStartAuctionState int
 
 const (
@@ -18,17 +16,6 @@ type LRPStartAuction struct {
 
 	State     LRPStartAuctionState `json:"state"`
 	UpdatedAt int64                `json:"updated_at"`
-}
-
-func NewLRPStartAuctionFromJSON(payload []byte) (LRPStartAuction, error) {
-	auction := LRPStartAuction{}
-
-	err := json.Unmarshal(payload, &auction)
-	if err != nil {
-		return LRPStartAuction{}, err
-	}
-
-	return auction, auction.Validate()
 }
 
 func (auction LRPStartAuction) Validate() error {
@@ -48,13 +35,4 @@ func (auction LRPStartAuction) Validate() error {
 	}
 
 	return nil
-}
-
-func (auction LRPStartAuction) ToJSON() []byte {
-	bytes, err := json.Marshal(auction)
-	if err != nil {
-		panic(err)
-	}
-
-	return bytes
 }

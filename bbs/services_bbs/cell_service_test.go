@@ -56,7 +56,11 @@ var _ = Describe("Fetching all Cells", func() {
 			node, err := etcdClient.Get("/v1/cell/" + firstCellPresence.CellID)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(node.TTL).ShouldNot(BeZero())
-			Ω(node.Value).Should(MatchJSON(firstCellPresence.ToJSON()))
+
+			expectedJSON, err := models.ToJSON(firstCellPresence)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(node.Value).Should(MatchJSON(expectedJSON))
 		})
 	})
 

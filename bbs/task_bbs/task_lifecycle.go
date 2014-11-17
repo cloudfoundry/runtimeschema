@@ -24,9 +24,13 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 		}
 		task.UpdatedAt = s.timeProvider.Time().UnixNano()
 		task.State = models.TaskStatePending
+		value, err := models.ToJSON(task)
+		if err != nil {
+			return err
+		}
 		return s.store.Create(storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(task.TaskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 	return err
@@ -50,10 +54,15 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
 	task.State = models.TaskStateClaimed
 	task.CellID = cellID
 
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 }
@@ -79,10 +88,15 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateRunning
 
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 }
@@ -105,10 +119,15 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 
 	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
 
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 }
@@ -130,10 +149,14 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 
 	task = bbs.markTaskCompleted(task, failed, failureReason, result)
 
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 }
@@ -154,10 +177,15 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 	task.State = models.TaskStateResolving
 
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		})
 	})
 }

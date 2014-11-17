@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -11,9 +12,11 @@ import (
 )
 
 var _ = Describe("Task", func() {
+	var taskPayload string
 	var task Task
 
-	taskPayload := `{
+	BeforeEach(func() {
+		taskPayload = `{
 		"task_guid":"some-guid",
 		"domain":"some-domain",
 		"root_fs": "docker:///docker.com/docker",
@@ -26,8 +29,7 @@ var _ = Describe("Task", func() {
 		],
 		"cell_id":"cell",
 		"action": {
-			"action":"download",
-			"args":{
+			"download":{
 				"from":"old_location",
 				"to":"new_location",
 				"cache_key":"the-cache-key"
@@ -49,7 +51,6 @@ var _ = Describe("Task", func() {
 		"annotation": "[{\"anything\": \"you want!\"}]... dude"
 	}`
 
-	BeforeEach(func() {
 		task = Task{
 			TaskGuid:   "some-guid",
 			Domain:     "some-domain",
@@ -61,98 +62,107 @@ var _ = Describe("Task", func() {
 					Value: "an environmment value",
 				},
 			},
-			Action: ExecutorAction{
-				Action: DownloadAction{
-					From:     "old_location",
-					To:       "new_location",
-					CacheKey: "the-cache-key",
-				},
+			Action: &DownloadAction{
+				From:     "old_location",
+				To:       "new_location",
+				CacheKey: "the-cache-key",
 			},
-			LogGuid:          "123",
-			LogSource:        "APP",
-			CellID:           "cell",
-			ResultFile:       "some-file.txt",
-			Result:           "turboencabulated",
-			Failed:           true,
-			FailureReason:    "because i said so",
 			MemoryMB:         256,
 			DiskMB:           1024,
 			CPUWeight:        42,
+			LogSource:        "APP",
+			LogGuid:          "123",
 			CreatedAt:        time.Date(2014, time.February, 25, 23, 46, 11, 00, time.UTC).UnixNano(),
 			UpdatedAt:        time.Date(2014, time.February, 25, 23, 46, 11, 10, time.UTC).UnixNano(),
 			FirstCompletedAt: time.Date(2014, time.February, 25, 23, 46, 11, 30, time.UTC).UnixNano(),
+			ResultFile:       "some-file.txt",
 			State:            TaskStatePending,
-			Annotation:       `[{"anything": "you want!"}]... dude`,
+			CellID:           "cell",
+
+			Result:        "turboencabulated",
+			Failed:        true,
+			FailureReason: "because i said so",
+
+			Annotation: `[{"anything": "you want!"}]... dude`,
 		}
 	})
 
-	Describe("ToJSON", func() {
+	Describe("Marshal", func() {
 		It("should JSONify", func() {
-			json := task.ToJSON()
+			json, err := ToJSON(&task)
+			Ω(err).ShouldNot(HaveOccurred())
 			Ω(string(json)).Should(MatchJSON(taskPayload))
 		})
 	})
 
-	Describe("NewTaskFromJSON", func() {
+	Describe("Unmarshal", func() {
 		It("returns a Task with correct fields", func() {
-			decodedTask, err := NewTaskFromJSON([]byte(taskPayload))
+			decodedTask := &Task{}
+			err := FromJSON([]byte(taskPayload), decodedTask)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedTask).Should(Equal(task))
+			Ω(decodedTask).Should(Equal(&task))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedTask, err := NewTaskFromJSON([]byte("aliens lol"))
+				decodedTask := &Task{}
+				err := json.Unmarshal([]byte("aliens lol"), decodedTask)
 				Ω(err).Should(HaveOccurred())
+			})
+		})
 
-				Ω(decodedTask).Should(BeZero())
+		Context("with a missing action", func() {
+			It("returns the error", func() {
+				taskPayload = `{
+					"domain": "some-domain", "task_guid": "process-guid",
+					"stack": "some-stack"}`
+				decodedTask := &Task{}
+
+				err := FromJSON([]byte(taskPayload), decodedTask)
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		for field, payload := range map[string]string{
-			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "action": {"action": "run", "args": {"path": "date"}}}`,
-			"action":    `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
-			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
-			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
-			"annotation": `{"domain": "some-domain", "stack": "some-stack", "task_guid": "process-guid", "instances": 1, "action": {"action": "run", "args": {"path": "date"}},
-			 								"annotation":"` + strings.Repeat("a", 10*1024+1) + `"}`,
+			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "action": {"run": {"path": "date"}}}`,
+			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "action": {"run": {"path": "date"}}}`,
+			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "action": {"run": {"path": "date"}}}`,
+			"annotation": `{"domain": "some-domain", "stack": "some-stack", "task_guid": "process-guid", "instances": 1, "action": {"run": {"path": "date"}},
+										"annotation":"` + strings.Repeat("a", 10*1024+1) + `"}`,
 		} {
-			json := payload
 			missingField := field
+			jsonPayload := payload
 
 			Context("when the json is missing a "+missingField, func() {
 				It("returns an error indicating so", func() {
-					decodedStartAuction, err := NewTaskFromJSON([]byte(json))
+					decodedTask := &Task{}
+					err := FromJSON([]byte(jsonPayload), decodedTask)
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring(missingField))
-
-					Ω(decodedStartAuction).Should(BeZero())
 				})
 			})
 		}
 
 		Context("when the task GUID is present but invalid", func() {
-			json := `{"domain": "some-domain", "task_guid": "invalid/guid", "stack": "some-stack", "actions": [{"action": "run", "args": {"path": "date"}}]}`
+			payload := `{"domain": "some-domain", "task_guid": "invalid/guid", "stack": "some-stack", "action": {"run": {"path": "date"}}}`
 
 			It("returns an error indicating so", func() {
-				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
+				decodedTask := &Task{}
+				err := FromJSON([]byte(payload), decodedTask)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("task_guid"))
-
-				Ω(decodedStartAuction).Should(BeZero())
 			})
 		})
 
 		Context("with an invalid CPU weight", func() {
-			json := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "action": {"action": "run", "args": {"path": "date"}}}`
+			payload := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "action": {"run": {"path": "date"}}}`
 
 			It("returns an error", func() {
-				decodedStartAuction, err := NewTaskFromJSON([]byte(json))
+				decodedTask := &Task{}
+				err := FromJSON([]byte(payload), decodedTask)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("cpu_weight"))
-
-				Ω(decodedStartAuction).Should(BeZero())
 			})
 		})
 	})

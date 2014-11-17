@@ -27,7 +27,7 @@ type Task struct {
 	RootFSPath           string                `json:"root_fs"`
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
-	Action               ExecutorAction        `json:"action"`
+	Action               Action                `json:"-"`
 	MemoryMB             int                   `json:"memory_mb"`
 	DiskMB               int                   `json:"disk_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
@@ -50,6 +50,13 @@ type Task struct {
 	Annotation            string   `json:"annotation,omitempty"`
 }
 
+type InnerTask Task
+
+type mTask struct {
+	ActionRaw json.RawMessage `json:"action"`
+	*InnerTask
+}
+
 type StagingResult struct {
 	BuildpackKey         string            `json:"buildpack_key,omitempty"`
 	DetectedBuildpack    string            `json:"detected_buildpack"`
@@ -67,20 +74,20 @@ type StagingTaskAnnotation struct {
 	TaskId string `json:"task_id"`
 }
 
-func NewTaskFromJSON(payload []byte) (Task, error) {
-	var task Task
-
-	err := json.Unmarshal(payload, &task)
+func (t *Task) UnmarshalJSON(payload []byte) error {
+	mtask := mTask{InnerTask: (*InnerTask)(t)}
+	err := json.Unmarshal(payload, &mtask)
 	if err != nil {
-		return Task{}, err
+		return err
 	}
 
-	err = task.Validate()
+	a, err := UnmarshalAction(mtask.ActionRaw)
 	if err != nil {
-		return Task{}, err
+		return err
 	}
+	t.Action = a
 
-	return task, nil
+	return nil
 }
 
 func (task Task) Validate() error {
@@ -98,8 +105,8 @@ func (task Task) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
-	if err := task.Action.Validate(); err != nil {
-		validationError = append(validationError, err)
+	if task.Action == nil {
+		validationError = append(validationError, ErrInvalidActionType)
 	}
 
 	if task.CPUWeight > 100 {
@@ -117,11 +124,18 @@ func (task Task) Validate() error {
 	return nil
 }
 
-func (task Task) ToJSON() []byte {
-	bytes, err := json.Marshal(task)
+func (task Task) MarshalJSON() ([]byte, error) {
+	actionRaw, err := MarshalAction(task.Action)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return bytes
+	innerTask := InnerTask(task)
+
+	mtask := &mTask{
+		ActionRaw: actionRaw,
+		InnerTask: &innerTask,
+	}
+
+	return json.Marshal(mtask)
 }

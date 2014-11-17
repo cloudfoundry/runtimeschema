@@ -13,19 +13,30 @@ func (bbs *StopAuctionBBS) RequestLRPStopAuction(lrp models.LRPStopAuction) erro
 		lrp.State = models.LRPStopAuctionStatePending
 		lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 
+		value, err := models.ToJSON(lrp)
+		if err != nil {
+			return err
+		}
 		return bbs.store.Create(storeadapter.StoreNode{
 			Key:   shared.LRPStopAuctionSchemaPath(lrp),
-			Value: lrp.ToJSON(),
+			Value: value,
 		})
 	})
 }
 
 func (bbs *StopAuctionBBS) ClaimLRPStopAuction(lrp models.LRPStopAuction) error {
-	originalValue := lrp.ToJSON()
+	originalValue, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
 
 	lrp.State = models.LRPStopAuctionStateClaimed
 	lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
-	changedValue := lrp.ToJSON()
+
+	changedValue, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwap(storeadapter.StoreNode{
@@ -46,50 +57,52 @@ func (s *StopAuctionBBS) ResolveLRPStopAuction(lrp models.LRPStopAuction) error 
 }
 
 func (bbs *StopAuctionBBS) LRPStopAuctions() ([]models.LRPStopAuction, error) {
-	lrps := []models.LRPStopAuction{}
+	auctions := []models.LRPStopAuction{}
 
 	node, err := bbs.store.ListRecursively(shared.LRPStopAuctionSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return auctions, nil
 	}
 
 	if err != nil {
-		return lrps, err
+		return auctions, err
 	}
 
 	for _, node := range node.ChildNodes {
 		for _, node := range node.ChildNodes {
-			lrp, err := models.NewLRPStopAuctionFromJSON(node.Value)
+			var auction models.LRPStopAuction
+			err := models.FromJSON(node.Value, &auction)
 			if err != nil {
-				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				return auctions, fmt.Errorf("cannot parse auction JSON for key %s: %s", node.Key, err.Error())
 			} else {
-				lrps = append(lrps, lrp)
+				auctions = append(auctions, auction)
 			}
 		}
 	}
 
-	return lrps, nil
+	return auctions, nil
 }
 
 func (bbs *StopAuctionBBS) WatchForLRPStopAuction() (<-chan models.LRPStopAuction, chan<- bool, <-chan error) {
-	lrps := make(chan models.LRPStopAuction)
+	auctions := make(chan models.LRPStopAuction)
 
 	filter := func(event storeadapter.WatchEvent) (models.LRPStopAuction, bool) {
 		switch event.Type {
 		case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-			lrp, err := models.NewLRPStopAuctionFromJSON(event.Node.Value)
+			var auction models.LRPStopAuction
+			err := models.FromJSON(event.Node.Value, &auction)
 			if err != nil {
 				return models.LRPStopAuction{}, false
 			}
 
-			if lrp.State == models.LRPStopAuctionStatePending {
-				return lrp, true
+			if auction.State == models.LRPStopAuctionStatePending {
+				return auction, true
 			}
 		}
 		return models.LRPStopAuction{}, false
 	}
 
-	stop, errs := shared.WatchWithFilter(bbs.store, shared.LRPStopAuctionSchemaRoot, lrps, filter)
+	stop, errs := shared.WatchWithFilter(bbs.store, shared.LRPStopAuctionSchemaRoot, auctions, filter)
 
-	return lrps, stop, errs
+	return auctions, stop, errs
 }

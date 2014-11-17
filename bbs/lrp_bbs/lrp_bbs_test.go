@@ -23,11 +23,9 @@ var _ = Describe("LRP", func() {
 			MemoryMB:    1024,
 			DiskMB:      512,
 			Routes:      []string{"route-1", "route-2"},
-			Action: models.ExecutorAction{
-				Action: models.DownloadAction{
-					From: "http://example.com",
-					To:   "/tmp/internet",
-				},
+			Action: &models.DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
 			},
 		}
 	})
@@ -40,7 +38,9 @@ var _ = Describe("LRP", func() {
 
 				node, err := etcdClient.Get("/v1/desired/some-process-guid")
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(node.Value).Should(Equal(lrp.ToJSON()))
+				expected, err := models.ToJSON(lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(node.Value).Should(Equal(expected))
 			})
 		})
 
@@ -110,7 +110,11 @@ var _ = Describe("LRP", func() {
 				expectedLRP.State = models.ActualLRPStateStarting
 				expectedLRP.Since = timeProvider.Time().UnixNano()
 				expectedLRP.CellID = cellID
-				Ω(node.Value).Should(MatchJSON(expectedLRP.ToJSON()))
+
+				expectedJSON, err := models.ToJSON(expectedLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(node.Value).Should(MatchJSON(expectedJSON))
 			})
 
 			Context("when the store is out of commission", func() {
@@ -146,7 +150,10 @@ var _ = Describe("LRP", func() {
 				expectedLRP.State = models.ActualLRPStateRunning
 				expectedLRP.Since = timeProvider.Time().UnixNano()
 				expectedLRP.CellID = cellID
-				Ω(node.Value).Should(MatchJSON(expectedLRP.ToJSON()))
+
+				expectedJSON, err := models.ToJSON(expectedLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(node.Value).Should(MatchJSON(expectedJSON))
 			})
 
 			Context("when the store is out of commission", func() {
@@ -223,11 +230,9 @@ var _ = Describe("LRP", func() {
 			ProcessGuid: "some-guid",
 			Stack:       "some-stack",
 			Instances:   1,
-			Action: models.ExecutorAction{
-				Action: models.DownloadAction{
-					From: "http://example.com",
-					To:   "/tmp/internet",
-				},
+			Action: &models.DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
 			},
 		}
 
@@ -272,11 +277,9 @@ var _ = Describe("LRP", func() {
 			ProcessGuid: "some-guid",
 			Stack:       "some-stack",
 			Instances:   1,
-			Action: models.ExecutorAction{
-				Action: models.DownloadAction{
-					From: "http://example.com",
-					To:   "/tmp/internet",
-				},
+			Action: &models.DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
 			},
 		}
 

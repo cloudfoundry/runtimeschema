@@ -10,39 +10,44 @@ import (
 var _ = Describe("CellPresence", func() {
 	var cellPresence CellPresence
 
-	const payload = `{
-    "cell_id":"some-id",
-    "stack": "some-stack"
-  }`
+	var payload string
 
 	BeforeEach(func() {
 		cellPresence = CellPresence{
 			CellID: "some-id",
 			Stack:  "some-stack",
 		}
+
+		payload = `{
+    "cell_id":"some-id",
+    "stack": "some-stack"
+  }`
 	})
 
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
-			json := cellPresence.ToJSON()
+			json, err := ToJSON(&cellPresence)
+			Ω(err).ShouldNot(HaveOccurred())
 			Ω(string(json)).Should(MatchJSON(payload))
 		})
 	})
 
 	Describe("NewTaskFromJSON", func() {
 		It("returns a Task with correct fields", func() {
-			decodedCellPresence, err := NewCellPresenceFromJSON([]byte(payload))
+			decodedCellPresence := &CellPresence{}
+			err := FromJSON([]byte(payload), decodedCellPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedCellPresence).Should(Equal(cellPresence))
+			Ω(decodedCellPresence).Should(Equal(&cellPresence))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedCellPresence, err := NewCellPresenceFromJSON([]byte("aliens lol"))
-				Ω(err).Should(HaveOccurred())
+				payload = "aliens lol"
+				decodedCellPresence := &CellPresence{}
+				err := FromJSON([]byte(payload), decodedCellPresence)
 
-				Ω(decodedCellPresence).Should(BeZero())
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 	})

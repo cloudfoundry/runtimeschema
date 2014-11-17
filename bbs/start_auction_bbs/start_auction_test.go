@@ -26,11 +26,9 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Action: models.ExecutorAction{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+					Action: &models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}
@@ -45,7 +43,10 @@ var _ = Describe("Start Auction", func() {
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
 			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
-			Ω(node.Value).Should(Equal(auctionLRP.ToJSON()))
+
+			expectedJSON, err := models.ToJSON(auctionLRP)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(node.Value).Should(Equal(expectedJSON))
 		})
 
 		Context("when the key already exists", func() {
@@ -83,11 +84,9 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Action: models.ExecutorAction{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+					Action: &models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}
@@ -116,10 +115,13 @@ var _ = Describe("Start Auction", func() {
 			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
 			Eventually(events).Should(Receive(Equal(auctionLRP)))
 
+			value, err := models.ToJSON(auctionLRP)
+			Ω(err).ShouldNot(HaveOccurred())
+
 			err = etcdClient.SetMulti([]storeadapter.StoreNode{
 				{
 					Key:   shared.LRPStartAuctionSchemaPath(auctionLRP),
-					Value: auctionLRP.ToJSON(),
+					Value: value,
 				},
 			})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -155,11 +157,9 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Action: models.ExecutorAction{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+					Action: &models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}
@@ -184,9 +184,13 @@ var _ = Describe("Start Auction", func() {
 
 				node, err := etcdClient.Get("/v1/start/some-guid/1")
 				Ω(err).ShouldNot(HaveOccurred())
+
+				value, err := models.ToJSON(expectedAuctionLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				Ω(node).Should(MatchStoreNode(storeadapter.StoreNode{
 					Key:   "/v1/start/some-guid/1",
-					Value: expectedAuctionLRP.ToJSON(),
+					Value: value,
 				}))
 			})
 
@@ -223,11 +227,9 @@ var _ = Describe("Start Auction", func() {
 					ProcessGuid: "some-guid",
 					Stack:       "some-stack",
 					Instances:   1,
-					Action: models.ExecutorAction{
-						Action: models.DownloadAction{
-							From: "http://example.com",
-							To:   "/tmp/internet",
-						},
+					Action: &models.DownloadAction{
+						From: "http://example.com",
+						To:   "/tmp/internet",
 					},
 				},
 			}

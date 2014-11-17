@@ -155,11 +155,9 @@ func newStartAuction(processGuid string) models.LRPStartAuction {
 			ProcessGuid: processGuid,
 			Stack:       "some-stack",
 			Instances:   1,
-			Action: models.ExecutorAction{
-				Action: models.DownloadAction{
-					From: "http://example.com",
-					To:   "/tmp/internet",
-				},
+			Action: &models.DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
 			},
 		},
 	}

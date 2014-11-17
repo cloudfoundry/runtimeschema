@@ -19,7 +19,8 @@ func (bbs *TaskBBS) Tasks() ([]models.Task, error) {
 
 	tasks := []models.Task{}
 	for _, node := range node.ChildNodes {
-		task, err := models.NewTaskFromJSON(node.Value)
+		var task models.Task
+		err := models.FromJSON(node.Value, &task)
 		if err != nil {
 			bbs.logger.Error("failed-to-unmarshal-task", err, lager.Data{
 				"key":   node.Key,
@@ -105,7 +106,8 @@ func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
 		return models.Task{}, 0, err
 	}
 
-	task, err := models.NewTaskFromJSON(node.Value)
+	var task models.Task
+	err = models.FromJSON(node.Value, &task)
 
 	return task, node.Index, err
 }

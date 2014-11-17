@@ -10,10 +10,14 @@ import (
 
 func (bbs *LRPBBS) RequestStopLRPInstance(stopInstance models.StopLRPInstance) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		value, err := models.ToJSON(stopInstance)
+		if err != nil {
+			return err
+		}
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.StopLRPInstanceSchemaPath(stopInstance),
-				Value: stopInstance.ToJSON(),
+				Value: value,
 				TTL:   60,
 			},
 		})
@@ -25,9 +29,13 @@ func (bbs *LRPBBS) RequestStopLRPInstances(stopInstances []models.StopLRPInstanc
 		var nodes []storeadapter.StoreNode
 
 		for _, stopInstance := range stopInstances {
+			value, err := models.ToJSON(stopInstance)
+			if err != nil {
+				return err
+			}
 			nodes = append(nodes, storeadapter.StoreNode{
 				Key:   shared.StopLRPInstanceSchemaPath(stopInstance),
-				Value: stopInstance.ToJSON(),
+				Value: value,
 				TTL:   60,
 			})
 		}
@@ -48,11 +56,12 @@ func (bbs *LRPBBS) StopLRPInstances() ([]models.StopLRPInstance, error) {
 	}
 
 	for _, node := range node.ChildNodes {
-		lrp, err := models.NewStopLRPInstanceFromJSON(node.Value)
+		var stopInstance models.StopLRPInstance
+		err = models.FromJSON(node.Value, &stopInstance)
 		if err != nil {
-			return stopInstances, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+			return stopInstances, fmt.Errorf("cannot parse stop instance JSON for key %s: %s", node.Key, err.Error())
 		} else {
-			stopInstances = append(stopInstances, lrp)
+			stopInstances = append(stopInstances, stopInstance)
 		}
 	}
 
@@ -75,7 +84,8 @@ func (bbs *LRPBBS) WatchForStopLRPInstance() (<-chan models.StopLRPInstance, cha
 	filter := func(event storeadapter.WatchEvent) (models.StopLRPInstance, bool) {
 		switch event.Type {
 		case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-			stopInstance, err := models.NewStopLRPInstanceFromJSON(event.Node.Value)
+			var stopInstance models.StopLRPInstance
+			err := models.FromJSON(event.Node.Value, &stopInstance)
 			if err != nil {
 				return models.StopLRPInstance{}, false
 			}

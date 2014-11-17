@@ -17,20 +17,30 @@ func (bbs *StartAuctionBBS) RequestLRPStartAuction(lrp models.LRPStartAuction) e
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		lrp.State = models.LRPStartAuctionStatePending
 		lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+		value, err := models.ToJSON(lrp)
+		if err != nil {
+			return err
+		}
 
 		return bbs.store.Create(storeadapter.StoreNode{
 			Key:   shared.LRPStartAuctionSchemaPath(lrp),
-			Value: lrp.ToJSON(),
+			Value: value,
 		})
 	})
 }
 
 func (bbs *StartAuctionBBS) ClaimLRPStartAuction(lrp models.LRPStartAuction) error {
-	originalValue := lrp.ToJSON()
+	originalValue, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
 
 	lrp.State = models.LRPStartAuctionStateClaimed
 	lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
-	changedValue := lrp.ToJSON()
+	changedValue, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwap(storeadapter.StoreNode{
@@ -51,50 +61,52 @@ func (s *StartAuctionBBS) ResolveLRPStartAuction(lrp models.LRPStartAuction) err
 }
 
 func (bbs *StartAuctionBBS) LRPStartAuctions() ([]models.LRPStartAuction, error) {
-	lrps := []models.LRPStartAuction{}
+	auctions := []models.LRPStartAuction{}
 
 	node, err := bbs.store.ListRecursively(shared.LRPStartAuctionSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return auctions, nil
 	}
 
 	if err != nil {
-		return lrps, err
+		return auctions, err
 	}
 
 	for _, node := range node.ChildNodes {
 		for _, node := range node.ChildNodes {
-			lrp, err := models.NewLRPStartAuctionFromJSON(node.Value)
+			var auction models.LRPStartAuction
+			err := models.FromJSON(node.Value, &auction)
 			if err != nil {
-				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				return auctions, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
 			} else {
-				lrps = append(lrps, lrp)
+				auctions = append(auctions, auction)
 			}
 		}
 	}
 
-	return lrps, nil
+	return auctions, nil
 }
 
 func (bbs *StartAuctionBBS) WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error) {
-	lrps := make(chan models.LRPStartAuction)
+	auctions := make(chan models.LRPStartAuction)
 
 	filter := func(event storeadapter.WatchEvent) (models.LRPStartAuction, bool) {
 		switch event.Type {
 		case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-			lrp, err := models.NewLRPStartAuctionFromJSON(event.Node.Value)
+			var auction models.LRPStartAuction
+			err := models.FromJSON(event.Node.Value, &auction)
 			if err != nil {
 				return models.LRPStartAuction{}, false
 			}
 
-			if lrp.State == models.LRPStartAuctionStatePending {
-				return lrp, true
+			if auction.State == models.LRPStartAuctionStatePending {
+				return auction, true
 			}
 		}
 		return models.LRPStartAuction{}, false
 	}
 
-	stop, errs := shared.WatchWithFilter(bbs.store, shared.LRPStartAuctionSchemaRoot, lrps, filter)
+	stop, errs := shared.WatchWithFilter(bbs.store, shared.LRPStartAuctionSchemaRoot, auctions, filter)
 
-	return lrps, stop, errs
+	return auctions, stop, errs
 }

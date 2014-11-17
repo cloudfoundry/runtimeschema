@@ -1,7 +1,5 @@
 package models
 
-import "encoding/json"
-
 type ActualLRPState int
 
 const (
@@ -53,31 +51,6 @@ func NewActualLRP(
 	}
 
 	return lrp, nil
-}
-
-func NewActualLRPFromJSON(payload []byte) (ActualLRP, error) {
-	var actualLRP ActualLRP
-
-	err := json.Unmarshal(payload, &actualLRP)
-	if err != nil {
-		return ActualLRP{}, err
-	}
-
-	err = actualLRP.Validate()
-	if err != nil {
-		return ActualLRP{}, err
-	}
-
-	return actualLRP, nil
-}
-
-func (actual ActualLRP) ToJSON() []byte {
-	bytes, err := json.Marshal(actual)
-	if err != nil {
-		panic(err)
-	}
-
-	return bytes
 }
 
 func (actual ActualLRP) Validate() error {

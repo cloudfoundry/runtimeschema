@@ -28,10 +28,15 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 		return err
 	}
 
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
+
 	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.Create(storeadapter.StoreNode{
 			Key:   shared.DesiredLRPSchemaPath(lrp),
-			Value: lrp.ToJSON(),
+			Value: value,
 		})
 	})
 
@@ -47,11 +52,16 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 			return err
 		}
 
+		value, err := models.ToJSON(lrp)
+		if err != nil {
+			return err
+		}
+
 		return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 			return bbs.store.SetMulti([]storeadapter.StoreNode{
 				{
 					Key:   shared.DesiredLRPSchemaPath(lrp),
-					Value: lrp.ToJSON(),
+					Value: value,
 				},
 			})
 		})
@@ -68,16 +78,25 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
 }
 
 func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
+	beforeValue, err := models.ToJSON(change.Before)
+	if err != nil {
+		return err
+	}
+	afterValue, err := models.ToJSON(change.After)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		if change.Before != nil && change.After != nil {
 			return bbs.store.CompareAndSwap(
 				storeadapter.StoreNode{
 					Key:   shared.DesiredLRPSchemaPath(*change.Before),
-					Value: (*change.Before).ToJSON(),
+					Value: beforeValue,
 				},
 				storeadapter.StoreNode{
 					Key:   shared.DesiredLRPSchemaPath(*change.After),
-					Value: (*change.After).ToJSON(),
+					Value: afterValue,
 				},
 			)
 		}
@@ -86,7 +105,7 @@ func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
 			return bbs.store.CompareAndDelete(
 				storeadapter.StoreNode{
 					Key:   shared.DesiredLRPSchemaPath(*change.Before),
-					Value: (*change.Before).ToJSON(),
+					Value: beforeValue,
 				},
 			)
 		}
@@ -95,7 +114,7 @@ func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
 			return bbs.store.Create(
 				storeadapter.StoreNode{
 					Key:   shared.DesiredLRPSchemaPath(*change.After),
-					Value: (*change.After).ToJSON(),
+					Value: afterValue,
 				},
 			)
 		}
@@ -116,11 +135,16 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 		return err
 	}
 
+	value, err := models.ToJSON(updatedLRP)
+	if err != nil {
+		return err
+	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.DesiredLRPSchemaPath(updatedLRP),
-				Value: updatedLRP.ToJSON(),
+				Value: value,
 			},
 		})
 	})
@@ -144,11 +168,16 @@ func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, 
 	lrp.State = models.ActualLRPStateStarting
 	lrp.Since = bbs.timeProvider.Time().UnixNano()
 
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return models.ActualLRP{}, err
+	}
+
 	return lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid),
-				Value: lrp.ToJSON(),
+				Value: value,
 			},
 		})
 	})
@@ -159,11 +188,15 @@ func (bbs *LRPBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellID string)
 	lrp.Since = bbs.timeProvider.Time().UnixNano()
 	lrp.CellID = cellID
 
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid),
-				Value: lrp.ToJSON(),
+				Value: value,
 			},
 		})
 	})

@@ -1,9 +1,10 @@
 package stop_auction_bbs_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -31,7 +32,10 @@ var _ = Describe("Stop Auction", func() {
 
 			auctionLRP.State = models.LRPStopAuctionStatePending
 			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
-			Ω(node.Value).Should(Equal(auctionLRP.ToJSON()))
+			expectedJSON, err := models.ToJSON(auctionLRP)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(node.Value).Should(Equal(expectedJSON))
 		})
 
 		Context("when the key already exists", func() {
@@ -88,10 +92,13 @@ var _ = Describe("Stop Auction", func() {
 			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
 			Eventually(events).Should(Receive(Equal(auctionLRP)))
 
+			value, err := models.ToJSON(auctionLRP)
+			Ω(err).ShouldNot(HaveOccurred())
+
 			err = etcdClient.SetMulti([]storeadapter.StoreNode{
 				{
 					Key:   shared.LRPStopAuctionSchemaPath(auctionLRP),
-					Value: auctionLRP.ToJSON(),
+					Value: value,
 				},
 			})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -143,9 +150,13 @@ var _ = Describe("Stop Auction", func() {
 
 				node, err := etcdClient.Get("/v1/stop/some-guid/1")
 				Ω(err).ShouldNot(HaveOccurred())
+
+				value, err := models.ToJSON(expectedAuctionLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				Ω(node).Should(MatchStoreNode(storeadapter.StoreNode{
 					Key:   "/v1/stop/some-guid/1",
-					Value: expectedAuctionLRP.ToJSON(),
+					Value: value,
 				}))
 			})
 

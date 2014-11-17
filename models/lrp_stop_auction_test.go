@@ -8,16 +8,17 @@ import (
 )
 
 var _ = Describe("LRPStopAuction", func() {
+	var stopAuctionPayload string
 	var stopAuction LRPStopAuction
 
-	stopAuctionPayload := `{
+	BeforeEach(func() {
+		stopAuctionPayload = `{
     "process_guid":"some-guid",
     "index": 2,
     "updated_at": 1138,
     "state": 1
   }`
 
-	BeforeEach(func() {
 		stopAuction = LRPStopAuction{
 			ProcessGuid: "some-guid",
 			Index:       2,
@@ -27,25 +28,28 @@ var _ = Describe("LRPStopAuction", func() {
 	})
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
-			json := stopAuction.ToJSON()
+			json, err := ToJSON(stopAuction)
+			Ω(err).ShouldNot(HaveOccurred())
 			Ω(string(json)).Should(MatchJSON(stopAuctionPayload))
 		})
 	})
 
 	Describe("NewLRPStopAuctionFromJSON", func() {
 		It("returns a LRP with correct fields", func() {
-			decodedStopAuction, err := NewLRPStopAuctionFromJSON([]byte(stopAuctionPayload))
+			decodedStopAuction := &LRPStopAuction{}
+			err := FromJSON([]byte(stopAuctionPayload), decodedStopAuction)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedStopAuction).Should(Equal(stopAuction))
+			Ω(decodedStopAuction).Should(Equal(&stopAuction))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedStopAuction, err := NewLRPStopAuctionFromJSON([]byte("aliens lol"))
-				Ω(err).Should(HaveOccurred())
+				stopAuctionPayload = "aliens lol"
+				decodedStopAuction := &LRPStopAuction{}
+				err := FromJSON([]byte(stopAuctionPayload), decodedStopAuction)
 
-				Ω(decodedStopAuction).Should(BeZero())
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 
@@ -57,11 +61,10 @@ var _ = Describe("LRPStopAuction", func() {
 
 			Context("when the json is missing a "+missingField, func() {
 				It("returns an error indicating so", func() {
-					decodedStartAuction, err := NewLRPStopAuctionFromJSON([]byte(json))
+					decodedStopAuction := &LRPStopAuction{}
+					err := FromJSON([]byte(json), decodedStopAuction)
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
-
-					Ω(decodedStartAuction).Should(BeZero())
 				})
 			})
 		}

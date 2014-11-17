@@ -74,7 +74,8 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve
 	}
 
 	for _, node := range taskState.ChildNodes {
-		task, err := models.NewTaskFromJSON(node.Value)
+		var task models.Task
+		err = models.FromJSON(node.Value, &task)
 		if err != nil {
 			taskLog.Error("failed-to-unmarshal-task-json", err, lager.Data{
 				"key":   node.Key,
@@ -175,9 +176,15 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 	for _, taskToCAS := range tasksToCAS {
 		task := taskToCAS.NewTask
 		task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+		value, err := models.ToJSON(task)
+		if err != nil {
+			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
+			panic(err)
+		}
+
 		newStoreNode := storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(task.TaskGuid),
-			Value: task.ToJSON(),
+			Value: value,
 		}
 
 		go func(taskToCAS compareAndSwappableTask, newStoreNode storeadapter.StoreNode) {

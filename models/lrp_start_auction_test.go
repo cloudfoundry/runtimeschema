@@ -1,8 +1,6 @@
 package models_test
 
 import (
-	"encoding/json"
-
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -11,17 +9,17 @@ import (
 
 var _ = Describe("LRPStartAuction", func() {
 	var startAuction LRPStartAuction
+	var startAuctionPayload string
 
-	startAuctionPayload := `{
+	BeforeEach(func() {
+		startAuctionPayload = `{
     "desired_lrp": {
       "process_guid": "some-guid",
-			"domain": "tests",
+      "domain": "tests",
       "instances": 1,
       "stack": "some-stack",
       "root_fs": "docker:///docker.com/docker",
-      "action": {
-        "action": "download",
-        "args": {
+      "action": {"download": {
           "from": "http://example.com",
           "to": "/tmp/internet",
           "cache_key": ""
@@ -46,7 +44,6 @@ var _ = Describe("LRPStartAuction", func() {
     "updated_at": 1138
   }`
 
-	BeforeEach(func() {
 		startAuction = LRPStartAuction{
 			Index:        2,
 			InstanceGuid: "some-instance-guid",
@@ -67,11 +64,9 @@ var _ = Describe("LRPStartAuction", func() {
 				},
 				LogGuid:   "log-guid",
 				LogSource: "the cloud",
-				Action: ExecutorAction{
-					Action: DownloadAction{
-						From: "http://example.com",
-						To:   "/tmp/internet",
-					},
+				Action: &DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
 				},
 			},
 
@@ -81,56 +76,51 @@ var _ = Describe("LRPStartAuction", func() {
 	})
 
 	Describe("ToJSON", func() {
-
 		It("should JSONify", func() {
-			json := startAuction.ToJSON()
-			Ω(string(json)).Should(MatchJSON(startAuctionPayload))
+			jsonPayload, err := ToJSON(&startAuction)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(string(jsonPayload)).Should(MatchJSON(startAuctionPayload))
 		})
 	})
 
-	Describe("JSON", func() {
-		It("should not error with a blank auction", func() {
-			blankAuction := LRPStartAuction{}
-			jsonBytes, err := json.Marshal(blankAuction)
-			Ω(err).ShouldNot(HaveOccurred())
+	Describe("FromJSON", func() {
+		var decodedStartAuction *LRPStartAuction
+		var err error
 
-			err = json.Unmarshal(jsonBytes, &blankAuction)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(blankAuction).Should(BeZero())
+		JustBeforeEach(func() {
+			decodedStartAuction = &LRPStartAuction{}
+			err = FromJSON([]byte(startAuctionPayload), decodedStartAuction)
 		})
-	})
 
-	Describe("NewLRPStartAuctionFromJSON", func() {
 		It("returns a LRP with correct fields", func() {
-			decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte(startAuctionPayload))
 			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(decodedStartAuction).Should(Equal(startAuction))
+			Ω(decodedStartAuction).Should(Equal(&startAuction))
 		})
 
 		Context("with an invalid payload", func() {
-			It("returns the error", func() {
-				decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte("aliens lol"))
-				Ω(err).Should(HaveOccurred())
+			BeforeEach(func() {
+				startAuctionPayload = "aliens lol"
+			})
 
-				Ω(decodedStartAuction).Should(BeZero())
+			It("returns the error", func() {
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		for field, payload := range map[string]string{
 			"instance_guid": `{"process_guid": "process-guid", "index": 0}`,
 		} {
-			json := payload
 			missingField := field
+			jsonPayload := payload
 
 			Context("when the json is missing a "+missingField, func() {
+				BeforeEach(func() {
+					startAuctionPayload = jsonPayload
+				})
+
 				It("returns an error indicating so", func() {
-					decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte(json))
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring("JSON has missing/invalid field: " + missingField))
-
-					Ω(decodedStartAuction).Should(BeZero())
 				})
 			})
 		}

@@ -1,6 +1,8 @@
 package models_test
 
 import (
+	"encoding/json"
+
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -41,27 +43,28 @@ var _ = Describe("ActualLRP", func() {
 		}
 	})
 
-	Describe("ToJSON", func() {
+	Describe("To JSON", func() {
 		It("should JSONify", func() {
-			json := lrp.ToJSON()
-			Ω(string(json)).Should(MatchJSON(lrpPayload))
+			marshalled, err := json.Marshal(&lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(string(marshalled)).Should(MatchJSON(lrpPayload))
 		})
 	})
 
-	Describe("NewActualLRPFromJSON", func() {
+	Describe("FromJSON", func() {
 		It("returns a LRP with correct fields", func() {
-			decodedStartAuction, err := NewActualLRPFromJSON([]byte(lrpPayload))
+			aLRP := &ActualLRP{}
+			err := FromJSON([]byte(lrpPayload), aLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedStartAuction).Should(Equal(lrp))
+			Ω(aLRP).Should(Equal(&lrp))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedStartAuction, err := NewActualLRPFromJSON([]byte("something lol"))
+				aLRP := &ActualLRP{}
+				err := FromJSON([]byte("something lol"), aLRP)
 				Ω(err).Should(HaveOccurred())
-
-				Ω(decodedStartAuction).Should(BeZero())
 			})
 		})
 
@@ -72,15 +75,13 @@ var _ = Describe("ActualLRP", func() {
 			"domain":        `{"process_guid": "process-guid", "cell_id": "cell_id", "instance_guid": "instance_guid"}`,
 		} {
 			missingField := field
-			json := payload
+			jsonPayload := payload
 
 			Context("when the json is missing a "+missingField, func() {
 				It("returns an error indicating so", func() {
-					decodedStartAuction, err := NewActualLRPFromJSON([]byte(json))
-					Ω(err).Should(HaveOccurred())
+					aLRP := &ActualLRP{}
+					err := FromJSON([]byte(jsonPayload), aLRP)
 					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
-
-					Ω(decodedStartAuction).Should(BeZero())
 				})
 			})
 		}

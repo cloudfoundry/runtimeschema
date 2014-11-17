@@ -39,7 +39,8 @@ func (bbs *StartAuctionBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Du
 	auctionsToCAS := []compareAndSwappableLRPStartAuction{}
 
 	err := prune.Prune(bbs.store, shared.LRPStartAuctionSchemaRoot, func(auctionNode storeadapter.StoreNode) (shouldKeep bool) {
-		auction, err := models.NewLRPStartAuctionFromJSON(auctionNode.Value)
+		var auction models.LRPStartAuction
+		err := models.FromJSON(auctionNode.Value, &auction)
 		if err != nil {
 			bbs.logger.Info("detected-invalid-start-auction-json", lager.Data{
 				"error":   err.Error(),
@@ -93,9 +94,15 @@ func (bbs *StartAuctionBBS) batchCompareAndSwapLRPStartAuctions(auctionsToCAS []
 	waitGroup.Add(len(auctionsToCAS))
 	for _, auctionToCAS := range auctionsToCAS {
 		auction := auctionToCAS.NewLRPStartAuction
+		value, err := models.ToJSON(auction)
+		if err != nil {
+			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
+			panic(err)
+		}
+
 		newStoreNode := storeadapter.StoreNode{
 			Key:   shared.LRPStartAuctionSchemaPath(auction),
-			Value: auction.ToJSON(),
+			Value: value,
 		}
 
 		go func(auctionToCAS compareAndSwappableLRPStartAuction, newStoreNode storeadapter.StoreNode) {

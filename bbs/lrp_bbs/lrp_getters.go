@@ -24,7 +24,8 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	}
 
 	for _, node := range node.ChildNodes {
-		lrp, err := models.NewDesiredLRPFromJSON(node.Value)
+		var lrp models.DesiredLRP
+		err = models.FromJSON(node.Value, &lrp)
 		if err != nil {
 			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
 		} else {
@@ -52,7 +53,8 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	}
 
 	for _, node := range node.ChildNodes {
-		lrp, err := models.NewDesiredLRPFromJSON(node.Value)
+		var lrp models.DesiredLRP
+		err = models.FromJSON(node.Value, &lrp)
 		if err != nil {
 			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
 		} else if lrp.Domain == domain {
@@ -70,7 +72,9 @@ func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLR
 	if err != nil {
 		return models.DesiredLRP{}, err
 	}
-	return models.NewDesiredLRPFromJSON(node.Value)
+	var lrp models.DesiredLRP
+	err = models.FromJSON(node.Value, &lrp)
+	return lrp, err
 }
 
 func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
@@ -85,10 +89,11 @@ func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 		return lrps, err
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
+	for _, processNode := range node.ChildNodes {
+		for _, indexNode := range processNode.ChildNodes {
 			for _, instanceNode := range indexNode.ChildNodes {
-				lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
 				if err != nil {
 					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 				} else if lrp.CellID == cellID {
@@ -116,7 +121,8 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	for _, node := range node.ChildNodes {
 		for _, indexNode := range node.ChildNodes {
 			for _, instanceNode := range indexNode.ChildNodes {
-				lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
 				if err != nil {
 					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 				} else {
@@ -152,7 +158,8 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualL
 
 	for _, indexNode := range node.ChildNodes {
 		for _, instanceNode := range indexNode.ChildNodes {
-			lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+			var lrp models.ActualLRP
+			err = models.FromJSON(instanceNode.Value, &lrp)
 			if err != nil {
 				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 			} else {
@@ -177,7 +184,8 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuidAndIndex(processGuid string, index int
 	}
 
 	for _, instanceNode := range node.ChildNodes {
-		lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+		var lrp models.ActualLRP
+		err := models.FromJSON(instanceNode.Value, &lrp)
 		if err != nil {
 			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 		} else {
@@ -212,7 +220,8 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	for _, node := range node.ChildNodes {
 		for _, indexNode := range node.ChildNodes {
 			for _, instanceNode := range indexNode.ChildNodes {
-				lrp, err := models.NewActualLRPFromJSON(instanceNode.Value)
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
 				if err != nil {
 					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 				} else if lrp.Domain == domain {

@@ -27,16 +27,14 @@ var _ = Describe("DesiredLRP", func() {
 	    }
 	  ],
 		"setup": {
-			"action": "download",
-			"args": {
+			"download": {
 				"from": "http://example.com",
 				"to": "/tmp/internet",
 				"cache_key": ""
 			}
 		},
 		"action": {
-			"action": "run",
-			"args": {
+			"run": {
 				"path": "ls",
 				"args": null,
 				"env": null,
@@ -44,8 +42,7 @@ var _ = Describe("DesiredLRP", func() {
 			}
 		},
 		"monitor": {
-			"action": "run",
-			"args": {
+			"run": {
 				"path": "reboot",
 				"args": null,
 				"env": null,
@@ -90,28 +87,23 @@ var _ = Describe("DesiredLRP", func() {
 					Value: "some environment variable value",
 				},
 			},
-			Setup: &ExecutorAction{
-				DownloadAction{
-					From: "http://example.com",
-					To:   "/tmp/internet",
-				},
+			Setup: &DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
 			},
-			Action: ExecutorAction{
-				RunAction{
-					Path: "ls",
-				},
+			Action: &RunAction{
+				Path: "ls",
 			},
-			Monitor: &ExecutorAction{
-				RunAction{
-					Path: "reboot",
-				},
+			Monitor: &RunAction{
+				Path: "reboot",
 			},
 		}
 	})
 
-	Describe("ToJSON", func() {
+	Describe("To JSON", func() {
 		It("should JSONify", func() {
-			json := lrp.ToJSON()
+			json, err := ToJSON(&lrp)
+			Ω(err).ShouldNot(HaveOccurred())
 			Ω(string(json)).Should(MatchJSON(lrpPayload))
 		})
 	})
@@ -225,7 +217,7 @@ var _ = Describe("DesiredLRP", func() {
 		})
 
 		It("requires an action", func() {
-			lrp.Action.Action = nil
+			lrp.Action = nil
 			assertDesiredLRPValidationFailsWithMessage(lrp, "action")
 		})
 
@@ -301,11 +293,9 @@ var _ = Describe("DesiredLRP", func() {
 		})
 
 		It("does not allow the actions to change", func() {
-			newLrp.Action = ExecutorAction{
-				UploadAction{
-					To:   "new-destination",
-					From: "new-source",
-				},
+			newLrp.Action = &UploadAction{
+				To:   "new-destination",
+				From: "new-source",
 			}
 
 			err := lrp.ValidateModifications(newLrp)
@@ -356,50 +346,56 @@ var _ = Describe("DesiredLRP", func() {
 		})
 	})
 
-	Describe("NewDesiredLRPFromJSON", func() {
+	Describe("Unmarshal", func() {
 		It("returns a LRP with correct fields", func() {
-			decodedStartAuction, err := NewDesiredLRPFromJSON([]byte(lrpPayload))
+			decodedLRP := DesiredLRP{}
+			err := FromJSON([]byte(lrpPayload), &decodedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(decodedStartAuction).Should(Equal(lrp))
+			Ω(decodedLRP).Should(Equal(lrp))
 		})
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				decodedStartAuction, err := NewDesiredLRPFromJSON([]byte("aliens lol"))
+				decodedLRP := DesiredLRP{}
+				err := FromJSON([]byte("aliens lol"), &decodedLRP)
 				Ω(err).Should(HaveOccurred())
 
-				Ω(decodedStartAuction).Should(BeZero())
+				Ω(decodedLRP).Should(BeZero())
+			})
+		})
+
+		Context("with a missing action", func() {
+			It("returns the error", func() {
+				decodedLRP := DesiredLRP{}
+				err := FromJSON([]byte(`{
+				"domain": "some-domain",
+				"process_guid": "process_guid",
+				"stack": "some-stack"
+			}`,
+				), &decodedLRP)
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		for field, payload := range map[string]string{
 			"process_guid": `{
 				"domain": "some-domain",
-				"action": {
-					"action":"download",
-					"args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
-				},
-				"stack": "some-stack"
-			}`,
-			"action": `{
-				"domain": "some-domain",
-				"process_guid": "process_guid",
-				"stack": "some-stack"
+				"stack": "some-stack",
+				"action":
+					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 			}`,
 			"stack": `{
 				"domain": "some-domain",
 				"process_guid": "process_guid",
-				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
-				]
+				"action":
+					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 			}`,
 			"domain": `{
 				"stack": "some-stack",
 				"process_guid": "process_guid",
-				"actions": [
-					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
-				]
+				"action":
+					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 			}`,
 			"annotation": `{
 				"stack": "some-stack",
@@ -407,21 +403,21 @@ var _ = Describe("DesiredLRP", func() {
 				"process_guid": "process_guid",
 				"instances": 1,
 				"action": {
-					"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
 				},
 				"annotation":"` + strings.Repeat("a", 10*1024+1) + `"
 			}`,
 		} {
-			json := payload
 			missingField := field
+			jsonBytes := payload
 
 			Context("when the json is missing a "+missingField, func() {
 				It("returns an error indicating so", func() {
-					decodedStartAuction, err := NewDesiredLRPFromJSON([]byte(json))
+					decodedLRP := &DesiredLRP{}
+
+					err := FromJSON([]byte(jsonBytes), decodedLRP)
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring(missingField))
-
-					Ω(decodedStartAuction).Should(BeZero())
 				})
 			})
 		}

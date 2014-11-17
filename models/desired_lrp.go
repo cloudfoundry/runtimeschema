@@ -13,9 +13,9 @@ type DesiredLRP struct {
 	Instances            int                   `json:"instances"`
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
-	Setup                *ExecutorAction       `json:"setup,omitempty"`
-	Action               ExecutorAction        `json:"action"`
-	Monitor              *ExecutorAction       `json:"monitor,omitempty"`
+	Setup                Action                `json:"-"`
+	Action               Action                `json:"-"`
+	Monitor              Action                `json:"-"`
 	DiskMB               int                   `json:"disk_mb"`
 	MemoryMB             int                   `json:"memory_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
@@ -24,6 +24,15 @@ type DesiredLRP struct {
 	LogSource            string                `json:"log_source"`
 	LogGuid              string                `json:"log_guid"`
 	Annotation           string                `json:"annotation,omitempty"`
+}
+
+type InnerDesiredLRP DesiredLRP
+
+type mDesiredLRP struct {
+	SetupRaw   *json.RawMessage `json:"setup,omitempty"`
+	ActionRaw  json.RawMessage  `json:"action"`
+	MonitorRaw *json.RawMessage `json:"monitor,omitempty"`
+	*InnerDesiredLRP
 }
 
 type DesiredLRPChange struct {
@@ -67,8 +76,8 @@ func (desired DesiredLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
-	if err := desired.Action.Validate(); err != nil {
-		validationError = append(validationError, err)
+	if desired.Action == nil {
+		validationError = append(validationError, ErrInvalidActionType)
 	}
 
 	if desired.Instances < 1 {
@@ -148,27 +157,70 @@ func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
 	return nil
 }
 
-func NewDesiredLRPFromJSON(payload []byte) (DesiredLRP, error) {
-	var lrp DesiredLRP
-
-	err := json.Unmarshal(payload, &lrp)
+func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
+	mLRP := &mDesiredLRP{InnerDesiredLRP: (*InnerDesiredLRP)(desired)}
+	err := json.Unmarshal(payload, mLRP)
 	if err != nil {
-		return DesiredLRP{}, err
+		return err
 	}
 
-	err = lrp.Validate()
+	a, err := UnmarshalAction(mLRP.ActionRaw)
 	if err != nil {
-		return DesiredLRP{}, err
+		return err
+	}
+	desired.Action = a
+
+	if mLRP.SetupRaw != nil {
+		a, err = UnmarshalAction(*mLRP.SetupRaw)
+		if err != nil {
+			return err
+		}
+		desired.Setup = a
 	}
 
-	return lrp, nil
+	if mLRP.MonitorRaw != nil {
+		a, err = UnmarshalAction(*mLRP.MonitorRaw)
+		if err != nil {
+			return err
+		}
+		desired.Monitor = a
+	}
+
+	return nil
 }
 
-func (desired DesiredLRP) ToJSON() []byte {
-	bytes, err := json.Marshal(desired)
+func (desired DesiredLRP) MarshalJSON() ([]byte, error) {
+	actionRaw, err := MarshalAction(desired.Action)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return bytes
+	var setupRaw, monitorRaw *json.RawMessage
+	if desired.Setup != nil {
+		raw, err := MarshalAction(desired.Setup)
+		if err != nil {
+			return nil, err
+		}
+		rm := json.RawMessage(raw)
+		setupRaw = &rm
+	}
+	if desired.Monitor != nil {
+		raw, err := MarshalAction(desired.Monitor)
+		if err != nil {
+			return nil, err
+		}
+		rm := json.RawMessage(raw)
+		monitorRaw = &rm
+	}
+
+	innerDesiredLRP := InnerDesiredLRP(desired)
+
+	mLRP := &mDesiredLRP{
+		SetupRaw:        setupRaw,
+		ActionRaw:       actionRaw,
+		MonitorRaw:      monitorRaw,
+		InnerDesiredLRP: &innerDesiredLRP,
+	}
+
+	return json.Marshal(mLRP)
 }

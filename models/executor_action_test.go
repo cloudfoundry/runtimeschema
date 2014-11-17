@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -10,35 +11,31 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-var _ = Describe("ExecutorAction", func() {
-	Describe("Validate", func() {
-		Context("With an invalid action", func() {
-			It("should fail to marshal", func() {
-				invalidAction := []string{"aliens", "from", "mars"}
-				executorAction := ExecutorAction{Action: invalidAction}
-				err := executorAction.Validate()
-				Ω(err).Should(Equal(ValidationError{ErrInvalidActionType}))
-			})
-		})
-	})
-
-	itSerializesAndDeserializes := func(actionPayload string, action interface{}) {
-		Describe("Converting to JSON", func() {
-			It("creates a json representation of the object", func() {
+var _ = Describe("Actions", func() {
+	itSerializesAndDeserializes := func(actionPayload string, action Action) {
+		It("Action <-> JSON for "+string(action.ActionType()), func() {
+			By("marshalling to JSON", func() {
 				marshalledAction := action
 
 				json, err := json.Marshal(&marshalledAction)
-				Ω(err).Should(BeNil())
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(json).Should(MatchJSON(actionPayload))
 			})
-		})
 
-		Describe("Converting from JSON", func() {
-			It("constructs an object from the json string", func() {
-				var unmarshalledAction *ExecutorAction
-				err := json.Unmarshal([]byte(actionPayload), &unmarshalledAction)
-				Ω(err).Should(BeNil())
-				Ω(*unmarshalledAction).Should(Equal(action))
+			wrappedJSON := fmt.Sprintf(`{"%s":%s}`, action.ActionType(), actionPayload)
+			By("wrapping", func() {
+				marshalledAction := action
+
+				json, err := MarshalAction(marshalledAction)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(json).Should(MatchJSON(wrappedJSON))
+			})
+
+			By("unwrapping", func() {
+				var unmarshalledAction Action
+				unmarshalledAction, err := UnmarshalAction([]byte(wrappedJSON))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(unmarshalledAction).Should(Equal(action))
 			})
 		})
 	}
@@ -46,19 +43,14 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Download", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "download",
-				"args": {
 					"from": "web_location",
 					"to": "local_location",
 					"cache_key": "elephant"
-				}
 			}`,
-			ExecutorAction{
-				Action: DownloadAction{
-					From:     "web_location",
-					To:       "local_location",
-					CacheKey: "elephant",
-				},
+			&DownloadAction{
+				From:     "web_location",
+				To:       "local_location",
+				CacheKey: "elephant",
 			},
 		)
 	})
@@ -66,17 +58,12 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Upload", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "upload",
-				"args": {
 					"from": "local_location",
 					"to": "web_location"
-				}
 			}`,
-			ExecutorAction{
-				Action: UploadAction{
-					From: "local_location",
-					To:   "web_location",
-				},
+			&UploadAction{
+				From: "local_location",
+				To:   "web_location",
 			},
 		)
 	})
@@ -84,8 +71,6 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Run", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "run",
-				"args": {
 					"path": "rm",
 					"args": ["-rf", "/"],
 					"env": [
@@ -94,18 +79,15 @@ var _ = Describe("ExecutorAction", func() {
 					],
 					"resource_limits":{},
 					"privileged": true
-				}
 			}`,
-			ExecutorAction{
-				Action: RunAction{
-					Path: "rm",
-					Args: []string{"-rf", "/"},
-					Env: []EnvironmentVariable{
-						{"FOO", "1"},
-						{"BAR", "2"},
-					},
-					Privileged: true,
+			&RunAction{
+				Path: "rm",
+				Args: []string{"-rf", "/"},
+				Env: []EnvironmentVariable{
+					{"FOO", "1"},
+					{"BAR", "2"},
 				},
+				Privileged: true,
 			},
 		)
 	})
@@ -113,51 +95,43 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("EmitProgressAction", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "emit_progress",
-				"args": {
 					"start_message": "reticulating splines",
 					"success_message": "reticulated splines",
 					"failure_message": "reticulation failed",
 					"action": {
-						"action": "run",
-						"args": {
+						"run": {
 							"path": "echo",
 							"args": null,
 							"env": null,
 							"resource_limits":{}
 						}
 					}
-				}
 			}`,
 			EmitProgressFor(
-				ExecutorAction{
-					RunAction{
-						Path: "echo",
-					},
-				}, "reticulating splines", "reticulated splines", "reticulation failed"),
+				&RunAction{
+					Path: "echo",
+				},
+				"reticulating splines", "reticulated splines", "reticulation failed",
+			),
 		)
 	})
 
 	Describe("Timeout", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "timeout",
-				"args": {
-					"action": {
-						"action": "run",
-						"args": {
-							"path": "echo",
-							"args": null,
-							"env": null,
-							"resource_limits":{}
-						}
-					},
-					"timeout": 10000000
-				}
+				"action": {
+					"run": {
+						"path": "echo",
+						"args": null,
+						"env": null,
+						"resource_limits":{}
+					}
+				},
+				"timeout": 10000000
 			}`,
 			Timeout(
-				ExecutorAction{
-					RunAction{Path: "echo"},
+				&RunAction{
+					Path: "echo",
 				},
 				10*time.Millisecond,
 			),
@@ -167,42 +141,32 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Try", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "try",
-				"args": {
 					"action": {
-						"action": "run",
-						"args": {
+						"run": {
 							"path": "echo",
 							"args": null,
 							"env": null,
 							"resource_limits":{}
 						}
 					}
-				}
 			}`,
-			Try(ExecutorAction{
-				RunAction{Path: "echo"},
-			}),
+			Try(&RunAction{Path: "echo"}),
 		)
 	})
 
 	Describe("Parallel", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "parallel",
-				"args": {
 					"actions": [
 						{
-							"action": "download",
-							"args": {
+							"download": {
 								"cache_key": "elephant",
 								"to": "local_location",
 								"from": "web_location"
 							}
 						},
 						{
-							"action": "run",
-							"args": {
+							"run": {
 								"resource_limits": {},
 								"env": null,
 								"path": "echo",
@@ -210,19 +174,14 @@ var _ = Describe("ExecutorAction", func() {
 							}
 						}
 					]
-				}
 			}`,
 			Parallel(
-				ExecutorAction{
-					DownloadAction{
-						From:     "web_location",
-						To:       "local_location",
-						CacheKey: "elephant",
-					},
+				&DownloadAction{
+					From:     "web_location",
+					To:       "local_location",
+					CacheKey: "elephant",
 				},
-				ExecutorAction{
-					RunAction{Path: "echo"},
-				},
+				&RunAction{Path: "echo"},
 			),
 		)
 	})
@@ -230,20 +189,16 @@ var _ = Describe("ExecutorAction", func() {
 	Describe("Serial", func() {
 		itSerializesAndDeserializes(
 			`{
-				"action": "serial",
-				"args": {
 					"actions": [
 						{
-							"action": "download",
-							"args": {
+							"download": {
 								"cache_key": "elephant",
 								"to": "local_location",
 								"from": "web_location"
 							}
 						},
 						{
-							"action": "run",
-							"args": {
+							"run": {
 								"resource_limits": {},
 								"env": null,
 								"path": "echo",
@@ -251,19 +206,14 @@ var _ = Describe("ExecutorAction", func() {
 							}
 						}
 					]
-				}
 			}`,
 			Serial(
-				ExecutorAction{
-					DownloadAction{
-						From:     "web_location",
-						To:       "local_location",
-						CacheKey: "elephant",
-					},
+				&DownloadAction{
+					From:     "web_location",
+					To:       "local_location",
+					CacheKey: "elephant",
 				},
-				ExecutorAction{
-					RunAction{Path: "echo"},
-				},
+				&RunAction{Path: "echo"},
 			),
 		)
 	})

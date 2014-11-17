@@ -54,7 +54,8 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	knownDesiredProcessGuids := map[string]bool{}
 
 	for _, node := range desiredLRPRoot.ChildNodes {
-		desiredLRP, err := models.NewDesiredLRPFromJSON(node.Value)
+		var desiredLRP models.DesiredLRP
+		err := models.FromJSON(node.Value, &desiredLRP)
 
 		if err != nil {
 			bbs.logger.Info("pruning-invalid-desired-lrp-json", lager.Data{
@@ -164,7 +165,8 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 	}
 
 	err = prune.Prune(bbs.store, shared.ActualLRPSchemaRoot, func(node storeadapter.StoreNode) (shouldKeep bool) {
-		actual, err := models.NewActualLRPFromJSON(node.Value)
+		var actual models.ActualLRP
+		err := models.FromJSON(node.Value, &actual)
 		if err != nil {
 			return false
 		}
@@ -194,9 +196,14 @@ func (bbs *LRPBBS) batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS []compareAndS
 	waitGroup.Add(len(desiredLRPsToCAS))
 	for _, desiredLRPToCAS := range desiredLRPsToCAS {
 		desiredLRP := desiredLRPToCAS.NewDesiredLRP
+		value, err := models.ToJSON(desiredLRP)
+		if err != nil {
+			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
+			panic(err)
+		}
 		newStoreNode := storeadapter.StoreNode{
 			Key:   shared.DesiredLRPSchemaPath(desiredLRP),
-			Value: desiredLRP.ToJSON(),
+			Value: value,
 		}
 
 		go func(desiredLRPToCAS compareAndSwappableDesiredLRP, newStoreNode storeadapter.StoreNode) {

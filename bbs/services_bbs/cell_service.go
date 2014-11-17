@@ -11,7 +11,11 @@ import (
 )
 
 func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
-	return heartbeater.New(bbs.store, shared.CellSchemaPath(cellPresence.CellID), string(cellPresence.ToJSON()), interval, bbs.logger)
+	payload, err := models.ToJSON(cellPresence)
+	if err != nil {
+		panic(err)
+	}
+	return heartbeater.New(bbs.store, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
 }
 
 func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
@@ -26,7 +30,8 @@ func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 
 	var cellPresences []models.CellPresence
 	for _, node := range node.ChildNodes {
-		cellPresence, err := models.NewCellPresenceFromJSON(node.Value)
+		var cellPresence models.CellPresence
+		err := models.FromJSON(node.Value, &cellPresence)
 		if err != nil {
 			bbs.logger.Error("failed-to-unmarshal-cells-json", err)
 			continue

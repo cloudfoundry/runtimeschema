@@ -27,7 +27,10 @@ var _ = Describe("StopLRPInstance", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(node.TTL).Should(BeNumerically(">", 0))
-			Ω(node.Value).Should(Equal(stopInstance.ToJSON()))
+
+			expectedJSON, err := models.ToJSON(stopInstance)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(node.Value).Should(Equal(expectedJSON))
 		})
 
 		Context("when the key already exists", func() {
@@ -62,13 +65,19 @@ var _ = Describe("StopLRPInstance", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(node.TTL).Should(BeNumerically(">", 0))
-			Ω(node.Value).Should(Equal(stopInstance.ToJSON()))
+
+			expectedJSON, err := models.ToJSON(stopInstance)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(node.Value).Should(Equal(expectedJSON))
 
 			anotherNode, err := etcdClient.Get("/v1/stop-instance/some-other-instance-guid")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(anotherNode.TTL).Should(BeNumerically(">", 0))
-			Ω(anotherNode.Value).Should(Equal(anotherStopInstance.ToJSON()))
+
+			expectedJSON, err = models.ToJSON(anotherStopInstance)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(anotherNode.Value).Should(Equal(expectedJSON))
 		})
 
 		Context("when the key already exists", func() {

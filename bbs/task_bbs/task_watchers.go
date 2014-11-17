@@ -23,7 +23,8 @@ func taskFilterByState(state models.TaskState) func(storeadapter.WatchEvent) (mo
 
 		switch event.Type {
 		case storeadapter.CreateEvent, storeadapter.UpdateEvent:
-			task, err := models.NewTaskFromJSON(event.Node.Value)
+			var task models.Task
+			err := models.FromJSON(event.Node.Value, &task)
 			if err != nil {
 				return models.Task{}, false
 			}
