@@ -34,10 +34,10 @@ var _ = Describe("ActualLRP", func() {
 				{ContainerPort: 8080},
 				{ContainerPort: 8081, HostPort: 1234},
 			},
-			Index:      2,
-			Since:      1138,
+			Index:  2,
+			Since:  1138,
 			CellID: "some-cell-id",
-			Domain:     "some-domain",
+			Domain: "some-domain",
 		}
 	})
 
@@ -68,7 +68,7 @@ var _ = Describe("ActualLRP", func() {
 		for field, payload := range map[string]string{
 			"process_guid":  `{"instance_guid": "instance_guid", "cell_id": "cell_id", "domain": "domain"}`,
 			"instance_guid": `{"process_guid": "process-guid", "cell_id": "cell_id", "domain": "domain"}`,
-			"cell_id":   `{"process_guid": "process-guid", "instance_guid": "instance_guid", "domain": "domain"}`,
+			"cell_id":       `{"process_guid": "process-guid", "instance_guid": "instance_guid", "domain": "domain"}`,
 			"domain":        `{"process_guid": "process-guid", "cell_id": "cell_id", "instance_guid": "instance_guid"}`,
 		} {
 			missingField := field

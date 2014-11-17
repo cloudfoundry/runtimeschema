@@ -69,7 +69,7 @@ var _ = Describe("Task", func() {
 			},
 			LogGuid:          "123",
 			LogSource:        "APP",
-			CellID:       "cell",
+			CellID:           "cell",
 			ResultFile:       "some-file.txt",
 			Result:           "turboencabulated",
 			Failed:           true,

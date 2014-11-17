@@ -90,19 +90,19 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when there are tasks for the given cell ID", func() {
 			var task1Request = models.Task{
-				TaskGuid:   "some-guid-1",
-				CellID: "cell-id",
-				Domain:     "tests",
-				Stack:      "pancakes",
-				Action:     dummyAction,
+				TaskGuid: "some-guid-1",
+				CellID:   "cell-id",
+				Domain:   "tests",
+				Stack:    "pancakes",
+				Action:   dummyAction,
 			}
 			var task1 models.Task
 			var task2Request = models.Task{
-				TaskGuid:   "some-guid-2",
-				CellID: "cell-id",
-				Domain:     "tests",
-				Stack:      "pancakes",
-				Action:     dummyAction,
+				TaskGuid: "some-guid-2",
+				CellID:   "cell-id",
+				Domain:   "tests",
+				Stack:    "pancakes",
+				Action:   dummyAction,
 			}
 			var task2 models.Task
 

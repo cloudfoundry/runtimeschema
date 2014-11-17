@@ -19,7 +19,7 @@ type FakeConvergerBBS struct {
 	ConvergeLockStopChan   chan chan bool
 
 	maintainConvergeInterval      time.Duration
-	maintainConvergeCellID    string
+	maintainConvergeCellID        string
 	maintainConvergeStatusChannel <-chan bool
 	maintainConvergeStopChannel   chan<- chan bool
 	maintainConvergeLockError     error

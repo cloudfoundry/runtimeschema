@@ -4,7 +4,7 @@ import "encoding/json"
 
 type CellPresence struct {
 	CellID string `json:"cell_id"`
-	Stack      string `json:"stack"`
+	Stack  string `json:"stack"`
 }
 
 func NewCellPresenceFromJSON(payload []byte) (CellPresence, error) {

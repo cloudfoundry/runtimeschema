@@ -93,13 +93,13 @@ var _ = Describe("LrpWatchers", func() {
 
 	Describe("WatchForActualLRPChanges", func() {
 		var (
-			events                                         <-chan models.ActualLRPChange
-			stop                                           chan<- bool
-			errors                                         <-chan error
-			lrp                                            models.ActualLRP
+			events                                     <-chan models.ActualLRPChange
+			stop                                       chan<- bool
+			errors                                     <-chan error
+			lrp                                        models.ActualLRP
 			lrpProcessGuid, lrpInstanceGuid, lrpCellId string
-			lrpDomain                                      string
-			lrpIndex                                       int
+			lrpDomain                                  string
+			lrpIndex                                   int
 		)
 
 		BeforeEach(func() {

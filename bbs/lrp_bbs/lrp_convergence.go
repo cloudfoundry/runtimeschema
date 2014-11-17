@@ -171,7 +171,7 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 
 		if _, ok := cellRoot.Lookup(actual.CellID); !ok {
 			bbs.logger.Info("detected-actual-with-missing-cell", lager.Data{
-				"actual":      actual,
+				"actual":  actual,
 				"cell-id": actual.CellID,
 			})
 			return false

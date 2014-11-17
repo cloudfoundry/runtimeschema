@@ -114,7 +114,7 @@ var _ = Describe("LRP", func() {
 				startedLRP = models.ActualLRP{
 					InstanceGuid: instanceGuid,
 					ProcessGuid:  processGuid,
-					CellID:   cellID,
+					CellID:       cellID,
 					Domain:       domain,
 					Index:        index,
 					Since:        timeProvider.Time().UnixNano(),

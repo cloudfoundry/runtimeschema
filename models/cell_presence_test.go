@@ -18,7 +18,7 @@ var _ = Describe("CellPresence", func() {
 	BeforeEach(func() {
 		cellPresence = CellPresence{
 			CellID: "some-id",
-			Stack:      "some-stack",
+			Stack:  "some-stack",
 		}
 	})
 

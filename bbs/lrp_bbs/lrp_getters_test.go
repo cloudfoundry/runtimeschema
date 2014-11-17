@@ -21,7 +21,7 @@ var _ = Describe("LrpGetters", func() {
 
 		newLrpProcessGuid  string
 		newLrpInstanceGuid string
-		newLrpCellId   string
+		newLrpCellId       string
 		newLrpDomain       string
 		newLrpIndex        int
 	)
@@ -79,7 +79,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:       "domain-a",
 			State:        models.ActualLRPStateRunning,
 			Since:        timeProvider.Time().UnixNano(),
-			CellID:   "cell-id",
+			CellID:       "cell-id",
 		}
 
 		runningLrp2 = models.ActualLRP{
@@ -89,7 +89,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:       "domain-b",
 			State:        models.ActualLRPStateRunning,
 			Since:        timeProvider.Time().UnixNano(),
-			CellID:   "cell-id",
+			CellID:       "cell-id",
 		}
 
 		runningLrp3 = models.ActualLRP{
@@ -99,7 +99,7 @@ var _ = Describe("LrpGetters", func() {
 			Domain:       "domain-b",
 			State:        models.ActualLRPStateRunning,
 			Since:        timeProvider.Time().UnixNano(),
-			CellID:   "cell-id",
+			CellID:       "cell-id",
 		}
 	})
 

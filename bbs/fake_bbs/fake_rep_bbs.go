@@ -15,7 +15,7 @@ type FakeRepBBS struct {
 	newCellHeartbeatMutex       sync.RWMutex
 	newCellHeartbeatArgsForCall []struct {
 		cellPresence models.CellPresence
-		interval         time.Duration
+		interval     time.Duration
 	}
 	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
@@ -23,7 +23,7 @@ type FakeRepBBS struct {
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns struct {
+	watchForDesiredTaskReturns     struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -31,8 +31,8 @@ type FakeRepBBS struct {
 	ClaimTaskStub        func(taskGuid string, cellID string) error
 	claimTaskMutex       sync.RWMutex
 	claimTaskArgsForCall []struct {
-		taskGuid   string
-		cellID string
+		taskGuid string
+		cellID   string
 	}
 	claimTaskReturns struct {
 		result1 error
@@ -40,8 +40,8 @@ type FakeRepBBS struct {
 	StartTaskStub        func(taskGuid string, cellID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
-		taskGuid   string
-		cellID string
+		taskGuid string
+		cellID   string
 	}
 	startTaskReturns struct {
 		result1 error
@@ -98,7 +98,7 @@ type FakeRepBBS struct {
 	reportActualLRPAsStartingArgsForCall []struct {
 		processGuid  string
 		instanceGuid string
-		cellID   string
+		cellID       string
 		domain       string
 		index        int
 	}
@@ -109,7 +109,7 @@ type FakeRepBBS struct {
 	ReportActualLRPAsRunningStub        func(lrp models.ActualLRP, cellId string) error
 	reportActualLRPAsRunningMutex       sync.RWMutex
 	reportActualLRPAsRunningArgsForCall []struct {
-		lrp        models.ActualLRP
+		lrp    models.ActualLRP
 		cellId string
 	}
 	reportActualLRPAsRunningReturns struct {
@@ -136,7 +136,7 @@ type FakeRepBBS struct {
 	WatchForStopLRPInstanceStub        func() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
 	watchForStopLRPInstanceMutex       sync.RWMutex
 	watchForStopLRPInstanceArgsForCall []struct{}
-	watchForStopLRPInstanceReturns struct {
+	watchForStopLRPInstanceReturns     struct {
 		result1 <-chan models.StopLRPInstance
 		result2 chan<- bool
 		result3 <-chan error
@@ -155,7 +155,7 @@ func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, inter
 	fake.newCellHeartbeatMutex.Lock()
 	fake.newCellHeartbeatArgsForCall = append(fake.newCellHeartbeatArgsForCall, struct {
 		cellPresence models.CellPresence
-		interval         time.Duration
+		interval     time.Duration
 	}{cellPresence, interval})
 	fake.newCellHeartbeatMutex.Unlock()
 	if fake.NewCellHeartbeatStub != nil {
@@ -213,8 +213,8 @@ func (fake *FakeRepBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, r
 func (fake *FakeRepBBS) ClaimTask(taskGuid string, cellID string) error {
 	fake.claimTaskMutex.Lock()
 	fake.claimTaskArgsForCall = append(fake.claimTaskArgsForCall, struct {
-		taskGuid   string
-		cellID string
+		taskGuid string
+		cellID   string
 	}{taskGuid, cellID})
 	fake.claimTaskMutex.Unlock()
 	if fake.ClaimTaskStub != nil {
@@ -246,8 +246,8 @@ func (fake *FakeRepBBS) ClaimTaskReturns(result1 error) {
 func (fake *FakeRepBBS) StartTask(taskGuid string, cellID string) error {
 	fake.startTaskMutex.Lock()
 	fake.startTaskArgsForCall = append(fake.startTaskArgsForCall, struct {
-		taskGuid   string
-		cellID string
+		taskGuid string
+		cellID   string
 	}{taskGuid, cellID})
 	fake.startTaskMutex.Unlock()
 	if fake.StartTaskStub != nil {
@@ -448,7 +448,7 @@ func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGu
 	fake.reportActualLRPAsStartingArgsForCall = append(fake.reportActualLRPAsStartingArgsForCall, struct {
 		processGuid  string
 		instanceGuid string
-		cellID   string
+		cellID       string
 		domain       string
 		index        int
 	}{processGuid, instanceGuid, cellID, domain, index})
@@ -483,7 +483,7 @@ func (fake *FakeRepBBS) ReportActualLRPAsStartingReturns(result1 models.ActualLR
 func (fake *FakeRepBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error {
 	fake.reportActualLRPAsRunningMutex.Lock()
 	fake.reportActualLRPAsRunningArgsForCall = append(fake.reportActualLRPAsRunningArgsForCall, struct {
-		lrp        models.ActualLRP
+		lrp    models.ActualLRP
 		cellId string
 	}{lrp, cellId})
 	fake.reportActualLRPAsRunningMutex.Unlock()

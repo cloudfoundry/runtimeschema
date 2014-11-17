@@ -21,7 +21,7 @@ type ActualLRPChange struct {
 type ActualLRP struct {
 	ProcessGuid  string `json:"process_guid"`
 	InstanceGuid string `json:"instance_guid"`
-	CellID   string `json:"cell_id"`
+	CellID       string `json:"cell_id"`
 	Domain       string `json:"domain"`
 
 	Index int `json:"index"`
@@ -59,7 +59,7 @@ func NewActualLRP(
 	return ActualLRP{
 		ProcessGuid:  processGuid,
 		InstanceGuid: instanceGuid,
-		CellID:   cellID,
+		CellID:       cellID,
 		Domain:       domain,
 
 		Index: index,

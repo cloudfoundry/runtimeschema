@@ -17,10 +17,10 @@ import (
 
 var _ = Describe("Fetching all Cells", func() {
 	var (
-		bbs                    *ServicesBBS
-		interval               = time.Second
-		heartbeat1             ifrit.Process
-		heartbeat2             ifrit.Process
+		bbs                *ServicesBBS
+		interval           = time.Second
+		heartbeat1         ifrit.Process
+		heartbeat2         ifrit.Process
 		firstCellPresence  models.CellPresence
 		secondCellPresence models.CellPresence
 	)
@@ -30,12 +30,12 @@ var _ = Describe("Fetching all Cells", func() {
 
 		firstCellPresence = models.CellPresence{
 			CellID: "first-rep",
-			Stack:      "lucid64",
+			Stack:  "lucid64",
 		}
 
 		secondCellPresence = models.CellPresence{
 			CellID: "second-rep",
-			Stack:      ".Net",
+			Stack:  ".Net",
 		}
 
 		interval = 1 * time.Second
