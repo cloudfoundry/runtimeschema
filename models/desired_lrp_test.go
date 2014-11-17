@@ -57,10 +57,7 @@ var _ = Describe("DesiredLRP", func() {
 	  "memory_mb": 1024,
 	  "cpu_weight": 42,
 	  "ports": [
-	    {
-	      "container_port": 5678,
-	      "host_port": 1234
-	    }
+	    5678
 	  ],
 	  "routes": [
 	    "route-1",
@@ -83,8 +80,8 @@ var _ = Describe("DesiredLRP", func() {
 			CPUWeight:  42,
 			Routes:     []string{"route-1", "route-2"},
 			Annotation: "some-annotation",
-			Ports: []PortMapping{
-				{HostPort: 1234, ContainerPort: 5678},
+			Ports: []uint32{
+				5678,
 			},
 			LogGuid:   "log-guid",
 			LogSource: "the cloud",
@@ -339,9 +336,7 @@ var _ = Describe("DesiredLRP", func() {
 		})
 
 		It("does not allow the ports to change", func() {
-			newLrp.Ports = []PortMapping{
-				{HostPort: 2345, ContainerPort: 6789},
-			}
+			newLrp.Ports = []uint32{6789}
 			err := lrp.ValidateModifications(newLrp)
 			Ω(err).Should(HaveOccurred())
 			Ω(err.Error()).Should(ContainSubstring("ports"))
