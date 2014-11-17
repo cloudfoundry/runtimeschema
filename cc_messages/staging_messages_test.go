@@ -130,4 +130,27 @@ var _ = Describe("StagingMessages", func() {
 			})
 		})
 	})
+
+	Describe("StopStagingRequestForCC", func() {
+		var stopStagingRequestFromCC StopStagingRequestFromCC
+
+		BeforeEach(func() {
+			stopStagingRequestFromCC = StopStagingRequestFromCC{
+				AppId:  "the-app-id",
+				TaskId: "the-task-id",
+			}
+		})
+
+		It("unmarshals JSON", func() {
+			stopStagingRequest := StopStagingRequestFromCC{}
+
+			err := json.Unmarshal([]byte(`{
+					"app_id": "the-app-id",
+					"task_id": "the-task-id"
+				}`), &stopStagingRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(stopStagingRequest).Should(Equal(stopStagingRequestFromCC))
+		})
+	})
 })

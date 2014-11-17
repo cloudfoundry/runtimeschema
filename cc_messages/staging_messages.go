@@ -51,3 +51,8 @@ type StagingResponseForCC struct {
 	DetectedStartCommand map[string]string `json:"detected_start_command"`
 	Error                string            `json:"error,omitempty"`
 }
+
+type StopStagingRequestFromCC struct {
+	AppId  string `json:"app_id"`
+	TaskId string `json:"task_id"`
+}
