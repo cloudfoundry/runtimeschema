@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	"time"
 )
 
 var ErrInvalidActionType = errors.New("invalid action type")
@@ -27,7 +26,6 @@ type RunAction struct {
 	Path           string                `json:"path"`
 	Args           []string              `json:"args"`
 	Env            []EnvironmentVariable `json:"env"`
-	Timeout        time.Duration         `json:"timeout"`
 	ResourceLimits ResourceLimits        `json:"resource_limits"`
 	Privileged     bool                  `json:"privileged,omitempty"`
 

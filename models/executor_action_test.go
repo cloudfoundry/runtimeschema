@@ -2,7 +2,6 @@ package models_test
 
 import (
 	"encoding/json"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -88,7 +87,6 @@ var _ = Describe("ExecutorAction", func() {
 				"args": {
 					"path": "rm",
 					"args": ["-rf", "/"],
-					"timeout": 10000000,
 					"env": [
 						{"name":"FOO", "value":"1"},
 						{"name":"BAR", "value":"2"}
@@ -99,9 +97,8 @@ var _ = Describe("ExecutorAction", func() {
 			}`,
 			ExecutorAction{
 				Action: RunAction{
-					Path:    "rm",
-					Args:    []string{"-rf", "/"},
-					Timeout: 10 * time.Millisecond,
+					Path: "rm",
+					Args: []string{"-rf", "/"},
 					Env: []EnvironmentVariable{
 						{"FOO", "1"},
 						{"BAR", "2"},
@@ -125,7 +122,6 @@ var _ = Describe("ExecutorAction", func() {
 						"args": {
 							"path": "echo",
 							"args": null,
-							"timeout": 0,
 							"env": null,
 							"resource_limits":{}
 						}
@@ -151,7 +147,6 @@ var _ = Describe("ExecutorAction", func() {
 						"args": {
 							"path": "echo",
 							"args": null,
-							"timeout": 0,
 							"env": null,
 							"resource_limits":{}
 						}
@@ -183,7 +178,6 @@ var _ = Describe("ExecutorAction", func() {
 							"args": {
 								"resource_limits": {},
 								"env": null,
-								"timeout": 0,
 								"path": "echo",
 								"args": null
 							}
@@ -225,7 +219,6 @@ var _ = Describe("ExecutorAction", func() {
 							"args": {
 								"resource_limits": {},
 								"env": null,
-								"timeout": 0,
 								"path": "echo",
 								"args": null
 							}

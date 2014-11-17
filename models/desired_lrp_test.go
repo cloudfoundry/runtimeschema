@@ -38,7 +38,6 @@ var _ = Describe("DesiredLRP", func() {
 			"args": {
 				"path": "ls",
 				"args": null,
-				"timeout": 0,
 				"env": null,
 				"resource_limits":{}
 			}
@@ -48,7 +47,6 @@ var _ = Describe("DesiredLRP", func() {
 			"args": {
 				"path": "reboot",
 				"args": null,
-				"timeout": 0,
 				"env": null,
 				"resource_limits":{}
 			}
