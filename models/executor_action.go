@@ -44,8 +44,9 @@ type ResourceLimits struct {
 
 type TimeoutAction struct {
 	Action ExecutorAction `json:"action"`
-
 	Timeout time.Duration `json:"timeout"`
+
+	LogSource string `json:"log_source,omitempty"`
 }
 
 type TryAction struct {
