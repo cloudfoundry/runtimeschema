@@ -9,6 +9,7 @@ type DockerStagingRequestFromCC struct {
 	MemoryMB        int         `json:"memory_mb"`
 	DiskMB          int         `json:"disk_mb"`
 	Environment     Environment `json:"environment"`
+	Timeout         int         `json:"timeout"`
 }
 
 type DockerStagingResponseForCC struct {
@@ -32,6 +33,7 @@ type StagingRequestFromCC struct {
 	Buildpacks                     []Buildpack `json:"buildpacks"`
 	Environment                    Environment `json:"environment"`
 	DropletUploadUri               string      `json:"droplet_upload_uri"`
+	Timeout                        int         `json:"timeout"`
 }
 
 const CUSTOM_BUILDPACK = "custom"

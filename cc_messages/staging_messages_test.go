@@ -23,7 +23,8 @@ var _ = Describe("StagingMessages", func() {
            "build_artifacts_cache_download_uri" : "http://a-nice-place-to-get-valuable-artifacts.com",
            "build_artifacts_cache_upload_uri" : "http://a-nice-place-to-upload-valuable-artifacts.com",
            "buildpacks" : [{"name":"fake-buildpack-name", "key":"fake-buildpack-key" ,"url":"fake-buildpack-url"}],
-           "droplet_upload_uri" : "http://droplet-upload-uri"
+           "droplet_upload_uri" : "http://droplet-upload-uri",
+           "timeout" : 900
         }`
 
 		It("should be mapped to the CC's staging request JSON", func() {
@@ -52,6 +53,41 @@ var _ = Describe("StagingMessages", func() {
 					{Name: "FOO", Value: "BAR"},
 				},
 				DropletUploadUri: "http://droplet-upload-uri",
+				Timeout:          900,
+			}))
+		})
+	})
+
+	Describe("DockerStagingRequestFromCC", func() {
+		ccJSON := `{
+           "app_id" : "fake-app_id",
+           "task_id" : "fake-task_id",
+           "docker_image" : "docker:///diego/image",
+           "memory_mb" : 1024,
+           "disk_mb" : 10000,
+           "file_descriptors" : 3,
+           "environment" : [{"name": "FOO", "value":"BAR"}],
+           "stack" : "fake-stack",
+           "timeout" : 900
+        }`
+
+		It("should be mapped to the CC's staging request JSON", func() {
+			var stagingRequest DockerStagingRequestFromCC
+			err := json.Unmarshal([]byte(ccJSON), &stagingRequest)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(stagingRequest).Should(Equal(DockerStagingRequestFromCC{
+				AppId:           "fake-app_id",
+				TaskId:          "fake-task_id",
+				DockerImageUrl:  "docker:///diego/image",
+				Stack:           "fake-stack",
+				MemoryMB:        1024,
+				FileDescriptors: 3,
+				DiskMB:          10000,
+				Environment: Environment{
+					{Name: "FOO", Value: "BAR"},
+				},
+				Timeout: 900,
 			}))
 		})
 	})
@@ -123,6 +159,44 @@ var _ = Describe("StagingMessages", func() {
 					"app_id": "the-app-id",
 					"buildpack_key": "the-buildpack-key",
 					"detected_buildpack": "the-detected-buildpack",
+					"execution_metadata": "the-execution-metadata",
+					"detected_start_command":{"web":"the-detected-start-command"},
+					"task_id": "the-task-id"
+				}`))
+			})
+		})
+	})
+
+	Describe("DockerStagingResponseForCC", func() {
+		var stagingResponseForCC DockerStagingResponseForCC
+
+		BeforeEach(func() {
+			stagingResponseForCC = DockerStagingResponseForCC{
+				AppId:                "the-app-id",
+				TaskId:               "the-task-id",
+				ExecutionMetadata:    "the-execution-metadata",
+				DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
+			}
+		})
+
+		Context("without an error", func() {
+			It("generates valid JSON", func() {
+				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+					"app_id": "the-app-id",
+					"execution_metadata": "the-execution-metadata",
+					"detected_start_command":{"web":"the-detected-start-command"},
+					"task_id": "the-task-id"
+				}`))
+			})
+		})
+
+		Context("with an error", func() {
+			It("generates valid JSON with the error", func() {
+				stagingResponseForCC.Error = "FAIL, missing camels!"
+				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+					"error": "FAIL, missing camels!",
+
+					"app_id": "the-app-id",
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"},
 					"task_id": "the-task-id"
