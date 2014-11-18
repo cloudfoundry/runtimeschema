@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 var ErrInvalidActionType = errors.New("invalid action type")
@@ -39,6 +40,12 @@ type EnvironmentVariable struct {
 
 type ResourceLimits struct {
 	Nofile *uint64 `json:"nofile,omitempty"`
+}
+
+type TimeoutAction struct {
+	Action ExecutorAction `json:"action"`
+
+	Timeout time.Duration `json:"timeout"`
 }
 
 type TryAction struct {
@@ -79,6 +86,15 @@ func EmitProgressFor(action ExecutorAction, startMessage string, successMessage 
 	}
 }
 
+func Timeout(action ExecutorAction, timeout time.Duration) ExecutorAction {
+	return ExecutorAction{
+		TimeoutAction{
+			Action: action,
+			Timeout: timeout,
+		},
+	}
+}
+
 func Try(action ExecutorAction) ExecutorAction {
 	return ExecutorAction{
 		TryAction{
@@ -114,7 +130,7 @@ type ExecutorAction struct {
 
 func (a ExecutorAction) Validate() error {
 	switch a.Action.(type) {
-	case DownloadAction, RunAction, UploadAction, EmitProgressAction, TryAction, ParallelAction, SerialAction:
+	case DownloadAction, RunAction, UploadAction, TimeoutAction, EmitProgressAction, TryAction, ParallelAction, SerialAction:
 		return nil
 	default:
 		return ErrInvalidActionType
@@ -137,6 +153,8 @@ func (a ExecutorAction) MarshalJSON() ([]byte, error) {
 		envelope.Name = "run"
 	case UploadAction:
 		envelope.Name = "upload"
+	case TimeoutAction:
+		envelope.Name = "timeout"
 	case EmitProgressAction:
 		envelope.Name = "emit_progress"
 	case TryAction:
@@ -175,6 +193,10 @@ func (a *ExecutorAction) UnmarshalJSON(bytes []byte) error {
 		a.Action = action
 	case "emit_progress":
 		action := EmitProgressAction{}
+		err = json.Unmarshal(*envelope.ActionPayload, &action)
+		a.Action = action
+	case "timeout":
+		action := TimeoutAction{}
 		err = json.Unmarshal(*envelope.ActionPayload, &action)
 		a.Action = action
 	case "try":

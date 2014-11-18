@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"encoding/json"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -134,6 +135,32 @@ var _ = Describe("ExecutorAction", func() {
 						Path: "echo",
 					},
 				}, "reticulating splines", "reticulated splines", "reticulation failed"),
+		)
+	})
+
+	Describe("Timeout", func() {
+		itSerializesAndDeserializes(
+			`{
+				"action": "timeout",
+				"args": {
+					"action": {
+						"action": "run",
+						"args": {
+							"path": "echo",
+							"args": null,
+							"env": null,
+							"resource_limits":{}
+						}
+					},
+					"timeout": 10000000
+				}
+			}`,
+			Timeout(
+				ExecutorAction{
+					RunAction{Path: "echo"},
+				},
+				10 * time.Millisecond,
+			),
 		)
 	})
 
