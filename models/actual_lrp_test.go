@@ -105,34 +105,10 @@ var _ = Describe("ActualLRP", func() {
 		})
 
 		Context("When given a blank process guid", func() {
-			It("returns an error indicating so", func() {
+			It("returns a validation error", func() {
 				_, err := NewActualLRP("", "instanceGuid", "cellID", "domain", 0)
 				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty process guid"))
-			})
-		})
-
-		Context("When given a blank instance guid", func() {
-			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "", "cellID", "domain", 0)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty instance guid"))
-			})
-		})
-
-		Context("When given a blank cell ID", func() {
-			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "instanceGuid", "", "domain", 0)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty cell ID"))
-			})
-		})
-
-		Context("When given a blank domain", func() {
-			It("returns an error indicating so", func() {
-				_, err := NewActualLRP("processGuid", "instanceGuid", "cellID", "", 0)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(Equal("Cannot construct Actual LRP with empty domain"))
+				Ω(err).Should(BeAssignableToTypeOf(ValidationError{}))
 			})
 		})
 	})

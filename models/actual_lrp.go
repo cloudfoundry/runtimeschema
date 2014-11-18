@@ -1,9 +1,6 @@
 package models
 
-import (
-	"encoding/json"
-	"errors"
-)
+import "encoding/json"
 
 type ActualLRPState int
 
@@ -40,30 +37,22 @@ func NewActualLRP(
 	domain string,
 	index int,
 ) (ActualLRP, error) {
-	if processGuid == "" {
-		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty process guid")
-	}
 
-	if instanceGuid == "" {
-		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty instance guid")
-	}
-
-	if cellID == "" {
-		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty cell ID")
-	}
-
-	if domain == "" {
-		return ActualLRP{}, errors.New("Cannot construct Actual LRP with empty domain")
-	}
-
-	return ActualLRP{
+	lrp := ActualLRP{
 		ProcessGuid:  processGuid,
 		InstanceGuid: instanceGuid,
 		CellID:       cellID,
 		Domain:       domain,
 
 		Index: index,
-	}, nil
+	}
+
+	err := lrp.Validate()
+	if err != nil {
+		return ActualLRP{}, err
+	}
+
+	return lrp, nil
 }
 
 func NewActualLRPFromJSON(payload []byte) (ActualLRP, error) {
@@ -74,20 +63,9 @@ func NewActualLRPFromJSON(payload []byte) (ActualLRP, error) {
 		return ActualLRP{}, err
 	}
 
-	if actualLRP.ProcessGuid == "" {
-		return ActualLRP{}, ErrInvalidJSONMessage{"process_guid"}
-	}
-
-	if actualLRP.InstanceGuid == "" {
-		return ActualLRP{}, ErrInvalidJSONMessage{"instance_guid"}
-	}
-
-	if actualLRP.CellID == "" {
-		return ActualLRP{}, ErrInvalidJSONMessage{"cell_id"}
-	}
-
-	if actualLRP.Domain == "" {
-		return ActualLRP{}, ErrInvalidJSONMessage{"domain"}
+	err = actualLRP.Validate()
+	if err != nil {
+		return ActualLRP{}, err
 	}
 
 	return actualLRP, nil
@@ -100,4 +78,30 @@ func (actual ActualLRP) ToJSON() []byte {
 	}
 
 	return bytes
+}
+
+func (actual ActualLRP) Validate() error {
+	var validationError ValidationError
+
+	if actual.ProcessGuid == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
+	}
+
+	if actual.InstanceGuid == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
+	}
+
+	if actual.CellID == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"cell_id"})
+	}
+
+	if actual.Domain == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }

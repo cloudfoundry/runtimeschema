@@ -19,18 +19,19 @@ type LRPStopAuction struct {
 }
 
 func NewLRPStopAuctionFromJSON(payload []byte) (LRPStopAuction, error) {
-	var task LRPStopAuction
+	var stopAuction LRPStopAuction
 
-	err := json.Unmarshal(payload, &task)
+	err := json.Unmarshal(payload, &stopAuction)
 	if err != nil {
 		return LRPStopAuction{}, err
 	}
 
-	if task.ProcessGuid == "" {
-		return LRPStopAuction{}, ErrInvalidJSONMessage{"process_guid"}
+	err = stopAuction.Validate()
+	if err != nil {
+		return LRPStopAuction{}, err
 	}
 
-	return task, nil
+	return stopAuction, nil
 }
 
 func (auction LRPStopAuction) ToJSON() []byte {
@@ -40,4 +41,12 @@ func (auction LRPStopAuction) ToJSON() []byte {
 	}
 
 	return bytes
+}
+
+func (auction LRPStopAuction) Validate() error {
+	if auction.ProcessGuid == "" {
+		return ValidationError{ErrInvalidJSONMessage{"process_guid"}}
+	}
+
+	return nil
 }

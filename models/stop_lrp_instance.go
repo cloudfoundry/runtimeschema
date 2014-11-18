@@ -16,12 +16,9 @@ func NewStopLRPInstanceFromJSON(payload []byte) (StopLRPInstance, error) {
 		return StopLRPInstance{}, err
 	}
 
-	if stopInstance.ProcessGuid == "" {
-		return StopLRPInstance{}, ErrInvalidJSONMessage{"process_guid"}
-	}
-
-	if stopInstance.InstanceGuid == "" {
-		return StopLRPInstance{}, ErrInvalidJSONMessage{"instance_guid"}
+	err = stopInstance.Validate()
+	if err != nil {
+		return StopLRPInstance{}, err
 	}
 
 	return stopInstance, nil
@@ -34,4 +31,22 @@ func (stop StopLRPInstance) ToJSON() []byte {
 	}
 
 	return bytes
+}
+
+func (stop StopLRPInstance) Validate() error {
+	var validationError ValidationError
+
+	if stop.ProcessGuid == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
+	}
+
+	if stop.InstanceGuid == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
