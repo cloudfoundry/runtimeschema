@@ -91,7 +91,7 @@ func (a *TimeoutAction) MarshalJSON() ([]byte, error) {
 	j := json.RawMessage(bytes)
 
 	return json.Marshal(&mTimeoutAction{
-		Action:    &j,
+		Action:    j,
 		Timeout:   a.Timeout,
 		LogSource: a.LogSource,
 	})
@@ -104,7 +104,7 @@ func (a *TimeoutAction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	action, err := UnmarshalAction([]byte(*m.Action))
+	action, err := UnmarshalAction([]byte(m.Action))
 	if err != nil {
 		return err
 	}
@@ -117,8 +117,8 @@ func (a *TimeoutAction) UnmarshalJSON(data []byte) error {
 }
 
 type mTimeoutAction struct {
-	Action  *json.RawMessage `json:"action"`
-	Timeout time.Duration    `json:"timeout"`
+	Action  json.RawMessage `json:"action"`
+	Timeout time.Duration   `json:"timeout"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
@@ -141,7 +141,7 @@ func (a *TryAction) MarshalJSON() ([]byte, error) {
 	j := json.RawMessage(bytes)
 
 	return json.Marshal(&mTryAction{
-		Action:    &j,
+		Action:    j,
 		LogSource: a.LogSource,
 	})
 }
@@ -153,7 +153,7 @@ func (a *TryAction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	action, err := UnmarshalAction([]byte(*m.Action))
+	action, err := UnmarshalAction([]byte(m.Action))
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (a *TryAction) UnmarshalJSON(data []byte) error {
 }
 
 type mTryAction struct {
-	Action *json.RawMessage `json:"action"`
+	Action json.RawMessage `json:"action"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
