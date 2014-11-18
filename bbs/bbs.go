@@ -21,9 +21,9 @@ import (
 type ReceptorBBS interface {
 	//task
 	DesireTask(models.Task) error
-	GetAllTasks() ([]models.Task, error)
-	GetAllTasksByDomain(domain string) ([]models.Task, error)
-	GetTaskByGuid(taskGuid string) (models.Task, error)
+	Tasks() ([]models.Task, error)
+	TasksByDomain(domain string) ([]models.Task, error)
+	TaskByGuid(taskGuid string) (models.Task, error)
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
 	CancelTask(taskGuid string) error
@@ -33,19 +33,19 @@ type ReceptorBBS interface {
 	DesireLRP(models.DesiredLRP) error
 	UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error
 	RemoveDesiredLRPByProcessGuid(processGuid string) error
-	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
-	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
-	GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPs() ([]models.DesiredLRP, error)
+	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
+	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
 
 	//actual lrp
-	GetAllActualLRPs() ([]models.ActualLRP, error)
-	GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
-	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	GetActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
+	ActualLRPs() ([]models.ActualLRP, error)
+	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
 	RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error
 
 	// cells
-	GetAllCells() ([]models.CellPresence, error)
+	Cells() ([]models.CellPresence, error)
 
 	// freshness
 	BumpFreshness(models.Freshness) error
@@ -60,13 +60,13 @@ type RepBBS interface {
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
 	ClaimTask(taskGuid string, cellID string) error
 	StartTask(taskGuid string, cellID string) error
-	GetTaskByGuid(taskGuid string) (models.Task, error)
-	GetAllTasksByCellID(cellID string) ([]models.Task, error)
+	TaskByGuid(taskGuid string) (models.Task, error)
+	TasksByCellID(cellID string) ([]models.Task, error)
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lrp
-	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
 	ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error
 	RemoveActualLRP(lrp models.ActualLRP) error
@@ -78,7 +78,7 @@ type RepBBS interface {
 type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs()
-	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RequestStopLRPInstance(stopInstance models.StopLRPInstance) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 
@@ -99,14 +99,14 @@ type ConvergerBBS interface {
 
 type TPSBBS interface {
 	//lrp
-	GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 }
 
 type NsyncBBS interface {
 	// lrp
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
-	GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
+	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	ChangeDesiredLRP(change models.DesiredLRPChange) error
 	BumpFreshness(freshness models.Freshness) error
 
@@ -117,7 +117,7 @@ type NsyncBBS interface {
 
 type AuctioneerBBS interface {
 	//services
-	GetAllCells() ([]models.CellPresence, error)
+	Cells() ([]models.CellPresence, error)
 
 	//start auction
 	WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
@@ -135,15 +135,15 @@ type AuctioneerBBS interface {
 
 type MetricsBBS interface {
 	//task
-	GetAllTasks() ([]models.Task, error)
+	Tasks() ([]models.Task, error)
 
 	//services
-	GetServiceRegistrations() (models.ServiceRegistrations, error)
+	ServiceRegistrations() (models.ServiceRegistrations, error)
 
 	//lrps
 	Freshnesses() ([]models.Freshness, error)
-	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
-	GetAllActualLRPs() ([]models.ActualLRP, error)
+	DesiredLRPs() ([]models.DesiredLRP, error)
+	ActualLRPs() ([]models.ActualLRP, error)
 
 	//lock
 	NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner
@@ -153,10 +153,10 @@ type RouteEmitterBBS interface {
 	// lrp
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
-	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
-	GetRunningActualLRPs() ([]models.ActualLRP, error)
-	GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
-	GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
+	DesiredLRPs() ([]models.DesiredLRP, error)
+	RunningActualLRPs() ([]models.ActualLRP, error)
+	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+	RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
 
 	//lock
 	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner
@@ -164,24 +164,24 @@ type RouteEmitterBBS interface {
 
 type VeritasBBS interface {
 	//task
-	GetAllTasks() ([]models.Task, error)
+	Tasks() ([]models.Task, error)
 
 	//lrp
-	GetAllDesiredLRPs() ([]models.DesiredLRP, error)
-	GetAllActualLRPs() ([]models.ActualLRP, error)
-	GetAllStopLRPInstances() ([]models.StopLRPInstance, error)
+	DesiredLRPs() ([]models.DesiredLRP, error)
+	ActualLRPs() ([]models.ActualLRP, error)
+	StopLRPInstances() ([]models.StopLRPInstance, error)
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
 	Freshnesses() ([]models.Freshness, error)
 
 	//start auctions
-	GetAllLRPStartAuctions() ([]models.LRPStartAuction, error)
+	LRPStartAuctions() ([]models.LRPStartAuction, error)
 
 	//stop auctions
-	GetAllLRPStopAuctions() ([]models.LRPStopAuction, error)
+	LRPStopAuctions() ([]models.LRPStopAuction, error)
 
 	//services
-	GetAllCells() ([]models.CellPresence, error)
+	Cells() ([]models.CellPresence, error)
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {

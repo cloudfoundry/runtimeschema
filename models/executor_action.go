@@ -43,8 +43,8 @@ type ResourceLimits struct {
 }
 
 type TimeoutAction struct {
-	Action ExecutorAction `json:"action"`
-	Timeout time.Duration `json:"timeout"`
+	Action  ExecutorAction `json:"action"`
+	Timeout time.Duration  `json:"timeout"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
@@ -90,7 +90,7 @@ func EmitProgressFor(action ExecutorAction, startMessage string, successMessage 
 func Timeout(action ExecutorAction, timeout time.Duration) ExecutorAction {
 	return ExecutorAction{
 		TimeoutAction{
-			Action: action,
+			Action:  action,
 			Timeout: timeout,
 		},
 	}

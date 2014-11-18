@@ -11,7 +11,7 @@ import (
 
 var ErrNoDomain = errors.New("no domain given")
 
-func (bbs *LRPBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
+func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	lrps := []models.DesiredLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
@@ -35,7 +35,7 @@ func (bbs *LRPBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
+func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
 	if len(domain) == 0 {
 		return nil, ErrNoDomain
 	}
@@ -63,7 +63,7 @@ func (bbs *LRPBBS) GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{
 		ProcessGuid: processGuid,
 	}))
@@ -73,7 +73,7 @@ func (bbs *LRPBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.Desire
 	return models.NewDesiredLRPFromJSON(node.Value)
 }
 
-func (bbs *LRPBBS) GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
@@ -101,7 +101,7 @@ func (bbs *LRPBBS) GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, 
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetAllActualLRPs() ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
@@ -129,8 +129,8 @@ func (bbs *LRPBBS) GetAllActualLRPs() ([]models.ActualLRP, error) {
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetRunningActualLRPs() ([]models.ActualLRP, error) {
-	lrps, err := bbs.GetAllActualLRPs()
+func (bbs *LRPBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
+	lrps, err := bbs.ActualLRPs()
 	if err != nil {
 		return []models.ActualLRP{}, err
 	}
@@ -138,7 +138,7 @@ func (bbs *LRPBBS) GetRunningActualLRPs() ([]models.ActualLRP, error) {
 	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
 }
 
-func (bbs *LRPBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
@@ -164,7 +164,7 @@ func (bbs *LRPBBS) GetActualLRPsByProcessGuid(processGuid string) ([]models.Actu
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetActualLRPsByProcessGuidAndIndex(processGuid string, index int) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPsByProcessGuidAndIndex(processGuid string, index int) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPIndexDir(processGuid, index))
@@ -188,8 +188,8 @@ func (bbs *LRPBBS) GetActualLRPsByProcessGuidAndIndex(processGuid string, index 
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
-	lrps, err := bbs.GetActualLRPsByProcessGuid(processGuid)
+func (bbs *LRPBBS) RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
+	lrps, err := bbs.ActualLRPsByProcessGuid(processGuid)
 	if err != nil {
 		return []models.ActualLRP{}, err
 	}
@@ -197,7 +197,7 @@ func (bbs *LRPBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]mode
 	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
 }
 
-func (bbs *LRPBBS) GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)

@@ -7,7 +7,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *TaskBBS) GetAllTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) Tasks() ([]models.Task, error) {
 	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return []models.Task{}, nil
@@ -33,45 +33,45 @@ func (bbs *TaskBBS) GetAllTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (bbs *TaskBBS) GetTaskByGuid(guid string) (models.Task, error) {
+func (bbs *TaskBBS) TaskByGuid(guid string) (models.Task, error) {
 	task, _, err := bbs.getTask(guid)
 	return task, err
 }
 
 func (bbs *TaskBBS) GetAllPendingTasks() ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStatePending), err
 }
 
 func (bbs *TaskBBS) GetAllClaimedTasks() ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateClaimed), err
 }
 
 func (bbs *TaskBBS) GetAllRunningTasks() ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateRunning), err
 }
 
 func (bbs *TaskBBS) GetAllCompletedTasks() ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
 func (bbs *TaskBBS) GetAllResolvingTasks() ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateResolving), err
 }
 
-func (bbs *TaskBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+func (bbs *TaskBBS) TasksByDomain(domain string) ([]models.Task, error) {
+	all, err := bbs.Tasks()
 	return filterTasks(all, func(task models.Task) bool {
 		return task.Domain == domain
 	}), err
 }
 
-func (bbs *TaskBBS) GetAllTasksByCellID(cellId string) ([]models.Task, error) {
-	all, err := bbs.GetAllTasks()
+func (bbs *TaskBBS) TasksByCellID(cellId string) ([]models.Task, error) {
+	all, err := bbs.Tasks()
 	return filterTasks(all, func(task models.Task) bool {
 		return task.CellID == cellId
 	}), err

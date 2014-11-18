@@ -35,7 +35,7 @@ func (bbs *LRPBBS) RequestStopLRPInstances(stopInstances []models.StopLRPInstanc
 	})
 }
 
-func (bbs *LRPBBS) GetAllStopLRPInstances() ([]models.StopLRPInstance, error) {
+func (bbs *LRPBBS) StopLRPInstances() ([]models.StopLRPInstance, error) {
 	stopInstances := []models.StopLRPInstance{}
 
 	node, err := bbs.store.ListRecursively(shared.StopLRPInstanceSchemaRoot)

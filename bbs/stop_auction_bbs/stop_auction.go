@@ -45,7 +45,7 @@ func (s *StopAuctionBBS) ResolveLRPStopAuction(lrp models.LRPStopAuction) error 
 	return err
 }
 
-func (bbs *StopAuctionBBS) GetAllLRPStopAuctions() ([]models.LRPStopAuction, error) {
+func (bbs *StopAuctionBBS) LRPStopAuctions() ([]models.LRPStopAuction, error) {
 	lrps := []models.LRPStopAuction{}
 
 	node, err := bbs.store.ListRecursively(shared.LRPStopAuctionSchemaRoot)

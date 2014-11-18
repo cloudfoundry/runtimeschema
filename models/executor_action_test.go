@@ -159,7 +159,7 @@ var _ = Describe("ExecutorAction", func() {
 				ExecutorAction{
 					RunAction{Path: "echo"},
 				},
-				10 * time.Millisecond,
+				10*time.Millisecond,
 			),
 		)
 	})

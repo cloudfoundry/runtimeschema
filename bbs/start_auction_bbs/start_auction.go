@@ -50,7 +50,7 @@ func (s *StartAuctionBBS) ResolveLRPStartAuction(lrp models.LRPStartAuction) err
 	return err
 }
 
-func (bbs *StartAuctionBBS) GetAllLRPStartAuctions() ([]models.LRPStartAuction, error) {
+func (bbs *StartAuctionBBS) LRPStartAuctions() ([]models.LRPStartAuction, error) {
 	lrps := []models.LRPStartAuction{}
 
 	node, err := bbs.store.ListRecursively(shared.LRPStartAuctionSchemaRoot)

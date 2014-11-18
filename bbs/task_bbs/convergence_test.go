@@ -310,7 +310,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should delete the task", func() {
-					_, err := bbs.GetTaskByGuid(task.TaskGuid)
+					_, err := bbs.TaskByGuid(task.TaskGuid)
 					Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 				})
 			})
@@ -376,7 +376,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("should delete the task", func() {
-				_, err := bbs.GetTaskByGuid(task.TaskGuid)
+				_, err := bbs.TaskByGuid(task.TaskGuid)
 				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 			})
 		})

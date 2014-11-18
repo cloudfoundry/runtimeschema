@@ -110,7 +110,7 @@ var _ = Describe("LrpAuctionConvergence", func() {
 			})
 
 			It("should not delete claimed events", func() {
-				Ω(bbs.GetAllLRPStopAuctions()).Should(HaveLen(1))
+				Ω(bbs.LRPStopAuctions()).Should(HaveLen(1))
 			})
 		})
 
@@ -125,7 +125,7 @@ var _ = Describe("LrpAuctionConvergence", func() {
 			})
 
 			It("should delete claimed events that have expired", func() {
-				Ω(bbs.GetAllLRPStopAuctions()).Should(HaveLen(2))
+				Ω(bbs.LRPStopAuctions()).Should(HaveLen(2))
 			})
 
 			It("should prune stop auction directories for events that have expired", func() {

@@ -17,12 +17,12 @@ var _ = Context("Getting Generic Services", func() {
 		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
 	})
 
-	Describe("GetServiceRegistrations", func() {
+	Describe("ServiceRegistrations", func() {
 		var registrations models.ServiceRegistrations
 		var registrationsErr error
 
 		JustBeforeEach(func() {
-			registrations, registrationsErr = bbs.GetServiceRegistrations()
+			registrations, registrationsErr = bbs.ServiceRegistrations()
 		})
 
 		Context("when etcd returns sucessfully", func() {

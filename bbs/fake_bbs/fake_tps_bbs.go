@@ -9,7 +9,7 @@ import (
 )
 
 type FakeTPSBBS struct {
-	GetActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidStub           func(string) ([]models.ActualLRP, error)
 	getActualLRPsByProcessGuidMutex       sync.RWMutex
 	getActualLRPsByProcessGuidArgsForCall []struct {
 		arg1 string
@@ -20,33 +20,33 @@ type FakeTPSBBS struct {
 	}
 }
 
-func (fake *FakeTPSBBS) GetActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+func (fake *FakeTPSBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
 	fake.getActualLRPsByProcessGuidMutex.Lock()
 	fake.getActualLRPsByProcessGuidArgsForCall = append(fake.getActualLRPsByProcessGuidArgsForCall, struct {
 		arg1 string
 	}{arg1})
 	fake.getActualLRPsByProcessGuidMutex.Unlock()
-	if fake.GetActualLRPsByProcessGuidStub != nil {
-		return fake.GetActualLRPsByProcessGuidStub(arg1)
+	if fake.ActualLRPsByProcessGuidStub != nil {
+		return fake.ActualLRPsByProcessGuidStub(arg1)
 	} else {
 		return fake.getActualLRPsByProcessGuidReturns.result1, fake.getActualLRPsByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeTPSBBS) GetActualLRPsByProcessGuidCallCount() int {
+func (fake *FakeTPSBBS) ActualLRPsByProcessGuidCallCount() int {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return len(fake.getActualLRPsByProcessGuidArgsForCall)
 }
 
-func (fake *FakeTPSBBS) GetActualLRPsByProcessGuidArgsForCall(i int) string {
+func (fake *FakeTPSBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return fake.getActualLRPsByProcessGuidArgsForCall[i].arg1
 }
 
-func (fake *FakeTPSBBS) GetActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetActualLRPsByProcessGuidStub = nil
+func (fake *FakeTPSBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByProcessGuidStub = nil
 	fake.getActualLRPsByProcessGuidReturns = struct {
 		result1 []models.ActualLRP
 		result2 error

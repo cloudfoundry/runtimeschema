@@ -27,7 +27,7 @@ type FakeNsyncBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	GetAllDesiredLRPsByDomainStub        func(domain string) ([]models.DesiredLRP, error)
+	DesiredLRPsByDomainStub              func(domain string) ([]models.DesiredLRP, error)
 	getAllDesiredLRPsByDomainMutex       sync.RWMutex
 	getAllDesiredLRPsByDomainArgsForCall []struct {
 		domain string
@@ -136,33 +136,33 @@ func (fake *FakeNsyncBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeNsyncBBS) GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
+func (fake *FakeNsyncBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
 	fake.getAllDesiredLRPsByDomainMutex.Lock()
 	fake.getAllDesiredLRPsByDomainArgsForCall = append(fake.getAllDesiredLRPsByDomainArgsForCall, struct {
 		domain string
 	}{domain})
 	fake.getAllDesiredLRPsByDomainMutex.Unlock()
-	if fake.GetAllDesiredLRPsByDomainStub != nil {
-		return fake.GetAllDesiredLRPsByDomainStub(domain)
+	if fake.DesiredLRPsByDomainStub != nil {
+		return fake.DesiredLRPsByDomainStub(domain)
 	} else {
 		return fake.getAllDesiredLRPsByDomainReturns.result1, fake.getAllDesiredLRPsByDomainReturns.result2
 	}
 }
 
-func (fake *FakeNsyncBBS) GetAllDesiredLRPsByDomainCallCount() int {
+func (fake *FakeNsyncBBS) DesiredLRPsByDomainCallCount() int {
 	fake.getAllDesiredLRPsByDomainMutex.RLock()
 	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
 	return len(fake.getAllDesiredLRPsByDomainArgsForCall)
 }
 
-func (fake *FakeNsyncBBS) GetAllDesiredLRPsByDomainArgsForCall(i int) string {
+func (fake *FakeNsyncBBS) DesiredLRPsByDomainArgsForCall(i int) string {
 	fake.getAllDesiredLRPsByDomainMutex.RLock()
 	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
 	return fake.getAllDesiredLRPsByDomainArgsForCall[i].domain
 }
 
-func (fake *FakeNsyncBBS) GetAllDesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
-	fake.GetAllDesiredLRPsByDomainStub = nil
+func (fake *FakeNsyncBBS) DesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.DesiredLRPsByDomainStub = nil
 	fake.getAllDesiredLRPsByDomainReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error

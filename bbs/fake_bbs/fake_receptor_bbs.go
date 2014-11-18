@@ -17,14 +17,14 @@ type FakeReceptorBBS struct {
 	desireTaskReturns struct {
 		result1 error
 	}
-	GetAllTasksStub        func() ([]models.Task, error)
+	TasksStub              func() ([]models.Task, error)
 	getAllTasksMutex       sync.RWMutex
 	getAllTasksArgsForCall []struct{}
 	getAllTasksReturns     struct {
 		result1 []models.Task
 		result2 error
 	}
-	GetAllTasksByDomainStub        func(domain string) ([]models.Task, error)
+	TasksByDomainStub              func(domain string) ([]models.Task, error)
 	getAllTasksByDomainMutex       sync.RWMutex
 	getAllTasksByDomainArgsForCall []struct {
 		domain string
@@ -33,7 +33,7 @@ type FakeReceptorBBS struct {
 		result1 []models.Task
 		result2 error
 	}
-	GetTaskByGuidStub        func(taskGuid string) (models.Task, error)
+	TaskByGuidStub           func(taskGuid string) (models.Task, error)
 	getTaskByGuidMutex       sync.RWMutex
 	getTaskByGuidArgsForCall []struct {
 		taskGuid string
@@ -99,14 +99,14 @@ type FakeReceptorBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
+	DesiredLRPsStub              func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
 	getAllDesiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	GetAllDesiredLRPsByDomainStub        func(domain string) ([]models.DesiredLRP, error)
+	DesiredLRPsByDomainStub              func(domain string) ([]models.DesiredLRP, error)
 	getAllDesiredLRPsByDomainMutex       sync.RWMutex
 	getAllDesiredLRPsByDomainArgsForCall []struct {
 		domain string
@@ -115,7 +115,7 @@ type FakeReceptorBBS struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	GetDesiredLRPByProcessGuidStub        func(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPByProcessGuidStub           func(processGuid string) (models.DesiredLRP, error)
 	getDesiredLRPByProcessGuidMutex       sync.RWMutex
 	getDesiredLRPByProcessGuidArgsForCall []struct {
 		processGuid string
@@ -124,14 +124,14 @@ type FakeReceptorBBS struct {
 		result1 models.DesiredLRP
 		result2 error
 	}
-	GetAllActualLRPsStub        func() ([]models.ActualLRP, error)
+	ActualLRPsStub              func() ([]models.ActualLRP, error)
 	getAllActualLRPsMutex       sync.RWMutex
 	getAllActualLRPsArgsForCall []struct{}
 	getAllActualLRPsReturns     struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetAllActualLRPsByDomainStub        func(domain string) ([]models.ActualLRP, error)
+	ActualLRPsByDomainStub              func(domain string) ([]models.ActualLRP, error)
 	getAllActualLRPsByDomainMutex       sync.RWMutex
 	getAllActualLRPsByDomainArgsForCall []struct {
 		domain string
@@ -140,7 +140,7 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidStub           func(string) ([]models.ActualLRP, error)
 	getActualLRPsByProcessGuidMutex       sync.RWMutex
 	getActualLRPsByProcessGuidArgsForCall []struct {
 		arg1 string
@@ -149,7 +149,7 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetActualLRPsByProcessGuidAndIndexStub        func(string, int) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidAndIndexStub           func(string, int) ([]models.ActualLRP, error)
 	getActualLRPsByProcessGuidAndIndexMutex       sync.RWMutex
 	getActualLRPsByProcessGuidAndIndexArgsForCall []struct {
 		arg1 string
@@ -167,7 +167,7 @@ type FakeReceptorBBS struct {
 	requestStopLRPInstancesReturns struct {
 		result1 error
 	}
-	GetAllCellsStub        func() ([]models.CellPresence, error)
+	CellsStub              func() ([]models.CellPresence, error)
 	getAllCellsMutex       sync.RWMutex
 	getAllCellsArgsForCall []struct{}
 	getAllCellsReturns     struct {
@@ -223,91 +223,91 @@ func (fake *FakeReceptorBBS) DesireTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) GetAllTasks() ([]models.Task, error) {
+func (fake *FakeReceptorBBS) Tasks() ([]models.Task, error) {
 	fake.getAllTasksMutex.Lock()
 	fake.getAllTasksArgsForCall = append(fake.getAllTasksArgsForCall, struct{}{})
 	fake.getAllTasksMutex.Unlock()
-	if fake.GetAllTasksStub != nil {
-		return fake.GetAllTasksStub()
+	if fake.TasksStub != nil {
+		return fake.TasksStub()
 	} else {
 		return fake.getAllTasksReturns.result1, fake.getAllTasksReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksCallCount() int {
+func (fake *FakeReceptorBBS) TasksCallCount() int {
 	fake.getAllTasksMutex.RLock()
 	defer fake.getAllTasksMutex.RUnlock()
 	return len(fake.getAllTasksArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksReturns(result1 []models.Task, result2 error) {
-	fake.GetAllTasksStub = nil
+func (fake *FakeReceptorBBS) TasksReturns(result1 []models.Task, result2 error) {
+	fake.TasksStub = nil
 	fake.getAllTasksReturns = struct {
 		result1 []models.Task
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksByDomain(domain string) ([]models.Task, error) {
+func (fake *FakeReceptorBBS) TasksByDomain(domain string) ([]models.Task, error) {
 	fake.getAllTasksByDomainMutex.Lock()
 	fake.getAllTasksByDomainArgsForCall = append(fake.getAllTasksByDomainArgsForCall, struct {
 		domain string
 	}{domain})
 	fake.getAllTasksByDomainMutex.Unlock()
-	if fake.GetAllTasksByDomainStub != nil {
-		return fake.GetAllTasksByDomainStub(domain)
+	if fake.TasksByDomainStub != nil {
+		return fake.TasksByDomainStub(domain)
 	} else {
 		return fake.getAllTasksByDomainReturns.result1, fake.getAllTasksByDomainReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksByDomainCallCount() int {
+func (fake *FakeReceptorBBS) TasksByDomainCallCount() int {
 	fake.getAllTasksByDomainMutex.RLock()
 	defer fake.getAllTasksByDomainMutex.RUnlock()
 	return len(fake.getAllTasksByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) TasksByDomainArgsForCall(i int) string {
 	fake.getAllTasksByDomainMutex.RLock()
 	defer fake.getAllTasksByDomainMutex.RUnlock()
 	return fake.getAllTasksByDomainArgsForCall[i].domain
 }
 
-func (fake *FakeReceptorBBS) GetAllTasksByDomainReturns(result1 []models.Task, result2 error) {
-	fake.GetAllTasksByDomainStub = nil
+func (fake *FakeReceptorBBS) TasksByDomainReturns(result1 []models.Task, result2 error) {
+	fake.TasksByDomainStub = nil
 	fake.getAllTasksByDomainReturns = struct {
 		result1 []models.Task
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetTaskByGuid(taskGuid string) (models.Task, error) {
+func (fake *FakeReceptorBBS) TaskByGuid(taskGuid string) (models.Task, error) {
 	fake.getTaskByGuidMutex.Lock()
 	fake.getTaskByGuidArgsForCall = append(fake.getTaskByGuidArgsForCall, struct {
 		taskGuid string
 	}{taskGuid})
 	fake.getTaskByGuidMutex.Unlock()
-	if fake.GetTaskByGuidStub != nil {
-		return fake.GetTaskByGuidStub(taskGuid)
+	if fake.TaskByGuidStub != nil {
+		return fake.TaskByGuidStub(taskGuid)
 	} else {
 		return fake.getTaskByGuidReturns.result1, fake.getTaskByGuidReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetTaskByGuidCallCount() int {
+func (fake *FakeReceptorBBS) TaskByGuidCallCount() int {
 	fake.getTaskByGuidMutex.RLock()
 	defer fake.getTaskByGuidMutex.RUnlock()
 	return len(fake.getTaskByGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetTaskByGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) TaskByGuidArgsForCall(i int) string {
 	fake.getTaskByGuidMutex.RLock()
 	defer fake.getTaskByGuidMutex.RUnlock()
 	return fake.getTaskByGuidArgsForCall[i].taskGuid
 }
 
-func (fake *FakeReceptorBBS) GetTaskByGuidReturns(result1 models.Task, result2 error) {
-	fake.GetTaskByGuidStub = nil
+func (fake *FakeReceptorBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
+	fake.TaskByGuidStub = nil
 	fake.getTaskByGuidReturns = struct {
 		result1 models.Task
 		result2 error
@@ -533,216 +533,216 @@ func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error)
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	fake.getAllDesiredLRPsMutex.Lock()
 	fake.getAllDesiredLRPsArgsForCall = append(fake.getAllDesiredLRPsArgsForCall, struct{}{})
 	fake.getAllDesiredLRPsMutex.Unlock()
-	if fake.GetAllDesiredLRPsStub != nil {
-		return fake.GetAllDesiredLRPsStub()
+	if fake.DesiredLRPsStub != nil {
+		return fake.DesiredLRPsStub()
 	} else {
 		return fake.getAllDesiredLRPsReturns.result1, fake.getAllDesiredLRPsReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsCallCount() int {
+func (fake *FakeReceptorBBS) DesiredLRPsCallCount() int {
 	fake.getAllDesiredLRPsMutex.RLock()
 	defer fake.getAllDesiredLRPsMutex.RUnlock()
 	return len(fake.getAllDesiredLRPsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
-	fake.GetAllDesiredLRPsStub = nil
+func (fake *FakeReceptorBBS) DesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.DesiredLRPsStub = nil
 	fake.getAllDesiredLRPsReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
 	fake.getAllDesiredLRPsByDomainMutex.Lock()
 	fake.getAllDesiredLRPsByDomainArgsForCall = append(fake.getAllDesiredLRPsByDomainArgsForCall, struct {
 		domain string
 	}{domain})
 	fake.getAllDesiredLRPsByDomainMutex.Unlock()
-	if fake.GetAllDesiredLRPsByDomainStub != nil {
-		return fake.GetAllDesiredLRPsByDomainStub(domain)
+	if fake.DesiredLRPsByDomainStub != nil {
+		return fake.DesiredLRPsByDomainStub(domain)
 	} else {
 		return fake.getAllDesiredLRPsByDomainReturns.result1, fake.getAllDesiredLRPsByDomainReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainCallCount() int {
+func (fake *FakeReceptorBBS) DesiredLRPsByDomainCallCount() int {
 	fake.getAllDesiredLRPsByDomainMutex.RLock()
 	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
 	return len(fake.getAllDesiredLRPsByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) DesiredLRPsByDomainArgsForCall(i int) string {
 	fake.getAllDesiredLRPsByDomainMutex.RLock()
 	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
 	return fake.getAllDesiredLRPsByDomainArgsForCall[i].domain
 }
 
-func (fake *FakeReceptorBBS) GetAllDesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
-	fake.GetAllDesiredLRPsByDomainStub = nil
+func (fake *FakeReceptorBBS) DesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.DesiredLRPsByDomainStub = nil
 	fake.getAllDesiredLRPsByDomainReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	fake.getDesiredLRPByProcessGuidMutex.Lock()
 	fake.getDesiredLRPByProcessGuidArgsForCall = append(fake.getDesiredLRPByProcessGuidArgsForCall, struct {
 		processGuid string
 	}{processGuid})
 	fake.getDesiredLRPByProcessGuidMutex.Unlock()
-	if fake.GetDesiredLRPByProcessGuidStub != nil {
-		return fake.GetDesiredLRPByProcessGuidStub(processGuid)
+	if fake.DesiredLRPByProcessGuidStub != nil {
+		return fake.DesiredLRPByProcessGuidStub(processGuid)
 	} else {
 		return fake.getDesiredLRPByProcessGuidReturns.result1, fake.getDesiredLRPByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidCallCount() int {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidCallCount() int {
 	fake.getDesiredLRPByProcessGuidMutex.RLock()
 	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
 	return len(fake.getDesiredLRPByProcessGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidArgsForCall(i int) string {
 	fake.getDesiredLRPByProcessGuidMutex.RLock()
 	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
 	return fake.getDesiredLRPByProcessGuidArgsForCall[i].processGuid
 }
 
-func (fake *FakeReceptorBBS) GetDesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
-	fake.GetDesiredLRPByProcessGuidStub = nil
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
+	fake.DesiredLRPByProcessGuidStub = nil
 	fake.getDesiredLRPByProcessGuidReturns = struct {
 		result1 models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPs() ([]models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	fake.getAllActualLRPsMutex.Lock()
 	fake.getAllActualLRPsArgsForCall = append(fake.getAllActualLRPsArgsForCall, struct{}{})
 	fake.getAllActualLRPsMutex.Unlock()
-	if fake.GetAllActualLRPsStub != nil {
-		return fake.GetAllActualLRPsStub()
+	if fake.ActualLRPsStub != nil {
+		return fake.ActualLRPsStub()
 	} else {
 		return fake.getAllActualLRPsReturns.result1, fake.getAllActualLRPsReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsCallCount() int {
+func (fake *FakeReceptorBBS) ActualLRPsCallCount() int {
 	fake.getAllActualLRPsMutex.RLock()
 	defer fake.getAllActualLRPsMutex.RUnlock()
 	return len(fake.getAllActualLRPsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetAllActualLRPsStub = nil
+func (fake *FakeReceptorBBS) ActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsStub = nil
 	fake.getAllActualLRPsReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
 	fake.getAllActualLRPsByDomainMutex.Lock()
 	fake.getAllActualLRPsByDomainArgsForCall = append(fake.getAllActualLRPsByDomainArgsForCall, struct {
 		domain string
 	}{domain})
 	fake.getAllActualLRPsByDomainMutex.Unlock()
-	if fake.GetAllActualLRPsByDomainStub != nil {
-		return fake.GetAllActualLRPsByDomainStub(domain)
+	if fake.ActualLRPsByDomainStub != nil {
+		return fake.ActualLRPsByDomainStub(domain)
 	} else {
 		return fake.getAllActualLRPsByDomainReturns.result1, fake.getAllActualLRPsByDomainReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainCallCount() int {
+func (fake *FakeReceptorBBS) ActualLRPsByDomainCallCount() int {
 	fake.getAllActualLRPsByDomainMutex.RLock()
 	defer fake.getAllActualLRPsByDomainMutex.RUnlock()
 	return len(fake.getAllActualLRPsByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ActualLRPsByDomainArgsForCall(i int) string {
 	fake.getAllActualLRPsByDomainMutex.RLock()
 	defer fake.getAllActualLRPsByDomainMutex.RUnlock()
 	return fake.getAllActualLRPsByDomainArgsForCall[i].domain
 }
 
-func (fake *FakeReceptorBBS) GetAllActualLRPsByDomainReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetAllActualLRPsByDomainStub = nil
+func (fake *FakeReceptorBBS) ActualLRPsByDomainReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByDomainStub = nil
 	fake.getAllActualLRPsByDomainReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
 	fake.getActualLRPsByProcessGuidMutex.Lock()
 	fake.getActualLRPsByProcessGuidArgsForCall = append(fake.getActualLRPsByProcessGuidArgsForCall, struct {
 		arg1 string
 	}{arg1})
 	fake.getActualLRPsByProcessGuidMutex.Unlock()
-	if fake.GetActualLRPsByProcessGuidStub != nil {
-		return fake.GetActualLRPsByProcessGuidStub(arg1)
+	if fake.ActualLRPsByProcessGuidStub != nil {
+		return fake.ActualLRPsByProcessGuidStub(arg1)
 	} else {
 		return fake.getActualLRPsByProcessGuidReturns.result1, fake.getActualLRPsByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidCallCount() int {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidCallCount() int {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return len(fake.getActualLRPsByProcessGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return fake.getActualLRPsByProcessGuidArgsForCall[i].arg1
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetActualLRPsByProcessGuidStub = nil
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByProcessGuidStub = nil
 	fake.getActualLRPsByProcessGuidReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndex(arg1 string, arg2 int) ([]models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndex(arg1 string, arg2 int) ([]models.ActualLRP, error) {
 	fake.getActualLRPsByProcessGuidAndIndexMutex.Lock()
 	fake.getActualLRPsByProcessGuidAndIndexArgsForCall = append(fake.getActualLRPsByProcessGuidAndIndexArgsForCall, struct {
 		arg1 string
 		arg2 int
 	}{arg1, arg2})
 	fake.getActualLRPsByProcessGuidAndIndexMutex.Unlock()
-	if fake.GetActualLRPsByProcessGuidAndIndexStub != nil {
-		return fake.GetActualLRPsByProcessGuidAndIndexStub(arg1, arg2)
+	if fake.ActualLRPsByProcessGuidAndIndexStub != nil {
+		return fake.ActualLRPsByProcessGuidAndIndexStub(arg1, arg2)
 	} else {
 		return fake.getActualLRPsByProcessGuidAndIndexReturns.result1, fake.getActualLRPsByProcessGuidAndIndexReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexCallCount() int {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexCallCount() int {
 	fake.getActualLRPsByProcessGuidAndIndexMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidAndIndexMutex.RUnlock()
 	return len(fake.getActualLRPsByProcessGuidAndIndexArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexArgsForCall(i int) (string, int) {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexArgsForCall(i int) (string, int) {
 	fake.getActualLRPsByProcessGuidAndIndexMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidAndIndexMutex.RUnlock()
 	return fake.getActualLRPsByProcessGuidAndIndexArgsForCall[i].arg1, fake.getActualLRPsByProcessGuidAndIndexArgsForCall[i].arg2
 }
 
-func (fake *FakeReceptorBBS) GetActualLRPsByProcessGuidAndIndexReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetActualLRPsByProcessGuidAndIndexStub = nil
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByProcessGuidAndIndexStub = nil
 	fake.getActualLRPsByProcessGuidAndIndexReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
@@ -781,25 +781,25 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstancesReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) GetAllCells() ([]models.CellPresence, error) {
+func (fake *FakeReceptorBBS) Cells() ([]models.CellPresence, error) {
 	fake.getAllCellsMutex.Lock()
 	fake.getAllCellsArgsForCall = append(fake.getAllCellsArgsForCall, struct{}{})
 	fake.getAllCellsMutex.Unlock()
-	if fake.GetAllCellsStub != nil {
-		return fake.GetAllCellsStub()
+	if fake.CellsStub != nil {
+		return fake.CellsStub()
 	} else {
 		return fake.getAllCellsReturns.result1, fake.getAllCellsReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) GetAllCellsCallCount() int {
+func (fake *FakeReceptorBBS) CellsCallCount() int {
 	fake.getAllCellsMutex.RLock()
 	defer fake.getAllCellsMutex.RUnlock()
 	return len(fake.getAllCellsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) GetAllCellsReturns(result1 []models.CellPresence, result2 error) {
-	fake.GetAllCellsStub = nil
+func (fake *FakeReceptorBBS) CellsReturns(result1 []models.CellPresence, result2 error) {
+	fake.CellsStub = nil
 	fake.getAllCellsReturns = struct {
 		result1 []models.CellPresence
 		result2 error

@@ -33,7 +33,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 
 	switch err {
 	case storeadapter.ErrorKeyExists:
-		existingLRP, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+		existingLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
 }
 
 func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
-	existing, err := bbs.GetDesiredLRPByProcessGuid(processGuid)
+	existing, err := bbs.DesiredLRPByProcessGuid(processGuid)
 	if err != nil {
 		return err
 	}

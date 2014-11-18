@@ -27,21 +27,21 @@ type FakeRouteEmitterBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
-	GetAllDesiredLRPsStub        func() ([]models.DesiredLRP, error)
+	DesiredLRPsStub              func() ([]models.DesiredLRP, error)
 	getAllDesiredLRPsMutex       sync.RWMutex
 	getAllDesiredLRPsArgsForCall []struct{}
 	getAllDesiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	GetRunningActualLRPsStub        func() ([]models.ActualLRP, error)
+	RunningActualLRPsStub           func() ([]models.ActualLRP, error)
 	getRunningActualLRPsMutex       sync.RWMutex
 	getRunningActualLRPsArgsForCall []struct{}
 	getRunningActualLRPsReturns     struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetDesiredLRPByProcessGuidStub        func(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPByProcessGuidStub           func(processGuid string) (models.DesiredLRP, error)
 	getDesiredLRPByProcessGuidMutex       sync.RWMutex
 	getDesiredLRPByProcessGuidArgsForCall []struct {
 		processGuid string
@@ -50,7 +50,7 @@ type FakeRouteEmitterBBS struct {
 		result1 models.DesiredLRP
 		result2 error
 	}
-	GetRunningActualLRPsByProcessGuidStub        func(processGuid string) ([]models.ActualLRP, error)
+	RunningActualLRPsByProcessGuidStub           func(processGuid string) ([]models.ActualLRP, error)
 	getRunningActualLRPsByProcessGuidMutex       sync.RWMutex
 	getRunningActualLRPsByProcessGuidArgsForCall []struct {
 		processGuid string
@@ -122,116 +122,116 @@ func (fake *FakeRouteEmitterBBS) WatchForActualLRPChangesReturns(result1 <-chan 
 	}{result1, result2, result3}
 }
 
-func (fake *FakeRouteEmitterBBS) GetAllDesiredLRPs() ([]models.DesiredLRP, error) {
+func (fake *FakeRouteEmitterBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	fake.getAllDesiredLRPsMutex.Lock()
 	fake.getAllDesiredLRPsArgsForCall = append(fake.getAllDesiredLRPsArgsForCall, struct{}{})
 	fake.getAllDesiredLRPsMutex.Unlock()
-	if fake.GetAllDesiredLRPsStub != nil {
-		return fake.GetAllDesiredLRPsStub()
+	if fake.DesiredLRPsStub != nil {
+		return fake.DesiredLRPsStub()
 	} else {
 		return fake.getAllDesiredLRPsReturns.result1, fake.getAllDesiredLRPsReturns.result2
 	}
 }
 
-func (fake *FakeRouteEmitterBBS) GetAllDesiredLRPsCallCount() int {
+func (fake *FakeRouteEmitterBBS) DesiredLRPsCallCount() int {
 	fake.getAllDesiredLRPsMutex.RLock()
 	defer fake.getAllDesiredLRPsMutex.RUnlock()
 	return len(fake.getAllDesiredLRPsArgsForCall)
 }
 
-func (fake *FakeRouteEmitterBBS) GetAllDesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
-	fake.GetAllDesiredLRPsStub = nil
+func (fake *FakeRouteEmitterBBS) DesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
+	fake.DesiredLRPsStub = nil
 	fake.getAllDesiredLRPsReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPs() ([]models.ActualLRP, error) {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
 	fake.getRunningActualLRPsMutex.Lock()
 	fake.getRunningActualLRPsArgsForCall = append(fake.getRunningActualLRPsArgsForCall, struct{}{})
 	fake.getRunningActualLRPsMutex.Unlock()
-	if fake.GetRunningActualLRPsStub != nil {
-		return fake.GetRunningActualLRPsStub()
+	if fake.RunningActualLRPsStub != nil {
+		return fake.RunningActualLRPsStub()
 	} else {
 		return fake.getRunningActualLRPsReturns.result1, fake.getRunningActualLRPsReturns.result2
 	}
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsCallCount() int {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsCallCount() int {
 	fake.getRunningActualLRPsMutex.RLock()
 	defer fake.getRunningActualLRPsMutex.RUnlock()
 	return len(fake.getRunningActualLRPsArgsForCall)
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetRunningActualLRPsStub = nil
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
+	fake.RunningActualLRPsStub = nil
 	fake.getRunningActualLRPsReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRouteEmitterBBS) GetDesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (fake *FakeRouteEmitterBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	fake.getDesiredLRPByProcessGuidMutex.Lock()
 	fake.getDesiredLRPByProcessGuidArgsForCall = append(fake.getDesiredLRPByProcessGuidArgsForCall, struct {
 		processGuid string
 	}{processGuid})
 	fake.getDesiredLRPByProcessGuidMutex.Unlock()
-	if fake.GetDesiredLRPByProcessGuidStub != nil {
-		return fake.GetDesiredLRPByProcessGuidStub(processGuid)
+	if fake.DesiredLRPByProcessGuidStub != nil {
+		return fake.DesiredLRPByProcessGuidStub(processGuid)
 	} else {
 		return fake.getDesiredLRPByProcessGuidReturns.result1, fake.getDesiredLRPByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeRouteEmitterBBS) GetDesiredLRPByProcessGuidCallCount() int {
+func (fake *FakeRouteEmitterBBS) DesiredLRPByProcessGuidCallCount() int {
 	fake.getDesiredLRPByProcessGuidMutex.RLock()
 	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
 	return len(fake.getDesiredLRPByProcessGuidArgsForCall)
 }
 
-func (fake *FakeRouteEmitterBBS) GetDesiredLRPByProcessGuidArgsForCall(i int) string {
+func (fake *FakeRouteEmitterBBS) DesiredLRPByProcessGuidArgsForCall(i int) string {
 	fake.getDesiredLRPByProcessGuidMutex.RLock()
 	defer fake.getDesiredLRPByProcessGuidMutex.RUnlock()
 	return fake.getDesiredLRPByProcessGuidArgsForCall[i].processGuid
 }
 
-func (fake *FakeRouteEmitterBBS) GetDesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
-	fake.GetDesiredLRPByProcessGuidStub = nil
+func (fake *FakeRouteEmitterBBS) DesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
+	fake.DesiredLRPByProcessGuidStub = nil
 	fake.getDesiredLRPByProcessGuidReturns = struct {
 		result1 models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
 	fake.getRunningActualLRPsByProcessGuidMutex.Lock()
 	fake.getRunningActualLRPsByProcessGuidArgsForCall = append(fake.getRunningActualLRPsByProcessGuidArgsForCall, struct {
 		processGuid string
 	}{processGuid})
 	fake.getRunningActualLRPsByProcessGuidMutex.Unlock()
-	if fake.GetRunningActualLRPsByProcessGuidStub != nil {
-		return fake.GetRunningActualLRPsByProcessGuidStub(processGuid)
+	if fake.RunningActualLRPsByProcessGuidStub != nil {
+		return fake.RunningActualLRPsByProcessGuidStub(processGuid)
 	} else {
 		return fake.getRunningActualLRPsByProcessGuidReturns.result1, fake.getRunningActualLRPsByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsByProcessGuidCallCount() int {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidCallCount() int {
 	fake.getRunningActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getRunningActualLRPsByProcessGuidMutex.RUnlock()
 	return len(fake.getRunningActualLRPsByProcessGuidArgsForCall)
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsByProcessGuidArgsForCall(i int) string {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidArgsForCall(i int) string {
 	fake.getRunningActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getRunningActualLRPsByProcessGuidMutex.RUnlock()
 	return fake.getRunningActualLRPsByProcessGuidArgsForCall[i].processGuid
 }
 
-func (fake *FakeRouteEmitterBBS) GetRunningActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetRunningActualLRPsByProcessGuidStub = nil
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+	fake.RunningActualLRPsByProcessGuidStub = nil
 	fake.getRunningActualLRPsByProcessGuidReturns = struct {
 		result1 []models.ActualLRP
 		result2 error

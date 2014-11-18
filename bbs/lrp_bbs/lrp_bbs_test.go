@@ -230,7 +230,7 @@ var _ = Describe("LRP", func() {
 			err := bbs.DesireLRP(newValue)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(current).Should(Equal(newValue))
@@ -243,7 +243,7 @@ var _ = Describe("LRP", func() {
 			err := bbs.DesireLRP(newValue)
 			Ω(err).Should(HaveOccurred())
 
-			current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(current).Should(Equal(value))
@@ -293,7 +293,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("updates the value in the store", func() {
-					current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(current).Should(Equal(after))
@@ -310,7 +310,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("does not update the value in the store", func() {
-					current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(current).Should(Equal(prevValue))
@@ -336,7 +336,7 @@ var _ = Describe("LRP", func() {
 
 			Context("when the current value matches", func() {
 				It("deletes the desired state", func() {
-					_, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					_, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 				})
 			})
@@ -351,7 +351,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("does not remove the value from the store", func() {
-					current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(current).Should(Equal(prevValue))
@@ -375,7 +375,7 @@ var _ = Describe("LRP", func() {
 
 			Context("when the current value does not exist", func() {
 				It("creates the value at the given key", func() {
-					current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(current).Should(Equal(after))
@@ -393,7 +393,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("does not change the value in the store", func() {
-					current, err := bbs.GetDesiredLRPByProcessGuid("some-guid")
+					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(current).Should(Equal(prevValue))
@@ -422,7 +422,7 @@ var _ = Describe("LRP", func() {
 				err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				updated, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(updated.Routes).Should(Equal(routes))
@@ -443,7 +443,7 @@ var _ = Describe("LRP", func() {
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("instances"))
 
-				updated, err := bbs.GetDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(updated).Should(Equal(lrp))
 			})

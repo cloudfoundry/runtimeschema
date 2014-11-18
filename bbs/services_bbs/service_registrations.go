@@ -12,7 +12,7 @@ var serviceSchemas = map[string]string{
 	models.CellServiceName: shared.CellSchemaRoot,
 }
 
-func (bbs *ServicesBBS) GetServiceRegistrations() (models.ServiceRegistrations, error) {
+func (bbs *ServicesBBS) ServiceRegistrations() (models.ServiceRegistrations, error) {
 	registrations := models.ServiceRegistrations{}
 
 	for serviceName := range serviceSchemas {

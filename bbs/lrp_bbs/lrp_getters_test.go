@@ -103,7 +103,7 @@ var _ = Describe("LrpGetters", func() {
 		}
 	})
 
-	Describe("GetAllDesiredLRPs", func() {
+	Describe("DesiredLRPs", func() {
 		BeforeEach(func() {
 			err := bbs.DesireLRP(desiredLrp1)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -116,7 +116,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns all desired long running processes", func() {
-			all, err := bbs.GetAllDesiredLRPs()
+			all, err := bbs.DesiredLRPs()
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(all).Should(HaveLen(3))
@@ -126,7 +126,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 	})
 
-	Describe("GetAllDesiredLRPsByDomain", func() {
+	Describe("DesiredLRPsByDomain", func() {
 		BeforeEach(func() {
 			desiredLrp1.Domain = "domain-1"
 			desiredLrp2.Domain = "domain-1"
@@ -143,22 +143,22 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns all desired long running processes for the given domain", func() {
-			byDomain, err := bbs.GetAllDesiredLRPsByDomain("domain-1")
+			byDomain, err := bbs.DesiredLRPsByDomain("domain-1")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(byDomain).Should(ConsistOf([]models.DesiredLRP{desiredLrp1, desiredLrp2}))
 
-			byDomain, err = bbs.GetAllDesiredLRPsByDomain("domain-2")
+			byDomain, err = bbs.DesiredLRPsByDomain("domain-2")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(byDomain).Should(ConsistOf([]models.DesiredLRP{desiredLrp3}))
 		})
 
 		It("blows up with an empty string domain", func() {
-			_, err := bbs.GetAllDesiredLRPsByDomain("")
+			_, err := bbs.DesiredLRPsByDomain("")
 			Ω(err).Should(Equal(lrp_bbs.ErrNoDomain))
 		})
 	})
 
-	Describe("GetDesiredLRPByProcessGuid", func() {
+	Describe("DesiredLRPByProcessGuid", func() {
 		BeforeEach(func() {
 			err := bbs.DesireLRP(desiredLrp1)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -171,14 +171,14 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns all desired long running processes", func() {
-			desiredLrp, err := bbs.GetDesiredLRPByProcessGuid("guidA")
+			desiredLrp, err := bbs.DesiredLRPByProcessGuid("guidA")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(desiredLrp).Should(Equal(desiredLrp1))
 		})
 	})
 
-	Describe("GetAllActualLRPs", func() {
+	Describe("ActualLRPs", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -191,7 +191,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns all actual long running processes", func() {
-			all, err := bbs.GetAllActualLRPs()
+			all, err := bbs.ActualLRPs()
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(all).Should(HaveLen(3))
@@ -201,7 +201,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 	})
 
-	Describe("GetAllActualLRPsByCellID", func() {
+	Describe("ActualLRPsByCellID", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -217,19 +217,19 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns actual long running processes belongs to 'cell-id'", func() {
-			actualLrpsForMainCell, err := bbs.GetAllActualLRPsByCellID("cell-id")
+			actualLrpsForMainCell, err := bbs.ActualLRPsByCellID("cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(actualLrpsForMainCell).Should(ConsistOf(runningLrp1, newLrp, runningLrp2))
 
-			actualLrpsForOtherCell, err := bbs.GetAllActualLRPsByCellID("some-other-cell")
+			actualLrpsForOtherCell, err := bbs.ActualLRPsByCellID("some-other-cell")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(actualLrpsForOtherCell).Should(HaveLen(1))
 		})
 	})
 
-	Describe("GetRunningActualLRPs", func() {
+	Describe("RunningActualLRPs", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -242,7 +242,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("returns all actual long running processes", func() {
-			all, err := bbs.GetRunningActualLRPs()
+			all, err := bbs.RunningActualLRPs()
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(all).Should(HaveLen(2))
@@ -251,7 +251,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 	})
 
-	Describe("GetActualLRPsByProcessGuid", func() {
+	Describe("ActualLRPsByProcessGuid", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -264,7 +264,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("should fetch all LRPs for the specified guid", func() {
-			lrps, err := bbs.GetActualLRPsByProcessGuid("guidA")
+			lrps, err := bbs.ActualLRPsByProcessGuid("guidA")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(lrps).Should(HaveLen(2))
 			Ω(lrps).Should(ContainElement(runningLrp1))
@@ -272,7 +272,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 	})
 
-	Describe("GetActualLRPsByProcessGuidAndIndex", func() {
+	Describe("ActualLRPsByProcessGuidAndIndex", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -285,14 +285,14 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("should fetch all LRPs for the specified guid", func() {
-			lrps, err := bbs.GetActualLRPsByProcessGuidAndIndex("guidA", 1)
+			lrps, err := bbs.ActualLRPsByProcessGuidAndIndex("guidA", 1)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(lrps).Should(HaveLen(1))
 			Ω(lrps).Should(ContainElement(runningLrp1))
 		})
 	})
 
-	Describe("GetRunningActualLRPsByProcessGuid", func() {
+	Describe("RunningActualLRPsByProcessGuid", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -305,14 +305,14 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("should fetch all LRPs for the specified guid", func() {
-			lrps, err := bbs.GetRunningActualLRPsByProcessGuid("guidA")
+			lrps, err := bbs.RunningActualLRPsByProcessGuid("guidA")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(lrps).Should(HaveLen(1))
 			Ω(lrps).Should(ContainElement(runningLrp1))
 		})
 	})
 
-	Describe("GetAllActualLRPsByDomain", func() {
+	Describe("ActualLRPsByDomain", func() {
 		BeforeEach(func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
@@ -328,7 +328,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		It("should fetch all LRPs for the specified guid", func() {
-			lrps, err := bbs.GetAllActualLRPsByDomain("domain-b")
+			lrps, err := bbs.ActualLRPsByDomain("domain-b")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(lrps).Should(HaveLen(2))
@@ -339,7 +339,7 @@ var _ = Describe("LrpGetters", func() {
 
 		Context("when there are no actual LRPs in the requested domain", func() {
 			It("returns an empty list", func() {
-				lrps, err := bbs.GetAllActualLRPsByDomain("bogus-domain")
+				lrps, err := bbs.ActualLRPsByDomain("bogus-domain")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrps).ShouldNot(BeNil())

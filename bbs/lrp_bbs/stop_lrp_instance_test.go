@@ -88,7 +88,7 @@ var _ = Describe("StopLRPInstance", func() {
 		})
 	})
 
-	Describe("GetAllStopLRPInstances", func() {
+	Describe("StopLRPInstances", func() {
 		It("gets all stop instances", func() {
 			stopInstance1 := models.StopLRPInstance{
 				ProcessGuid:  "some-process-guid-1",
@@ -105,7 +105,7 @@ var _ = Describe("StopLRPInstance", func() {
 			err = bbs.RequestStopLRPInstance(stopInstance2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			stopInstances, err := bbs.GetAllStopLRPInstances()
+			stopInstances, err := bbs.StopLRPInstances()
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(stopInstances).Should(HaveLen(2))
@@ -134,7 +134,7 @@ var _ = Describe("StopLRPInstance", func() {
 			})
 
 			It("removes the StopLRPInstance", func() {
-				Ω(bbs.GetAllStopLRPInstances()).Should(BeEmpty())
+				Ω(bbs.StopLRPInstances()).Should(BeEmpty())
 			})
 		})
 

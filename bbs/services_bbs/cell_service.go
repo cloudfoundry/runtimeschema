@@ -14,7 +14,7 @@ func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, inter
 	return heartbeater.New(bbs.store, shared.CellSchemaPath(cellPresence.CellID), string(cellPresence.ToJSON()), interval, bbs.logger)
 }
 
-func (bbs *ServicesBBS) GetAllCells() ([]models.CellPresence, error) {
+func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 	node, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return []models.CellPresence{}, nil

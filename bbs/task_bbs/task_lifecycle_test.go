@@ -227,7 +227,7 @@ var _ = Describe("Task BBS", func() {
 
 			JustBeforeEach(func() {
 				cancelError = bbs.CancelTask(task.TaskGuid)
-				taskAfterCancel, _ = bbs.GetTaskByGuid(task.TaskGuid)
+				taskAfterCancel, _ = bbs.TaskByGuid(task.TaskGuid)
 			})
 
 			itMarksTaskAsCancelled := func() {
@@ -537,7 +537,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ResolveTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllTasks()
+				tasks, err := bbs.Tasks()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
 			})

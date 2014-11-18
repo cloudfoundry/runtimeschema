@@ -211,7 +211,7 @@ func (fakeBBS *FakeConvergerBBS) GetStopLRPInstances() []models.StopLRPInstance 
 	return fakeBBS.stopLRPInstances
 }
 
-func (fakeBBS *FakeConvergerBBS) GetActualLRPsByProcessGuid(string) ([]models.ActualLRP, error) {
+func (fakeBBS *FakeConvergerBBS) ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error) {
 	fakeBBS.RLock()
 	defer fakeBBS.RUnlock()
 	return fakeBBS.ActualLRPs, fakeBBS.ActualLRPsErr

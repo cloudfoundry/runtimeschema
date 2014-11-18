@@ -30,7 +30,7 @@ var _ = Describe("Task BBS", func() {
 		}
 	})
 
-	Describe("GetTaskByGuid", func() {
+	Describe("TaskByGuid", func() {
 		var guid string
 		var receivedTask models.Task
 
@@ -40,7 +40,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		JustBeforeEach(func() {
-			receivedTask, err = bbs.GetTaskByGuid(guid)
+			receivedTask, err = bbs.TaskByGuid(guid)
 		})
 
 		Context("When there is a task with the given guid", func() {
@@ -74,7 +74,7 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("GetAllTasksByCellID", func() {
+	Describe("TasksByCellID", func() {
 		BeforeEach(func() {
 			task.CellID = "some-other-cell-id"
 			err = bbs.DesireTask(task)
@@ -82,7 +82,7 @@ var _ = Describe("Task BBS", func() {
 		})
 		Context("when there are no tasks for the given cell ID", func() {
 			It("returns an empty list", func() {
-				tasks, err := bbs.GetAllTasksByCellID("cell-id")
+				tasks, err := bbs.TasksByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
 			})
@@ -109,17 +109,17 @@ var _ = Describe("Task BBS", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task1Request)
 				Ω(err).ShouldNot(HaveOccurred())
-				task1, err = bbs.GetTaskByGuid("some-guid-1")
+				task1, err = bbs.TaskByGuid("some-guid-1")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.DesireTask(task2Request)
 				Ω(err).ShouldNot(HaveOccurred())
-				task2, err = bbs.GetTaskByGuid("some-guid-2")
+				task2, err = bbs.TaskByGuid("some-guid-2")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("returns only those tasks", func() {
-				tasks, err := bbs.GetAllTasksByCellID("cell-id")
+				tasks, err := bbs.TasksByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(ConsistOf(task1, task2))
 			})
@@ -226,7 +226,7 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("GetAllTasksByDomain", func() {
+	Describe("TasksByDomain", func() {
 		BeforeEach(func() {
 			task.TaskGuid = "guid-1"
 			err = bbs.DesireTask(task)
@@ -244,7 +244,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in the given domain", func() {
-			tasks, err := bbs.GetAllTasksByDomain("tests")
+			tasks, err := bbs.TasksByDomain("tests")
 
 			guids := []string{}
 			for _, task := range tasks {

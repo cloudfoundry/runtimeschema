@@ -59,7 +59,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when no cell is missing", func() {
 			It("should not prune any LRPs", func() {
-				Ω(bbs.GetAllActualLRPs()).Should(HaveLen(2))
+				Ω(bbs.ActualLRPs()).Should(HaveLen(2))
 			})
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("should delete LRPs associated with said cell", func() {
-				Ω(bbs.GetAllActualLRPs()).Should(BeEmpty())
+				Ω(bbs.ActualLRPs()).Should(BeEmpty())
 			})
 
 			It("should prune LRP directories for apps that are no longer running", func() {
@@ -211,7 +211,7 @@ var _ = Describe("LrpConvergence", func() {
 	Context("when there is an actual LRP with no matching desired LRP", func() {
 		It("should emit a stop for the actual LRP", func() {
 			bbs.ConvergeLRPs()
-			stops, err := bbs.GetAllStopLRPInstances()
+			stops, err := bbs.StopLRPInstances()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(stops).Should(HaveLen(2))
 

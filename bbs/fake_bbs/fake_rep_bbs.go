@@ -46,7 +46,7 @@ type FakeRepBBS struct {
 	startTaskReturns struct {
 		result1 error
 	}
-	GetTaskByGuidStub        func(taskGuid string) (models.Task, error)
+	TaskByGuidStub           func(taskGuid string) (models.Task, error)
 	getTaskByGuidMutex       sync.RWMutex
 	getTaskByGuidArgsForCall []struct {
 		taskGuid string
@@ -55,7 +55,7 @@ type FakeRepBBS struct {
 		result1 models.Task
 		result2 error
 	}
-	GetAllTasksByCellIDStub        func(cellID string) ([]models.Task, error)
+	TasksByCellIDStub              func(cellID string) ([]models.Task, error)
 	getAllTasksByCellIDMutex       sync.RWMutex
 	getAllTasksByCellIDArgsForCall []struct {
 		cellID string
@@ -75,7 +75,7 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	GetActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidStub           func(string) ([]models.ActualLRP, error)
 	getActualLRPsByProcessGuidMutex       sync.RWMutex
 	getActualLRPsByProcessGuidArgsForCall []struct {
 		arg1 string
@@ -84,7 +84,7 @@ type FakeRepBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	GetAllActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
+	ActualLRPsByCellIDStub              func(cellID string) ([]models.ActualLRP, error)
 	getAllActualLRPsByCellIDMutex       sync.RWMutex
 	getAllActualLRPsByCellIDArgsForCall []struct {
 		cellID string
@@ -276,66 +276,66 @@ func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) GetTaskByGuid(taskGuid string) (models.Task, error) {
+func (fake *FakeRepBBS) TaskByGuid(taskGuid string) (models.Task, error) {
 	fake.getTaskByGuidMutex.Lock()
 	fake.getTaskByGuidArgsForCall = append(fake.getTaskByGuidArgsForCall, struct {
 		taskGuid string
 	}{taskGuid})
 	fake.getTaskByGuidMutex.Unlock()
-	if fake.GetTaskByGuidStub != nil {
-		return fake.GetTaskByGuidStub(taskGuid)
+	if fake.TaskByGuidStub != nil {
+		return fake.TaskByGuidStub(taskGuid)
 	} else {
 		return fake.getTaskByGuidReturns.result1, fake.getTaskByGuidReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetTaskByGuidCallCount() int {
+func (fake *FakeRepBBS) TaskByGuidCallCount() int {
 	fake.getTaskByGuidMutex.RLock()
 	defer fake.getTaskByGuidMutex.RUnlock()
 	return len(fake.getTaskByGuidArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetTaskByGuidArgsForCall(i int) string {
+func (fake *FakeRepBBS) TaskByGuidArgsForCall(i int) string {
 	fake.getTaskByGuidMutex.RLock()
 	defer fake.getTaskByGuidMutex.RUnlock()
 	return fake.getTaskByGuidArgsForCall[i].taskGuid
 }
 
-func (fake *FakeRepBBS) GetTaskByGuidReturns(result1 models.Task, result2 error) {
-	fake.GetTaskByGuidStub = nil
+func (fake *FakeRepBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
+	fake.TaskByGuidStub = nil
 	fake.getTaskByGuidReturns = struct {
 		result1 models.Task
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) GetAllTasksByCellID(cellID string) ([]models.Task, error) {
+func (fake *FakeRepBBS) TasksByCellID(cellID string) ([]models.Task, error) {
 	fake.getAllTasksByCellIDMutex.Lock()
 	fake.getAllTasksByCellIDArgsForCall = append(fake.getAllTasksByCellIDArgsForCall, struct {
 		cellID string
 	}{cellID})
 	fake.getAllTasksByCellIDMutex.Unlock()
-	if fake.GetAllTasksByCellIDStub != nil {
-		return fake.GetAllTasksByCellIDStub(cellID)
+	if fake.TasksByCellIDStub != nil {
+		return fake.TasksByCellIDStub(cellID)
 	} else {
 		return fake.getAllTasksByCellIDReturns.result1, fake.getAllTasksByCellIDReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetAllTasksByCellIDCallCount() int {
+func (fake *FakeRepBBS) TasksByCellIDCallCount() int {
 	fake.getAllTasksByCellIDMutex.RLock()
 	defer fake.getAllTasksByCellIDMutex.RUnlock()
 	return len(fake.getAllTasksByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetAllTasksByCellIDArgsForCall(i int) string {
+func (fake *FakeRepBBS) TasksByCellIDArgsForCall(i int) string {
 	fake.getAllTasksByCellIDMutex.RLock()
 	defer fake.getAllTasksByCellIDMutex.RUnlock()
 	return fake.getAllTasksByCellIDArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) GetAllTasksByCellIDReturns(result1 []models.Task, result2 error) {
-	fake.GetAllTasksByCellIDStub = nil
+func (fake *FakeRepBBS) TasksByCellIDReturns(result1 []models.Task, result2 error) {
+	fake.TasksByCellIDStub = nil
 	fake.getAllTasksByCellIDReturns = struct {
 		result1 []models.Task
 		result2 error
@@ -377,66 +377,66 @@ func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) GetActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+func (fake *FakeRepBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
 	fake.getActualLRPsByProcessGuidMutex.Lock()
 	fake.getActualLRPsByProcessGuidArgsForCall = append(fake.getActualLRPsByProcessGuidArgsForCall, struct {
 		arg1 string
 	}{arg1})
 	fake.getActualLRPsByProcessGuidMutex.Unlock()
-	if fake.GetActualLRPsByProcessGuidStub != nil {
-		return fake.GetActualLRPsByProcessGuidStub(arg1)
+	if fake.ActualLRPsByProcessGuidStub != nil {
+		return fake.ActualLRPsByProcessGuidStub(arg1)
 	} else {
 		return fake.getActualLRPsByProcessGuidReturns.result1, fake.getActualLRPsByProcessGuidReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetActualLRPsByProcessGuidCallCount() int {
+func (fake *FakeRepBBS) ActualLRPsByProcessGuidCallCount() int {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return len(fake.getActualLRPsByProcessGuidArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetActualLRPsByProcessGuidArgsForCall(i int) string {
+func (fake *FakeRepBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
 	fake.getActualLRPsByProcessGuidMutex.RLock()
 	defer fake.getActualLRPsByProcessGuidMutex.RUnlock()
 	return fake.getActualLRPsByProcessGuidArgsForCall[i].arg1
 }
 
-func (fake *FakeRepBBS) GetActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetActualLRPsByProcessGuidStub = nil
+func (fake *FakeRepBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByProcessGuidStub = nil
 	fake.getActualLRPsByProcessGuidReturns = struct {
 		result1 []models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
+func (fake *FakeRepBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
 	fake.getAllActualLRPsByCellIDMutex.Lock()
 	fake.getAllActualLRPsByCellIDArgsForCall = append(fake.getAllActualLRPsByCellIDArgsForCall, struct {
 		cellID string
 	}{cellID})
 	fake.getAllActualLRPsByCellIDMutex.Unlock()
-	if fake.GetAllActualLRPsByCellIDStub != nil {
-		return fake.GetAllActualLRPsByCellIDStub(cellID)
+	if fake.ActualLRPsByCellIDStub != nil {
+		return fake.ActualLRPsByCellIDStub(cellID)
 	} else {
 		return fake.getAllActualLRPsByCellIDReturns.result1, fake.getAllActualLRPsByCellIDReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByCellIDCallCount() int {
+func (fake *FakeRepBBS) ActualLRPsByCellIDCallCount() int {
 	fake.getAllActualLRPsByCellIDMutex.RLock()
 	defer fake.getAllActualLRPsByCellIDMutex.RUnlock()
 	return len(fake.getAllActualLRPsByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByCellIDArgsForCall(i int) string {
+func (fake *FakeRepBBS) ActualLRPsByCellIDArgsForCall(i int) string {
 	fake.getAllActualLRPsByCellIDMutex.RLock()
 	defer fake.getAllActualLRPsByCellIDMutex.RUnlock()
 	return fake.getAllActualLRPsByCellIDArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) GetAllActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
-	fake.GetAllActualLRPsByCellIDStub = nil
+func (fake *FakeRepBBS) ActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
+	fake.ActualLRPsByCellIDStub = nil
 	fake.getAllActualLRPsByCellIDReturns = struct {
 		result1 []models.ActualLRP
 		result2 error

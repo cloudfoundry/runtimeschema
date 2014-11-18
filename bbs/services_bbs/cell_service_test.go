@@ -60,10 +60,10 @@ var _ = Describe("Fetching all Cells", func() {
 		})
 	})
 
-	Describe("GetAllCells", func() {
+	Describe("Cells", func() {
 		Context("when there are available Cells", func() {
 			It("should get from /v1/cell/", func() {
-				cellPresences, err := bbs.GetAllCells()
+				cellPresences, err := bbs.Cells()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(cellPresences).Should(HaveLen(2))
 				Ω(cellPresences).Should(ContainElement(firstCellPresence))
@@ -79,7 +79,7 @@ var _ = Describe("Fetching all Cells", func() {
 				})
 
 				It("should ignore the unparsable JSON and move on", func() {
-					cellPresences, err := bbs.GetAllCells()
+					cellPresences, err := bbs.Cells()
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(cellPresences).Should(HaveLen(2))
 					Ω(cellPresences).Should(ContainElement(firstCellPresence))
@@ -97,7 +97,7 @@ var _ = Describe("Fetching all Cells", func() {
 			})
 
 			It("should return empty", func() {
-				reps, err := bbs.GetAllCells()
+				reps, err := bbs.Cells()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(reps).Should(BeEmpty())
 			})
