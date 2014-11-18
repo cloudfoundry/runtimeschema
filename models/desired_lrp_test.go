@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -399,6 +400,16 @@ var _ = Describe("DesiredLRP", func() {
 				"actions": [
 					{"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 				]
+			}`,
+			"annotation": `{
+				"stack": "some-stack",
+				"domain": "some-domain",
+				"process_guid": "process_guid",
+				"instances": 1,
+				"action": {
+					"action":"download","args":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+				},
+				"annotation":"` + strings.Repeat("a", 10*1024+1) + `"
 			}`,
 		} {
 			json := payload

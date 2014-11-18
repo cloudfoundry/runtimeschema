@@ -17,6 +17,8 @@ const (
 	TaskStateResolving
 )
 
+const maximumAnnotationLength = 10 * 1024
+
 var taskGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 type Task struct {
@@ -100,6 +102,10 @@ func (task Task) Validate() error {
 
 	if task.CPUWeight > 100 {
 		return ErrInvalidJSONMessage{"cpu_weight"}
+	}
+
+	if len(task.Annotation) > maximumAnnotationLength {
+		return ErrInvalidJSONMessage{"annotation"}
 	}
 
 	return nil

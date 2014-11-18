@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -114,6 +115,8 @@ var _ = Describe("Task", func() {
 			"action":    `{"domain": "some-domain", "task_guid": "process-guid", "stack": "some-stack"}`,
 			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
 			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "action": {"action": "run", "args": {"path": "date"}}}`,
+			"annotation": `{"domain": "some-domain", "stack": "some-stack", "task_guid": "process-guid", "instances": 1, "action": {"action": "run", "args": {"path": "date"}},
+			 								"annotation":"` + strings.Repeat("a", 10*1024+1) + `"}`,
 		} {
 			json := payload
 			missingField := field
@@ -150,7 +153,6 @@ var _ = Describe("Task", func() {
 				Ω(err.Error()).Should(ContainSubstring("cpu_weight"))
 
 				Ω(decodedStartAuction).Should(BeZero())
-
 			})
 		})
 	})

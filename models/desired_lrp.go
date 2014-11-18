@@ -77,6 +77,10 @@ func (desired DesiredLRP) Validate() error {
 		return ErrInvalidJSONMessage{"cpu_weight"}
 	}
 
+	if len(desired.Annotation) > maximumAnnotationLength {
+		return ErrInvalidJSONMessage{"annotation"}
+	}
+
 	return nil
 }
 
