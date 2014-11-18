@@ -107,17 +107,17 @@ func (s CircusTailorConfig) Args() []string {
 }
 
 func (s CircusTailorConfig) Validate() error {
-	var missingFlags []string
+	var validationError ValidationError
 
 	s.FlagSet.VisitAll(func(flag *flag.Flag) {
 		value := flag.Value.String()
 		if value == "" {
-			missingFlags = append(missingFlags, "-"+flag.Name)
+			validationError = append(validationError, fmt.Errorf("missing flag: -%s", flag.Name))
 		}
 	})
 
-	if len(missingFlags) > 0 {
-		return fmt.Errorf("missing flags: %s", strings.Join(missingFlags, ", "))
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil

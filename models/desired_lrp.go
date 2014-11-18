@@ -53,28 +53,34 @@ func (desired DesiredLRP) ApplyUpdate(update DesiredLRPUpdate) DesiredLRP {
 var processGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 func (desired DesiredLRP) Validate() error {
+	var validationError ValidationError
+
 	if desired.Domain == "" {
-		return ErrInvalidJSONMessage{"domain"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
 	}
 
 	if !processGuidPattern.MatchString(desired.ProcessGuid) {
-		return ErrInvalidJSONMessage{"process_guid"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
 	}
 
 	if desired.Stack == "" {
-		return ErrInvalidJSONMessage{"stack"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
 	if err := desired.Action.Validate(); err != nil {
-		return err
+		validationError = append(validationError, err)
 	}
 
 	if desired.Instances < 1 {
-		return ErrInvalidJSONMessage{"instances"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"instances"})
 	}
 
 	if desired.CPUWeight > 100 {
-		return ErrInvalidJSONMessage{"cpu_weight"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	if len(desired.Annotation) > maximumAnnotationLength {
@@ -85,52 +91,58 @@ func (desired DesiredLRP) Validate() error {
 }
 
 func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
+	var validationError ValidationError
+
 	if desired.ProcessGuid != updatedModel.ProcessGuid {
-		return ErrInvalidModification{"process_guid"}
+		validationError = append(validationError, ErrInvalidModification{"process_guid"})
 	}
 
 	if desired.Domain != updatedModel.Domain {
-		return ErrInvalidModification{"domain"}
+		validationError = append(validationError, ErrInvalidModification{"domain"})
 	}
 
 	if desired.RootFSPath != updatedModel.RootFSPath {
-		return ErrInvalidModification{"root_fs"}
+		validationError = append(validationError, ErrInvalidModification{"root_fs"})
 	}
 
 	if desired.Stack != updatedModel.Stack {
-		return ErrInvalidModification{"stack"}
+		validationError = append(validationError, ErrInvalidModification{"stack"})
 	}
 
 	if !reflect.DeepEqual(desired.EnvironmentVariables, updatedModel.EnvironmentVariables) {
-		return ErrInvalidModification{"env"}
+		validationError = append(validationError, ErrInvalidModification{"env"})
 	}
 
 	if !reflect.DeepEqual(desired.Action, updatedModel.Action) {
-		return ErrInvalidModification{"action"}
+		validationError = append(validationError, ErrInvalidModification{"action"})
 	}
 
 	if desired.DiskMB != updatedModel.DiskMB {
-		return ErrInvalidModification{"disk_mb"}
+		validationError = append(validationError, ErrInvalidModification{"disk_mb"})
 	}
 
 	if desired.MemoryMB != updatedModel.MemoryMB {
-		return ErrInvalidModification{"memory_mb"}
+		validationError = append(validationError, ErrInvalidModification{"memory_mb"})
 	}
 
 	if desired.CPUWeight != updatedModel.CPUWeight {
-		return ErrInvalidModification{"cpu_weight"}
+		validationError = append(validationError, ErrInvalidModification{"cpu_weight"})
 	}
 
 	if !reflect.DeepEqual(desired.Ports, updatedModel.Ports) {
-		return ErrInvalidModification{"ports"}
+		validationError = append(validationError, ErrInvalidModification{"ports"})
 	}
 
 	if desired.LogSource != updatedModel.LogSource {
-		return ErrInvalidModification{"log_source"}
+		validationError = append(validationError, ErrInvalidModification{"log_source"})
 	}
 
 	if desired.LogGuid != updatedModel.LogGuid {
-		return ErrInvalidModification{"log_guid"}
+		validationError = append(validationError, ErrInvalidModification{"log_guid"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil

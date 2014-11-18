@@ -84,24 +84,30 @@ func NewTaskFromJSON(payload []byte) (Task, error) {
 }
 
 func (task Task) Validate() error {
+	var validationError ValidationError
+
 	if task.Domain == "" {
-		return ErrInvalidJSONMessage{"domain"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
 	}
 
 	if !taskGuidPattern.MatchString(task.TaskGuid) {
-		return ErrInvalidJSONMessage{"task_guid"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"task_guid"})
 	}
 
 	if task.Stack == "" {
-		return ErrInvalidJSONMessage{"stack"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
 	if err := task.Action.Validate(); err != nil {
-		return err
+		validationError = append(validationError, err)
 	}
 
 	if task.CPUWeight > 100 {
-		return ErrInvalidJSONMessage{"cpu_weight"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	if len(task.Annotation) > maximumAnnotationLength {

@@ -128,7 +128,7 @@ var _ = Describe("LRPStartAuction", func() {
 				It("returns an error indicating so", func() {
 					decodedStartAuction, err := NewLRPStartAuctionFromJSON([]byte(json))
 					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(ContainSubstring("JSON has missing/invalid field: " + missingField))
 
 					Ω(decodedStartAuction).Should(BeZero())
 				})

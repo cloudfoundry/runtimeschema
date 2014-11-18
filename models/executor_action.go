@@ -134,7 +134,7 @@ func (a ExecutorAction) Validate() error {
 	case DownloadAction, RunAction, UploadAction, TimeoutAction, EmitProgressAction, TryAction, ParallelAction, SerialAction:
 		return nil
 	default:
-		return ErrInvalidActionType
+		return ValidationError{ErrInvalidActionType}
 	}
 }
 

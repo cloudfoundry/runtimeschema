@@ -6,12 +6,18 @@ type Freshness struct {
 }
 
 func (freshness Freshness) Validate() error {
+	var validationError ValidationError
+
 	if freshness.Domain == "" {
-		return ErrInvalidJSONMessage{"domain"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
 	}
 
 	if freshness.TTLInSeconds < 0 {
-		return ErrInvalidJSONMessage{"ttl_in_seconds"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"ttl_in_seconds"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil

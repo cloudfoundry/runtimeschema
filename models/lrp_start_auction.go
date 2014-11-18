@@ -32,10 +32,22 @@ func NewLRPStartAuctionFromJSON(payload []byte) (LRPStartAuction, error) {
 }
 
 func (auction LRPStartAuction) Validate() error {
+	var validationError ValidationError
+
 	if auction.InstanceGuid == "" {
-		return ErrInvalidJSONMessage{"instance_guid"}
+		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
 	}
-	return auction.DesiredLRP.Validate()
+
+	err := auction.DesiredLRP.Validate()
+	if err != nil {
+		validationError = append(validationError, err)
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 func (auction LRPStartAuction) ToJSON() []byte {

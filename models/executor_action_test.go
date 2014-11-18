@@ -17,7 +17,7 @@ var _ = Describe("ExecutorAction", func() {
 				invalidAction := []string{"aliens", "from", "mars"}
 				executorAction := ExecutorAction{Action: invalidAction}
 				err := executorAction.Validate()
-				Ω(err).Should(Equal(ErrInvalidActionType))
+				Ω(err).Should(Equal(ValidationError{ErrInvalidActionType}))
 			})
 		})
 	})

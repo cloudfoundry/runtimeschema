@@ -1,5 +1,7 @@
 package models
 
+import "bytes"
+
 type ErrInvalidJSONMessage struct {
 	MissingField string
 }
@@ -14,4 +16,19 @@ type ErrInvalidModification struct {
 
 func (err ErrInvalidModification) Error() string {
 	return "attempt to make invalid change to field: " + err.InvalidField
+}
+
+type ValidationError []error
+
+func (ve ValidationError) Error() string {
+	var buffer bytes.Buffer
+
+	for i, err := range ve {
+		if i > 0 {
+			buffer.WriteString(", ")
+		}
+		buffer.WriteString(err.Error())
+	}
+
+	return buffer.String()
 }
