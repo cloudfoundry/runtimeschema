@@ -13,7 +13,12 @@ import (
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
 func (s *TaskBBS) DesireTask(task models.Task) error {
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+	err := task.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		if task.CreatedAt == 0 {
 			task.CreatedAt = s.timeProvider.Time().UnixNano()
 		}

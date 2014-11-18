@@ -23,8 +23,12 @@ func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider
 }
 
 func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
+	err := lrp.Validate()
+	if err != nil {
+		return err
+	}
 
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.Create(storeadapter.StoreNode{
 			Key:   shared.DesiredLRPSchemaPath(lrp),
 			Value: lrp.ToJSON(),

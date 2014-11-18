@@ -97,6 +97,20 @@ var _ = Describe("Task BBS", func() {
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 		})
+
+		Context("with an invalid task", func() {
+			var desireError error
+
+			BeforeEach(func() {
+				task.Domain = ""
+				desireError = bbs.DesireTask(task)
+			})
+
+			It("returns an error", func() {
+				Ω(desireError).Should(HaveOccurred())
+				Ω(desireError).Should(BeAssignableToTypeOf(*new(models.ValidationError)))
+			})
+		})
 	})
 
 	Describe("ClaimTask", func() {

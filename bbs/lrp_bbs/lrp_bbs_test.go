@@ -71,6 +71,20 @@ var _ = Describe("LRP", func() {
 				return bbs.DesireLRP(lrp)
 			})
 		})
+
+		Context("with an invalid LRP", func() {
+			var desireError error
+
+			BeforeEach(func() {
+				lrp.Domain = ""
+				desireError = bbs.DesireLRP(lrp)
+			})
+
+			It("returns an error", func() {
+				Ω(desireError).Should(HaveOccurred())
+				Ω(desireError).Should(BeAssignableToTypeOf(*new(models.ValidationError)))
+			})
+		})
 	})
 
 	Describe("Adding and removing actual LRPs", func() {
