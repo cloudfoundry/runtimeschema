@@ -382,6 +382,9 @@ func marshalActions(actions []Action) ([]*json.RawMessage, error) {
 }
 
 func MarshalAction(a Action) ([]byte, error) {
+	if a == nil {
+		return json.Marshal(a)
+	}
 	payload, err := json.Marshal(a)
 	if err != nil {
 		return nil, err
@@ -414,6 +417,9 @@ func UnmarshalAction(data []byte) (Action, error) {
 	err := json.Unmarshal(data, &wrapped)
 	if err != nil {
 		return nil, err
+	}
+	if wrapped == nil {
+		return nil, nil
 	}
 
 	if len(wrapped) == 1 {
