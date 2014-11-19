@@ -44,11 +44,11 @@ func (a DownloadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+		validationError = append(validationError, ErrInvalidField{"from"})
 	}
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+		validationError = append(validationError, ErrInvalidField{"to"})
 	}
 
 	if len(validationError) > 0 {
@@ -73,11 +73,11 @@ func (a UploadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+		validationError = append(validationError, ErrInvalidField{"to"})
 	}
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+		validationError = append(validationError, ErrInvalidField{"from"})
 	}
 
 	if len(validationError) > 0 {
@@ -105,7 +105,7 @@ func (a RunAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Path == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"path"})
+		validationError = append(validationError, ErrInvalidField{"path"})
 	}
 
 	if len(validationError) > 0 {
@@ -139,7 +139,7 @@ func (a TimeoutAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -148,7 +148,7 @@ func (a TimeoutAction) Validate() error {
 	}
 
 	if a.Timeout <= 0 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"timeout"})
+		validationError = append(validationError, ErrInvalidField{"timeout"})
 	}
 
 	if len(validationError) > 0 {
@@ -166,7 +166,7 @@ func (a *TimeoutAction) MarshalJSON() ([]byte, error) {
 	j := json.RawMessage(bytes)
 
 	return json.Marshal(&mTimeoutAction{
-		Action:    j,
+		Action:    &j,
 		Timeout:   a.Timeout,
 		LogSource: a.LogSource,
 	})
@@ -179,9 +179,14 @@ func (a *TimeoutAction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	action, err := UnmarshalAction([]byte(m.Action))
-	if err != nil {
-		return err
+	var action Action
+	if m.Action == nil {
+		action = nil
+	} else {
+		action, err = UnmarshalAction([]byte(*m.Action))
+		if err != nil {
+			return err
+		}
 	}
 
 	a.Action = action
@@ -192,8 +197,8 @@ func (a *TimeoutAction) UnmarshalJSON(data []byte) error {
 }
 
 type mTimeoutAction struct {
-	Action  json.RawMessage `json:"action"`
-	Timeout time.Duration   `json:"timeout"`
+	Action  *json.RawMessage `json:"action"`
+	Timeout time.Duration    `json:"timeout"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
@@ -212,7 +217,7 @@ func (a TryAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -235,7 +240,7 @@ func (a *TryAction) MarshalJSON() ([]byte, error) {
 	j := json.RawMessage(bytes)
 
 	return json.Marshal(&mTryAction{
-		Action:    j,
+		Action:    &j,
 		LogSource: a.LogSource,
 	})
 }
@@ -247,9 +252,14 @@ func (a *TryAction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	action, err := UnmarshalAction([]byte(m.Action))
-	if err != nil {
-		return err
+	var action Action
+	if m.Action == nil {
+		action = nil
+	} else {
+		action, err = UnmarshalAction([]byte(*m.Action))
+		if err != nil {
+			return err
+		}
 	}
 
 	a.Action = action
@@ -259,7 +269,7 @@ func (a *TryAction) UnmarshalJSON(data []byte) error {
 }
 
 type mTryAction struct {
-	Action json.RawMessage `json:"action"`
+	Action *json.RawMessage `json:"action"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
@@ -278,12 +288,12 @@ func (a ParallelAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+		validationError = append(validationError, ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+				validationError = append(validationError, ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
@@ -350,12 +360,12 @@ func (a SerialAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+		validationError = append(validationError, ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+				validationError = append(validationError, ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
@@ -425,7 +435,7 @@ func (a EmitProgressAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -463,9 +473,14 @@ func (a *EmitProgressAction) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	action, err := UnmarshalAction([]byte(*m.Action))
-	if err != nil {
-		return err
+	var action Action
+	if m.Action == nil {
+		action = nil
+	} else {
+		action, err = UnmarshalAction([]byte(*m.Action))
+		if err != nil {
+			return err
+		}
 	}
 
 	a.Action = action
@@ -532,6 +547,10 @@ var actionMap = map[ActionType]Action{
 }
 
 func marshalActions(actions []Action) ([]*json.RawMessage, error) {
+	if actions == nil {
+		return nil, nil
+	}
+
 	mActions := make([]*json.RawMessage, len(actions))
 	for i, action := range actions {
 		bytes, err := MarshalAction(action)
@@ -565,13 +584,21 @@ func MarshalAction(a Action) ([]byte, error) {
 }
 
 func unmarshalActions(mActions []*json.RawMessage) ([]Action, error) {
+	if mActions == nil {
+		return nil, nil
+	}
+
 	actions := make([]Action, len(mActions))
 	for i, mAction := range mActions {
-		action, err := UnmarshalAction([]byte(*mAction))
-		if err != nil {
-			return nil, err
+		if mAction == nil {
+			actions[i] = nil
+		} else {
+			action, err := UnmarshalAction([]byte(*mAction))
+			if err != nil {
+				return nil, err
+			}
+			actions[i] = action
 		}
-		actions[i] = action
 	}
 
 	return actions, nil
@@ -597,5 +624,5 @@ func UnmarshalAction(data []byte) (Action, error) {
 		}
 	}
 
-	return nil, ErrInvalidJSONMessage{"Invalid action"}
+	return nil, ErrInvalidField{"Invalid action"}
 }

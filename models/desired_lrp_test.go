@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -396,6 +397,45 @@ var _ = Describe("DesiredLRP", func() {
 			}`,
 				), &decodedLRP)
 				Ω(err).Should(HaveOccurred())
+			})
+		})
+
+		Context("with invalid actions", func() {
+			var expectedLRP DesiredLRP
+			var payload string
+
+			BeforeEach(func() {
+				expectedLRP = DesiredLRP{}
+			})
+
+			Context("with null actions", func() {
+				BeforeEach(func() {
+					payload = `{
+					"setup": null,
+					"action": null,
+					"monitor": null
+				}`
+				})
+
+				It("unmarshals", func() {
+					var actualLRP DesiredLRP
+					err := json.Unmarshal([]byte(payload), &actualLRP)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(actualLRP).Should(Equal(expectedLRP))
+				})
+			})
+
+			Context("with missing action", func() {
+				BeforeEach(func() {
+					payload = `{}`
+				})
+
+				It("unmarshals", func() {
+					var actualLRP DesiredLRP
+					err := json.Unmarshal([]byte(payload), &actualLRP)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(actualLRP).Should(Equal(expectedLRP))
+				})
 			})
 		})
 

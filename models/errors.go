@@ -2,12 +2,12 @@ package models
 
 import "bytes"
 
-type ErrInvalidJSONMessage struct {
-	MissingField string
+type ErrInvalidField struct {
+	Field string
 }
 
-func (err ErrInvalidJSONMessage) Error() string {
-	return "JSON has missing/invalid field: " + err.MissingField
+func (err ErrInvalidField) Error() string {
+	return "Invalid field: " + err.Field
 }
 
 type ErrInvalidModification struct {

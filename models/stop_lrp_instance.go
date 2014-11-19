@@ -10,11 +10,11 @@ func (stop StopLRPInstance) Validate() error {
 	var validationError ValidationError
 
 	if stop.ProcessGuid == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
+		validationError = append(validationError, ErrInvalidField{"process_guid"})
 	}
 
 	if stop.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
+		validationError = append(validationError, ErrInvalidField{"instance_guid"})
 	}
 
 	if len(validationError) > 0 {

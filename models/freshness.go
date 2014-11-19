@@ -9,11 +9,11 @@ func (freshness Freshness) Validate() error {
 	var validationError ValidationError
 
 	if freshness.Domain == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
 	if freshness.TTLInSeconds < 0 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"ttl_in_seconds"})
+		validationError = append(validationError, ErrInvalidField{"ttl_in_seconds"})
 	}
 
 	if len(validationError) > 0 {

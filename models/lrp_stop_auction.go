@@ -18,7 +18,7 @@ type LRPStopAuction struct {
 
 func (auction LRPStopAuction) Validate() error {
 	if auction.ProcessGuid == "" {
-		return ValidationError{ErrInvalidJSONMessage{"process_guid"}}
+		return ValidationError{ErrInvalidField{"process_guid"}}
 	}
 
 	return nil

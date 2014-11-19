@@ -53,7 +53,7 @@ type Task struct {
 type InnerTask Task
 
 type mTask struct {
-	ActionRaw json.RawMessage `json:"action"`
+	ActionRaw *json.RawMessage `json:"action,omitempty"`
 	*InnerTask
 }
 
@@ -81,9 +81,14 @@ func (t *Task) UnmarshalJSON(payload []byte) error {
 		return err
 	}
 
-	a, err := UnmarshalAction(mtask.ActionRaw)
-	if err != nil {
-		return err
+	var a Action
+	if mtask.ActionRaw == nil {
+		a = nil
+	} else {
+		a, err = UnmarshalAction(*mtask.ActionRaw)
+		if err != nil {
+			return err
+		}
 	}
 	t.Action = a
 
@@ -94,15 +99,15 @@ func (task Task) Validate() error {
 	var validationError ValidationError
 
 	if task.Domain == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
 	if !taskGuidPattern.MatchString(task.TaskGuid) {
-		validationError = append(validationError, ErrInvalidJSONMessage{"task_guid"})
+		validationError = append(validationError, ErrInvalidField{"task_guid"})
 	}
 
 	if task.Stack == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
+		validationError = append(validationError, ErrInvalidField{"stack"})
 	}
 
 	if task.Action == nil {
@@ -115,11 +120,11 @@ func (task Task) Validate() error {
 	}
 
 	if task.CPUWeight > 100 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
+		validationError = append(validationError, ErrInvalidField{"cpu_weight"})
 	}
 
 	if len(task.Annotation) > maximumAnnotationLength {
-		validationError = append(validationError, ErrInvalidJSONMessage{"annotation"})
+		validationError = append(validationError, ErrInvalidField{"annotation"})
 	}
 
 	if len(validationError) > 0 {
@@ -135,10 +140,11 @@ func (task Task) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
+	rm := json.RawMessage(actionRaw)
 	innerTask := InnerTask(task)
 
 	mtask := &mTask{
-		ActionRaw: actionRaw,
+		ActionRaw: &rm,
 		InnerTask: &innerTask,
 	}
 

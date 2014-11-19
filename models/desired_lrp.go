@@ -30,7 +30,7 @@ type InnerDesiredLRP DesiredLRP
 
 type mDesiredLRP struct {
 	SetupRaw   *json.RawMessage `json:"setup,omitempty"`
-	ActionRaw  json.RawMessage  `json:"action"`
+	ActionRaw  *json.RawMessage `json:"action,omitempty"`
 	MonitorRaw *json.RawMessage `json:"monitor,omitempty"`
 	*InnerDesiredLRP
 }
@@ -65,15 +65,15 @@ func (desired DesiredLRP) Validate() error {
 	var validationError ValidationError
 
 	if desired.Domain == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
 	if !processGuidPattern.MatchString(desired.ProcessGuid) {
-		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
+		validationError = append(validationError, ErrInvalidField{"process_guid"})
 	}
 
 	if desired.Stack == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
+		validationError = append(validationError, ErrInvalidField{"stack"})
 	}
 
 	if desired.Setup != nil {
@@ -100,15 +100,15 @@ func (desired DesiredLRP) Validate() error {
 	}
 
 	if desired.Instances < 1 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"instances"})
+		validationError = append(validationError, ErrInvalidField{"instances"})
 	}
 
 	if desired.CPUWeight > 100 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
+		validationError = append(validationError, ErrInvalidField{"cpu_weight"})
 	}
 
 	if len(desired.Annotation) > maximumAnnotationLength {
-		validationError = append(validationError, ErrInvalidJSONMessage{"annotation"})
+		validationError = append(validationError, ErrInvalidField{"annotation"})
 	}
 
 	if len(validationError) > 0 {
@@ -183,13 +183,20 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 		return err
 	}
 
-	a, err := UnmarshalAction(mLRP.ActionRaw)
-	if err != nil {
-		return err
+	var a Action
+	if mLRP.ActionRaw == nil {
+		a = nil
+	} else {
+		a, err = UnmarshalAction(*mLRP.ActionRaw)
+		if err != nil {
+			return err
+		}
 	}
 	desired.Action = a
 
-	if mLRP.SetupRaw != nil {
+	if mLRP.SetupRaw == nil {
+		a = nil
+	} else {
 		a, err = UnmarshalAction(*mLRP.SetupRaw)
 		if err != nil {
 			return err
@@ -197,7 +204,9 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 		desired.Setup = a
 	}
 
-	if mLRP.MonitorRaw != nil {
+	if mLRP.MonitorRaw == nil {
+		a = nil
+	} else {
 		a, err = UnmarshalAction(*mLRP.MonitorRaw)
 		if err != nil {
 			return err
@@ -209,12 +218,17 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 }
 
 func (desired DesiredLRP) MarshalJSON() ([]byte, error) {
-	actionRaw, err := MarshalAction(desired.Action)
-	if err != nil {
-		return nil, err
+	var setupRaw, actionRaw, monitorRaw *json.RawMessage
+
+	if desired.Action != nil {
+		raw, err := MarshalAction(desired.Action)
+		if err != nil {
+			return nil, err
+		}
+		rm := json.RawMessage(raw)
+		actionRaw = &rm
 	}
 
-	var setupRaw, monitorRaw *json.RawMessage
 	if desired.Setup != nil {
 		raw, err := MarshalAction(desired.Setup)
 		if err != nil {

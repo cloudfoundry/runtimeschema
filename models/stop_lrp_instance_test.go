@@ -63,7 +63,7 @@ var _ = Describe("StopLrpInstance", func() {
 					decodedStopInstance := &StopLRPInstance{}
 					err := FromJSON([]byte(json), decodedStopInstance)
 					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(Equal("Invalid field: " + missingField))
 				})
 			})
 		}

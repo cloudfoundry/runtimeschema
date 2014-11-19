@@ -12,8 +12,8 @@ import (
 )
 
 var _ = Describe("Actions", func() {
-	itSerializesAndDeserializes := func(actionPayload string, action Action) {
-		It("Action <-> JSON for "+string(action.ActionType()), func() {
+	itSerializes := func(actionPayload string, action Action) {
+		It("Action -> JSON for "+string(action.ActionType()), func() {
 			By("marshalling to JSON", func() {
 				marshalledAction := action
 
@@ -30,6 +30,12 @@ var _ = Describe("Actions", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(json).Should(MatchJSON(wrappedJSON))
 			})
+		})
+	}
+
+	itDeserializes := func(actionPayload string, action Action) {
+		It("JSON -> Action for "+string(action.ActionType()), func() {
+			wrappedJSON := fmt.Sprintf(`{"%s":%s}`, action.ActionType(), actionPayload)
 
 			By("unwrapping", func() {
 				var unmarshalledAction Action
@@ -38,6 +44,11 @@ var _ = Describe("Actions", func() {
 				Ω(unmarshalledAction).Should(Equal(action))
 			})
 		})
+	}
+
+	itSerializesAndDeserializes := func(actionPayload string, action Action) {
+		itSerializes(actionPayload, action)
+		itDeserializes(actionPayload, action)
 	}
 
 	Describe("Download", func() {
@@ -69,24 +80,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]DownloadAction{
-				"from": DownloadAction{
-					To: "local_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"from",
+					DownloadAction{
+						To: "local_location",
+					},
 				},
-				"to": DownloadAction{
-					From: "web_location",
+				{
+					"to",
+					DownloadAction{
+						From: "web_location",
+					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -118,24 +126,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]UploadAction{
-				"from": UploadAction{
-					To: "local_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"from",
+					UploadAction{
+						To: "web_location",
+					},
 				},
-				"to": UploadAction{
-					From: "web_location",
+				{
+					"to",
+					UploadAction{
+						From: "local_location",
+					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -177,19 +182,13 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]RunAction{
-				"path": RunAction{},
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"path",
+					RunAction{},
+				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -215,6 +214,27 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itSerializesAndDeserializes(
+			`{
+				"action": null,
+				"timeout": 10000000
+			}`,
+			Timeout(
+				nil,
+				10*time.Millisecond,
+			),
+		)
+
+		itDeserializes(
+			`{
+				"timeout": 10000000
+			}`,
+			Timeout(
+				nil,
+				10*time.Millisecond,
+			),
+		)
+
 		Describe("Validate", func() {
 			var timeoutAction TimeoutAction
 
@@ -233,33 +253,33 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]TimeoutAction{
-				"action": TimeoutAction{
-					Timeout: time.Second,
-				},
-				"from": TimeoutAction{
-					Action: &UploadAction{
-						To: "web_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"action",
+					TimeoutAction{
+						Timeout: time.Second,
 					},
-					Timeout: time.Second,
 				},
-				"timeout": TimeoutAction{
-					Action: &UploadAction{
-						From: "local_location",
-						To:   "web_location",
+				{
+					"from",
+					TimeoutAction{
+						Action: &UploadAction{
+							To: "web_location",
+						},
+						Timeout: time.Second,
+					},
+				},
+				{
+					"timeout",
+					TimeoutAction{
+						Action: &UploadAction{
+							From: "local_location",
+							To:   "web_location",
+						},
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -279,6 +299,18 @@ var _ = Describe("Actions", func() {
 			Try(&RunAction{Path: "echo"}),
 		)
 
+		itSerializesAndDeserializes(
+			`{
+					"action": null
+			}`,
+			Try(nil),
+		)
+
+		itDeserializes(
+			`{}`,
+			Try(nil),
+		)
+
 		Describe("Validate", func() {
 			var tryAction TryAction
 
@@ -296,24 +328,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]TryAction{
-				"action": TryAction{},
-				"from": TryAction{
-					Action: &UploadAction{
-						To: "web_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"action",
+					TryAction{},
+				},
+				{
+					"from",
+					TryAction{
+						Action: &UploadAction{
+							To: "web_location",
+						},
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -349,6 +378,38 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itDeserializes(
+			`{}`,
+			&ParallelAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": null
+			}`,
+			&ParallelAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": []
+			}`,
+			&ParallelAction{
+				Actions: []Action{},
+			},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": [null]
+			}`,
+			&ParallelAction{
+				Actions: []Action{
+					nil,
+				},
+			},
+		)
+
 		Describe("Validate", func() {
 			var parallelAction ParallelAction
 
@@ -368,31 +429,31 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]ParallelAction{
-				"actions": ParallelAction{},
-				"action at index 0": ParallelAction{
-					Actions: []Action{
-						nil,
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"actions",
+					ParallelAction{},
+				},
+				{
+					"action at index 0",
+					ParallelAction{
+						Actions: []Action{
+							nil,
+						},
 					},
 				},
-				"from": ParallelAction{
-					Actions: []Action{
-						&UploadAction{
-							To: "web_location",
+				{
+					"from",
+					ParallelAction{
+						Actions: []Action{
+							&UploadAction{
+								To: "web_location",
+							},
 						},
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -428,6 +489,38 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itDeserializes(
+			`{}`,
+			&SerialAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": null
+			}`,
+			&SerialAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": []
+			}`,
+			&SerialAction{
+				Actions: []Action{},
+			},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": [null]
+			}`,
+			&SerialAction{
+				Actions: []Action{
+					nil,
+				},
+			},
+		)
+
 		Describe("Validate", func() {
 			var serialAction SerialAction
 
@@ -447,32 +540,32 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]SerialAction{
-				"actions": SerialAction{},
-				"action at index 0": SerialAction{
-					Actions: []Action{
-						nil,
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"actions",
+					SerialAction{},
+				},
+				{
+					"action at index 0",
+					SerialAction{
+						Actions: []Action{
+							nil,
+						},
 					},
 				},
-				"from": SerialAction{
-					Actions: []Action{
-						&UploadAction{
-							To: "web_location",
+				{
+					"from",
+					SerialAction{
+						Actions: []Action{
+							&UploadAction{
+								To: "web_location",
+							},
+							nil,
 						},
-						nil,
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -500,6 +593,31 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itSerializesAndDeserializes(
+			`{
+					"start_message": "reticulating splines",
+					"success_message": "reticulated splines",
+					"failure_message": "reticulation failed",
+					"action": null
+			}`,
+			EmitProgressFor(
+				nil,
+				"reticulating splines", "reticulated splines", "reticulation failed",
+			),
+		)
+
+		itDeserializes(
+			`{
+					"start_message": "reticulating splines",
+					"success_message": "reticulated splines",
+					"failure_message": "reticulation failed"
+			}`,
+			EmitProgressFor(
+				nil,
+				"reticulating splines", "reticulated splines", "reticulation failed",
+			),
+		)
+
 		Describe("Validate", func() {
 			var emitProgressAction EmitProgressAction
 
@@ -517,24 +635,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]EmitProgressAction{
-				"action": EmitProgressAction{},
-				"from": EmitProgressAction{
-					Action: &UploadAction{
-						To: "web_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"action",
+					EmitProgressAction{},
+				},
+				{
+					"from",
+					EmitProgressAction{
+						Action: &UploadAction{
+							To: "web_location",
+						},
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
