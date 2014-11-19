@@ -120,68 +120,78 @@ var _ = Describe("Task", func() {
 			})
 		})
 
-		for field, task := range map[string]Task{
-			"task_guid": Task{
-				Domain: "some-domain",
-				Stack:  "some-stack",
-				Action: &RunAction{
-					Path: "ls",
+		for _, testCase := range []ValidatorErrorCase{
+			{"task_guid",
+				Task{
+					Domain: "some-domain",
+					Stack:  "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
 				},
 			},
-			"stack": Task{
-				Domain:   "some-domain",
-				TaskGuid: "some-stack",
-				Action: &RunAction{
-					Path: "ls",
+			{
+				"stack",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
 				},
 			},
-			"domain": Task{
-				TaskGuid: "some-stack",
-				Stack:    "some-stack",
-				Action: &RunAction{
-					Path: "ls",
+			{
+				"domain",
+				Task{
+					TaskGuid: "some-stack",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
 				},
 			},
-			"action": Task{
-				Domain:   "some-domain",
-				TaskGuid: "some-stack",
-				Stack:    "some-stack",
-			},
-			"path": Task{
-				Domain:   "some-domain",
-				TaskGuid: "some-stack",
-				Stack:    "some-stack",
-				Action:   &RunAction{},
-			},
-			"annotation": Task{
-				Domain:   "some-domain",
-				TaskGuid: "some-stack",
-				Stack:    "some-stack",
-				Action: &RunAction{
-					Path: "ls",
+			{
+				"action",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-stack",
+					Stack:    "some-stack",
+				}},
+			{
+				"path",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-stack",
+					Stack:    "some-stack",
+					Action:   &RunAction{},
 				},
-				Annotation: strings.Repeat("a", 10*1024+1),
 			},
-			"cpu_weight": Task{
-				Domain:   "some-domain",
-				TaskGuid: "some-stack",
-				Stack:    "some-stack",
-				Action: &RunAction{
-					Path: "ls",
+			{
+				"annotation",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-stack",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
+					Annotation: strings.Repeat("a", 10*1024+1),
 				},
-				CPUWeight: 101,
+			},
+			{
+				"cpu_weight",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-stack",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
+					CPUWeight: 101,
+				},
 			},
 		} {
-			missingField := field
-			invalidTask := task
-
-			Context("when the field "+missingField+" is invalid", func() {
-				It("returns an error indicating so", func() {
-					err := invalidTask.Validate()
-					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(ContainSubstring(missingField))
-				})
-			})
+			testValidatorErrorCase(testCase)
 		}
 	})
 
