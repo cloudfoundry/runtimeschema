@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -24,6 +25,7 @@ const (
 
 type Action interface {
 	ActionType() ActionType
+	Validator
 }
 
 type DownloadAction struct {
@@ -38,6 +40,24 @@ func (a *DownloadAction) ActionType() ActionType {
 	return ActionTypeDownload
 }
 
+func (a DownloadAction) Validate() error {
+	var validationError ValidationError
+
+	if a.From == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+	}
+
+	if a.To == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
+}
+
 type UploadAction struct {
 	To   string `json:"to"`
 	From string `json:"from"`
@@ -47,6 +67,24 @@ type UploadAction struct {
 
 func (a *UploadAction) ActionType() ActionType {
 	return ActionTypeUpload
+}
+
+func (a UploadAction) Validate() error {
+	var validationError ValidationError
+
+	if a.To == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+	}
+
+	if a.From == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 type RunAction struct {
@@ -61,6 +99,20 @@ type RunAction struct {
 
 func (a *RunAction) ActionType() ActionType {
 	return ActionTypeRun
+}
+
+func (a RunAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Path == "" {
+		validationError = append(validationError, ErrInvalidJSONMessage{"path"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 type EnvironmentVariable struct {
@@ -81,6 +133,29 @@ type TimeoutAction struct {
 
 func (a *TimeoutAction) ActionType() ActionType {
 	return ActionTypeTimeout
+}
+
+func (a TimeoutAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Action == nil {
+		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+	} else {
+		err := a.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
+	if a.Timeout <= 0 {
+		validationError = append(validationError, ErrInvalidJSONMessage{"timeout"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 func (a *TimeoutAction) MarshalJSON() ([]byte, error) {
@@ -133,6 +208,25 @@ func (a *TryAction) ActionType() ActionType {
 	return ActionTypeTry
 }
 
+func (a TryAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Action == nil {
+		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+	} else {
+		err := a.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
+}
+
 func (a *TryAction) MarshalJSON() ([]byte, error) {
 	bytes, err := MarshalAction(a.Action)
 	if err != nil {
@@ -180,6 +274,32 @@ func (a *ParallelAction) ActionType() ActionType {
 	return ActionTypeParallel
 }
 
+func (a ParallelAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Actions == nil {
+		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+	} else {
+		for index, action := range a.Actions {
+			if action == nil {
+				errorString := fmt.Sprintf("action at index %d", index)
+				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+			} else {
+				err := action.Validate()
+				if err != nil {
+					validationError = append(validationError, err)
+				}
+			}
+		}
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
+}
+
 func (a *ParallelAction) MarshalJSON() ([]byte, error) {
 	mActions, err := marshalActions(a.Actions)
 	if err != nil {
@@ -224,6 +344,32 @@ type SerialAction struct {
 
 func (a *SerialAction) ActionType() ActionType {
 	return ActionTypeSerial
+}
+
+func (a SerialAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Actions == nil {
+		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+	} else {
+		for index, action := range a.Actions {
+			if action == nil {
+				errorString := fmt.Sprintf("action at index %d", index)
+				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+			} else {
+				err := action.Validate()
+				if err != nil {
+					validationError = append(validationError, err)
+				}
+			}
+		}
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 func (a *SerialAction) MarshalJSON() ([]byte, error) {
@@ -273,6 +419,25 @@ type EmitProgressAction struct {
 
 func (a *EmitProgressAction) ActionType() ActionType {
 	return ActionTypeEmitProgress
+}
+
+func (a EmitProgressAction) Validate() error {
+	var validationError ValidationError
+
+	if a.Action == nil {
+		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+	} else {
+		err := a.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
 }
 
 func (a *EmitProgressAction) MarshalJSON() ([]byte, error) {

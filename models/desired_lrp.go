@@ -76,8 +76,27 @@ func (desired DesiredLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
+	if desired.Setup != nil {
+		err := desired.Setup.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
 	if desired.Action == nil {
 		validationError = append(validationError, ErrInvalidActionType)
+	} else {
+		err := desired.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
+	if desired.Monitor != nil {
+		err := desired.Monitor.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
 	}
 
 	if desired.Instances < 1 {
@@ -88,12 +107,12 @@ func (desired DesiredLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
 	}
 
-	if len(validationError) > 0 {
-		return validationError
+	if len(desired.Annotation) > maximumAnnotationLength {
+		validationError = append(validationError, ErrInvalidJSONMessage{"annotation"})
 	}
 
-	if len(desired.Annotation) > maximumAnnotationLength {
-		return ErrInvalidJSONMessage{"annotation"}
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil
