@@ -12,8 +12,8 @@ import (
 )
 
 var _ = Describe("Actions", func() {
-	itSerializesAndDeserializes := func(actionPayload string, action Action) {
-		It("Action <-> JSON for "+string(action.ActionType()), func() {
+	itSerializes := func(actionPayload string, action Action) {
+		It("Action -> JSON for "+string(action.ActionType()), func() {
 			By("marshalling to JSON", func() {
 				marshalledAction := action
 
@@ -30,6 +30,12 @@ var _ = Describe("Actions", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(json).Should(MatchJSON(wrappedJSON))
 			})
+		})
+	}
+
+	itDeserializes := func(actionPayload string, action Action) {
+		It("JSON -> Action for "+string(action.ActionType()), func() {
+			wrappedJSON := fmt.Sprintf(`{"%s":%s}`, action.ActionType(), actionPayload)
 
 			By("unwrapping", func() {
 				var unmarshalledAction Action
@@ -38,6 +44,11 @@ var _ = Describe("Actions", func() {
 				Ω(unmarshalledAction).Should(Equal(action))
 			})
 		})
+	}
+
+	itSerializesAndDeserializes := func(actionPayload string, action Action) {
+		itSerializes(actionPayload, action)
+		itDeserializes(actionPayload, action)
 	}
 
 	Describe("Download", func() {
@@ -203,6 +214,27 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itSerializesAndDeserializes(
+			`{
+				"action": null,
+				"timeout": 10000000
+			}`,
+			Timeout(
+				nil,
+				10*time.Millisecond,
+			),
+		)
+
+		itDeserializes(
+			`{
+				"timeout": 10000000
+			}`,
+			Timeout(
+				nil,
+				10*time.Millisecond,
+			),
+		)
+
 		Describe("Validate", func() {
 			var timeoutAction TimeoutAction
 
@@ -265,6 +297,18 @@ var _ = Describe("Actions", func() {
 					}
 			}`,
 			Try(&RunAction{Path: "echo"}),
+		)
+
+		itSerializesAndDeserializes(
+			`{
+					"action": null
+			}`,
+			Try(nil),
+		)
+
+		itDeserializes(
+			`{}`,
+			Try(nil),
 		)
 
 		Describe("Validate", func() {
@@ -332,6 +376,38 @@ var _ = Describe("Actions", func() {
 				},
 				&RunAction{Path: "echo"},
 			),
+		)
+
+		itDeserializes(
+			`{}`,
+			&ParallelAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": null
+			}`,
+			&ParallelAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": []
+			}`,
+			&ParallelAction{
+				Actions: []Action{},
+			},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": [null]
+			}`,
+			&ParallelAction{
+				Actions: []Action{
+					nil,
+				},
+			},
 		)
 
 		Describe("Validate", func() {
@@ -413,6 +489,38 @@ var _ = Describe("Actions", func() {
 			),
 		)
 
+		itDeserializes(
+			`{}`,
+			&SerialAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": null
+			}`,
+			&SerialAction{},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": []
+			}`,
+			&SerialAction{
+				Actions: []Action{},
+			},
+		)
+
+		itSerializesAndDeserializes(
+			`{
+				"actions": [null]
+			}`,
+			&SerialAction{
+				Actions: []Action{
+					nil,
+				},
+			},
+		)
+
 		Describe("Validate", func() {
 			var serialAction SerialAction
 
@@ -481,6 +589,31 @@ var _ = Describe("Actions", func() {
 				&RunAction{
 					Path: "echo",
 				},
+				"reticulating splines", "reticulated splines", "reticulation failed",
+			),
+		)
+
+		itSerializesAndDeserializes(
+			`{
+					"start_message": "reticulating splines",
+					"success_message": "reticulated splines",
+					"failure_message": "reticulation failed",
+					"action": null
+			}`,
+			EmitProgressFor(
+				nil,
+				"reticulating splines", "reticulated splines", "reticulation failed",
+			),
+		)
+
+		itDeserializes(
+			`{
+					"start_message": "reticulating splines",
+					"success_message": "reticulated splines",
+					"failure_message": "reticulation failed"
+			}`,
+			EmitProgressFor(
+				nil,
 				"reticulating splines", "reticulated splines", "reticulation failed",
 			),
 		)

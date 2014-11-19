@@ -81,9 +81,14 @@ func (t *Task) UnmarshalJSON(payload []byte) error {
 		return err
 	}
 
-	a, err := UnmarshalAction(mtask.ActionRaw)
-	if err != nil {
-		return err
+	var a Action
+	if mtask.ActionRaw == nil {
+		a = nil
+	} else {
+		a, err = UnmarshalAction(mtask.ActionRaw)
+		if err != nil {
+			return err
+		}
 	}
 	t.Action = a
 

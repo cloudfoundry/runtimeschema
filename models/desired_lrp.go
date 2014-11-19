@@ -30,7 +30,7 @@ type InnerDesiredLRP DesiredLRP
 
 type mDesiredLRP struct {
 	SetupRaw   *json.RawMessage `json:"setup,omitempty"`
-	ActionRaw  json.RawMessage  `json:"action"`
+	ActionRaw  *json.RawMessage `json:"action"`
 	MonitorRaw *json.RawMessage `json:"monitor,omitempty"`
 	*InnerDesiredLRP
 }
@@ -183,13 +183,20 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 		return err
 	}
 
-	a, err := UnmarshalAction(mLRP.ActionRaw)
-	if err != nil {
-		return err
+	var a Action
+	if mLRP.ActionRaw == nil {
+		a = nil
+	} else {
+		a, err = UnmarshalAction(*mLRP.ActionRaw)
+		if err != nil {
+			return err
+		}
 	}
 	desired.Action = a
 
-	if mLRP.SetupRaw != nil {
+	if mLRP.SetupRaw == nil {
+		a = nil
+	} else {
 		a, err = UnmarshalAction(*mLRP.SetupRaw)
 		if err != nil {
 			return err
@@ -197,7 +204,9 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 		desired.Setup = a
 	}
 
-	if mLRP.MonitorRaw != nil {
+	if mLRP.MonitorRaw == nil {
+		a = nil
+	} else {
 		a, err = UnmarshalAction(*mLRP.MonitorRaw)
 		if err != nil {
 			return err
@@ -209,12 +218,15 @@ func (desired *DesiredLRP) UnmarshalJSON(payload []byte) error {
 }
 
 func (desired DesiredLRP) MarshalJSON() ([]byte, error) {
-	actionRaw, err := MarshalAction(desired.Action)
+	var setupRaw, actionRaw, monitorRaw *json.RawMessage
+
+	raw, err := MarshalAction(desired.Action)
 	if err != nil {
 		return nil, err
 	}
+	rm := json.RawMessage(raw)
+	actionRaw = &rm
 
-	var setupRaw, monitorRaw *json.RawMessage
 	if desired.Setup != nil {
 		raw, err := MarshalAction(desired.Setup)
 		if err != nil {

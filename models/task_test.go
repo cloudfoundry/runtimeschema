@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -134,7 +135,7 @@ var _ = Describe("Task", func() {
 				"stack",
 				Task{
 					Domain:   "some-domain",
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Action: &RunAction{
 						Path: "ls",
 					},
@@ -143,7 +144,7 @@ var _ = Describe("Task", func() {
 			{
 				"domain",
 				Task{
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Stack:    "some-stack",
 					Action: &RunAction{
 						Path: "ls",
@@ -154,14 +155,14 @@ var _ = Describe("Task", func() {
 				"action",
 				Task{
 					Domain:   "some-domain",
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Stack:    "some-stack",
 				}},
 			{
 				"path",
 				Task{
 					Domain:   "some-domain",
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Stack:    "some-stack",
 					Action:   &RunAction{},
 				},
@@ -170,7 +171,7 @@ var _ = Describe("Task", func() {
 				"annotation",
 				Task{
 					Domain:   "some-domain",
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Stack:    "some-stack",
 					Action: &RunAction{
 						Path: "ls",
@@ -182,7 +183,7 @@ var _ = Describe("Task", func() {
 				"cpu_weight",
 				Task{
 					Domain:   "some-domain",
-					TaskGuid: "some-stack",
+					TaskGuid: "task-guid",
 					Stack:    "some-stack",
 					Action: &RunAction{
 						Path: "ls",
@@ -217,6 +218,54 @@ var _ = Describe("Task", func() {
 				decodedTask := &Task{}
 				err := FromJSON([]byte("aliens lol"), decodedTask)
 				Ω(err).Should(HaveOccurred())
+			})
+		})
+
+		Context("with invalid action", func() {
+			var expectedTask Task
+			var taskJSON string
+
+			BeforeEach(func() {
+				expectedTask = Task{
+					TaskGuid: "some-guid",
+					Domain:   "some-domain",
+					Stack:    "some-stack",
+				}
+			})
+
+			Context("with null action", func() {
+				BeforeEach(func() {
+					taskJSON = `{
+					"task_guid":"some-guid",
+					"domain":"some-domain",
+					"action": null,
+					"stack":"some-stack"
+				}`
+				})
+
+				It("unmarshals", func() {
+					var actualTask Task
+					err := json.Unmarshal([]byte(taskJSON), &actualTask)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(actualTask).Should(Equal(expectedTask))
+				})
+			})
+
+			Context("with missing action", func() {
+				BeforeEach(func() {
+					taskJSON = `{
+					"task_guid":"some-guid",
+					"domain":"some-domain",
+					"stack":"some-stack"
+				}`
+				})
+
+				It("unmarshals", func() {
+					var actualTask Task
+					err := json.Unmarshal([]byte(taskJSON), &actualTask)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(actualTask).Should(Equal(expectedTask))
+				})
 			})
 		})
 	})
