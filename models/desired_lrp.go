@@ -76,8 +76,27 @@ func (desired DesiredLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
 	}
 
+	if desired.Setup != nil {
+		err := desired.Setup.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
 	if desired.Action == nil {
 		validationError = append(validationError, ErrInvalidActionType)
+	} else {
+		err := desired.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
+	}
+
+	if desired.Monitor != nil {
+		err := desired.Monitor.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
 	}
 
 	if desired.Instances < 1 {

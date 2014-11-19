@@ -221,6 +221,27 @@ var _ = Describe("DesiredLRP", func() {
 			assertDesiredLRPValidationFailsWithMessage(lrp, "action")
 		})
 
+		It("requires a valid action", func() {
+			lrp.Action = &UploadAction{
+				From: "web_location",
+			}
+			assertDesiredLRPValidationFailsWithMessage(lrp, "to")
+		})
+
+		It("requires a valid setup action if specified", func() {
+			lrp.Setup = &UploadAction{
+				From: "web_location",
+			}
+			assertDesiredLRPValidationFailsWithMessage(lrp, "to")
+		})
+
+		It("requires a valid monitor action if specified", func() {
+			lrp.Monitor = &UploadAction{
+				From: "web_location",
+			}
+			assertDesiredLRPValidationFailsWithMessage(lrp, "to")
+		})
+
 		It("requires a valid CPU weight", func() {
 			lrp.CPUWeight = 101
 			assertDesiredLRPValidationFailsWithMessage(lrp, "cpu_weight")

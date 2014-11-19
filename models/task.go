@@ -107,6 +107,11 @@ func (task Task) Validate() error {
 
 	if task.Action == nil {
 		validationError = append(validationError, ErrInvalidActionType)
+	} else {
+		err := task.Action.Validate()
+		if err != nil {
+			validationError = append(validationError, err)
+		}
 	}
 
 	if task.CPUWeight > 100 {

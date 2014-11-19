@@ -1,7 +1,6 @@
 package models_test
 
 import (
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -87,6 +86,105 @@ var _ = Describe("Task", func() {
 		}
 	})
 
+	Describe("Validate", func() {
+		Context("when the task has a domain, valid guid, stack, and valid action", func() {
+			It("is valid", func() {
+				task = Task{
+					Domain:   "some-domain",
+					TaskGuid: "some-task-guid",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
+				}
+
+				err := task.Validate()
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("when the task GUID is present but invalid", func() {
+			It("returns an error indicating so", func() {
+				task = Task{
+					Domain:   "some-domain",
+					TaskGuid: "invalid/guid",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
+				}
+
+				err := task.Validate()
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("task_guid"))
+			})
+		})
+
+		for field, task := range map[string]Task{
+			"task_guid": Task{
+				Domain: "some-domain",
+				Stack:  "some-stack",
+				Action: &RunAction{
+					Path: "ls",
+				},
+			},
+			"stack": Task{
+				Domain:   "some-domain",
+				TaskGuid: "some-stack",
+				Action: &RunAction{
+					Path: "ls",
+				},
+			},
+			"domain": Task{
+				TaskGuid: "some-stack",
+				Stack:    "some-stack",
+				Action: &RunAction{
+					Path: "ls",
+				},
+			},
+			"action": Task{
+				Domain:   "some-domain",
+				TaskGuid: "some-stack",
+				Stack:    "some-stack",
+			},
+			"path": Task{
+				Domain:   "some-domain",
+				TaskGuid: "some-stack",
+				Stack:    "some-stack",
+				Action:   &RunAction{},
+			},
+			"annotation": Task{
+				Domain:   "some-domain",
+				TaskGuid: "some-stack",
+				Stack:    "some-stack",
+				Action: &RunAction{
+					Path: "ls",
+				},
+				Annotation: strings.Repeat("a", 10*1024+1),
+			},
+			"cpu_weight": Task{
+				Domain:   "some-domain",
+				TaskGuid: "some-stack",
+				Stack:    "some-stack",
+				Action: &RunAction{
+					Path: "ls",
+				},
+				CPUWeight: 101,
+			},
+		} {
+			missingField := field
+			invalidTask := task
+
+			Context("when the field "+missingField+" is invalid", func() {
+				It("returns an error indicating so", func() {
+					err := invalidTask.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring(missingField))
+				})
+			})
+		}
+	})
+
 	Describe("Marshal", func() {
 		It("should JSONify", func() {
 			json, err := ToJSON(&task)
@@ -107,62 +205,8 @@ var _ = Describe("Task", func() {
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
 				decodedTask := &Task{}
-				err := json.Unmarshal([]byte("aliens lol"), decodedTask)
+				err := FromJSON([]byte("aliens lol"), decodedTask)
 				Ω(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("with a missing action", func() {
-			It("returns the error", func() {
-				taskPayload = `{
-					"domain": "some-domain", "task_guid": "process-guid",
-					"stack": "some-stack"}`
-				decodedTask := &Task{}
-
-				err := FromJSON([]byte(taskPayload), decodedTask)
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-
-		for field, payload := range map[string]string{
-			"task_guid": `{"domain": "some-domain", "stack": "some-stack", "action": {"run": {"path": "date"}}}`,
-			"stack":     `{"domain": "some-domain", "task_guid": "process-guid", "action": {"run": {"path": "date"}}}`,
-			"domain":    `{"stack": "some-stack", "task_guid": "process-guid", "action": {"run": {"path": "date"}}}`,
-			"annotation": `{"domain": "some-domain", "stack": "some-stack", "task_guid": "process-guid", "instances": 1, "action": {"run": {"path": "date"}},
-										"annotation":"` + strings.Repeat("a", 10*1024+1) + `"}`,
-		} {
-			missingField := field
-			jsonPayload := payload
-
-			Context("when the json is missing a "+missingField, func() {
-				It("returns an error indicating so", func() {
-					decodedTask := &Task{}
-					err := FromJSON([]byte(jsonPayload), decodedTask)
-					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(ContainSubstring(missingField))
-				})
-			})
-		}
-
-		Context("when the task GUID is present but invalid", func() {
-			payload := `{"domain": "some-domain", "task_guid": "invalid/guid", "stack": "some-stack", "action": {"run": {"path": "date"}}}`
-
-			It("returns an error indicating so", func() {
-				decodedTask := &Task{}
-				err := FromJSON([]byte(payload), decodedTask)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("task_guid"))
-			})
-		})
-
-		Context("with an invalid CPU weight", func() {
-			payload := `{"domain": "some-domain", "task_guid": "guid", "cpu_weight": 101, "stack": "some-stack", "action": {"run": {"path": "date"}}}`
-
-			It("returns an error", func() {
-				decodedTask := &Task{}
-				err := FromJSON([]byte(payload), decodedTask)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("cpu_weight"))
 			})
 		})
 	})

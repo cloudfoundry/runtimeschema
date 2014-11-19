@@ -18,6 +18,10 @@ func (err ErrInvalidModification) Error() string {
 	return "attempt to make invalid change to field: " + err.InvalidField
 }
 
+type Validator interface {
+	Validate() error
+}
+
 type ValidationError []error
 
 func (ve ValidationError) Error() string {
