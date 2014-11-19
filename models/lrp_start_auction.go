@@ -22,7 +22,7 @@ func (auction LRPStartAuction) Validate() error {
 	var validationError ValidationError
 
 	if auction.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
+		validationError = append(validationError, ErrInvalidField{"instance_guid"})
 	}
 
 	err := auction.DesiredLRP.Validate()

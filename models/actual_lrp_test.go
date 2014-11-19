@@ -81,7 +81,7 @@ var _ = Describe("ActualLRP", func() {
 				It("returns an error indicating so", func() {
 					aLRP := &ActualLRP{}
 					err := FromJSON([]byte(jsonPayload), aLRP)
-					Ω(err.Error()).Should(Equal("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(Equal("Invalid field: " + missingField))
 				})
 			})
 		}

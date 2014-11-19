@@ -94,15 +94,15 @@ func (task Task) Validate() error {
 	var validationError ValidationError
 
 	if task.Domain == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
 	if !taskGuidPattern.MatchString(task.TaskGuid) {
-		validationError = append(validationError, ErrInvalidJSONMessage{"task_guid"})
+		validationError = append(validationError, ErrInvalidField{"task_guid"})
 	}
 
 	if task.Stack == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"stack"})
+		validationError = append(validationError, ErrInvalidField{"stack"})
 	}
 
 	if task.Action == nil {
@@ -115,7 +115,7 @@ func (task Task) Validate() error {
 	}
 
 	if task.CPUWeight > 100 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
+		validationError = append(validationError, ErrInvalidField{"cpu_weight"})
 	}
 
 	if len(validationError) > 0 {
@@ -123,7 +123,7 @@ func (task Task) Validate() error {
 	}
 
 	if len(task.Annotation) > maximumAnnotationLength {
-		return ErrInvalidJSONMessage{"annotation"}
+		return ErrInvalidField{"annotation"}
 	}
 
 	return nil

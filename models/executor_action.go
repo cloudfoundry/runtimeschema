@@ -44,11 +44,11 @@ func (a DownloadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+		validationError = append(validationError, ErrInvalidField{"from"})
 	}
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+		validationError = append(validationError, ErrInvalidField{"to"})
 	}
 
 	if len(validationError) > 0 {
@@ -73,11 +73,11 @@ func (a UploadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"to"})
+		validationError = append(validationError, ErrInvalidField{"to"})
 	}
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"from"})
+		validationError = append(validationError, ErrInvalidField{"from"})
 	}
 
 	if len(validationError) > 0 {
@@ -105,7 +105,7 @@ func (a RunAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Path == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"path"})
+		validationError = append(validationError, ErrInvalidField{"path"})
 	}
 
 	if len(validationError) > 0 {
@@ -139,7 +139,7 @@ func (a TimeoutAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -148,7 +148,7 @@ func (a TimeoutAction) Validate() error {
 	}
 
 	if a.Timeout <= 0 {
-		validationError = append(validationError, ErrInvalidJSONMessage{"timeout"})
+		validationError = append(validationError, ErrInvalidField{"timeout"})
 	}
 
 	if len(validationError) > 0 {
@@ -212,7 +212,7 @@ func (a TryAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -278,12 +278,12 @@ func (a ParallelAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+		validationError = append(validationError, ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+				validationError = append(validationError, ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
@@ -350,12 +350,12 @@ func (a SerialAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"actions"})
+		validationError = append(validationError, ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidJSONMessage{errorString})
+				validationError = append(validationError, ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
@@ -425,7 +425,7 @@ func (a EmitProgressAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidJSONMessage{"action"})
+		validationError = append(validationError, ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
@@ -597,5 +597,5 @@ func UnmarshalAction(data []byte) (Action, error) {
 		}
 	}
 
-	return nil, ErrInvalidJSONMessage{"Invalid action"}
+	return nil, ErrInvalidField{"Invalid action"}
 }

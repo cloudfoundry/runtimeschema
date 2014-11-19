@@ -11,7 +11,7 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-var _ = Describe("Actions", func() {
+var _ = FDescribe("Actions", func() {
 	itSerializesAndDeserializes := func(actionPayload string, action Action) {
 		It("Action <-> JSON for "+string(action.ActionType()), func() {
 			By("marshalling to JSON", func() {
@@ -69,24 +69,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]DownloadAction{
-				"from": DownloadAction{
-					To: "local_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"from",
+					DownloadAction{
+						To: "local_location",
+					},
 				},
-				"to": DownloadAction{
-					From: "web_location",
+				{
+					"to",
+					DownloadAction{
+						From: "web_location",
+					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -118,24 +115,21 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]UploadAction{
-				"from": UploadAction{
-					To: "local_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"from",
+					UploadAction{
+						To: "web_location",
+					},
 				},
-				"to": UploadAction{
-					From: "web_location",
+				{
+					"to",
+					UploadAction{
+						From: "local_location",
+					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})
@@ -233,33 +227,33 @@ var _ = Describe("Actions", func() {
 				})
 			})
 
-			for field, action := range map[string]TimeoutAction{
-				"action": TimeoutAction{
-					Timeout: time.Second,
-				},
-				"from": TimeoutAction{
-					Action: &UploadAction{
-						To: "web_location",
+			for _, testCase := range []ValidatorErrorCase{
+				{
+					"action",
+					TimeoutAction{
+						Timeout: time.Second,
 					},
-					Timeout: time.Second,
 				},
-				"timeout": TimeoutAction{
-					Action: &UploadAction{
-						From: "local_location",
-						To:   "web_location",
+				{
+					"from",
+					TimeoutAction{
+						Action: &UploadAction{
+							To: "web_location",
+						},
+						Timeout: time.Second,
+					},
+				},
+				{
+					"timeout",
+					TimeoutAction{
+						Action: &UploadAction{
+							From: "local_location",
+							To:   "web_location",
+						},
 					},
 				},
 			} {
-				missingField := field
-				invalidAction := action
-
-				Context("when the field "+missingField+" is invalid", func() {
-					It("returns an error indicating so", func() {
-						err := invalidAction.Validate()
-						Ω(err).Should(HaveOccurred())
-						Ω(err.Error()).Should(ContainSubstring(missingField))
-					})
-				})
+				testValidatorErrorCase(testCase)
 			}
 		})
 	})

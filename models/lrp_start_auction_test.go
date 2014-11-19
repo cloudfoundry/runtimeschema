@@ -120,7 +120,7 @@ var _ = Describe("LRPStartAuction", func() {
 
 				It("returns an error indicating so", func() {
 					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(ContainSubstring("JSON has missing/invalid field: " + missingField))
+					Ω(err.Error()).Should(ContainSubstring("Invalid field: " + missingField))
 				})
 			})
 		}

@@ -57,19 +57,19 @@ func (actual ActualLRP) Validate() error {
 	var validationError ValidationError
 
 	if actual.ProcessGuid == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"process_guid"})
+		validationError = append(validationError, ErrInvalidField{"process_guid"})
 	}
 
 	if actual.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"instance_guid"})
+		validationError = append(validationError, ErrInvalidField{"instance_guid"})
 	}
 
 	if actual.CellID == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"cell_id"})
+		validationError = append(validationError, ErrInvalidField{"cell_id"})
 	}
 
 	if actual.Domain == "" {
-		validationError = append(validationError, ErrInvalidJSONMessage{"domain"})
+		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
 	if len(validationError) > 0 {
