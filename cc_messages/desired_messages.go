@@ -31,3 +31,8 @@ type CCDesiredStateServerResponse struct {
 type CCBulkToken struct {
 	Id int `json:"id"`
 }
+
+type KillIndexRequestFromCC struct {
+	ProcessGuid string `json:"process_guid"`
+	Index       int    `json:"index"`
+}

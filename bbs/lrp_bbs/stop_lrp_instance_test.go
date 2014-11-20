@@ -18,6 +18,62 @@ var _ = Describe("StopLRPInstance", func() {
 		}
 	})
 
+	Describe("RequestStopLRPIndex", func() {
+		var processGuid = "process-guid"
+		var stoppedIndex = 1
+		var requestErr error
+
+		BeforeEach(func() {
+			err := bbs.ReportActualLRPAsRunning(models.ActualLRP{
+				ProcessGuid:  processGuid,
+				InstanceGuid: "instance-0",
+				Domain:       "domain",
+				Index:        0,
+			}, "cell-0")
+			Ω(err).ShouldNot(HaveOccurred())
+			err = bbs.ReportActualLRPAsRunning(models.ActualLRP{
+				ProcessGuid:  processGuid,
+				InstanceGuid: "instance-1",
+				Domain:       "domain",
+				Index:        stoppedIndex,
+			}, "cell-0")
+			Ω(err).ShouldNot(HaveOccurred())
+			err = bbs.ReportActualLRPAsRunning(models.ActualLRP{
+				ProcessGuid:  processGuid,
+				InstanceGuid: "instance-2",
+				Domain:       "domain",
+				Index:        stoppedIndex,
+			}, "cell-0")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			requestErr = bbs.RequestStopLRPIndex(processGuid, stoppedIndex)
+		})
+
+		It("should not return an error", func() {
+			Ω(requestErr).ShouldNot(HaveOccurred())
+		})
+
+		It("should request the instances at the correct index to stop", func() {
+			instances, err := bbs.StopLRPInstances()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(instances).Should(ConsistOf(
+				models.StopLRPInstance{
+					ProcessGuid:  processGuid,
+					InstanceGuid: "instance-1",
+					Index:        stoppedIndex,
+				},
+				models.StopLRPInstance{
+					ProcessGuid:  processGuid,
+					InstanceGuid: "instance-2",
+					Index:        stoppedIndex,
+				},
+			))
+		})
+	})
+
 	Describe("RequestStopLRPInstance", func() {
 		It("creates /v1/stop-instance/<instance-guid>", func() {
 			err := bbs.RequestStopLRPInstance(stopInstance)

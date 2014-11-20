@@ -8,6 +8,24 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
+func (bbs *LRPBBS) RequestStopLRPIndex(processGuid string, stopIndex int) error {
+	instances, err := bbs.ActualLRPsByProcessGuidAndIndex(processGuid, stopIndex)
+	if err != nil {
+		return err
+	}
+
+	stopInstances := make([]models.StopLRPInstance, len(instances))
+	for i, instance := range instances {
+		stopInstances[i] = models.StopLRPInstance{
+			ProcessGuid:  instance.ProcessGuid,
+			InstanceGuid: instance.InstanceGuid,
+			Index:        instance.Index,
+		}
+	}
+
+	return bbs.RequestStopLRPInstances(stopInstances)
+}
+
 func (bbs *LRPBBS) RequestStopLRPInstance(stopInstance models.StopLRPInstance) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		value, err := models.ToJSON(stopInstance)

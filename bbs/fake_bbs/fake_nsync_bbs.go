@@ -27,12 +27,12 @@ type FakeNsyncBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	DesiredLRPsByDomainStub              func(domain string) ([]models.DesiredLRP, error)
-	getAllDesiredLRPsByDomainMutex       sync.RWMutex
-	getAllDesiredLRPsByDomainArgsForCall []struct {
+	DesiredLRPsByDomainStub        func(domain string) ([]models.DesiredLRP, error)
+	desiredLRPsByDomainMutex       sync.RWMutex
+	desiredLRPsByDomainArgsForCall []struct {
 		domain string
 	}
-	getAllDesiredLRPsByDomainReturns struct {
+	desiredLRPsByDomainReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -50,6 +50,15 @@ type FakeNsyncBBS struct {
 		freshness models.Freshness
 	}
 	bumpFreshnessReturns struct {
+		result1 error
+	}
+	RequestStopLRPIndexStub        func(processGuid string, stopIndex int) error
+	requestStopLRPIndexMutex       sync.RWMutex
+	requestStopLRPIndexArgsForCall []struct {
+		processGuid string
+		stopIndex   int
+	}
+	requestStopLRPIndexReturns struct {
 		result1 error
 	}
 	NewNsyncBulkerLockStub        func(bulkerID string, interval time.Duration) ifrit.Runner
@@ -137,33 +146,33 @@ func (fake *FakeNsyncBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error) {
 }
 
 func (fake *FakeNsyncBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
-	fake.getAllDesiredLRPsByDomainMutex.Lock()
-	fake.getAllDesiredLRPsByDomainArgsForCall = append(fake.getAllDesiredLRPsByDomainArgsForCall, struct {
+	fake.desiredLRPsByDomainMutex.Lock()
+	fake.desiredLRPsByDomainArgsForCall = append(fake.desiredLRPsByDomainArgsForCall, struct {
 		domain string
 	}{domain})
-	fake.getAllDesiredLRPsByDomainMutex.Unlock()
+	fake.desiredLRPsByDomainMutex.Unlock()
 	if fake.DesiredLRPsByDomainStub != nil {
 		return fake.DesiredLRPsByDomainStub(domain)
 	} else {
-		return fake.getAllDesiredLRPsByDomainReturns.result1, fake.getAllDesiredLRPsByDomainReturns.result2
+		return fake.desiredLRPsByDomainReturns.result1, fake.desiredLRPsByDomainReturns.result2
 	}
 }
 
 func (fake *FakeNsyncBBS) DesiredLRPsByDomainCallCount() int {
-	fake.getAllDesiredLRPsByDomainMutex.RLock()
-	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
-	return len(fake.getAllDesiredLRPsByDomainArgsForCall)
+	fake.desiredLRPsByDomainMutex.RLock()
+	defer fake.desiredLRPsByDomainMutex.RUnlock()
+	return len(fake.desiredLRPsByDomainArgsForCall)
 }
 
 func (fake *FakeNsyncBBS) DesiredLRPsByDomainArgsForCall(i int) string {
-	fake.getAllDesiredLRPsByDomainMutex.RLock()
-	defer fake.getAllDesiredLRPsByDomainMutex.RUnlock()
-	return fake.getAllDesiredLRPsByDomainArgsForCall[i].domain
+	fake.desiredLRPsByDomainMutex.RLock()
+	defer fake.desiredLRPsByDomainMutex.RUnlock()
+	return fake.desiredLRPsByDomainArgsForCall[i].domain
 }
 
 func (fake *FakeNsyncBBS) DesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
 	fake.DesiredLRPsByDomainStub = nil
-	fake.getAllDesiredLRPsByDomainReturns = struct {
+	fake.desiredLRPsByDomainReturns = struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}{result1, result2}
@@ -229,6 +238,39 @@ func (fake *FakeNsyncBBS) BumpFreshnessArgsForCall(i int) models.Freshness {
 func (fake *FakeNsyncBBS) BumpFreshnessReturns(result1 error) {
 	fake.BumpFreshnessStub = nil
 	fake.bumpFreshnessReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeNsyncBBS) RequestStopLRPIndex(processGuid string, stopIndex int) error {
+	fake.requestStopLRPIndexMutex.Lock()
+	fake.requestStopLRPIndexArgsForCall = append(fake.requestStopLRPIndexArgsForCall, struct {
+		processGuid string
+		stopIndex   int
+	}{processGuid, stopIndex})
+	fake.requestStopLRPIndexMutex.Unlock()
+	if fake.RequestStopLRPIndexStub != nil {
+		return fake.RequestStopLRPIndexStub(processGuid, stopIndex)
+	} else {
+		return fake.requestStopLRPIndexReturns.result1
+	}
+}
+
+func (fake *FakeNsyncBBS) RequestStopLRPIndexCallCount() int {
+	fake.requestStopLRPIndexMutex.RLock()
+	defer fake.requestStopLRPIndexMutex.RUnlock()
+	return len(fake.requestStopLRPIndexArgsForCall)
+}
+
+func (fake *FakeNsyncBBS) RequestStopLRPIndexArgsForCall(i int) (string, int) {
+	fake.requestStopLRPIndexMutex.RLock()
+	defer fake.requestStopLRPIndexMutex.RUnlock()
+	return fake.requestStopLRPIndexArgsForCall[i].processGuid, fake.requestStopLRPIndexArgsForCall[i].stopIndex
+}
+
+func (fake *FakeNsyncBBS) RequestStopLRPIndexReturns(result1 error) {
+	fake.RequestStopLRPIndexStub = nil
+	fake.requestStopLRPIndexReturns = struct {
 		result1 error
 	}{result1}
 }

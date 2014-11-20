@@ -109,6 +109,7 @@ type NsyncBBS interface {
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	ChangeDesiredLRP(change models.DesiredLRPChange) error
 	BumpFreshness(freshness models.Freshness) error
+	RequestStopLRPIndex(processGuid string, stopIndex int) error
 
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
