@@ -15,6 +15,7 @@ type DesiredLRP struct {
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
 	Setup                Action                `json:"-"`
 	Action               Action                `json:"-"`
+	StartTimeout         uint                  `json:"start_timeout"`
 	Monitor              Action                `json:"-"`
 	DiskMB               int                   `json:"disk_mb"`
 	MemoryMB             int                   `json:"memory_mb"`

@@ -21,6 +21,7 @@ var _ = Describe("DesiredLRP", func() {
 	  "instances": 1,
 	  "stack": "some-stack",
 		"annotation": "some-annotation",
+		"start_timeout": 0,
 	  "env":[
 	    {
 	      "name": "ENV_VAR_NAME",

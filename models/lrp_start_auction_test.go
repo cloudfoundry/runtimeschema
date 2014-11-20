@@ -18,6 +18,7 @@ var _ = Describe("LRPStartAuction", func() {
       "domain": "tests",
       "instances": 1,
       "stack": "some-stack",
+      "start_timeout": 0,
       "root_fs": "docker:///docker.com/docker",
       "action": {"download": {
           "from": "http://example.com",
