@@ -14,13 +14,15 @@ var _ = Describe("CellPresence", func() {
 
 	BeforeEach(func() {
 		cellPresence = CellPresence{
-			CellID: "some-id",
-			Stack:  "some-stack",
+			CellID:     "some-id",
+			Stack:      "some-stack",
+			RepAddress: "some-address",
 		}
 
 		payload = `{
     "cell_id":"some-id",
-    "stack": "some-stack"
+    "stack": "some-stack",
+    "rep_address": "some-address"
   }`
 	})
 
