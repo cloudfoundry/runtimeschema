@@ -113,12 +113,12 @@ func (task Task) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
 	}
 
-	if len(validationError) > 0 {
-		return validationError
+	if len(task.Annotation) > maximumAnnotationLength {
+		validationError = append(validationError, ErrInvalidJSONMessage{"annotation"})
 	}
 
-	if len(task.Annotation) > maximumAnnotationLength {
-		return ErrInvalidJSONMessage{"annotation"}
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil

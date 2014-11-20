@@ -88,12 +88,12 @@ func (desired DesiredLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidJSONMessage{"cpu_weight"})
 	}
 
-	if len(validationError) > 0 {
-		return validationError
+	if len(desired.Annotation) > maximumAnnotationLength {
+		validationError = append(validationError, ErrInvalidJSONMessage{"annotation"})
 	}
 
-	if len(desired.Annotation) > maximumAnnotationLength {
-		return ErrInvalidJSONMessage{"annotation"}
+	if len(validationError) > 0 {
+		return validationError
 	}
 
 	return nil
