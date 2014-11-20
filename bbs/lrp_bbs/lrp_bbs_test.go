@@ -252,7 +252,7 @@ var _ = Describe("LRP", func() {
 			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(current).Should(Equal(newValue))
+			Ω(current).Should(Equal(&newValue))
 		})
 
 		It("fails to update the desired lrp if the modifications are invalid", func() {
@@ -265,7 +265,7 @@ var _ = Describe("LRP", func() {
 			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(current).Should(Equal(value))
+			Ω(current).Should(Equal(&value))
 		})
 	})
 
@@ -313,7 +313,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(after))
+					Ω(current).Should(Equal(&after))
 				})
 			})
 
@@ -330,7 +330,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(prevValue))
+					Ω(current).Should(Equal(&prevValue))
 				})
 			})
 		})
@@ -371,7 +371,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(prevValue))
+					Ω(current).Should(Equal(&prevValue))
 				})
 			})
 		})
@@ -395,7 +395,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(after))
+					Ω(current).Should(Equal(&after))
 				})
 			})
 
@@ -413,7 +413,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(prevValue))
+					Ω(current).Should(Equal(&prevValue))
 				})
 			})
 		})
@@ -462,7 +462,7 @@ var _ = Describe("LRP", func() {
 
 				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(updated).Should(Equal(lrp))
+				Ω(updated).Should(Equal(&lrp))
 			})
 		})
 

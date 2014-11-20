@@ -34,7 +34,7 @@ func (bbs *TaskBBS) Tasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (bbs *TaskBBS) TaskByGuid(guid string) (models.Task, error) {
+func (bbs *TaskBBS) TaskByGuid(guid string) (*models.Task, error) {
 	task, _, err := bbs.getTask(guid)
 	return task, err
 }
@@ -94,7 +94,7 @@ func filterTasksByState(tasks []models.Task, state models.TaskState) []models.Ta
 	})
 }
 
-func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
+func (bbs *TaskBBS) getTask(taskGuid string) (*models.Task, uint64, error) {
 	var node storeadapter.StoreNode
 	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		var err error
@@ -103,11 +103,11 @@ func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
 	})
 
 	if err != nil {
-		return models.Task{}, 0, err
+		return nil, 0, err
 	}
 
 	var task models.Task
 	err = models.FromJSON(node.Value, &task)
 
-	return task, node.Index, err
+	return &task, node.Index, err
 }

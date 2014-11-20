@@ -237,7 +237,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the store is reachable", func() {
 			var cancelError error
-			var taskAfterCancel models.Task
+			var taskAfterCancel *models.Task
 
 			JustBeforeEach(func() {
 				cancelError = bbs.CancelTask(task.TaskGuid)

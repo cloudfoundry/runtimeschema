@@ -168,7 +168,7 @@ var _ = Describe("LrpGetters", func() {
 			desiredLrp, err := bbs.DesiredLRPByProcessGuid("guidA")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(desiredLrp).Should(Equal(desiredLrp1))
+			Ω(desiredLrp).Should(Equal(&desiredLrp1))
 		})
 	})
 

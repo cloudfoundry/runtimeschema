@@ -111,13 +111,15 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 		return ErrTaskNotFound
 	} else if err != nil {
 		return err
+	} else if task == nil {
+		return ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStatePending && task.State != models.TaskStateClaimed && task.State != models.TaskStateRunning {
 		return UnexpectedTaskStateError("cannot complete task in non-pending/non-claimed/non-running state")
 	}
 
-	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
+	*task = bbs.markTaskCompleted(*task, true, "task was cancelled", "")
 
 	value, err := models.ToJSON(task)
 	if err != nil {
@@ -139,7 +141,7 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
-	if err != nil {
+	if err != nil || task == nil {
 		return ErrTaskNotFound
 	}
 
@@ -147,7 +149,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 		return UnexpectedTaskStateError("cannot complete task in non-running/non-claimed state")
 	}
 
-	task = bbs.markTaskCompleted(task, failed, failureReason, result)
+	*task = bbs.markTaskCompleted(*task, failed, failureReason, result)
 
 	value, err := models.ToJSON(task)
 	if err != nil {

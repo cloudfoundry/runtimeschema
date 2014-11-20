@@ -23,7 +23,7 @@ type ReceptorBBS interface {
 	DesireTask(models.Task) error
 	Tasks() ([]models.Task, error)
 	TasksByDomain(domain string) ([]models.Task, error)
-	TaskByGuid(taskGuid string) (models.Task, error)
+	TaskByGuid(taskGuid string) (*models.Task, error)
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
 	CancelTask(taskGuid string) error
@@ -35,7 +35,7 @@ type ReceptorBBS interface {
 	RemoveDesiredLRPByProcessGuid(processGuid string) error
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
-	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error)
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
@@ -60,7 +60,7 @@ type RepBBS interface {
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
 	ClaimTask(taskGuid string, cellID string) error
 	StartTask(taskGuid string, cellID string) error
-	TaskByGuid(taskGuid string) (models.Task, error)
+	TaskByGuid(taskGuid string) (*models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
@@ -155,7 +155,6 @@ type RouteEmitterBBS interface {
 	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	RunningActualLRPs() ([]models.ActualLRP, error)
-	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
 	RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
 
 	//lock

@@ -65,16 +65,16 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error) {
 	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{
 		ProcessGuid: processGuid,
 	}))
 	if err != nil {
-		return models.DesiredLRP{}, err
+		return nil, err
 	}
 	var lrp models.DesiredLRP
 	err = models.FromJSON(node.Value, &lrp)
-	return lrp, err
+	return &lrp, err
 }
 
 func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
