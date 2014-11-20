@@ -28,6 +28,9 @@ func (ve ValidationError) Error() string {
 	var buffer bytes.Buffer
 
 	for i, err := range ve {
+		if err == nil {
+			continue
+		}
 		if i > 0 {
 			buffer.WriteString(", ")
 		}

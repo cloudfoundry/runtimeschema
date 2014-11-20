@@ -178,7 +178,6 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 		task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
 		value, err := models.ToJSON(task)
 		if err != nil {
-			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
 			panic(err)
 		}
 

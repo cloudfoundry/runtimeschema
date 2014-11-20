@@ -198,7 +198,6 @@ func (bbs *LRPBBS) batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS []compareAndS
 		desiredLRP := desiredLRPToCAS.NewDesiredLRP
 		value, err := models.ToJSON(desiredLRP)
 		if err != nil {
-			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
 			panic(err)
 		}
 		newStoreNode := storeadapter.StoreNode{

@@ -96,7 +96,6 @@ func (bbs *StartAuctionBBS) batchCompareAndSwapLRPStartAuctions(auctionsToCAS []
 		auction := auctionToCAS.NewLRPStartAuction
 		value, err := models.ToJSON(auction)
 		if err != nil {
-			// TODO: this is what .ToJSON used to do on error; what should we do instead? log and move on??
 			panic(err)
 		}
 

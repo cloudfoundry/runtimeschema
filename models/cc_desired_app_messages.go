@@ -16,11 +16,6 @@ type DesireAppRequestFromCC struct {
 	LogGuid         string                `json:"log_guid"`
 }
 
-func (d DesireAppRequestFromCC) ToJSON() []byte {
-	encoded, _ := json.Marshal(d)
-	return encoded
-}
-
 type CCDesiredStateServerResponse struct {
 	Apps        []DesireAppRequestFromCC `json:"apps"`
 	CCBulkToken *json.RawMessage         `json:"token"`
