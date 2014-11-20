@@ -57,7 +57,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("is consistent with collection getters", func() {
-				pendingTasks, err := bbs.GetAllPendingTasks()
+				pendingTasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(pendingTasks).Should(Equal([]models.Task{*receivedTask}))
 			})
@@ -126,21 +126,21 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("GetAllPendingTasks", func() {
+	Describe("PendingTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'pending' state", func() {
-			tasks, err := bbs.GetAllPendingTasks()
+			tasks, err := bbs.PendingTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
-	Describe("GetAllClaimedTasks", func() {
+	Describe("ClaimedTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -150,14 +150,14 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'claimed' state", func() {
-			tasks, err := bbs.GetAllClaimedTasks()
+			tasks, err := bbs.ClaimedTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
-	Describe("GetAllRunningTasks", func() {
+	Describe("RunningTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -170,14 +170,14 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'running' state", func() {
-			tasks, err := bbs.GetAllRunningTasks()
+			tasks, err := bbs.RunningTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
-	Describe("GetAllCompletedTasks", func() {
+	Describe("CompletedTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -193,14 +193,14 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
-			tasks, err := bbs.GetAllCompletedTasks()
+			tasks, err := bbs.CompletedTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 		})
 	})
 
-	Describe("GetAllResolvingTasks", func() {
+	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -219,7 +219,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
-			tasks, err := bbs.GetAllResolvingTasks()
+			tasks, err := bbs.ResolvingTasks()
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))

@@ -23,7 +23,7 @@ type FakeRepBBS struct {
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns struct {
+	watchForDesiredTaskReturns     struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -136,7 +136,7 @@ type FakeRepBBS struct {
 	WatchForStopLRPInstanceStub        func() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
 	watchForStopLRPInstanceMutex       sync.RWMutex
 	watchForStopLRPInstanceArgsForCall []struct{}
-	watchForStopLRPInstanceReturns struct {
+	watchForStopLRPInstanceReturns     struct {
 		result1 <-chan models.StopLRPInstance
 		result2 chan<- bool
 		result3 <-chan error

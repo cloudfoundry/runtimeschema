@@ -39,27 +39,27 @@ func (bbs *TaskBBS) TaskByGuid(guid string) (*models.Task, error) {
 	return task, err
 }
 
-func (bbs *TaskBBS) GetAllPendingTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) PendingTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStatePending), err
 }
 
-func (bbs *TaskBBS) GetAllClaimedTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) ClaimedTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateClaimed), err
 }
 
-func (bbs *TaskBBS) GetAllRunningTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) RunningTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateRunning), err
 }
 
-func (bbs *TaskBBS) GetAllCompletedTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) CompletedTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
-func (bbs *TaskBBS) GetAllResolvingTasks() ([]models.Task, error) {
+func (bbs *TaskBBS) ResolvingTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateResolving), err
 }

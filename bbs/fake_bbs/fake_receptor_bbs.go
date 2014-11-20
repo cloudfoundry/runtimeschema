@@ -20,7 +20,7 @@ type FakeReceptorBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns struct {
+	tasksReturns     struct {
 		result1 []models.Task
 		result2 error
 	}
@@ -69,7 +69,7 @@ type FakeReceptorBBS struct {
 	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForCompletedTaskMutex       sync.RWMutex
 	watchForCompletedTaskArgsForCall []struct{}
-	watchForCompletedTaskReturns struct {
+	watchForCompletedTaskReturns     struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -102,7 +102,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns struct {
+	desiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -127,7 +127,7 @@ type FakeReceptorBBS struct {
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns struct {
+	actualLRPsReturns     struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -170,7 +170,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -185,7 +185,7 @@ type FakeReceptorBBS struct {
 	FreshnessesStub        func() ([]models.Freshness, error)
 	freshnessesMutex       sync.RWMutex
 	freshnessesArgsForCall []struct{}
-	freshnessesReturns struct {
+	freshnessesReturns     struct {
 		result1 []models.Freshness
 		result2 error
 	}

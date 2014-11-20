@@ -41,7 +41,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("creates /task/<guid>", func() {
-				tasks, err := bbs.GetAllPendingTasks()
+				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -57,14 +57,14 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("creates /task/<guid> and sets set the CreatedAt time to now", func() {
-				tasks, err := bbs.GetAllPendingTasks()
+				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].CreatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
 
 			It("should bump UpdatedAt", func() {
-				tasks, err := bbs.GetAllPendingTasks()
+				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -91,7 +91,7 @@ var _ = Describe("Task BBS", func() {
 			It("bumps UpdatedAt", func() {
 				err = bbs.DesireTask(task)
 
-				tasks, err := bbs.GetAllPendingTasks()
+				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -124,7 +124,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllClaimedTasks()
+				tasks, err := bbs.ClaimedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -136,7 +136,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllClaimedTasks()
+				tasks, err := bbs.ClaimedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -189,7 +189,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllRunningTasks()
+				tasks, err := bbs.RunningTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -202,7 +202,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllRunningTasks()
+				tasks, err := bbs.RunningTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -385,7 +385,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllCompletedTasks()
+				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].Failed).Should(BeTrue())
@@ -398,7 +398,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllCompletedTasks()
+				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -410,7 +410,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllCompletedTasks()
+				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Time().UnixNano()))
@@ -479,7 +479,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ResolvingTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllResolvingTasks()
+				tasks, err := bbs.ResolvingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 				Ω(tasks[0].State).Should(Equal(models.TaskStateResolving))
@@ -491,7 +491,7 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.ResolvingTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.GetAllResolvingTasks()
+				tasks, err := bbs.ResolvingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
 			})
