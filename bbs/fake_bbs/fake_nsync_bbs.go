@@ -52,15 +52,6 @@ type FakeNsyncBBS struct {
 	bumpFreshnessReturns struct {
 		result1 error
 	}
-	RequestStopLRPIndexStub        func(processGuid string, stopIndex int) error
-	requestStopLRPIndexMutex       sync.RWMutex
-	requestStopLRPIndexArgsForCall []struct {
-		processGuid string
-		stopIndex   int
-	}
-	requestStopLRPIndexReturns struct {
-		result1 error
-	}
 	NewNsyncBulkerLockStub        func(bulkerID string, interval time.Duration) ifrit.Runner
 	newNsyncBulkerLockMutex       sync.RWMutex
 	newNsyncBulkerLockArgsForCall []struct {
@@ -238,39 +229,6 @@ func (fake *FakeNsyncBBS) BumpFreshnessArgsForCall(i int) models.Freshness {
 func (fake *FakeNsyncBBS) BumpFreshnessReturns(result1 error) {
 	fake.BumpFreshnessStub = nil
 	fake.bumpFreshnessReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeNsyncBBS) RequestStopLRPIndex(processGuid string, stopIndex int) error {
-	fake.requestStopLRPIndexMutex.Lock()
-	fake.requestStopLRPIndexArgsForCall = append(fake.requestStopLRPIndexArgsForCall, struct {
-		processGuid string
-		stopIndex   int
-	}{processGuid, stopIndex})
-	fake.requestStopLRPIndexMutex.Unlock()
-	if fake.RequestStopLRPIndexStub != nil {
-		return fake.RequestStopLRPIndexStub(processGuid, stopIndex)
-	} else {
-		return fake.requestStopLRPIndexReturns.result1
-	}
-}
-
-func (fake *FakeNsyncBBS) RequestStopLRPIndexCallCount() int {
-	fake.requestStopLRPIndexMutex.RLock()
-	defer fake.requestStopLRPIndexMutex.RUnlock()
-	return len(fake.requestStopLRPIndexArgsForCall)
-}
-
-func (fake *FakeNsyncBBS) RequestStopLRPIndexArgsForCall(i int) (string, int) {
-	fake.requestStopLRPIndexMutex.RLock()
-	defer fake.requestStopLRPIndexMutex.RUnlock()
-	return fake.requestStopLRPIndexArgsForCall[i].processGuid, fake.requestStopLRPIndexArgsForCall[i].stopIndex
-}
-
-func (fake *FakeNsyncBBS) RequestStopLRPIndexReturns(result1 error) {
-	fake.RequestStopLRPIndexStub = nil
-	fake.requestStopLRPIndexReturns = struct {
 		result1 error
 	}{result1}
 }
