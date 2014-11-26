@@ -419,12 +419,19 @@ type mSerialAction struct {
 }
 
 type EmitProgressAction struct {
-	Action
-	StartMessage   string
-	SuccessMessage string
-	FailureMessage string
+	Action               Action `json:"-"`
+	StartMessage         string `json:"start_message"`
+	SuccessMessage       string `json:"success_message"`
+	FailureMessagePrefix string `json:"failure_message_prefix"`
 
-	LogSource string
+	LogSource string `json:"log_source,omitempty"`
+}
+
+type InnerEmitProgressAction EmitProgressAction
+
+type mEmitProgressAction struct {
+	*InnerEmitProgressAction
+	ActionRaw *json.RawMessage `json:"action"`
 }
 
 func (a *EmitProgressAction) ActionType() ActionType {
@@ -458,55 +465,38 @@ func (a *EmitProgressAction) MarshalJSON() ([]byte, error) {
 	j := json.RawMessage(bytes)
 
 	return json.Marshal(&mEmitProgressAction{
-		Action:         &j,
-		StartMessage:   a.StartMessage,
-		SuccessMessage: a.SuccessMessage,
-		FailureMessage: a.FailureMessage,
-		LogSource:      a.LogSource,
+		InnerEmitProgressAction: (*InnerEmitProgressAction)(a),
+		ActionRaw:               &j,
 	})
 }
 
 func (a *EmitProgressAction) UnmarshalJSON(data []byte) error {
-	m := mEmitProgressAction{}
-	err := json.Unmarshal(data, &m)
+	m := &mEmitProgressAction{InnerEmitProgressAction: (*InnerEmitProgressAction)(a)}
+	err := json.Unmarshal(data, m)
 	if err != nil {
 		return err
 	}
 
 	var action Action
-	if m.Action == nil {
+	if m.ActionRaw == nil {
 		action = nil
 	} else {
-		action, err = UnmarshalAction([]byte(*m.Action))
+		action, err = UnmarshalAction(*m.ActionRaw)
 		if err != nil {
 			return err
 		}
 	}
-
 	a.Action = action
-	a.StartMessage = m.StartMessage
-	a.SuccessMessage = m.SuccessMessage
-	a.FailureMessage = m.FailureMessage
-	a.LogSource = m.LogSource
 
 	return nil
 }
 
-type mEmitProgressAction struct {
-	Action         *json.RawMessage `json:"action"`
-	StartMessage   string           `json:"start_message"`
-	SuccessMessage string           `json:"success_message"`
-	FailureMessage string           `json:"failure_message"`
-
-	LogSource string `json:"log_source,omitempty"`
-}
-
-func EmitProgressFor(action Action, startMessage string, successMessage string, failureMessage string) *EmitProgressAction {
+func EmitProgressFor(action Action, startMessage string, successMessage string, failureMessagePrefix string) *EmitProgressAction {
 	return &EmitProgressAction{
-		Action:         action,
-		StartMessage:   startMessage,
-		SuccessMessage: successMessage,
-		FailureMessage: failureMessage,
+		Action:               action,
+		StartMessage:         startMessage,
+		SuccessMessage:       successMessage,
+		FailureMessagePrefix: failureMessagePrefix,
 	}
 }
 

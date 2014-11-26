@@ -575,7 +575,7 @@ var _ = Describe("Actions", func() {
 			`{
 					"start_message": "reticulating splines",
 					"success_message": "reticulated splines",
-					"failure_message": "reticulation failed",
+					"failure_message_prefix": "reticulation failed",
 					"action": {
 						"run": {
 							"path": "echo",
@@ -597,7 +597,7 @@ var _ = Describe("Actions", func() {
 			`{
 					"start_message": "reticulating splines",
 					"success_message": "reticulated splines",
-					"failure_message": "reticulation failed",
+					"failure_message_prefix": "reticulation failed",
 					"action": null
 			}`,
 			EmitProgressFor(
@@ -610,7 +610,7 @@ var _ = Describe("Actions", func() {
 			`{
 					"start_message": "reticulating splines",
 					"success_message": "reticulated splines",
-					"failure_message": "reticulation failed"
+					"failure_message_prefix": "reticulation failed"
 			}`,
 			EmitProgressFor(
 				nil,
