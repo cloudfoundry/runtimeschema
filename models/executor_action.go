@@ -29,6 +29,7 @@ type Action interface {
 }
 
 type DownloadAction struct {
+	Artifact string `json:"artifact,omitempty"`
 	From     string `json:"from"`
 	To       string `json:"to"`
 	CacheKey string `json:"cache_key"`
@@ -59,8 +60,9 @@ func (a DownloadAction) Validate() error {
 }
 
 type UploadAction struct {
-	To   string `json:"to"`
-	From string `json:"from"`
+	Artifact string `json:"artifact,omitempty"`
+	To       string `json:"to"`
+	From     string `json:"from"`
 
 	LogSource string `json:"log_source,omitempty"`
 }

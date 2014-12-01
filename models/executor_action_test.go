@@ -54,11 +54,13 @@ var _ = Describe("Actions", func() {
 	Describe("Download", func() {
 		itSerializesAndDeserializes(
 			`{
+					"artifact": "mouse",
 					"from": "web_location",
 					"to": "local_location",
 					"cache_key": "elephant"
 			}`,
 			&DownloadAction{
+				Artifact: "mouse",
 				From:     "web_location",
 				To:       "local_location",
 				CacheKey: "elephant",
@@ -102,12 +104,14 @@ var _ = Describe("Actions", func() {
 	Describe("Upload", func() {
 		itSerializesAndDeserializes(
 			`{
+					"artifact": "mouse",
 					"from": "local_location",
 					"to": "web_location"
 			}`,
 			&UploadAction{
-				From: "local_location",
-				To:   "web_location",
+				Artifact: "mouse",
+				From:     "local_location",
+				To:       "web_location",
 			},
 		)
 
