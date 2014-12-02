@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
@@ -61,7 +62,7 @@ var _ = Describe("LRP", func() {
 			Context("when the desired LRP does not exist", func() {
 				It("returns an ErrorKeyNotFound", func() {
 					err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
-					Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+					Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 		})
@@ -354,7 +355,7 @@ var _ = Describe("LRP", func() {
 			Context("when the current value matches", func() {
 				It("deletes the desired state", func() {
 					_, err := bbs.DesiredLRPByProcessGuid("some-guid")
-					Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 
@@ -473,7 +474,7 @@ var _ = Describe("LRP", func() {
 				err := bbs.UpdateDesiredLRP("garbage-guid", models.DesiredLRPUpdate{
 					Instances: &instances,
 				})
-				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})

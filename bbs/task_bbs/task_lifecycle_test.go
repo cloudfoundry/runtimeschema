@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
@@ -311,7 +312,7 @@ var _ = Describe("Task BBS", func() {
 
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(BeAssignableToTypeOf(*new(UnexpectedTaskStateError)))
+					Ω(cancelError).Should(BeAssignableToTypeOf(bbserrors.ErrTaskCannotBeCancelled))
 				})
 			})
 
@@ -329,14 +330,14 @@ var _ = Describe("Task BBS", func() {
 
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(BeAssignableToTypeOf(*new(UnexpectedTaskStateError)))
+					Ω(cancelError).Should(BeAssignableToTypeOf(bbserrors.ErrTaskCannotBeCancelled))
 				})
 			})
 
 			Context("when the task does not exist", func() {
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(ErrTaskNotFound))
+					Ω(cancelError).Should(Equal(bbserrors.ErrTaskNotFound))
 				})
 			})
 
@@ -523,7 +524,7 @@ var _ = Describe("Task BBS", func() {
 
 			It("should fail", func() {
 				err := bbs.ResolvingTask(task.TaskGuid)
-				Ω(err).Should(Equal(ErrTaskNotResolvable))
+				Ω(err).Should(Equal(bbserrors.ErrTaskCannotBeMarkedAsResolving))
 			})
 		})
 	})

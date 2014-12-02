@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -47,7 +48,7 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
 	}
 
 	if task.State != models.TaskStatePending {
-		return UnexpectedTaskStateError("cannot claim task in non-pending state")
+		return bbserrors.ErrTaskCannotBeClaimed
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
@@ -78,7 +79,7 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 	}
 
 	if task.State != models.TaskStateClaimed {
-		return UnexpectedTaskStateError("cannot start task in non-claimed state")
+		return bbserrors.ErrTaskCannotBeStarted
 	}
 
 	if task.CellID != cellID {
@@ -107,16 +108,16 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
-	if err == storeadapter.ErrorKeyNotFound {
-		return ErrTaskNotFound
+	if err == bbserrors.ErrStoreResourceNotFound {
+		return bbserrors.ErrTaskNotFound
 	} else if err != nil {
 		return err
 	} else if task == nil {
-		return ErrTaskNotFound
+		return bbserrors.ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStatePending && task.State != models.TaskStateClaimed && task.State != models.TaskStateRunning {
-		return UnexpectedTaskStateError("cannot complete task in non-pending/non-claimed/non-running state")
+		return bbserrors.ErrTaskCannotBeCancelled
 	}
 
 	*task = bbs.markTaskCompleted(*task, true, "task was cancelled", "")
@@ -142,11 +143,11 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil || task == nil {
-		return ErrTaskNotFound
+		return bbserrors.ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStateRunning && task.State != models.TaskStateClaimed {
-		return UnexpectedTaskStateError("cannot complete task in non-running/non-claimed state")
+		return bbserrors.ErrTaskCannotBeCompleted
 	}
 
 	*task = bbs.markTaskCompleted(*task, failed, failureReason, result)
@@ -169,11 +170,11 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return ErrTaskNotFound
+		return bbserrors.ErrTaskNotFound
 	}
 
 	if task.State != models.TaskStateCompleted {
-		return ErrTaskNotResolvable
+		return bbserrors.ErrTaskCannotBeMarkedAsResolving
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
@@ -203,7 +204,7 @@ func (bbs *TaskBBS) ResolveTask(taskGuid string) error {
 	}
 
 	if task.State != models.TaskStateResolving {
-		return UnexpectedTaskStateError("cannot resolve task in non-resolving state")
+		return bbserrors.ErrTaskCannotBeResolved
 	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {

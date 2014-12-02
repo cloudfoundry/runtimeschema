@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
@@ -311,7 +312,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				It("should delete the task", func() {
 					_, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 
@@ -377,7 +378,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			It("should delete the task", func() {
 				_, err := bbs.TaskByGuid(task.TaskGuid)
-				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})

@@ -1,6 +1,7 @@
 package lrp_bbs
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider"
@@ -41,7 +42,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 	})
 
 	switch err {
-	case storeadapter.ErrorKeyExists:
+	case bbserrors.ErrStoreResourceExists:
 		existingLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 		if err != nil {
 			return err

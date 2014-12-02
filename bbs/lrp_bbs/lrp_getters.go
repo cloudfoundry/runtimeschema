@@ -66,14 +66,20 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 }
 
 func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error) {
-	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{
-		ProcessGuid: processGuid,
-	}))
+	var node storeadapter.StoreNode
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		var err error
+		node, err = bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
+		return err
+	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	var lrp models.DesiredLRP
 	err = models.FromJSON(node.Value, &lrp)
+
 	return &lrp, err
 }
 

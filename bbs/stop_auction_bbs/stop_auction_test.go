@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -44,7 +45,7 @@ var _ = Describe("Stop Auction", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.RequestLRPStopAuction(auctionLRP)
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyExists))
+				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceExists))
 			})
 		})
 
