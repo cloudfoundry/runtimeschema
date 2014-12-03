@@ -167,7 +167,7 @@ func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, 
 		return lrp, err
 	}
 	lrp.State = models.ActualLRPStateStarting
-	lrp.Since = bbs.timeProvider.Time().UnixNano()
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
 
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -186,7 +186,7 @@ func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, 
 
 func (bbs *LRPBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellID string) error {
 	lrp.State = models.ActualLRPStateRunning
-	lrp.Since = bbs.timeProvider.Time().UnixNano()
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
 	lrp.CellID = cellID
 
 	value, err := models.ToJSON(lrp)

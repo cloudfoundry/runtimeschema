@@ -72,7 +72,7 @@ var _ = Describe("LrpGetters", func() {
 			InstanceGuid: "some-instance-guid-1",
 			Domain:       "domain-a",
 			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Time().UnixNano(),
+			Since:        timeProvider.Now().UnixNano(),
 			CellID:       "cell-id",
 		}
 
@@ -82,7 +82,7 @@ var _ = Describe("LrpGetters", func() {
 			InstanceGuid: "some-instance-guid-2",
 			Domain:       "domain-b",
 			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Time().UnixNano(),
+			Since:        timeProvider.Now().UnixNano(),
 			CellID:       "cell-id",
 		}
 
@@ -92,7 +92,7 @@ var _ = Describe("LrpGetters", func() {
 			InstanceGuid: "some-instance-guid-3",
 			Domain:       "domain-b",
 			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Time().UnixNano(),
+			Since:        timeProvider.Now().UnixNano(),
 			CellID:       "cell-id",
 		}
 	})

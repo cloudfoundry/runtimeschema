@@ -36,7 +36,7 @@ type compareAndSwappableTask struct {
 func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
-	convergeStart := time.Now()
+	convergeStart := bbs.timeProvider.Now()
 
 	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
@@ -137,18 +137,18 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {
-	return bbs.timeProvider.Time().Sub(time.Unix(0, task.CreatedAt))
+	return bbs.timeProvider.Now().Sub(time.Unix(0, task.CreatedAt))
 }
 
 func (bbs *TaskBBS) durationSinceTaskUpdated(task models.Task) time.Duration {
-	return bbs.timeProvider.Time().Sub(time.Unix(0, task.UpdatedAt))
+	return bbs.timeProvider.Now().Sub(time.Unix(0, task.UpdatedAt))
 }
 
 func (bbs *TaskBBS) durationSinceTaskFirstCompleted(task models.Task) time.Duration {
 	if task.FirstCompletedAt == 0 {
 		return 0
 	}
-	return bbs.timeProvider.Time().Sub(time.Unix(0, task.FirstCompletedAt))
+	return bbs.timeProvider.Now().Sub(time.Unix(0, task.FirstCompletedAt))
 }
 
 func (bbs *TaskBBS) markTaskFailed(task models.Task, reason string) models.Task {
@@ -156,8 +156,8 @@ func (bbs *TaskBBS) markTaskFailed(task models.Task, reason string) models.Task 
 }
 
 func (bbs *TaskBBS) markTaskCompleted(task models.Task, failed bool, failureReason string, result string) models.Task {
-	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
-	task.FirstCompletedAt = bbs.timeProvider.Time().UnixNano()
+	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
+	task.FirstCompletedAt = bbs.timeProvider.Now().UnixNano()
 	task.State = models.TaskStateCompleted
 	task.Failed = failed
 	task.FailureReason = failureReason
@@ -175,7 +175,7 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 	waitGroup.Add(len(tasksToCAS))
 	for _, taskToCAS := range tasksToCAS {
 		task := taskToCAS.NewTask
-		task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+		task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 		value, err := models.ToJSON(task)
 		if err != nil {
 			panic(err)

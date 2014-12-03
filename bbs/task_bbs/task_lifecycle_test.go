@@ -47,7 +47,7 @@ var _ = Describe("Task BBS", func() {
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 				Ω(tasks[0].CreatedAt).Should(Equal(task.CreatedAt))
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 		})
 
@@ -61,14 +61,14 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].CreatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].CreatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			It("should bump UpdatedAt", func() {
 				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 		})
 
@@ -95,7 +95,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 		})
 
@@ -140,7 +140,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.ClaimedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			Context("when the etcdClient is out of commission", func() {
@@ -206,7 +206,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.RunningTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			Context("when the store is out of commission", func() {
@@ -263,7 +263,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("bumps UpdatedAt", func() {
-					Ω(taskAfterCancel.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(taskAfterCancel.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 			}
 
@@ -402,7 +402,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			It("sets FirstCompletedAt", func() {
@@ -414,7 +414,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			Context("when the store is out of commission", func() {
@@ -494,7 +494,7 @@ var _ = Describe("Task BBS", func() {
 
 				tasks, err := bbs.ResolvingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
 
 			Context("when the Task is already resolving", func() {

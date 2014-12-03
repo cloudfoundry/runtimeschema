@@ -169,7 +169,7 @@ func newPendingStartAuction(processGuid string) models.LRPStartAuction {
 	err := bbs.RequestLRPStartAuction(auction)
 	Ω(err).ShouldNot(HaveOccurred())
 	auction.State = models.LRPStartAuctionStatePending
-	auction.UpdatedAt = timeProvider.Time().UnixNano()
+	auction.UpdatedAt = timeProvider.Now().UnixNano()
 
 	return auction
 }
@@ -180,7 +180,7 @@ func newClaimedStartAuction(processGuid string) models.LRPStartAuction {
 	err := bbs.ClaimLRPStartAuction(auction)
 	Ω(err).ShouldNot(HaveOccurred())
 	auction.State = models.LRPStartAuctionStateClaimed
-	auction.UpdatedAt = timeProvider.Time().UnixNano()
+	auction.UpdatedAt = timeProvider.Now().UnixNano()
 
 	return auction
 }

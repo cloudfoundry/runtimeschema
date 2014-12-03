@@ -43,7 +43,7 @@ var _ = Describe("Start Auction", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 
 			expectedJSON, err := models.ToJSON(auctionLRP)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -104,7 +104,7 @@ var _ = Describe("Start Auction", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 			Eventually(events).Should(Receive(Equal(auctionLRP)))
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("Start Auction", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 			Eventually(events).Should(Receive(Equal(auctionLRP)))
 
 			value, err := models.ToJSON(auctionLRP)
@@ -135,7 +135,7 @@ var _ = Describe("Start Auction", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 			Eventually(events).Should(Receive(Equal(auctionLRP)))
 
 			err = bbs.ResolveLRPStartAuction(auctionLRP)
@@ -168,7 +168,7 @@ var _ = Describe("Start Auction", func() {
 			err := bbs.RequestLRPStartAuction(auctionLRP)
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -181,7 +181,7 @@ var _ = Describe("Start Auction", func() {
 
 				expectedAuctionLRP := auctionLRP
 				expectedAuctionLRP.State = models.LRPStartAuctionStateClaimed
-				expectedAuctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+				expectedAuctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 
 				node, err := etcdClient.Get("/v1/start/some-guid/1")
 				Ω(err).ShouldNot(HaveOccurred())
@@ -238,7 +238,7 @@ var _ = Describe("Start Auction", func() {
 			err := bbs.RequestLRPStartAuction(auctionLRP)
 
 			auctionLRP.State = models.LRPStartAuctionStatePending
-			auctionLRP.UpdatedAt = timeProvider.Time().UnixNano()
+			auctionLRP.UpdatedAt = timeProvider.Now().UnixNano()
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ClaimLRPStartAuction(auctionLRP)

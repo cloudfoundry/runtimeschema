@@ -109,7 +109,7 @@ var _ = Describe("LRP", func() {
 
 				expectedLRP := lrp
 				expectedLRP.State = models.ActualLRPStateStarting
-				expectedLRP.Since = timeProvider.Time().UnixNano()
+				expectedLRP.Since = timeProvider.Now().UnixNano()
 				expectedLRP.CellID = cellID
 
 				expectedJSON, err := models.ToJSON(expectedLRP)
@@ -136,7 +136,7 @@ var _ = Describe("LRP", func() {
 					CellID:       cellID,
 					Domain:       domain,
 					Index:        index,
-					Since:        timeProvider.Time().UnixNano(),
+					Since:        timeProvider.Now().UnixNano(),
 				}
 			})
 
@@ -149,7 +149,7 @@ var _ = Describe("LRP", func() {
 
 				expectedLRP := startedLRP
 				expectedLRP.State = models.ActualLRPStateRunning
-				expectedLRP.Since = timeProvider.Time().UnixNano()
+				expectedLRP.Since = timeProvider.Now().UnixNano()
 				expectedLRP.CellID = cellID
 
 				expectedJSON, err := models.ToJSON(expectedLRP)

@@ -16,7 +16,7 @@ func (bbs *StartAuctionBBS) RequestLRPStartAuction(lrp models.LRPStartAuction) e
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		lrp.State = models.LRPStartAuctionStatePending
-		lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+		lrp.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 		value, err := models.ToJSON(lrp)
 		if err != nil {
 			return err
@@ -36,7 +36,7 @@ func (bbs *StartAuctionBBS) ClaimLRPStartAuction(lrp models.LRPStartAuction) err
 	}
 
 	lrp.State = models.LRPStartAuctionStateClaimed
-	lrp.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	lrp.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 	changedValue, err := models.ToJSON(lrp)
 	if err != nil {
 		return err

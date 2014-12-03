@@ -54,7 +54,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 
 		switch auction.State {
 		case models.LRPStopAuctionStatePending:
-			if bbs.timeProvider.Time().Sub(updatedAt) > kickPendingDuration {
+			if bbs.timeProvider.Now().Sub(updatedAt) > kickPendingDuration {
 				bbs.logger.Info("detected-pending-auction", lager.Data{
 					"auction":       auction,
 					"kick-duration": kickPendingDuration,
@@ -67,7 +67,7 @@ func (bbs *StopAuctionBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Dura
 			}
 
 		case models.LRPStopAuctionStateClaimed:
-			if bbs.timeProvider.Time().Sub(updatedAt) > expireClaimedDuration {
+			if bbs.timeProvider.Now().Sub(updatedAt) > expireClaimedDuration {
 				bbs.logger.Info("detected-expired-claim", lager.Data{
 					"auction":             auction,
 					"expiration-duration": expireClaimedDuration,

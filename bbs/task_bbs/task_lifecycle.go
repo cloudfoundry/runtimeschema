@@ -21,9 +21,9 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 
 	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		if task.CreatedAt == 0 {
-			task.CreatedAt = s.timeProvider.Time().UnixNano()
+			task.CreatedAt = s.timeProvider.Now().UnixNano()
 		}
-		task.UpdatedAt = s.timeProvider.Time().UnixNano()
+		task.UpdatedAt = s.timeProvider.Now().UnixNano()
 		task.State = models.TaskStatePending
 		value, err := models.ToJSON(task)
 		if err != nil {
@@ -51,7 +51,7 @@ func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
 		return bbserrors.ErrTaskCannotBeClaimed
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 	task.State = models.TaskStateClaimed
 	task.CellID = cellID
 
@@ -86,7 +86,7 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 		return errors.New("cannot start task claimed by another cell")
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 	task.State = models.TaskStateRunning
 
 	value, err := models.ToJSON(task)
@@ -177,7 +177,7 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 		return bbserrors.ErrTaskCannotBeMarkedAsResolving
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Time().UnixNano()
+	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 	task.State = models.TaskStateResolving
 
 	value, err := models.ToJSON(task)

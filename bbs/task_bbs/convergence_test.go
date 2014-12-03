@@ -137,7 +137,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStatePending))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -208,7 +208,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -259,7 +259,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -297,7 +297,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.Failed).Should(Equal(true))
 					Ω(noticedOnce.FailureReason).Should(Equal("'cause I said so"))
 					Ω(noticedOnce.Result).Should(Equal("a magical result"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -362,7 +362,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Time().UnixNano()))
+					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("bumps the compare-and-swap counter", func() {

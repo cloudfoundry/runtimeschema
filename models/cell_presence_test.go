@@ -4,16 +4,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
 var _ = Describe("CellPresence", func() {
-	var cellPresence CellPresence
+	var cellPresence models.CellPresence
 
 	var payload string
 
 	BeforeEach(func() {
-		cellPresence = CellPresence{
+		cellPresence = models.CellPresence{
 			CellID:     "some-id",
 			Stack:      "some-stack",
 			RepAddress: "some-address",
@@ -28,7 +28,7 @@ var _ = Describe("CellPresence", func() {
 
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
-			json, err := ToJSON(&cellPresence)
+			json, err := models.ToJSON(&cellPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(string(json)).Should(MatchJSON(payload))
 		})
@@ -36,8 +36,8 @@ var _ = Describe("CellPresence", func() {
 
 	Describe("NewTaskFromJSON", func() {
 		It("returns a Task with correct fields", func() {
-			decodedCellPresence := &CellPresence{}
-			err := FromJSON([]byte(payload), decodedCellPresence)
+			decodedCellPresence := &models.CellPresence{}
+			err := models.FromJSON([]byte(payload), decodedCellPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(decodedCellPresence).Should(Equal(&cellPresence))
@@ -46,8 +46,8 @@ var _ = Describe("CellPresence", func() {
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
 				payload = "aliens lol"
-				decodedCellPresence := &CellPresence{}
-				err := FromJSON([]byte(payload), decodedCellPresence)
+				decodedCellPresence := &models.CellPresence{}
+				err := models.FromJSON([]byte(payload), decodedCellPresence)
 
 				Ω(err).Should(HaveOccurred())
 			})

@@ -157,7 +157,7 @@ func newPendingStopAuction(processGuid string) models.LRPStopAuction {
 	err := bbs.RequestLRPStopAuction(auction)
 	Ω(err).ShouldNot(HaveOccurred())
 	auction.State = models.LRPStopAuctionStatePending
-	auction.UpdatedAt = timeProvider.Time().UnixNano()
+	auction.UpdatedAt = timeProvider.Now().UnixNano()
 
 	return auction
 }
@@ -168,7 +168,7 @@ func newClaimedStopAuction(processGuid string) models.LRPStopAuction {
 	err := bbs.ClaimLRPStopAuction(auction)
 	Ω(err).ShouldNot(HaveOccurred())
 	auction.State = models.LRPStopAuctionStateClaimed
-	auction.UpdatedAt = timeProvider.Time().UnixNano()
+	auction.UpdatedAt = timeProvider.Now().UnixNano()
 
 	return auction
 }
