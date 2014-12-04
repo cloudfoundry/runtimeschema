@@ -15,7 +15,7 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
-var _ = Describe("Fetching all Cells", func() {
+var _ = Describe("Cell Service Registry", func() {
 	var (
 		bbs                *ServicesBBS
 		interval           = time.Second
@@ -40,8 +40,8 @@ var _ = Describe("Fetching all Cells", func() {
 
 		interval = 1 * time.Second
 
-		heartbeat1 = ifrit.Envoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
-		heartbeat2 = ifrit.Envoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
+		heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+		heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
 	})
 
 	AfterEach(func() {
@@ -62,6 +62,18 @@ var _ = Describe("Fetching all Cells", func() {
 
 			Ω(node.Value).Should(MatchJSON(expectedJSON))
 		})
+	})
+
+	Describe("CellById", func() {
+		Context("when the cell exists", func() {
+			It("returns the correct CellPresence", func() {
+				cellPresence, err := bbs.CellById(firstCellPresence.CellID)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(cellPresence).Should(Equal(firstCellPresence))
+			})
+		})
+
+		Context("when the cell does not exist", func() {})
 	})
 
 	Describe("Cells", func() {

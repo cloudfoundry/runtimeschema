@@ -15,7 +15,7 @@ var _ = Describe("LrpConvergence", func() {
 	var (
 		sender *fake.FakeMetricSender
 
-		cellID string
+		cellPresence models.CellPresence
 	)
 
 	processGuid := "process-guid"
@@ -24,15 +24,17 @@ var _ = Describe("LrpConvergence", func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
 
-		cellID = "the-cell-id"
-		etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.CellSchemaPath(cellID),
-			Value: []byte{},
-		})
+		cellPresence = models.CellPresence{
+			CellID:     "the-cell-id",
+			Stack:      "the-stack",
+			RepAddress: "cell.example.com",
+		}
 
-		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", cellID, "domain", 0)
+		registerCell(cellPresence)
+
+		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", cellPresence.CellID, "domain", 0)
 		Ω(err).ShouldNot(HaveOccurred())
-		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", cellID, "domain", 1)
+		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -65,7 +67,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when an cell is missing", func() {
 			BeforeEach(func() {
-				etcdClient.Delete(shared.CellSchemaPath(cellID))
+				etcdClient.Delete(shared.CellSchemaPath(cellPresence.CellID))
 			})
 
 			It("should delete LRPs associated with said cell", func() {
@@ -185,7 +187,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when there are duplicate actual LRPs", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellID, "domain", 0)
+				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellPresence.CellID, "domain", 0)
 				bbs.DesireLRP(desiredLRP)
 			})
 
@@ -209,17 +211,19 @@ var _ = Describe("LrpConvergence", func() {
 	Context("when there is an actual LRP with no matching desired LRP", func() {
 		It("should emit a stop for the actual LRP", func() {
 			bbs.ConvergeLRPs()
-			stops, err := bbs.StopLRPInstances()
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(stops).Should(HaveLen(2))
+			Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(2))
 
-			Ω(stops).Should(ContainElement(models.StopLRPInstance{
+			addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+			Ω(addr1).Should(Equal(cellPresence.RepAddress))
+			Ω(stop1).Should(Equal(models.StopLRPInstance{
 				ProcessGuid:  processGuid,
 				InstanceGuid: "instance-guid-1",
 				Index:        0,
 			}))
 
-			Ω(stops).Should(ContainElement(models.StopLRPInstance{
+			addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+			Ω(addr2).Should(Equal(cellPresence.RepAddress))
+			Ω(stop2).Should(Equal(models.StopLRPInstance{
 				ProcessGuid:  processGuid,
 				InstanceGuid: "instance-guid-2",
 				Index:        1,
@@ -233,3 +237,7 @@ var _ = Describe("LrpConvergence", func() {
 		})
 	})
 })
+
+func ReceivedStopRequests() []models.StopLRPInstance {
+	return []models.StopLRPInstance{}
+}

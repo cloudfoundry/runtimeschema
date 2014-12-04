@@ -1,7 +1,10 @@
 package lrp_bbs_test
 
 import (
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	fakecellclient "github.com/cloudfoundry-incubator/runtime-schema/cell_client/fakes"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
@@ -16,8 +19,9 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var bbs *LRPBBS
+var bbs *lrp_bbs.LRPBBS
 var timeProvider *faketimeprovider.FakeTimeProvider
+var fakeCellClient *fakecellclient.FakeClient
 
 func TestLRPBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -37,9 +41,20 @@ var _ = BeforeEach(func() {
 	etcdRunner.Stop()
 	etcdRunner.Start()
 
+	fakeCellClient = &fakecellclient.FakeClient{}
 	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
-	bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, lagertest.NewTestLogger("test"))
 })
+
+func registerCell(cell models.CellPresence) {
+	jsonBytes, err := models.ToJSON(cell)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.CellSchemaPath(cell.CellID),
+		Value: jsonBytes,
+	})
+}
 
 func itRetriesUntilStoreComesBack(action func() error) {
 	It("should keep trying until the store comes back", func(done Done) {
