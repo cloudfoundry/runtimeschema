@@ -11,21 +11,35 @@ func (bbs *LRPBBS) RequestStopLRPInstance(stopInstance models.StopLRPInstance) e
 
 func (bbs *LRPBBS) RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error {
 	for _, stopInstance := range stopInstances {
-		lrps, err := bbs.ActualLRPsByProcessGuidAndIndex(stopInstance.ProcessGuid, stopInstance.Index)
+		err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+			return bbs.stop(stopInstance)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (bbs *LRPBBS) stop(stopInstance models.StopLRPInstance) error {
+	lrps, err := bbs.ActualLRPsByProcessGuidAndIndex(stopInstance.ProcessGuid, stopInstance.Index)
+	if err != nil {
+		return err
+	}
+
+	for _, lrp := range lrps {
+		if lrp.InstanceGuid != stopInstance.InstanceGuid {
+			continue
+		}
+
+		cell, err := bbs.cellById(lrp.CellID)
 		if err != nil {
 			return err
 		}
 
-		for _, lrp := range lrps {
-			if lrp.InstanceGuid == stopInstance.InstanceGuid {
-				cell, cellErr := bbs.cellById(lrp.CellID)
-				if cellErr != nil {
-					return cellErr
-				}
-
-				bbs.cellClient.StopLRPInstance(cell.RepAddress, stopInstance)
-			}
-		}
+		bbs.cellClient.StopLRPInstance(cell.RepAddress, stopInstance)
+		break
 	}
 
 	return nil

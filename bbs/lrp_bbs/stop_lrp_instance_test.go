@@ -62,7 +62,7 @@ var _ = Describe("StopLRPInstance", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		It("creates multiple /v1/stop-instance/<instance-guid> keys", func() {
+		It("stops the LRP instances on the correct cell", func() {
 			err := bbs.RequestStopLRPInstances([]models.StopLRPInstance{stopInstance, anotherStopInstance})
 			Ω(err).ShouldNot(HaveOccurred())
 
