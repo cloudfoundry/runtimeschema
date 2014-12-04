@@ -99,12 +99,25 @@ var _ = Describe("LRP", func() {
 			index = 1
 		})
 
-		Describe("ReportActualLRPAsStarting", func() {
-			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
+		Describe("ClaimActualLRP", func() {
+			var claimedLRP models.ActualLRP
+
+			BeforeEach(func() {
+				claimedLRP = models.ActualLRP{
+					InstanceGuid: instanceGuid,
+					ProcessGuid:  processGuid,
+					CellID:       cellID,
+					Domain:       domain,
+					Index:        index,
+					Since:        timeProvider.Now().UnixNano(),
+				}
+			})
+
+			It("creates /v1/actual/<process-guid>/<index>/instance", func() {
+				lrp, err := bbs.ClaimActualLRP(claimedLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
+				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/instance", processGuid, index))
 				Ω(err).ShouldNot(HaveOccurred())
 
 				expectedLRP := lrp
@@ -126,7 +139,7 @@ var _ = Describe("LRP", func() {
 			})
 		})
 
-		Describe("ReportActualLRPAsRunning", func() {
+		Describe("StartActualLRP", func() {
 			var startedLRP models.ActualLRP
 
 			BeforeEach(func() {
@@ -140,11 +153,11 @@ var _ = Describe("LRP", func() {
 				}
 			})
 
-			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLRPAsRunning(startedLRP, cellID)
+			It("creates /v1/actual/<process-guid>/<index>/instance", func() {
+				err := bbs.StartActualLRP(startedLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
+				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/instance", processGuid, index))
 				Ω(err).ShouldNot(HaveOccurred())
 
 				expectedLRP := startedLRP
@@ -223,6 +236,29 @@ var _ = Describe("LRP", func() {
 				})
 			})
 		})
+
+		Describe("ClaimActualLRP", func() {
+			Context("when the ActualLRP is missing", func() {
+
+				It("creates the LRP in a claimed state", func() {
+					claimedLRP, err := bbs.ClaimActualLRP(lrp)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					lrps := bbs.ActualLRPsByProcessGuid(processGuid)
+					Ω(lrps).Should(HaveLen(1))
+
+					actualLRP := lrps[0]
+					Ω(actualLRP.State).Should(Equal(models.ActualLRPStateClaimed))
+					Ω(actualLRP.InstanceGuid).Should(Equal(instanceGuid))
+					Ω(actualLRP.CellID).Should(Equal(cellID))
+					Ω(actualLRP.Domain).Should(Equal(domain))
+					Ω(actualLRP.Index).Should(Equal(index))
+					Ω(actualLRP.Since).Should(Equal(timeProvider.Now().UnixNano()))
+
+				})
+			})
+		})
+
 	})
 
 	Describe("upsert desired LRPs", func() {

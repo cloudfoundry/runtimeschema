@@ -54,8 +54,8 @@ func ActualLRPIndexDir(processGuid string, index int) string {
 	return path.Join(ActualLRPProcessDir(processGuid), strconv.Itoa(index))
 }
 
-func ActualLRPSchemaPath(processGuid string, index int, instanceGuid string) string {
-	return path.Join(ActualLRPIndexDir(processGuid, index), instanceGuid)
+func ActualLRPSchemaPath(processGuid string, index int) string {
+	return path.Join(ActualLRPIndexDir(processGuid, index), "instance")
 }
 
 func DesiredLRPSchemaPath(lrp models.DesiredLRP) string {

@@ -11,6 +11,8 @@ var (
 	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-claimed/non-running state")
 	ErrTaskCannotBeCancelled         = errors.New("cannot cancel task from non-pending/non-claimed/non-running state")
 
+	ErrActualLRPCannotBeClaimed = errors.New("cannot claim LRP")
+
 	ErrStoreResourceNotFound             = errors.New("the requested resource could not be found in the store")
 	ErrStoreExpectedNonCollectionRequest = errors.New("unable to access single (non-collection) store resource, request body refers to a collection")
 	ErrStoreExpectedCollectionRequest    = errors.New("unable to access collection of store resources, request body refers to a single object")

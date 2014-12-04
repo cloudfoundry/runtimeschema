@@ -6,6 +6,7 @@ const (
 	ActualLRPStateInvalid ActualLRPState = iota
 	ActualLRPStateStarting
 	ActualLRPStateRunning
+	ActualLRPStatePending
 )
 
 type ActualLRPChange struct {
