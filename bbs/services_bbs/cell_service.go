@@ -18,6 +18,22 @@ func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, inter
 	return heartbeater.New(bbs.store, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
 }
 
+func (bbs *ServicesBBS) CellById(cellId string) (models.CellPresence, error) {
+	cellPresence := models.CellPresence{}
+
+	node, err := bbs.store.Get(shared.CellSchemaPath(cellId))
+	if err != nil {
+		return cellPresence, err
+	}
+
+	err = models.FromJSON(node.Value, &cellPresence)
+	if err != nil {
+		return cellPresence, err
+	}
+
+	return cellPresence, nil
+}
+
 func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 	node, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
@@ -28,9 +44,9 @@ func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 		return nil, err
 	}
 
-	var cellPresences []models.CellPresence
+	cellPresences := []models.CellPresence{}
 	for _, node := range node.ChildNodes {
-		var cellPresence models.CellPresence
+		cellPresence := models.CellPresence{}
 		err := models.FromJSON(node.Value, &cellPresence)
 		if err != nil {
 			bbs.logger.Error("failed-to-unmarshal-cells-json", err)

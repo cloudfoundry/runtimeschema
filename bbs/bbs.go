@@ -9,6 +9,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/stop_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/cell_client"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
@@ -71,8 +72,6 @@ type RepBBS interface {
 	ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error
 	RemoveActualLRP(lrp models.ActualLRP) error
 	RemoveActualLRPForIndex(processGuid string, index int, instanceGuid string) error
-	WatchForStopLRPInstance() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
-	ResolveStopLRPInstance(stopInstance models.StopLRPInstance) error
 }
 
 type ConvergerBBS interface {
@@ -168,7 +167,6 @@ type VeritasBBS interface {
 	//lrp
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	ActualLRPs() ([]models.ActualLRP, error)
-	StopLRPInstances() ([]models.StopLRPInstance, error)
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
 	Freshnesses() ([]models.Freshness, error)
@@ -222,7 +220,7 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
 	return &BBS{
 		LockBBS:         lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:          lrp_bbs.New(store, timeProvider, logger.Session("lrp-bbs")),
+		LRPBBS:          lrp_bbs.New(store, timeProvider, cell_client.New(), logger.Session("lrp-bbs")),
 		StartAuctionBBS: start_auction_bbs.New(store, timeProvider, logger.Session("lrp-start-auction-bbs")),
 		StopAuctionBBS:  stop_auction_bbs.New(store, timeProvider, logger.Session("lrp-stop-auction-bbs")),
 		ServicesBBS:     services_bbs.New(store, logger.Session("services-bbs")),

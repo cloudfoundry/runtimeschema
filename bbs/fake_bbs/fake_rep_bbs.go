@@ -23,7 +23,7 @@ type FakeRepBBS struct {
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns     struct {
+	watchForDesiredTaskReturns struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -131,22 +131,6 @@ type FakeRepBBS struct {
 		instanceGuid string
 	}
 	removeActualLRPForIndexReturns struct {
-		result1 error
-	}
-	WatchForStopLRPInstanceStub        func() (<-chan models.StopLRPInstance, chan<- bool, <-chan error)
-	watchForStopLRPInstanceMutex       sync.RWMutex
-	watchForStopLRPInstanceArgsForCall []struct{}
-	watchForStopLRPInstanceReturns     struct {
-		result1 <-chan models.StopLRPInstance
-		result2 chan<- bool
-		result3 <-chan error
-	}
-	ResolveStopLRPInstanceStub        func(stopInstance models.StopLRPInstance) error
-	resolveStopLRPInstanceMutex       sync.RWMutex
-	resolveStopLRPInstanceArgsForCall []struct {
-		stopInstance models.StopLRPInstance
-	}
-	resolveStopLRPInstanceReturns struct {
 		result1 error
 	}
 }
@@ -575,64 +559,6 @@ func (fake *FakeRepBBS) RemoveActualLRPForIndexArgsForCall(i int) (string, int, 
 func (fake *FakeRepBBS) RemoveActualLRPForIndexReturns(result1 error) {
 	fake.RemoveActualLRPForIndexStub = nil
 	fake.removeActualLRPForIndexReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeRepBBS) WatchForStopLRPInstance() (<-chan models.StopLRPInstance, chan<- bool, <-chan error) {
-	fake.watchForStopLRPInstanceMutex.Lock()
-	fake.watchForStopLRPInstanceArgsForCall = append(fake.watchForStopLRPInstanceArgsForCall, struct{}{})
-	fake.watchForStopLRPInstanceMutex.Unlock()
-	if fake.WatchForStopLRPInstanceStub != nil {
-		return fake.WatchForStopLRPInstanceStub()
-	} else {
-		return fake.watchForStopLRPInstanceReturns.result1, fake.watchForStopLRPInstanceReturns.result2, fake.watchForStopLRPInstanceReturns.result3
-	}
-}
-
-func (fake *FakeRepBBS) WatchForStopLRPInstanceCallCount() int {
-	fake.watchForStopLRPInstanceMutex.RLock()
-	defer fake.watchForStopLRPInstanceMutex.RUnlock()
-	return len(fake.watchForStopLRPInstanceArgsForCall)
-}
-
-func (fake *FakeRepBBS) WatchForStopLRPInstanceReturns(result1 <-chan models.StopLRPInstance, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForStopLRPInstanceStub = nil
-	fake.watchForStopLRPInstanceReturns = struct {
-		result1 <-chan models.StopLRPInstance
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeRepBBS) ResolveStopLRPInstance(stopInstance models.StopLRPInstance) error {
-	fake.resolveStopLRPInstanceMutex.Lock()
-	fake.resolveStopLRPInstanceArgsForCall = append(fake.resolveStopLRPInstanceArgsForCall, struct {
-		stopInstance models.StopLRPInstance
-	}{stopInstance})
-	fake.resolveStopLRPInstanceMutex.Unlock()
-	if fake.ResolveStopLRPInstanceStub != nil {
-		return fake.ResolveStopLRPInstanceStub(stopInstance)
-	} else {
-		return fake.resolveStopLRPInstanceReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) ResolveStopLRPInstanceCallCount() int {
-	fake.resolveStopLRPInstanceMutex.RLock()
-	defer fake.resolveStopLRPInstanceMutex.RUnlock()
-	return len(fake.resolveStopLRPInstanceArgsForCall)
-}
-
-func (fake *FakeRepBBS) ResolveStopLRPInstanceArgsForCall(i int) models.StopLRPInstance {
-	fake.resolveStopLRPInstanceMutex.RLock()
-	defer fake.resolveStopLRPInstanceMutex.RUnlock()
-	return fake.resolveStopLRPInstanceArgsForCall[i].stopInstance
-}
-
-func (fake *FakeRepBBS) ResolveStopLRPInstanceReturns(result1 error) {
-	fake.ResolveStopLRPInstanceStub = nil
-	fake.resolveStopLRPInstanceReturns = struct {
 		result1 error
 	}{result1}
 }

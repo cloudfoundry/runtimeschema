@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"errors"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -9,6 +11,7 @@ import (
 
 var _ = Describe("StopLRPInstance", func() {
 	var stopInstance models.StopLRPInstance
+	var cellPresence models.CellPresence
 
 	BeforeEach(func() {
 		stopInstance = models.StopLRPInstance{
@@ -16,30 +19,41 @@ var _ = Describe("StopLRPInstance", func() {
 			InstanceGuid: "some-instance-guid",
 			Index:        5678,
 		}
+
+		cellPresence = models.CellPresence{
+			CellID:     "the-cell-id",
+			Stack:      "the-stack",
+			RepAddress: "cell.example.com",
+		}
+		registerCell(cellPresence)
+
+		_, err := bbs.ReportActualLRPAsStarting(stopInstance.ProcessGuid, stopInstance.InstanceGuid, cellPresence.CellID, "domain", stopInstance.Index)
+		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 	Describe("RequestStopLRPInstance", func() {
-		It("creates /v1/stop-instance/<instance-guid>", func() {
-			err := bbs.RequestStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			node, err := etcdClient.Get("/v1/stop-instance/some-instance-guid")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(node.TTL).Should(BeNumerically(">", 0))
-
-			expectedJSON, err := models.ToJSON(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(node.Value).Should(Equal(expectedJSON))
-		})
-
-		Context("when the key already exists", func() {
-			It("sets it again", func() {
+		Context("When the request is successful", func() {
+			It("makes a stop instance request to the correct cell", func() {
 				err := bbs.RequestStopLRPInstance(stopInstance)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.RequestStopLRPInstance(stopInstance)
-				Ω(err).ShouldNot(HaveOccurred())
+				Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
+
+				addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+				Ω(addr1).Should(Equal(cellPresence.RepAddress))
+				Ω(stop1).Should(Equal(stopInstance))
+			})
+		})
+
+		Context("When the cell returns an error", func() {
+			var expectedError = errors.New("cell go boom")
+			BeforeEach(func() {
+				fakeCellClient.StopLRPInstanceReturns(expectedError)
+			})
+
+			It("returns the error", func() {
+				err := bbs.RequestStopLRPInstance(stopInstance)
+				Ω(err).Should(Equal(expectedError))
 			})
 		})
 
@@ -51,164 +65,38 @@ var _ = Describe("StopLRPInstance", func() {
 	})
 
 	Describe("RequestStopLRPInstances", func() {
-		It("creates multiple /v1/stop-instance/<instance-guid> keys", func() {
-			anotherStopInstance := models.StopLRPInstance{
+		var anotherStopInstance models.StopLRPInstance
+
+		BeforeEach(func() {
+			anotherStopInstance = models.StopLRPInstance{
 				ProcessGuid:  "some-other-process-guid",
 				InstanceGuid: "some-other-instance-guid",
 				Index:        1234,
 			}
 
+			_, err := bbs.ReportActualLRPAsStarting(anotherStopInstance.ProcessGuid, anotherStopInstance.InstanceGuid, cellPresence.CellID, "domain", anotherStopInstance.Index)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("stops the LRP instances on the correct cell", func() {
 			err := bbs.RequestStopLRPInstances([]models.StopLRPInstance{stopInstance, anotherStopInstance})
 			Ω(err).ShouldNot(HaveOccurred())
 
-			node, err := etcdClient.Get("/v1/stop-instance/some-instance-guid")
-			Ω(err).ShouldNot(HaveOccurred())
+			Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(2))
 
-			Ω(node.TTL).Should(BeNumerically(">", 0))
+			addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+			Ω(addr1).Should(Equal(cellPresence.RepAddress))
+			Ω(stop1).Should(Equal(stopInstance))
 
-			expectedJSON, err := models.ToJSON(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(node.Value).Should(Equal(expectedJSON))
-
-			anotherNode, err := etcdClient.Get("/v1/stop-instance/some-other-instance-guid")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(anotherNode.TTL).Should(BeNumerically(">", 0))
-
-			expectedJSON, err = models.ToJSON(anotherStopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(anotherNode.Value).Should(Equal(expectedJSON))
-		})
-
-		Context("when the key already exists", func() {
-			It("sets it again", func() {
-				err := bbs.RequestStopLRPInstances([]models.StopLRPInstance{stopInstance})
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.RequestStopLRPInstances([]models.StopLRPInstance{stopInstance})
-				Ω(err).ShouldNot(HaveOccurred())
-			})
+			addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+			Ω(addr2).Should(Equal(cellPresence.RepAddress))
+			Ω(stop2).Should(Equal(anotherStopInstance))
 		})
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
 				return bbs.RequestStopLRPInstances([]models.StopLRPInstance{stopInstance})
 			})
-		})
-	})
-
-	Describe("StopLRPInstances", func() {
-		It("gets all stop instances", func() {
-			stopInstance1 := models.StopLRPInstance{
-				ProcessGuid:  "some-process-guid-1",
-				InstanceGuid: "some-instance-guid-1",
-			}
-			stopInstance2 := models.StopLRPInstance{
-				ProcessGuid:  "some-process-guid-2+",
-				InstanceGuid: "some-instance-guid-2+",
-			}
-
-			err := bbs.RequestStopLRPInstance(stopInstance1)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.RequestStopLRPInstance(stopInstance2)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			stopInstances, err := bbs.StopLRPInstances()
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(stopInstances).Should(HaveLen(2))
-
-			Ω(stopInstances).Should(ContainElement(stopInstance1))
-			Ω(stopInstances).Should(ContainElement(stopInstance2))
-		})
-	})
-
-	Describe("ResolveStopLRPInstance", func() {
-		Context("the happy path", func() {
-			BeforeEach(func() {
-				err := bbs.RequestStopLRPInstance(stopInstance)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ReportActualLRPAsRunning(models.ActualLRP{
-					ProcessGuid:  stopInstance.ProcessGuid,
-					InstanceGuid: stopInstance.InstanceGuid,
-					Index:        stopInstance.Index,
-					Domain:       "the-domain",
-				}, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ResolveStopLRPInstance(stopInstance)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("removes the StopLRPInstance", func() {
-				Ω(bbs.StopLRPInstances()).Should(BeEmpty())
-			})
-		})
-
-		Context("when the store is out of commission", func() {
-			BeforeEach(func() {
-				err := bbs.RequestStopLRPInstance(stopInstance)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.ResolveStopLRPInstance(stopInstance)
-			})
-		})
-	})
-
-	Describe("WatchForStopLRPInstance", func() {
-		var (
-			events       <-chan models.StopLRPInstance
-			stop         chan<- bool
-			errors       <-chan error
-			stopInstance models.StopLRPInstance
-		)
-
-		BeforeEach(func() {
-			stopInstance = models.StopLRPInstance{
-				ProcessGuid:  "some-process-guid",
-				InstanceGuid: "instance-guid",
-				Index:        17,
-			}
-			events, stop, errors = bbs.WatchForStopLRPInstance()
-		})
-
-		AfterEach(func() {
-			stop <- true
-		})
-
-		It("sends an event down the pipe for creates", func() {
-			err := bbs.RequestStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Eventually(events).Should(Receive(Equal(stopInstance)))
-		})
-
-		It("sends an event down the pipe for updates", func() {
-			err := bbs.RequestStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Eventually(events).Should(Receive(Equal(stopInstance)))
-
-			err = bbs.RequestStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Eventually(events).Should(Receive(Equal(stopInstance)))
-		})
-
-		It("does not send an event down the pipe for deletes", func() {
-			err := bbs.RequestStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Eventually(events).Should(Receive(Equal(stopInstance)))
-
-			err = bbs.ResolveStopLRPInstance(stopInstance)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Consistently(events).ShouldNot(Receive())
 		})
 	})
 })
