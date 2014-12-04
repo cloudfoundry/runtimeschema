@@ -93,27 +93,23 @@ type FakeRepBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ReportActualLRPAsStartingStub        func(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
-	reportActualLRPAsStartingMutex       sync.RWMutex
-	reportActualLRPAsStartingArgsForCall []struct {
-		processGuid  string
-		instanceGuid string
-		cellID       string
-		domain       string
-		index        int
+	ClaimActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	claimActualLRPMutex       sync.RWMutex
+	claimActualLRPArgsForCall []struct {
+		arg1 models.ActualLRP
 	}
-	reportActualLRPAsStartingReturns struct {
-		result1 models.ActualLRP
+	claimActualLRPReturns struct {
+		result1 *models.ActualLRP
 		result2 error
 	}
-	ReportActualLRPAsRunningStub        func(lrp models.ActualLRP, cellId string) error
-	reportActualLRPAsRunningMutex       sync.RWMutex
-	reportActualLRPAsRunningArgsForCall []struct {
-		lrp    models.ActualLRP
-		cellId string
+	StartActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	startActualLRPMutex       sync.RWMutex
+	startActualLRPArgsForCall []struct {
+		arg1 models.ActualLRP
 	}
-	reportActualLRPAsRunningReturns struct {
-		result1 error
+	startActualLRPReturns struct {
+		result1 *models.ActualLRP
+		result2 error
 	}
 	RemoveActualLRPStub        func(lrp models.ActualLRP) error
 	removeActualLRPMutex       sync.RWMutex
@@ -123,12 +119,11 @@ type FakeRepBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
-	RemoveActualLRPForIndexStub        func(processGuid string, index int, instanceGuid string) error
+	RemoveActualLRPForIndexStub        func(processGuid string, index int) error
 	removeActualLRPForIndexMutex       sync.RWMutex
 	removeActualLRPForIndexArgsForCall []struct {
-		processGuid  string
-		index        int
-		instanceGuid string
+		processGuid string
+		index       int
 	}
 	removeActualLRPForIndexReturns struct {
 		result1 error
@@ -427,74 +422,70 @@ func (fake *FakeRepBBS) ActualLRPsByCellIDReturns(result1 []models.ActualLRP, re
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStarting(processGuid string, instanceGuid string, cellID string, domain string, index int) (models.ActualLRP, error) {
-	fake.reportActualLRPAsStartingMutex.Lock()
-	fake.reportActualLRPAsStartingArgsForCall = append(fake.reportActualLRPAsStartingArgsForCall, struct {
-		processGuid  string
-		instanceGuid string
-		cellID       string
-		domain       string
-		index        int
-	}{processGuid, instanceGuid, cellID, domain, index})
-	fake.reportActualLRPAsStartingMutex.Unlock()
-	if fake.ReportActualLRPAsStartingStub != nil {
-		return fake.ReportActualLRPAsStartingStub(processGuid, instanceGuid, cellID, domain, index)
+func (fake *FakeRepBBS) ClaimActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+	fake.claimActualLRPMutex.Lock()
+	fake.claimActualLRPArgsForCall = append(fake.claimActualLRPArgsForCall, struct {
+		arg1 models.ActualLRP
+	}{arg1})
+	fake.claimActualLRPMutex.Unlock()
+	if fake.ClaimActualLRPStub != nil {
+		return fake.ClaimActualLRPStub(arg1)
 	} else {
-		return fake.reportActualLRPAsStartingReturns.result1, fake.reportActualLRPAsStartingReturns.result2
+		return fake.claimActualLRPReturns.result1, fake.claimActualLRPReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStartingCallCount() int {
-	fake.reportActualLRPAsStartingMutex.RLock()
-	defer fake.reportActualLRPAsStartingMutex.RUnlock()
-	return len(fake.reportActualLRPAsStartingArgsForCall)
+func (fake *FakeRepBBS) ClaimActualLRPCallCount() int {
+	fake.claimActualLRPMutex.RLock()
+	defer fake.claimActualLRPMutex.RUnlock()
+	return len(fake.claimActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStartingArgsForCall(i int) (string, string, string, string, int) {
-	fake.reportActualLRPAsStartingMutex.RLock()
-	defer fake.reportActualLRPAsStartingMutex.RUnlock()
-	return fake.reportActualLRPAsStartingArgsForCall[i].processGuid, fake.reportActualLRPAsStartingArgsForCall[i].instanceGuid, fake.reportActualLRPAsStartingArgsForCall[i].cellID, fake.reportActualLRPAsStartingArgsForCall[i].domain, fake.reportActualLRPAsStartingArgsForCall[i].index
+func (fake *FakeRepBBS) ClaimActualLRPArgsForCall(i int) models.ActualLRP {
+	fake.claimActualLRPMutex.RLock()
+	defer fake.claimActualLRPMutex.RUnlock()
+	return fake.claimActualLRPArgsForCall[i].arg1
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsStartingReturns(result1 models.ActualLRP, result2 error) {
-	fake.ReportActualLRPAsStartingStub = nil
-	fake.reportActualLRPAsStartingReturns = struct {
-		result1 models.ActualLRP
+func (fake *FakeRepBBS) ClaimActualLRPReturns(result1 *models.ActualLRP, result2 error) {
+	fake.ClaimActualLRPStub = nil
+	fake.claimActualLRPReturns = struct {
+		result1 *models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error {
-	fake.reportActualLRPAsRunningMutex.Lock()
-	fake.reportActualLRPAsRunningArgsForCall = append(fake.reportActualLRPAsRunningArgsForCall, struct {
-		lrp    models.ActualLRP
-		cellId string
-	}{lrp, cellId})
-	fake.reportActualLRPAsRunningMutex.Unlock()
-	if fake.ReportActualLRPAsRunningStub != nil {
-		return fake.ReportActualLRPAsRunningStub(lrp, cellId)
+func (fake *FakeRepBBS) StartActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+	fake.startActualLRPMutex.Lock()
+	fake.startActualLRPArgsForCall = append(fake.startActualLRPArgsForCall, struct {
+		arg1 models.ActualLRP
+	}{arg1})
+	fake.startActualLRPMutex.Unlock()
+	if fake.StartActualLRPStub != nil {
+		return fake.StartActualLRPStub(arg1)
 	} else {
-		return fake.reportActualLRPAsRunningReturns.result1
+		return fake.startActualLRPReturns.result1, fake.startActualLRPReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsRunningCallCount() int {
-	fake.reportActualLRPAsRunningMutex.RLock()
-	defer fake.reportActualLRPAsRunningMutex.RUnlock()
-	return len(fake.reportActualLRPAsRunningArgsForCall)
+func (fake *FakeRepBBS) StartActualLRPCallCount() int {
+	fake.startActualLRPMutex.RLock()
+	defer fake.startActualLRPMutex.RUnlock()
+	return len(fake.startActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsRunningArgsForCall(i int) (models.ActualLRP, string) {
-	fake.reportActualLRPAsRunningMutex.RLock()
-	defer fake.reportActualLRPAsRunningMutex.RUnlock()
-	return fake.reportActualLRPAsRunningArgsForCall[i].lrp, fake.reportActualLRPAsRunningArgsForCall[i].cellId
+func (fake *FakeRepBBS) StartActualLRPArgsForCall(i int) models.ActualLRP {
+	fake.startActualLRPMutex.RLock()
+	defer fake.startActualLRPMutex.RUnlock()
+	return fake.startActualLRPArgsForCall[i].arg1
 }
 
-func (fake *FakeRepBBS) ReportActualLRPAsRunningReturns(result1 error) {
-	fake.ReportActualLRPAsRunningStub = nil
-	fake.reportActualLRPAsRunningReturns = struct {
-		result1 error
-	}{result1}
+func (fake *FakeRepBBS) StartActualLRPReturns(result1 *models.ActualLRP, result2 error) {
+	fake.StartActualLRPStub = nil
+	fake.startActualLRPReturns = struct {
+		result1 *models.ActualLRP
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) RemoveActualLRP(lrp models.ActualLRP) error {
@@ -529,16 +520,15 @@ func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) RemoveActualLRPForIndex(processGuid string, index int, instanceGuid string) error {
+func (fake *FakeRepBBS) RemoveActualLRPForIndex(processGuid string, index int) error {
 	fake.removeActualLRPForIndexMutex.Lock()
 	fake.removeActualLRPForIndexArgsForCall = append(fake.removeActualLRPForIndexArgsForCall, struct {
-		processGuid  string
-		index        int
-		instanceGuid string
-	}{processGuid, index, instanceGuid})
+		processGuid string
+		index       int
+	}{processGuid, index})
 	fake.removeActualLRPForIndexMutex.Unlock()
 	if fake.RemoveActualLRPForIndexStub != nil {
-		return fake.RemoveActualLRPForIndexStub(processGuid, index, instanceGuid)
+		return fake.RemoveActualLRPForIndexStub(processGuid, index)
 	} else {
 		return fake.removeActualLRPForIndexReturns.result1
 	}
@@ -550,10 +540,10 @@ func (fake *FakeRepBBS) RemoveActualLRPForIndexCallCount() int {
 	return len(fake.removeActualLRPForIndexArgsForCall)
 }
 
-func (fake *FakeRepBBS) RemoveActualLRPForIndexArgsForCall(i int) (string, int, string) {
+func (fake *FakeRepBBS) RemoveActualLRPForIndexArgsForCall(i int) (string, int) {
 	fake.removeActualLRPForIndexMutex.RLock()
 	defer fake.removeActualLRPForIndexMutex.RUnlock()
-	return fake.removeActualLRPForIndexArgsForCall[i].processGuid, fake.removeActualLRPForIndexArgsForCall[i].index, fake.removeActualLRPForIndexArgsForCall[i].instanceGuid
+	return fake.removeActualLRPForIndexArgsForCall[i].processGuid, fake.removeActualLRPForIndexArgsForCall[i].index
 }
 
 func (fake *FakeRepBBS) RemoveActualLRPForIndexReturns(result1 error) {

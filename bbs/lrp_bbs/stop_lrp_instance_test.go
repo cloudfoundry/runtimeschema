@@ -22,10 +22,9 @@ var _ = Describe("StopLRPInstance", func() {
 
 		registerCell(cellPresence)
 
-		var err error
-
-		actualLRP, err = bbs.ReportActualLRPAsStarting("some-process-guid", "some-instance-guid", cellPresence.CellID, "domain", 5678)
+		_, alrp, err := createAndClaim(models.NewActualLRP("some-process-guid", "some-instance-guid", cellPresence.CellID, "domain", 5678, models.ActualLRPStateClaimed))
 		Ω(err).ShouldNot(HaveOccurred())
+		actualLRP = *alrp
 	})
 
 	Describe("RequestStopLRPInstance", func() {
@@ -65,16 +64,11 @@ var _ = Describe("StopLRPInstance", func() {
 		var anotherActualLRP models.ActualLRP
 
 		BeforeEach(func() {
-			var err error
-
-			anotherActualLRP, err = bbs.ReportActualLRPAsStarting(
-				"some-other-process-guid",
-				"some-other-instance-guid",
-				cellPresence.CellID,
-				"domain",
-				1234,
-			)
+			_, alrp, err := createAndClaim(models.NewActualLRP(
+				"some-other-process-guid", "some-other-instance-guid", cellPresence.CellID,
+				"domain", 1234, models.ActualLRPStateClaimed))
 			Ω(err).ShouldNot(HaveOccurred())
+			anotherActualLRP = *alrp
 		})
 
 		It("stops the LRP instances on the correct cell", func() {

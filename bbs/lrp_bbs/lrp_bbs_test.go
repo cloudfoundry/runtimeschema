@@ -1,9 +1,8 @@
 package lrp_bbs_test
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
@@ -31,9 +30,9 @@ var _ = Describe("LRP", func() {
 		}
 	})
 
-	Describe("Adding and removing DesireLRP", func() {
-		Context("when the LRP does not yet exist", func() {
-			It("creates /v1/desired/<process-guid>/<index>", func() {
+	Describe("DesireLRP", func() {
+		Context("when the desired LRP does not yet exist", func() {
+			It("creates /v1/desired/<process-guid>", func() {
 				err := bbs.DesireLRP(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -45,31 +44,48 @@ var _ = Describe("LRP", func() {
 			})
 		})
 
-		Context("when deleting the DesiredLRP", func() {
+		Context("when the desired LRP does exist", func() {
+			value := models.DesiredLRP{
+				Domain:      "tests",
+				ProcessGuid: "some-guid",
+				Stack:       "some-stack",
+				Instances:   1,
+				Action: &models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			}
+
 			BeforeEach(func() {
-				err := bbs.DesireLRP(lrp)
+				err := bbs.DesireLRP(value)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("should delete it", func() {
-				err := bbs.RemoveDesiredLRPByProcessGuid(lrp.ProcessGuid)
+			It("updates the desired lrp if the modifications are valid", func() {
+				newValue := value
+				newValue.Instances = 2
+				newValue.Routes = []string{"example.com", "foobar"}
+
+				err := bbs.DesireLRP(newValue)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = etcdClient.Get("/v1/desired/some-process-guid")
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+				current, err := bbs.DesiredLRPByProcessGuid("some-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(current).Should(Equal(&newValue))
 			})
 
-			Context("when the desired LRP does not exist", func() {
-				It("returns an ErrorKeyNotFound", func() {
-					err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
-					Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
-				})
-			})
-		})
+			It("fails to update the desired lrp if the modifications are invalid", func() {
+				newValue := value
+				newValue.Stack = "foo"
 
-		Context("when the store is out of commission", func() {
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireLRP(lrp)
+				err := bbs.DesireLRP(newValue)
+				Ω(err).Should(HaveOccurred())
+
+				current, err := bbs.DesiredLRPByProcessGuid("some-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(current).Should(Equal(&value))
 			})
 		})
 
@@ -86,96 +102,45 @@ var _ = Describe("LRP", func() {
 				Ω(desireError).Should(BeAssignableToTypeOf(*new(models.ValidationError)))
 			})
 		})
+
+		Context("when the store is out of commission", func() {
+			itRetriesUntilStoreComesBack(func() error {
+				return bbs.DesireLRP(lrp)
+			})
+		})
+	})
+
+	Describe("RemoveDesiredLRPByProcessGuid", func() {
+		Context("when the desired LRP exists", func() {
+			BeforeEach(func() {
+				err := bbs.DesireLRP(lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("should delete it", func() {
+				err := bbs.RemoveDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				_, err = etcdClient.Get("/v1/desired/some-process-guid")
+				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+			})
+		})
+
+		Context("when the desired LRP does not exist", func() {
+			It("returns an ErrorKeyNotFound", func() {
+				err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
+				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
 	})
 
 	Describe("Adding and removing actual LRPs", func() {
-		var processGuid, instanceGuid, domain string
-		var index int
-
-		BeforeEach(func() {
-			processGuid = "some-process-guid"
-			instanceGuid = "some-instance-guid"
-			domain = "some-domain"
-			index = 1
-		})
-
-		Describe("ReportActualLRPAsStarting", func() {
-			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				lrp, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
-				Ω(err).ShouldNot(HaveOccurred())
-
-				expectedLRP := lrp
-				expectedLRP.State = models.ActualLRPStateStarting
-				expectedLRP.Since = timeProvider.Now().UnixNano()
-				expectedLRP.CellID = cellID
-
-				expectedJSON, err := models.ToJSON(expectedLRP)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(node.Value).Should(MatchJSON(expectedJSON))
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					_, err := bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
-					return err
-				})
-			})
-		})
-
-		Describe("ReportActualLRPAsRunning", func() {
-			var startedLRP models.ActualLRP
-
-			BeforeEach(func() {
-				startedLRP = models.ActualLRP{
-					InstanceGuid: instanceGuid,
-					ProcessGuid:  processGuid,
-					CellID:       cellID,
-					Domain:       domain,
-					Index:        index,
-					Since:        timeProvider.Now().UnixNano(),
-				}
-			})
-
-			It("creates /v1/actual/<process-guid>/<index>/<instance-guid>", func() {
-				err := bbs.ReportActualLRPAsRunning(startedLRP, cellID)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				node, err := etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
-				Ω(err).ShouldNot(HaveOccurred())
-
-				expectedLRP := startedLRP
-				expectedLRP.State = models.ActualLRPStateRunning
-				expectedLRP.Since = timeProvider.Now().UnixNano()
-				expectedLRP.CellID = cellID
-
-				expectedJSON, err := models.ToJSON(expectedLRP)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(node.Value).Should(MatchJSON(expectedJSON))
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ReportActualLRPAsRunning(startedLRP, cellID)
-				})
-			})
-		})
-
 		Describe("RemoveActualLRP", func() {
-			var processGuid, instanceGuid, domain string
-			var index int
 			var lrp models.ActualLRP
 
 			BeforeEach(func() {
-				processGuid = "some-process-guid"
-				instanceGuid = "some-instance-guid"
-				domain = "some-domain"
-				index = 1
-				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
+				lrp = models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateClaimed)
+				_, err := bbs.CreateActualLRP(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -183,7 +148,7 @@ var _ = Describe("LRP", func() {
 				err := bbs.RemoveActualLRP(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
+				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
@@ -195,78 +160,27 @@ var _ = Describe("LRP", func() {
 		})
 
 		Describe("RemoveActualLRPForIndex", func() {
-			var processGuid, instanceGuid, domain string
-			var index int
 			var lrp models.ActualLRP
 
 			BeforeEach(func() {
-				processGuid = "some-process-guid"
-				instanceGuid = "some-instance-guid"
-				domain = "some-domain"
-				index = 1
-				var err error
-				lrp, err = bbs.ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain, index)
+				lrp = models.NewActualLRP("some-process-guid", "", "", "some-domain", 1, models.ActualLRPStateClaimed)
+				_, err := bbs.CreateActualLRP(lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should remove the LRP", func() {
-				err := bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid)
+				err := bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = etcdClient.Get(fmt.Sprintf("/v1/actual/%s/%d/%s", processGuid, index, instanceGuid))
+				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid)
+					return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
 				})
 			})
-		})
-	})
-
-	Describe("upsert desired LRPs", func() {
-		value := models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "some-guid",
-			Stack:       "some-stack",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		BeforeEach(func() {
-			err := bbs.DesireLRP(value)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		It("updates the desired lrp if the modifications are valid", func() {
-			newValue := value
-			newValue.Instances = 2
-			newValue.Routes = []string{"example.com", "foobar"}
-
-			err := bbs.DesireLRP(newValue)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(current).Should(Equal(&newValue))
-		})
-
-		It("fails to update the desired lrp if the modifications are invalid", func() {
-			newValue := value
-			newValue.Stack = "foo"
-
-			err := bbs.DesireLRP(newValue)
-			Ω(err).Should(HaveOccurred())
-
-			current, err := bbs.DesiredLRPByProcessGuid("some-guid")
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(current).Should(Equal(&value))
 		})
 	})
 

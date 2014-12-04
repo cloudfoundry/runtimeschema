@@ -19,6 +19,7 @@ var _ = Describe("LrpConvergence", func() {
 	)
 
 	processGuid := "process-guid"
+	unclaimedProcessGuid := "unclaimed-process-guid"
 
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
@@ -32,9 +33,13 @@ var _ = Describe("LrpConvergence", func() {
 
 		registerCell(cellPresence)
 
-		_, err := bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-1", cellPresence.CellID, "domain", 0)
-		Ω(err).ShouldNot(HaveOccurred())
-		_, err = bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1)
+		a1 := models.NewActualLRP(processGuid, "instance-guid-1", cellPresence.CellID, "domain", 0, models.ActualLRPStateUnclaimed)
+		createAndClaim(a1)
+
+		a2 := models.NewActualLRP(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1, models.ActualLRPStateUnclaimed)
+		createAndClaim(a2)
+
+		_, err := bbs.CreateActualLRP(models.NewActualLRP(unclaimedProcessGuid, "", "", "domain", 0, models.ActualLRPStateUnclaimed))
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -61,7 +66,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when no cell is missing", func() {
 			It("should not prune any LRPs", func() {
-				Ω(bbs.ActualLRPs()).Should(HaveLen(2))
+				Ω(bbs.ActualLRPs()).Should(HaveLen(3))
 			})
 		})
 
@@ -70,14 +75,18 @@ var _ = Describe("LrpConvergence", func() {
 				etcdClient.Delete(shared.CellSchemaPath(cellPresence.CellID))
 			})
 
-			It("should delete LRPs associated with said cell", func() {
-				Ω(bbs.ActualLRPs()).Should(BeEmpty())
+			It("should delete LRPs associated with said cell but not the unclaimed LRP", func() {
+				lrps, err := bbs.ActualLRPs()
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(lrps).Should(HaveLen(1))
+				Ω(lrps[0].ProcessGuid).Should(Equal(unclaimedProcessGuid))
 			})
 
 			It("should prune LRP directories for apps that are no longer running", func() {
 				actual, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actual.ChildNodes).Should(BeEmpty())
+				Ω(actual.ChildNodes).Should(HaveLen(1))
+				Ω(actual.ChildNodes[0].Key).Should(Equal(shared.ActualLRPProcessDir(unclaimedProcessGuid)))
 			})
 		})
 	})
@@ -163,8 +172,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 		})
 
-		Context("when there are extra actual LRPs", func() {
+		Context("when the desired LRP has unclaimed actuals", func() {
 			BeforeEach(func() {
+				desiredLRP.ProcessGuid = unclaimedProcessGuid
 				desiredLRP.Instances = 1
 				bbs.DesireLRP(desiredLRP)
 			})
@@ -185,9 +195,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 		})
 
-		Context("when there are duplicate actual LRPs", func() {
+		Context("when there are extra actual LRPs", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellPresence.CellID, "domain", 0)
+				desiredLRP.Instances = 1
 				bbs.DesireLRP(desiredLRP)
 			})
 

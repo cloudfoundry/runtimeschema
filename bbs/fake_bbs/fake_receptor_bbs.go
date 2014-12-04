@@ -149,22 +149,22 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ActualLRPsByProcessGuidAndIndexStub        func(string, int) ([]models.ActualLRP, error)
-	actualLRPsByProcessGuidAndIndexMutex       sync.RWMutex
-	actualLRPsByProcessGuidAndIndexArgsForCall []struct {
+	ActualLRPByProcessGuidAndIndexStub        func(string, int) (*models.ActualLRP, error)
+	actualLRPByProcessGuidAndIndexMutex       sync.RWMutex
+	actualLRPByProcessGuidAndIndexArgsForCall []struct {
 		arg1 string
 		arg2 int
 	}
-	actualLRPsByProcessGuidAndIndexReturns struct {
-		result1 []models.ActualLRP
+	actualLRPByProcessGuidAndIndexReturns struct {
+		result1 *models.ActualLRP
 		result2 error
 	}
-	RequestStopLRPInstancesStub        func(stopInstances []models.ActualLRP) error
-	requestStopLRPInstancesMutex       sync.RWMutex
-	requestStopLRPInstancesArgsForCall []struct {
-		stopInstances []models.ActualLRP
+	RequestStopLRPInstanceStub        func(stopInstances models.ActualLRP) error
+	requestStopLRPInstanceMutex       sync.RWMutex
+	requestStopLRPInstanceArgsForCall []struct {
+		stopInstances models.ActualLRP
 	}
-	requestStopLRPInstancesReturns struct {
+	requestStopLRPInstanceReturns struct {
 		result1 error
 	}
 	CellsStub        func() ([]models.CellPresence, error)
@@ -715,68 +715,68 @@ func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 []models.Act
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndex(arg1 string, arg2 int) ([]models.ActualLRP, error) {
-	fake.actualLRPsByProcessGuidAndIndexMutex.Lock()
-	fake.actualLRPsByProcessGuidAndIndexArgsForCall = append(fake.actualLRPsByProcessGuidAndIndexArgsForCall, struct {
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndex(arg1 string, arg2 int) (*models.ActualLRP, error) {
+	fake.actualLRPByProcessGuidAndIndexMutex.Lock()
+	fake.actualLRPByProcessGuidAndIndexArgsForCall = append(fake.actualLRPByProcessGuidAndIndexArgsForCall, struct {
 		arg1 string
 		arg2 int
 	}{arg1, arg2})
-	fake.actualLRPsByProcessGuidAndIndexMutex.Unlock()
-	if fake.ActualLRPsByProcessGuidAndIndexStub != nil {
-		return fake.ActualLRPsByProcessGuidAndIndexStub(arg1, arg2)
+	fake.actualLRPByProcessGuidAndIndexMutex.Unlock()
+	if fake.ActualLRPByProcessGuidAndIndexStub != nil {
+		return fake.ActualLRPByProcessGuidAndIndexStub(arg1, arg2)
 	} else {
-		return fake.actualLRPsByProcessGuidAndIndexReturns.result1, fake.actualLRPsByProcessGuidAndIndexReturns.result2
+		return fake.actualLRPByProcessGuidAndIndexReturns.result1, fake.actualLRPByProcessGuidAndIndexReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexCallCount() int {
-	fake.actualLRPsByProcessGuidAndIndexMutex.RLock()
-	defer fake.actualLRPsByProcessGuidAndIndexMutex.RUnlock()
-	return len(fake.actualLRPsByProcessGuidAndIndexArgsForCall)
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexCallCount() int {
+	fake.actualLRPByProcessGuidAndIndexMutex.RLock()
+	defer fake.actualLRPByProcessGuidAndIndexMutex.RUnlock()
+	return len(fake.actualLRPByProcessGuidAndIndexArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexArgsForCall(i int) (string, int) {
-	fake.actualLRPsByProcessGuidAndIndexMutex.RLock()
-	defer fake.actualLRPsByProcessGuidAndIndexMutex.RUnlock()
-	return fake.actualLRPsByProcessGuidAndIndexArgsForCall[i].arg1, fake.actualLRPsByProcessGuidAndIndexArgsForCall[i].arg2
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexArgsForCall(i int) (string, int) {
+	fake.actualLRPByProcessGuidAndIndexMutex.RLock()
+	defer fake.actualLRPByProcessGuidAndIndexMutex.RUnlock()
+	return fake.actualLRPByProcessGuidAndIndexArgsForCall[i].arg1, fake.actualLRPByProcessGuidAndIndexArgsForCall[i].arg2
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexReturns(result1 []models.ActualLRP, result2 error) {
-	fake.ActualLRPsByProcessGuidAndIndexStub = nil
-	fake.actualLRPsByProcessGuidAndIndexReturns = struct {
-		result1 []models.ActualLRP
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexReturns(result1 *models.ActualLRP, result2 error) {
+	fake.ActualLRPByProcessGuidAndIndexStub = nil
+	fake.actualLRPByProcessGuidAndIndexReturns = struct {
+		result1 *models.ActualLRP
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstances(stopInstances []models.ActualLRP) error {
-	fake.requestStopLRPInstancesMutex.Lock()
-	fake.requestStopLRPInstancesArgsForCall = append(fake.requestStopLRPInstancesArgsForCall, struct {
-		stopInstances []models.ActualLRP
+func (fake *FakeReceptorBBS) RequestStopLRPInstance(stopInstances models.ActualLRP) error {
+	fake.requestStopLRPInstanceMutex.Lock()
+	fake.requestStopLRPInstanceArgsForCall = append(fake.requestStopLRPInstanceArgsForCall, struct {
+		stopInstances models.ActualLRP
 	}{stopInstances})
-	fake.requestStopLRPInstancesMutex.Unlock()
-	if fake.RequestStopLRPInstancesStub != nil {
-		return fake.RequestStopLRPInstancesStub(stopInstances)
+	fake.requestStopLRPInstanceMutex.Unlock()
+	if fake.RequestStopLRPInstanceStub != nil {
+		return fake.RequestStopLRPInstanceStub(stopInstances)
 	} else {
-		return fake.requestStopLRPInstancesReturns.result1
+		return fake.requestStopLRPInstanceReturns.result1
 	}
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstancesCallCount() int {
-	fake.requestStopLRPInstancesMutex.RLock()
-	defer fake.requestStopLRPInstancesMutex.RUnlock()
-	return len(fake.requestStopLRPInstancesArgsForCall)
+func (fake *FakeReceptorBBS) RequestStopLRPInstanceCallCount() int {
+	fake.requestStopLRPInstanceMutex.RLock()
+	defer fake.requestStopLRPInstanceMutex.RUnlock()
+	return len(fake.requestStopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstancesArgsForCall(i int) []models.ActualLRP {
-	fake.requestStopLRPInstancesMutex.RLock()
-	defer fake.requestStopLRPInstancesMutex.RUnlock()
-	return fake.requestStopLRPInstancesArgsForCall[i].stopInstances
+func (fake *FakeReceptorBBS) RequestStopLRPInstanceArgsForCall(i int) models.ActualLRP {
+	fake.requestStopLRPInstanceMutex.RLock()
+	defer fake.requestStopLRPInstanceMutex.RUnlock()
+	return fake.requestStopLRPInstanceArgsForCall[i].stopInstances
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstancesReturns(result1 error) {
-	fake.RequestStopLRPInstancesStub = nil
-	fake.requestStopLRPInstancesReturns = struct {
+func (fake *FakeReceptorBBS) RequestStopLRPInstanceReturns(result1 error) {
+	fake.RequestStopLRPInstanceStub = nil
+	fake.requestStopLRPInstanceReturns = struct {
 		result1 error
 	}{result1}
 }

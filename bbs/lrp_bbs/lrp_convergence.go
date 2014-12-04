@@ -51,7 +51,7 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 
 	var desiredLRPsToCAS []compareAndSwappableDesiredLRP
 	var keysToDelete []string
-	knownDesiredProcessGuids := map[string]bool{}
+	knownDesiredProcessGuids := map[string]struct{}{}
 
 	for _, node := range desiredLRPRoot.ChildNodes {
 		var desiredLRP models.DesiredLRP
@@ -66,7 +66,7 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 			continue
 		}
 
-		knownDesiredProcessGuids[desiredLRP.ProcessGuid] = true
+		knownDesiredProcessGuids[desiredLRP.ProcessGuid] = struct{}{}
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
 		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired) {
@@ -93,12 +93,16 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	}
 }
 
-func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string][]models.ActualLRP) []models.ActualLRP {
+func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]struct{}, actualsByProcessGuid map[string][]models.ActualLRP) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
 
 	for processGuid, actuals := range actualsByProcessGuid {
-		if !knownDesiredProcessGuids[processGuid] {
+		if _, found := knownDesiredProcessGuids[processGuid]; !found {
 			for _, actual := range actuals {
+				if actual.State == models.ActualLRPStateUnclaimed {
+					continue
+				}
+
 				bbs.logger.Info("detected-undesired-process", lager.Data{
 					"process-guid":  processGuid,
 					"instance-guid": actual.InstanceGuid,
@@ -115,12 +119,16 @@ func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, act
 
 func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {
 	var actuals delta_force.ActualInstances
-	for _, actualLRP := range actualLRPsForDesired {
+	for _, actual := range actualLRPsForDesired {
+		if actual.State == models.ActualLRPStateUnclaimed {
+			continue
+		}
 		actuals = append(actuals, delta_force.ActualInstance{
-			Index: actualLRP.Index,
-			Guid:  actualLRP.InstanceGuid,
+			Index: actual.Index,
+			Guid:  actual.InstanceGuid,
 		})
 	}
+
 	result := delta_force.Reconcile(desiredLRP.Instances, actuals)
 
 	if len(result.IndicesToStart) > 0 {
@@ -168,12 +176,14 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 			return false
 		}
 
-		if _, ok := cellRoot.Lookup(actual.CellID); !ok {
-			bbs.logger.Info("detected-actual-with-missing-cell", lager.Data{
-				"actual":  actual,
-				"cell-id": actual.CellID,
-			})
-			return false
+		if actual.State != models.ActualLRPStateUnclaimed {
+			if _, ok := cellRoot.Lookup(actual.CellID); !ok {
+				bbs.logger.Info("detected-actual-with-missing-cell", lager.Data{
+					"actual":  actual,
+					"cell-id": actual.CellID,
+				})
+				return false
+			}
 		}
 
 		actualsByProcessGuid[actual.ProcessGuid] = append(actualsByProcessGuid[actual.ProcessGuid], actual)

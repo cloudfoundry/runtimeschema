@@ -11,12 +11,29 @@ func Prune(store db.StoreAdapter, rootKey string, predicate func(db.StoreNode) b
 	}
 
 	p := NewPruner(rootNode, predicate)
-	keySetsToDelete := p.Prune()
+	nodeSetsToDelete := p.Prune()
+
+	dirKeySetsToDelete := [][]string{}
+	leavesToDelete := []db.StoreNode{}
+
+	for _, nodes := range nodeSetsToDelete {
+		dirKeysToDelete := []string{}
+		for _, node := range nodes {
+			if node.Dir {
+				dirKeysToDelete = append(dirKeysToDelete, node.Key)
+			} else {
+				leavesToDelete = append(leavesToDelete, node)
+			}
+		}
+		dirKeySetsToDelete = append(dirKeySetsToDelete, dirKeysToDelete)
+	}
+
+	store.CompareAndDeleteByIndex(leavesToDelete...)
 
 	// note: we don't want to delete the root node, so do not delete the 0 index key set
-	for i := len(keySetsToDelete) - 1; i > 0; i-- {
-		if len(keySetsToDelete[i]) > 0 {
-			store.DeleteLeaves(keySetsToDelete[i]...)
+	for i := len(dirKeySetsToDelete) - 1; i > 0; i-- {
+		if len(dirKeySetsToDelete[i]) > 0 {
+			store.DeleteLeaves(dirKeySetsToDelete[i]...)
 		}
 	}
 
@@ -24,9 +41,9 @@ func Prune(store db.StoreAdapter, rootKey string, predicate func(db.StoreNode) b
 }
 
 type Pruner struct {
-	root            db.StoreNode
-	keySetsToDelete [][]string
-	predicate       func(db.StoreNode) bool
+	root             db.StoreNode
+	nodeSetsToDelete [][]db.StoreNode
+	predicate        func(db.StoreNode) bool
 }
 
 func NewPruner(root db.StoreNode, predicate func(db.StoreNode) bool) *Pruner {
@@ -36,19 +53,19 @@ func NewPruner(root db.StoreNode, predicate func(db.StoreNode) bool) *Pruner {
 	}
 }
 
-func (p *Pruner) Prune() (keySetsToDelete [][]string) {
+func (p *Pruner) Prune() [][]db.StoreNode {
 	p.walk(0, p.root)
-	return p.keySetsToDelete
+	return p.nodeSetsToDelete
 }
 
 func (p *Pruner) walk(depth int, node db.StoreNode) bool {
-	if len(p.keySetsToDelete) < depth+1 {
-		p.keySetsToDelete = append(p.keySetsToDelete, []string{})
+	if len(p.nodeSetsToDelete) < depth+1 {
+		p.nodeSetsToDelete = append(p.nodeSetsToDelete, []db.StoreNode{})
 	}
 
 	if len(node.ChildNodes) == 0 {
 		if node.Dir || !p.predicate(node) {
-			p.markForDelete(depth, node.Key)
+			p.markForDelete(depth, node)
 			return false
 		} else {
 			return true
@@ -64,13 +81,13 @@ func (p *Pruner) walk(depth int, node db.StoreNode) bool {
 	}
 
 	if empty {
-		p.markForDelete(depth, node.Key)
+		p.markForDelete(depth, node)
 		return false
 	}
 
 	return true
 }
 
-func (p *Pruner) markForDelete(depth int, key string) {
-	p.keySetsToDelete[depth] = append(p.keySetsToDelete[depth], key)
+func (p *Pruner) markForDelete(depth int, node db.StoreNode) {
+	p.nodeSetsToDelete[depth] = append(p.nodeSetsToDelete[depth], node)
 }

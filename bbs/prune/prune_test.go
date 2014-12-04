@@ -2,6 +2,8 @@ package prune_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune/fakes"
+
 	db "github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
@@ -9,227 +11,53 @@ import (
 )
 
 var _ = Describe("Prune", func() {
-	var keysSetsToDelete [][]string
-	var expectedKeysSetsToDelete [][]string
+	var fake_bbs *fakes.FakeStoreAdapter
 	var exampleTree db.StoreNode
 
-	JustBeforeEach(func() {
-		pruner := prune.NewPruner(exampleTree, func(node db.StoreNode) bool {
-			return string(node.Value) == "true"
-		})
-
-		keysSetsToDelete = pruner.Prune()
-	})
-
-	Context("an empty tree", func() {
-		BeforeEach(func() {
-			expectedKeysSetsToDelete = [][]string{
-				{"/0"},
-				{"/0/0", "/0/1"},
-				{"/0/0/0", "/0/1/0"},
-			}
-			exampleTree = db.StoreNode{
-				Key: "/0",
-				Dir: true,
-				ChildNodes: []db.StoreNode{
-					{
-						Key: "/0/0",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key:        "/0/0/0",
-								Dir:        true,
-								ChildNodes: []db.StoreNode{},
-							},
-						},
-					},
-					{
-						Key: "/0/1",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/1/0",
-								Dir: true,
-							},
+	BeforeEach(func() {
+		exampleTree = db.StoreNode{
+			Key: "/0",
+			Dir: true,
+			ChildNodes: []db.StoreNode{
+				{
+					Key: "/0/0",
+					Dir: true,
+					ChildNodes: []db.StoreNode{
+						{
+							Key:   "/0/0/0",
+							Value: []byte("a-node"),
 						},
 					},
 				},
-			}
-		})
-
-		It("deletes the correct keys", func() {
-			Ω(keysSetsToDelete).Should(Equal(expectedKeysSetsToDelete))
-		})
-	})
-
-	Context("a tree filled with deletables", func() {
-		BeforeEach(func() {
-			expectedKeysSetsToDelete = [][]string{
-				{"/0"},
-				{"/0/0", "/0/1"},
-				{"/0/0/0", "/0/1/0"},
-				{"/0/0/0/0", "/0/1/0/0"},
-			}
-
-			exampleTree = db.StoreNode{
-				Key: "/0",
-				Dir: true,
-				ChildNodes: []db.StoreNode{
-					{
-						Key: "/0/0",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/0/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/0/0/0",
-										Value: []byte("false"),
-									},
-								},
-							},
-						},
-					},
-					{
-						Key: "/0/1",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/1/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/1/0/0",
-										Value: []byte("false"),
-									},
-								},
-							},
+				{
+					Key: "/0/1",
+					Dir: true,
+					ChildNodes: []db.StoreNode{
+						{
+							Key:   "/0/1/0",
+							Value: []byte("b-node"),
 						},
 					},
 				},
-			}
-		})
+			},
+		}
 
-		It("deletes the correct keys", func() {
-			Ω(keysSetsToDelete).Should(Equal(expectedKeysSetsToDelete))
-		})
+		fake_bbs = new(fakes.FakeStoreAdapter)
+
+		fake_bbs.ListRecursivelyReturns(exampleTree, nil)
 	})
 
-	Context("a tree filled with keepables", func() {
-		BeforeEach(func() {
-			expectedKeysSetsToDelete = [][]string{
-				{},
-				{},
-				{},
-				{},
-			}
+	It("compares-and-deletes files by index and deletes empty dirs", func() {
+		predicate := func(db.StoreNode) bool { return false }
+		prune.Prune(fake_bbs, "/0", predicate)
 
-			exampleTree = db.StoreNode{
-				Key: "/0",
-				Dir: true,
-				ChildNodes: []db.StoreNode{
-					{
-						Key: "/0/0",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/0/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/1/0/0",
-										Value: []byte("true"),
-									},
-								},
-							},
-						},
-					},
-					{
-						Key: "/0/1",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/1/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/1/0/0",
-										Value: []byte("true"),
-									},
-								},
-							},
-						},
-					},
-				},
-			}
-		})
+		Ω(fake_bbs.ListRecursivelyCallCount()).Should(Equal(1))
+		Ω(fake_bbs.ListRecursivelyArgsForCall(0)).Should(Equal("/0"))
 
-		It("deletes the correct keys", func() {
-			Ω(keysSetsToDelete).Should(Equal(expectedKeysSetsToDelete))
-		})
-	})
+		Ω(fake_bbs.CompareAndDeleteByIndexCallCount()).Should(Equal(1))
+		Ω(fake_bbs.CompareAndDeleteByIndexArgsForCall(0)).Should(ConsistOf(exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]))
 
-	Context("a mixed, partially filled tree", func() {
-		BeforeEach(func() {
-			expectedKeysSetsToDelete = [][]string{
-				{},
-				{"/0/0", "/0/1"},
-				{"/0/0/0", "/0/1/0"},
-				{"/0/1/0/0"},
-			}
-			exampleTree = db.StoreNode{
-				Key: "/0",
-				Dir: true,
-				ChildNodes: []db.StoreNode{
-					{
-						Key: "/0/0",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key:        "/0/0/0",
-								Dir:        true,
-								ChildNodes: []db.StoreNode{},
-							},
-						},
-					}, {
-						Key: "/0/1",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/1/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/1/0/0",
-										Value: []byte("false"),
-									},
-								},
-							},
-						},
-					},
-					{
-						Key: "/0/2",
-						Dir: true,
-						ChildNodes: []db.StoreNode{
-							{
-								Key: "/0/2/0",
-								Dir: true,
-								ChildNodes: []db.StoreNode{
-									{
-										Key:   "/0/2/0/0",
-										Value: []byte("true"),
-									},
-								},
-							},
-						},
-					},
-				},
-			}
-		})
-
-		It("deletes the correct keys", func() {
-			Ω(keysSetsToDelete).Should(Equal(expectedKeysSetsToDelete))
-		})
+		Ω(fake_bbs.DeleteLeavesCallCount()).Should(Equal(1))
+		Ω(fake_bbs.DeleteLeavesArgsForCall(0)).Should(ConsistOf(exampleTree.ChildNodes[0].Key, exampleTree.ChildNodes[1].Key))
 	})
 })

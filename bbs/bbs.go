@@ -42,8 +42,8 @@ type ReceptorBBS interface {
 	ActualLRPs() ([]models.ActualLRP, error)
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	ActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
-	RequestStopLRPInstances(stopInstances []models.ActualLRP) error
+	ActualLRPByProcessGuidAndIndex(string, int) (*models.ActualLRP, error)
+	RequestStopLRPInstance(stopInstances models.ActualLRP) error
 
 	// cells
 	Cells() ([]models.CellPresence, error)
@@ -68,10 +68,10 @@ type RepBBS interface {
 	//lrp
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
-	ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
-	ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error
+	ClaimActualLRP(models.ActualLRP) (*models.ActualLRP, error)
+	StartActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 	RemoveActualLRP(lrp models.ActualLRP) error
-	RemoveActualLRPForIndex(processGuid string, index int, instanceGuid string) error
+	RemoveActualLRPForIndex(processGuid string, index int) error
 }
 
 type ConvergerBBS interface {
@@ -80,6 +80,7 @@ type ConvergerBBS interface {
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RequestStopLRPInstance(lrp models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
+	CreateActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 
 	//start auction
 	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)

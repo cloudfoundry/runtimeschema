@@ -60,7 +60,7 @@ func registerCell(cell models.CellPresence) {
 }
 
 func itRetriesUntilStoreComesBack(action func() error) {
-	It("should keep trying until the store comes back", func(done Done) {
+	It("should keep trying until the store comes back", func() {
 		etcdRunner.GoAway()
 
 		runResult := make(chan error)
@@ -73,8 +73,17 @@ func itRetriesUntilStoreComesBack(action func() error) {
 
 		etcdRunner.ComeBack()
 
-		Ω(<-runResult).ShouldNot(HaveOccurred())
+		Eventually(runResult).Should(Receive(BeNil()))
+	})
+}
 
-		close(done)
-	}, 5)
+func createAndClaim(a models.ActualLRP) (*models.ActualLRP, *models.ActualLRP, error) {
+	c := a
+	c.State = models.ActualLRPStateUnclaimed
+	unclaimed, err := bbs.CreateActualLRP(c)
+	Ω(err).ShouldNot(HaveOccurred())
+	claimed, err := bbs.ClaimActualLRP(a)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	return unclaimed, claimed, err
 }

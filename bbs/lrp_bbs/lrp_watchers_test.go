@@ -91,10 +91,13 @@ var _ = Describe("LrpWatchers", func() {
 
 	Describe("WatchForActualLRPChanges", func() {
 		var (
-			events          <-chan models.ActualLRPChange
-			stop            chan<- bool
-			errors          <-chan error
-			lrp             models.ActualLRP
+			events <-chan models.ActualLRPChange
+			stop   chan<- bool
+			errors <-chan error
+
+			unclaimedLRP *models.ActualLRP
+			claimedLRP   *models.ActualLRP
+
 			lrpProcessGuid  string
 			lrpInstanceGuid string
 			lrpCellId       string
@@ -112,7 +115,7 @@ var _ = Describe("LrpWatchers", func() {
 			events, stop, errors = bbs.WatchForActualLRPChanges()
 
 			var err error
-			lrp, err = bbs.ReportActualLRPAsStarting(lrpProcessGuid, lrpInstanceGuid, lrpCellId, lrpDomain, lrpIndex)
+			unclaimedLRP, claimedLRP, err = createAndClaim(models.NewActualLRP(lrpProcessGuid, lrpInstanceGuid, lrpCellId, lrpDomain, lrpIndex, models.ActualLRPStateClaimed))
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -122,23 +125,23 @@ var _ = Describe("LrpWatchers", func() {
 
 		It("sends an event down the pipe for creates", func() {
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: nil,
-				After:  &lrp,
+				Before: unclaimedLRP,
+				After:  claimedLRP,
 			})))
 		})
 
 		It("sends an event down the pipe for updates", func() {
 			Eventually(events).Should(Receive())
 
-			changedLRP := lrp
+			changedLRP := *claimedLRP
 			changedLRP.State = models.ActualLRPStateRunning
 			changedLRP.CellID = "cell-id"
 
-			err := bbs.ReportActualLRPAsRunning(changedLRP, "cell-id")
+			_, err := bbs.StartActualLRP(changedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: &lrp,
+				Before: claimedLRP,
 				After:  &changedLRP,
 			})))
 		})
@@ -146,11 +149,11 @@ var _ = Describe("LrpWatchers", func() {
 		It("sends an event down the pipe for delete", func() {
 			Eventually(events).Should(Receive())
 
-			err := bbs.RemoveActualLRP(lrp)
+			err := bbs.RemoveActualLRP(*claimedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: &lrp,
+				Before: claimedLRP,
 				After:  nil,
 			})))
 		})

@@ -1,11 +1,12 @@
 package models
 
-type ActualLRPState int
+type ActualLRPState string
 
 const (
-	ActualLRPStateInvalid ActualLRPState = iota
-	ActualLRPStateStarting
-	ActualLRPStateRunning
+	ActualLRPStateInvalid   ActualLRPState = "INVALID"
+	ActualLRPStateUnclaimed ActualLRPState = "UNCLAIMED"
+	ActualLRPStateClaimed   ActualLRPState = "CLAIMED"
+	ActualLRPStateRunning   ActualLRPState = "RUNNING"
 )
 
 type ActualLRPChange struct {
@@ -34,7 +35,8 @@ func NewActualLRP(
 	cellID string,
 	domain string,
 	index int,
-) (ActualLRP, error) {
+	state ActualLRPState,
+) ActualLRP {
 
 	lrp := ActualLRP{
 		ProcessGuid:  processGuid,
@@ -43,14 +45,10 @@ func NewActualLRP(
 		Domain:       domain,
 
 		Index: index,
+		State: state,
 	}
 
-	err := lrp.Validate()
-	if err != nil {
-		return ActualLRP{}, err
-	}
-
-	return lrp, nil
+	return lrp
 }
 
 func (actual ActualLRP) Validate() error {
@@ -60,16 +58,26 @@ func (actual ActualLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidField{"process_guid"})
 	}
 
-	if actual.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidField{"instance_guid"})
-	}
-
-	if actual.CellID == "" {
-		validationError = append(validationError, ErrInvalidField{"cell_id"})
-	}
-
 	if actual.Domain == "" {
 		validationError = append(validationError, ErrInvalidField{"domain"})
+	}
+
+	if actual.State == ActualLRPStateUnclaimed {
+		if actual.InstanceGuid != "" {
+			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+		}
+
+		if actual.CellID != "" {
+			validationError = append(validationError, ErrInvalidField{"cell_id"})
+		}
+	} else {
+		if actual.InstanceGuid == "" {
+			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+		}
+
+		if actual.CellID == "" {
+			validationError = append(validationError, ErrInvalidField{"cell_id"})
+		}
 	}
 
 	if len(validationError) > 0 {

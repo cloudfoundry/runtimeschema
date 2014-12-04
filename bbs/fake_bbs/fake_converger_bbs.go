@@ -39,6 +39,15 @@ type FakeConvergerBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
+	CreateActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	createActualLRPMutex       sync.RWMutex
+	createActualLRPArgsForCall []struct {
+		arg1 models.ActualLRP
+	}
+	createActualLRPReturns struct {
+		result1 *models.ActualLRP
+		result2 error
+	}
 	ConvergeLRPStartAuctionsStub        func(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
 	convergeLRPStartAuctionsMutex       sync.RWMutex
 	convergeLRPStartAuctionsArgsForCall []struct {
@@ -189,6 +198,39 @@ func (fake *FakeConvergerBBS) WatchForDesiredLRPChangesReturns(result1 <-chan mo
 		result2 chan<- bool
 		result3 <-chan error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+	fake.createActualLRPMutex.Lock()
+	fake.createActualLRPArgsForCall = append(fake.createActualLRPArgsForCall, struct {
+		arg1 models.ActualLRP
+	}{arg1})
+	fake.createActualLRPMutex.Unlock()
+	if fake.CreateActualLRPStub != nil {
+		return fake.CreateActualLRPStub(arg1)
+	} else {
+		return fake.createActualLRPReturns.result1, fake.createActualLRPReturns.result2
+	}
+}
+
+func (fake *FakeConvergerBBS) CreateActualLRPCallCount() int {
+	fake.createActualLRPMutex.RLock()
+	defer fake.createActualLRPMutex.RUnlock()
+	return len(fake.createActualLRPArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) CreateActualLRPArgsForCall(i int) models.ActualLRP {
+	fake.createActualLRPMutex.RLock()
+	defer fake.createActualLRPMutex.RUnlock()
+	return fake.createActualLRPArgsForCall[i].arg1
+}
+
+func (fake *FakeConvergerBBS) CreateActualLRPReturns(result1 *models.ActualLRP, result2 error) {
+	fake.CreateActualLRPStub = nil
+	fake.createActualLRPReturns = struct {
+		result1 *models.ActualLRP
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeConvergerBBS) ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {

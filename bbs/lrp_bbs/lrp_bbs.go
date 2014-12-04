@@ -158,53 +158,11 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 }
 
 func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
-	return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid)
+	return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
 }
 
-func (bbs *LRPBBS) RemoveActualLRPForIndex(processGuid string, index int, instanceGuid string) error {
+func (bbs *LRPBBS) RemoveActualLRPForIndex(processGuid string, index int) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Delete(shared.ActualLRPSchemaPath(processGuid, index, instanceGuid))
-	})
-}
-
-func (bbs *LRPBBS) ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error) {
-	lrp, err := models.NewActualLRP(processGuid, instanceGuid, cellID, domain, index)
-	if err != nil {
-		return lrp, err
-	}
-	lrp.State = models.ActualLRPStateStarting
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
-
-	value, err := models.ToJSON(lrp)
-	if err != nil {
-		return models.ActualLRP{}, err
-	}
-
-	return lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.SetMulti([]storeadapter.StoreNode{
-			{
-				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid),
-				Value: value,
-			},
-		})
-	})
-}
-
-func (bbs *LRPBBS) ReportActualLRPAsRunning(lrp models.ActualLRP, cellID string) error {
-	lrp.State = models.ActualLRPStateRunning
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
-	lrp.CellID = cellID
-
-	value, err := models.ToJSON(lrp)
-	if err != nil {
-		return err
-	}
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.SetMulti([]storeadapter.StoreNode{
-			{
-				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index, lrp.InstanceGuid),
-				Value: value,
-			},
-		})
+		return bbs.store.Delete(shared.ActualLRPSchemaPath(processGuid, index))
 	})
 }
