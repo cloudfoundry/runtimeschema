@@ -6,10 +6,9 @@ var (
 	ErrTaskNotFound                  = errors.New("task not found")
 	ErrTaskCannotBeResolved          = errors.New("cannot resolve task from non-resolving state")
 	ErrTaskCannotBeMarkedAsResolving = errors.New("cannot mark task as resolving from non-completed state")
-	ErrTaskCannotBeClaimed           = errors.New("cannot claim task from non-pending state")
-	ErrTaskCannotBeStarted           = errors.New("cannot start task from non-claimed state")
-	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-claimed/non-running state")
-	ErrTaskCannotBeCancelled         = errors.New("cannot cancel task from non-pending/non-claimed/non-running state")
+	ErrTaskCannotBeStarted           = errors.New("cannot start task from non-pending state")
+	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-running state")
+	ErrTaskCannotBeCancelled         = errors.New("cannot cancel task from non-pending/non-running state")
 
 	ErrStoreResourceNotFound             = errors.New("the requested resource could not be found in the store")
 	ErrStoreExpectedNonCollectionRequest = errors.New("unable to access single (non-collection) store resource, request body refers to a collection")

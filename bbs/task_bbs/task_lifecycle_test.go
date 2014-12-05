@@ -114,75 +114,10 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("ClaimTask", func() {
-		Context("when claiming a pending Task", func() {
-			BeforeEach(func() {
-				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("puts the Task in the claim state", func() {
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				tasks, err := bbs.ClaimedTasks()
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-				Ω(tasks[0].State).Should(Equal(models.TaskStateClaimed))
-				Ω(tasks[0].CellID).Should(Equal("cell-ID"))
-			})
-
-			It("should bump UpdatedAt", func() {
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				tasks, err := bbs.ClaimedTasks()
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
-			})
-
-			Context("when the etcdClient is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				})
-			})
-		})
-
-		Context("when claiming an already-claimed task", func() {
-			It("returns an error", func() {
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-
-		Context("when claiming a Task that is not in the pending state", func() {
-			BeforeEach(func() {
-				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("returns an error", func() {
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).Should(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "some-other-cell-ID")
-				Ω(err).Should(HaveOccurred())
-			})
-		})
-	})
-
 	Describe("StartTask", func() {
-		Context("when starting a claimed Task", func() {
+		Context("when starting a pending Task", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -216,26 +151,23 @@ var _ = Describe("Task BBS", func() {
 			})
 		})
 
-		Context("When starting a Task that is not in the claimed state", func() {
-			It("returns an error", func() {
+		Context("When starting a Task that is already started", func() {
+			BeforeEach(func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
-				Ω(err).Should(HaveOccurred())
+				Ω(err).ShouldNot(HaveOccurred())
 			})
-		})
 
-		Context("When starting a Task that was claimed by a different cell", func() {
 			It("returns an error", func() {
-				err = bbs.StartTask(task.TaskGuid, "some-other-cell-ID")
+				err = bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("CancelTask", func() {
-
 		Context("when the store is reachable", func() {
 			var cancelError error
 			var taskAfterCancel *models.Task
@@ -276,22 +208,9 @@ var _ = Describe("Task BBS", func() {
 				itMarksTaskAsCancelled()
 			})
 
-			Context("when the task is in claimed state", func() {
-				BeforeEach(func() {
-					err = bbs.DesireTask(task)
-					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				itMarksTaskAsCancelled()
-			})
-
 			Context("when the task is in running state", func() {
 				BeforeEach(func() {
 					err = bbs.DesireTask(task)
-					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -304,7 +223,7 @@ var _ = Describe("Task BBS", func() {
 				BeforeEach(func() {
 					err = bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -320,7 +239,7 @@ var _ = Describe("Task BBS", func() {
 				BeforeEach(func() {
 					err = bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.ClaimTask(task.TaskGuid, "cell-id")
+					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -375,9 +294,6 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -424,7 +340,7 @@ var _ = Describe("Task BBS", func() {
 			})
 		})
 
-		Context("When completing a Task that is not in the running/claimed state", func() {
+		Context("When completing a Task that is not in the running state", func() {
 			It("returns an error", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -433,22 +349,8 @@ var _ = Describe("Task BBS", func() {
 				Ω(err).Should(HaveOccurred())
 			})
 
-			It("has no error when Task is in claimed state", func() {
-				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
 			It("has no error when Task is in running state", func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -464,9 +366,6 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is complete", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -515,9 +414,6 @@ var _ = Describe("Task BBS", func() {
 				err = bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ClaimTask(task.TaskGuid, "some-cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
-
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -533,9 +429,6 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is resolving", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -567,9 +460,6 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is not resolving", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
