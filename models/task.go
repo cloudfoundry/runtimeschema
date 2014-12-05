@@ -11,7 +11,6 @@ type TaskState int
 const (
 	TaskStateInvalid TaskState = iota
 	TaskStatePending
-	TaskStateClaimed
 	TaskStateRunning
 	TaskStateCompleted
 	TaskStateResolving

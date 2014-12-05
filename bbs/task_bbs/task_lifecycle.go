@@ -1,7 +1,6 @@
 package task_bbs
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -37,40 +36,9 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 	return err
 }
 
-// The cell calls this when it wants to claim a task
+// The cell calls this when it is about to run the task in the allocated container
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
-// If this fails, the cell should assume that someone else is handling the claim and should bail
-func (bbs *TaskBBS) ClaimTask(taskGuid string, cellID string) error {
-	task, index, err := bbs.getTask(taskGuid)
-
-	if err != nil {
-		return fmt.Errorf("cannot claim non-existing task: %s", err.Error())
-	}
-
-	if task.State != models.TaskStatePending {
-		return bbserrors.ErrTaskCannotBeClaimed
-	}
-
-	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
-	task.State = models.TaskStateClaimed
-	task.CellID = cellID
-
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: value,
-		})
-	})
-}
-
-// The cell calls this when it is about to run the task in the claimed container
-// stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
-// If this fails, the cell should assume that someone else is running and should clean up and bail
+// If this fails, the cell should assume that someone else will run it and should clean up and bail
 func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
@@ -78,16 +46,13 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 		return fmt.Errorf("cannot start non-existing task: %s", err.Error())
 	}
 
-	if task.State != models.TaskStateClaimed {
+	if task.State != models.TaskStatePending {
 		return bbserrors.ErrTaskCannotBeStarted
-	}
-
-	if task.CellID != cellID {
-		return errors.New("cannot start task claimed by another cell")
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 	task.State = models.TaskStateRunning
+	task.CellID = cellID
 
 	value, err := models.ToJSON(task)
 	if err != nil {
@@ -116,7 +81,7 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 		return bbserrors.ErrTaskNotFound
 	}
 
-	if task.State != models.TaskStatePending && task.State != models.TaskStateClaimed && task.State != models.TaskStateRunning {
+	if task.State != models.TaskStatePending && task.State != models.TaskStateRunning {
 		return bbserrors.ErrTaskCannotBeCancelled
 	}
 
@@ -146,7 +111,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 		return bbserrors.ErrTaskNotFound
 	}
 
-	if task.State != models.TaskStateRunning && task.State != models.TaskStateClaimed {
+	if task.State != models.TaskStateRunning {
 		return bbserrors.ErrTaskCannotBeCompleted
 	}
 

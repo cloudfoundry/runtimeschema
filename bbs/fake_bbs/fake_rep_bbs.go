@@ -28,15 +28,6 @@ type FakeRepBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
-	ClaimTaskStub        func(taskGuid string, cellID string) error
-	claimTaskMutex       sync.RWMutex
-	claimTaskArgsForCall []struct {
-		taskGuid string
-		cellID   string
-	}
-	claimTaskReturns struct {
-		result1 error
-	}
 	StartTaskStub        func(taskGuid string, cellID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
@@ -187,39 +178,6 @@ func (fake *FakeRepBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, r
 		result2 chan<- bool
 		result3 <-chan error
 	}{result1, result2, result3}
-}
-
-func (fake *FakeRepBBS) ClaimTask(taskGuid string, cellID string) error {
-	fake.claimTaskMutex.Lock()
-	fake.claimTaskArgsForCall = append(fake.claimTaskArgsForCall, struct {
-		taskGuid string
-		cellID   string
-	}{taskGuid, cellID})
-	fake.claimTaskMutex.Unlock()
-	if fake.ClaimTaskStub != nil {
-		return fake.ClaimTaskStub(taskGuid, cellID)
-	} else {
-		return fake.claimTaskReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) ClaimTaskCallCount() int {
-	fake.claimTaskMutex.RLock()
-	defer fake.claimTaskMutex.RUnlock()
-	return len(fake.claimTaskArgsForCall)
-}
-
-func (fake *FakeRepBBS) ClaimTaskArgsForCall(i int) (string, string) {
-	fake.claimTaskMutex.RLock()
-	defer fake.claimTaskMutex.RUnlock()
-	return fake.claimTaskArgsForCall[i].taskGuid, fake.claimTaskArgsForCall[i].cellID
-}
-
-func (fake *FakeRepBBS) ClaimTaskReturns(result1 error) {
-	fake.ClaimTaskStub = nil
-	fake.claimTaskReturns = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *FakeRepBBS) StartTask(taskGuid string, cellID string) error {

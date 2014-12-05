@@ -75,9 +75,6 @@ var _ = Describe("Task BBS", func() {
 
 			Eventually(events).Should(Receive())
 
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
-
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -105,9 +102,6 @@ var _ = Describe("Task BBS", func() {
 			events, stop, errors = bbs.WatchForCompletedTask()
 
 			err = bbs.DesireTask(task)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")

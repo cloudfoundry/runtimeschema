@@ -140,29 +140,9 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
-	Describe("ClaimedTasks", func() {
-		BeforeEach(func() {
-			err = bbs.DesireTask(task)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		It("returns all Tasks in 'claimed' state", func() {
-			tasks, err := bbs.ClaimedTasks()
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-		})
-	})
-
 	Describe("RunningTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -180,9 +160,6 @@ var _ = Describe("Task BBS", func() {
 	Describe("CompletedTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -203,9 +180,6 @@ var _ = Describe("Task BBS", func() {
 	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
 			err = bbs.DesireTask(task)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			err = bbs.ClaimTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")

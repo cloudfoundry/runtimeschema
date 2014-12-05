@@ -59,7 +59,6 @@ type RepBBS interface {
 
 	//task
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
-	ClaimTask(taskGuid string, cellID string) error
 	StartTask(taskGuid string, cellID string) error
 	TaskByGuid(taskGuid string) (*models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)

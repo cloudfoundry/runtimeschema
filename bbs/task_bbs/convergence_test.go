@@ -26,9 +26,9 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		bbs                              *TaskBBS
 		task                             models.Task
-		timeToClaimInSeconds             uint64
+		timeToStartInSeconds             uint64
 		convergenceIntervalInSeconds     uint64
-		timeToClaim, convergenceInterval time.Duration
+		timeToStart, convergenceInterval time.Duration
 		timeToResolveInterval            time.Duration
 		timeProvider                     *faketimeprovider.FakeTimeProvider
 		err                              error
@@ -41,8 +41,8 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		err = nil
 
-		timeToClaimInSeconds = 30
-		timeToClaim = time.Duration(timeToClaimInSeconds) * time.Second
+		timeToStartInSeconds = 30
+		timeToStart = time.Duration(timeToStartInSeconds) * time.Second
 		convergenceIntervalInSeconds = 10
 		convergenceInterval = time.Duration(convergenceIntervalInSeconds) * time.Second
 		timeToResolveInterval = time.Hour
@@ -71,7 +71,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			desiredEvents, _, _ = bbs.WatchForDesiredTask()
 			completedEvents, _, _ = bbs.WatchForCompletedTask()
 
-			bbs.ConvergeTask(timeToClaim, convergenceInterval, timeToResolveInterval)
+			bbs.ConvergeTask(timeToStart, convergenceInterval, timeToResolveInterval)
 		})
 
 		It("bumps the convergence counter", func() {
@@ -145,9 +145,9 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 			})
 
-			Context("when the Task has been pending for longer than the timeToClaim", func() {
+			Context("when the Task has been pending for longer than the timeToStart", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(timeToClaimInSeconds + 1)
+					timeProvider.IncrementBySeconds(timeToStartInSeconds + 1)
 				})
 
 				It("should mark the Task as completed & failed", func() {
@@ -166,65 +166,11 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 		})
 
-		Context("when a Task is claimed", func() {
-			var heartbeat ifrit.Process
-
-			BeforeEach(func() {
-				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				cellPresence := models.CellPresence{
-					CellID: "cell-id",
-				}
-				heartbeat = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
-			})
-
-			AfterEach(func() {
-				heartbeat.Signal(os.Interrupt)
-				Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
-			})
-
-			It("should do nothing", func() {
-				Consistently(desiredEvents).ShouldNot(Receive())
-				Consistently(completedEvents).ShouldNot(Receive())
-			})
-
-			Context("when the associated cell is missing", func() {
-				BeforeEach(func() {
-					heartbeat.Signal(os.Interrupt)
-					Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
-
-					timeProvider.IncrementBySeconds(1)
-				})
-
-				It("should mark the Task as completed & failed", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
-
-					var noticedOnce models.Task
-					Eventually(completedEvents).Should(Receive(&noticedOnce))
-
-					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
-				})
-
-				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
-				})
-			})
-		})
-
 		Context("when a Task is running", func() {
 			var heartbeater ifrit.Process
 
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
@@ -271,9 +217,6 @@ var _ = Describe("Convergence of Tasks", func() {
 		Context("when a Task is completed", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
@@ -331,9 +274,6 @@ var _ = Describe("Convergence of Tasks", func() {
 		Context("when a Task is resolving", func() {
 			BeforeEach(func() {
 				err = bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")

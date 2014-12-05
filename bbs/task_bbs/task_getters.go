@@ -44,11 +44,6 @@ func (bbs *TaskBBS) PendingTasks() ([]models.Task, error) {
 	return filterTasksByState(all, models.TaskStatePending), err
 }
 
-func (bbs *TaskBBS) ClaimedTasks() ([]models.Task, error) {
-	all, err := bbs.Tasks()
-	return filterTasksByState(all, models.TaskStateClaimed), err
-}
-
 func (bbs *TaskBBS) RunningTasks() ([]models.Task, error) {
 	all, err := bbs.Tasks()
 	return filterTasksByState(all, models.TaskStateRunning), err

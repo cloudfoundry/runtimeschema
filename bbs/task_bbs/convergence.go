@@ -29,11 +29,10 @@ type compareAndSwappableTask struct {
 // 1. Kick (by setting) any run-onces that are still pending (and have been for > convergence interval)
 // 2. Kick (by setting) any run-onces that are completed (and have been for > convergence interval)
 // 3. Delete any run-onces that are completed (and have been for > timeToResolve interval)
-// 4. Demote to pending any claimed run-onces that have been claimed for > 30s
 // 5. Demote to completed any resolving run-onces that have been resolving for > 30s
-// 6. Mark as failed any run-onces that have been in the pending state for > timeToClaim
-// 7. Mark as failed any claimed or running run-onces whose cell has stopped maintaining presence
-func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration) {
+// 6. Mark as failed any run-onces that have been in the pending state for > timeToStart
+// 7. Mark as failed any running run-onces whose cell has stopped maintaining presence
+func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
 	convergeStart := bbs.timeProvider.Now()
@@ -90,18 +89,12 @@ func (bbs *TaskBBS) ConvergeTask(timeToClaim, convergenceInterval, timeToResolve
 
 		switch task.State {
 		case models.TaskStatePending:
-			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= timeToClaim
+			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= timeToStart
 			if shouldMarkAsFailed {
-				logError(task, "failed-to-claim")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not claimed within time limit"))
+				logError(task, "failed-to-start")
+				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
 			} else if shouldKickTask {
 				scheduleForCASByIndex(node.Index, task)
-			}
-		case models.TaskStateClaimed:
-			_, cellIsAlive := cellState.Lookup(task.CellID)
-			if !cellIsAlive {
-				logError(task, "cell-disappeared")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))
 			}
 		case models.TaskStateRunning:
 			_, cellIsAlive := cellState.Lookup(task.CellID)
