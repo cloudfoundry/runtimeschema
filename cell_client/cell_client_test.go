@@ -26,23 +26,24 @@ var _ = Describe("CellClient", func() {
 
 	Describe("StopLRPInstance", func() {
 		const cellAddr = "cell.example.com"
-		const expectedStopInstancePath = "/lrp/some-process-guid/index/2/instance/some-instance-guid"
 		var stopErr error
-		var stopInstance = models.StopLRPInstance{
+		var actualLRP = models.ActualLRP{
 			ProcessGuid:  "some-process-guid",
 			InstanceGuid: "some-instance-guid",
 			Index:        2,
+			CellID:       "some-cell-id",
 		}
 
 		JustBeforeEach(func() {
-			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), stopInstance)
+			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP)
 		})
 
 		Context("when the request is successful", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("DELETE", expectedStopInstancePath),
+						ghttp.VerifyRequest("POST", "/lrps/stop"),
+						ghttp.VerifyJSONRepresenting(actualLRP),
 						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
@@ -58,7 +59,8 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("DELETE", expectedStopInstancePath),
+						ghttp.VerifyRequest("POST", "/lrps/stop"),
+						ghttp.VerifyJSONRepresenting(actualLRP),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),
 					),
 				)
@@ -74,7 +76,8 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("DELETE", expectedStopInstancePath),
+						ghttp.VerifyRequest("POST", "/lrps/stop"),
+						ghttp.VerifyJSONRepresenting(actualLRP),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},

@@ -9,26 +9,26 @@ import (
 )
 
 type FakeClient struct {
-	StopLRPInstanceStub        func(cellAddr string, stopInstance models.StopLRPInstance) error
+	StopLRPInstanceStub        func(cellAddr string, lrp models.ActualLRP) error
 	stopLRPInstanceMutex       sync.RWMutex
 	stopLRPInstanceArgsForCall []struct {
-		cellAddr     string
-		stopInstance models.StopLRPInstance
+		cellAddr string
+		lrp      models.ActualLRP
 	}
 	stopLRPInstanceReturns struct {
 		result1 error
 	}
 }
 
-func (fake *FakeClient) StopLRPInstance(cellAddr string, stopInstance models.StopLRPInstance) error {
+func (fake *FakeClient) StopLRPInstance(cellAddr string, lrp models.ActualLRP) error {
 	fake.stopLRPInstanceMutex.Lock()
 	fake.stopLRPInstanceArgsForCall = append(fake.stopLRPInstanceArgsForCall, struct {
-		cellAddr     string
-		stopInstance models.StopLRPInstance
-	}{cellAddr, stopInstance})
+		cellAddr string
+		lrp      models.ActualLRP
+	}{cellAddr, lrp})
 	fake.stopLRPInstanceMutex.Unlock()
 	if fake.StopLRPInstanceStub != nil {
-		return fake.StopLRPInstanceStub(cellAddr, stopInstance)
+		return fake.StopLRPInstanceStub(cellAddr, lrp)
 	} else {
 		return fake.stopLRPInstanceReturns.result1
 	}
@@ -40,10 +40,10 @@ func (fake *FakeClient) StopLRPInstanceCallCount() int {
 	return len(fake.stopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeClient) StopLRPInstanceArgsForCall(i int) (string, models.StopLRPInstance) {
+func (fake *FakeClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRP) {
 	fake.stopLRPInstanceMutex.RLock()
 	defer fake.stopLRPInstanceMutex.RUnlock()
-	return fake.stopLRPInstanceArgsForCall[i].cellAddr, fake.stopLRPInstanceArgsForCall[i].stopInstance
+	return fake.stopLRPInstanceArgsForCall[i].cellAddr, fake.stopLRPInstanceArgsForCall[i].lrp
 }
 
 func (fake *FakeClient) StopLRPInstanceReturns(result1 error) {

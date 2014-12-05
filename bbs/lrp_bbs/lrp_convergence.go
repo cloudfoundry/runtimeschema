@@ -86,14 +86,15 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
 	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
+
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
 	if err != nil {
 		bbs.logger.Error("failed-to-request-stops", err)
 	}
 }
 
-func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string][]models.ActualLRP) []models.StopLRPInstance {
-	var stopLRPInstances []models.StopLRPInstance
+func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string][]models.ActualLRP) []models.ActualLRP {
+	var actualsToStop []models.ActualLRP
 
 	for processGuid, actuals := range actualsByProcessGuid {
 		if !knownDesiredProcessGuids[processGuid] {
@@ -104,16 +105,12 @@ func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, act
 					"index":         actual.Index,
 				})
 
-				stopLRPInstances = append(stopLRPInstances, models.StopLRPInstance{
-					ProcessGuid:  processGuid,
-					InstanceGuid: actual.InstanceGuid,
-					Index:        actual.Index,
-				})
+				actualsToStop = append(actualsToStop, actual)
 			}
 		}
 	}
 
-	return stopLRPInstances
+	return actualsToStop
 }
 
 func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {

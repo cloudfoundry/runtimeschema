@@ -1,6 +1,8 @@
 package cell_client
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -11,7 +13,7 @@ import (
 )
 
 type Client interface {
-	StopLRPInstance(cellAddr string, stopInstance models.StopLRPInstance) error
+	StopLRPInstance(cellAddr string, lrp models.ActualLRP) error
 }
 
 type client struct {
@@ -24,12 +26,20 @@ func New() Client {
 	}
 }
 
-func (c *client) StopLRPInstance(cellURL string, stopInstance models.StopLRPInstance) error {
+func (c *client) StopLRPInstance(cellURL string, lrp models.ActualLRP) error {
 	reqGen := rata.NewRequestGenerator(cellURL, routes.StopLRPRoutes)
-	req, err := reqGen.CreateRequest(routes.StopLRPInstance, paramsFromStopLRPInstance(stopInstance), nil)
+
+	payload, err := json.Marshal(lrp)
 	if err != nil {
 		return err
 	}
+
+	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(lrp), bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -44,10 +54,10 @@ func (c *client) StopLRPInstance(cellURL string, stopInstance models.StopLRPInst
 	return nil
 }
 
-func paramsFromStopLRPInstance(s models.StopLRPInstance) rata.Params {
+func stopParamsFromLRP(lrp models.ActualLRP) rata.Params {
 	return rata.Params{
-		"process_guid":  s.ProcessGuid,
-		"instance_guid": s.InstanceGuid,
-		"index":         strconv.Itoa(s.Index),
+		"process_guid":  lrp.ProcessGuid,
+		"instance_guid": lrp.InstanceGuid,
+		"index":         strconv.Itoa(lrp.Index),
 	}
 }

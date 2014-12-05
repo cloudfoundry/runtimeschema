@@ -2,7 +2,6 @@ package shared_test
 
 import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
@@ -54,9 +53,6 @@ var _ = Describe("Shared", func() {
 			Ω(func() {
 				WatchWithFilter(etcdClient, "", make(chan<- struct{}), func(storeadapter.WatchEvent) (int, bool) { return 0, true })
 			}).Should(Panic())
-			Ω(func() {
-				WatchWithFilter(etcdClient, "", make(chan models.StopLRPInstance), func(storeadapter.WatchEvent) (models.StopLRPInstance, bool) { return models.StopLRPInstance{}, true })
-			}).ShouldNot(Panic())
 		})
 
 		Describe("watching for events", func() {

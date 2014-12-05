@@ -218,16 +218,10 @@ var _ = Describe("LrpConvergence", func() {
 			Ω(addr1).Should(Equal(cellPresence.RepAddress))
 			Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-			Ω([]models.StopLRPInstance{stop1, stop2}).Should(ConsistOf(
-				models.StopLRPInstance{
-					ProcessGuid:  processGuid,
-					InstanceGuid: "instance-guid-1",
-					Index:        0,
-				}, models.StopLRPInstance{
-					ProcessGuid:  processGuid,
-					InstanceGuid: "instance-guid-2",
-					Index:        1,
-				}))
+			Ω([]string{stop1.InstanceGuid, stop2.InstanceGuid}).Should(ConsistOf([]string{
+				"instance-guid-1",
+				"instance-guid-2",
+			}))
 		})
 
 		It("bumps the stopped LRPs convergence counter", func() {
@@ -237,7 +231,3 @@ var _ = Describe("LrpConvergence", func() {
 		})
 	})
 })
-
-func ReceivedStopRequests() []models.StopLRPInstance {
-	return []models.StopLRPInstance{}
-}

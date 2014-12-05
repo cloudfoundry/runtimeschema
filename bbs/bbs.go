@@ -43,7 +43,7 @@ type ReceptorBBS interface {
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
-	RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error
+	RequestStopLRPInstances(stopInstances []models.ActualLRP) error
 
 	// cells
 	Cells() ([]models.CellPresence, error)
@@ -78,7 +78,7 @@ type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs()
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	RequestStopLRPInstance(stopInstance models.StopLRPInstance) error
+	RequestStopLRPInstance(lrp models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 
 	//start auction

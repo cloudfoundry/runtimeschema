@@ -15,7 +15,7 @@ var _ = Describe("FakeBbs", func() {
 		Ω(repBBS).ShouldNot(BeNil())
 
 		var convergerBBS bbs.ConvergerBBS
-		convergerBBS = NewFakeConvergerBBS()
+		convergerBBS = new(FakeConvergerBBS)
 		Ω(convergerBBS).ShouldNot(BeNil())
 
 		var auctioneerBBS bbs.AuctioneerBBS

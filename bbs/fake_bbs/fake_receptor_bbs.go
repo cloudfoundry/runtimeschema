@@ -20,7 +20,7 @@ type FakeReceptorBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns     struct {
+	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
@@ -69,7 +69,7 @@ type FakeReceptorBBS struct {
 	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForCompletedTaskMutex       sync.RWMutex
 	watchForCompletedTaskArgsForCall []struct{}
-	watchForCompletedTaskReturns     struct {
+	watchForCompletedTaskReturns struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -102,7 +102,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -127,7 +127,7 @@ type FakeReceptorBBS struct {
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns     struct {
+	actualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -159,10 +159,10 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	RequestStopLRPInstancesStub        func(stopInstances []models.StopLRPInstance) error
+	RequestStopLRPInstancesStub        func(stopInstances []models.ActualLRP) error
 	requestStopLRPInstancesMutex       sync.RWMutex
 	requestStopLRPInstancesArgsForCall []struct {
-		stopInstances []models.StopLRPInstance
+		stopInstances []models.ActualLRP
 	}
 	requestStopLRPInstancesReturns struct {
 		result1 error
@@ -170,7 +170,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -185,7 +185,7 @@ type FakeReceptorBBS struct {
 	FreshnessesStub        func() ([]models.Freshness, error)
 	freshnessesMutex       sync.RWMutex
 	freshnessesArgsForCall []struct{}
-	freshnessesReturns     struct {
+	freshnessesReturns struct {
 		result1 []models.Freshness
 		result2 error
 	}
@@ -749,10 +749,10 @@ func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidAndIndexReturns(result1 []mo
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstances(stopInstances []models.StopLRPInstance) error {
+func (fake *FakeReceptorBBS) RequestStopLRPInstances(stopInstances []models.ActualLRP) error {
 	fake.requestStopLRPInstancesMutex.Lock()
 	fake.requestStopLRPInstancesArgsForCall = append(fake.requestStopLRPInstancesArgsForCall, struct {
-		stopInstances []models.StopLRPInstance
+		stopInstances []models.ActualLRP
 	}{stopInstances})
 	fake.requestStopLRPInstancesMutex.Unlock()
 	if fake.RequestStopLRPInstancesStub != nil {
@@ -768,7 +768,7 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstancesCallCount() int {
 	return len(fake.requestStopLRPInstancesArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstancesArgsForCall(i int) []models.StopLRPInstance {
+func (fake *FakeReceptorBBS) RequestStopLRPInstancesArgsForCall(i int) []models.ActualLRP {
 	fake.requestStopLRPInstancesMutex.RLock()
 	defer fake.requestStopLRPInstancesMutex.RUnlock()
 	return fake.requestStopLRPInstancesArgsForCall[i].stopInstances
