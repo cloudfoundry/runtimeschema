@@ -2,6 +2,7 @@ package lrp_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	fakecellclient "github.com/cloudfoundry-incubator/runtime-schema/cell_client/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -43,7 +44,9 @@ var _ = BeforeEach(func() {
 
 	fakeCellClient = &fakecellclient.FakeClient{}
 	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, lagertest.NewTestLogger("test"))
+
+	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, lagertest.NewTestLogger("test"))
 })
 
 func registerCell(cell models.CellPresence) {

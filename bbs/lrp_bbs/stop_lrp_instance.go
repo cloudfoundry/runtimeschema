@@ -33,7 +33,7 @@ func (bbs *LRPBBS) stop(stopInstance models.StopLRPInstance) error {
 			continue
 		}
 
-		cell, err := bbs.cellById(lrp.CellID)
+		cell, err := bbs.services.CellById(lrp.CellID)
 		if err != nil {
 			return err
 		}
@@ -47,20 +47,4 @@ func (bbs *LRPBBS) stop(stopInstance models.StopLRPInstance) error {
 	}
 
 	return nil
-}
-
-func (bbs *LRPBBS) cellById(cellId string) (models.CellPresence, error) {
-	cellPresence := models.CellPresence{}
-
-	node, err := bbs.store.Get(shared.CellSchemaPath(cellId))
-	if err != nil {
-		return cellPresence, err
-	}
-
-	err = models.FromJSON(node.Value, &cellPresence)
-	if err != nil {
-		return cellPresence, err
-	}
-
-	return cellPresence, nil
 }
