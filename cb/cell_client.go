@@ -3,7 +3,7 @@ package cb
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -48,7 +48,7 @@ func (c *cellClient) StopLRPInstance(cellURL string, lrp models.ActualLRP) error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusAccepted {
-		return errors.New("server error")
+		return fmt.Errorf("http error: status code %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	return nil

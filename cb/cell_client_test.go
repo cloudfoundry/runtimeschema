@@ -68,6 +68,7 @@ var _ = Describe("CellClient", func() {
 
 			It("makes the request and returns an error", func() {
 				Ω(stopErr).Should(HaveOccurred())
+				Ω(stopErr.Error()).Should(ContainSubstring("http error: status code 500"))
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})
@@ -87,6 +88,7 @@ var _ = Describe("CellClient", func() {
 
 			It("makes the request and returns an error", func() {
 				Ω(stopErr).Should(HaveOccurred())
+				Ω(stopErr.Error()).Should(ContainSubstring("EOF"))
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})
