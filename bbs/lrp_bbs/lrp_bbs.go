@@ -156,13 +156,3 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 		})
 	})
 }
-
-func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
-	return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
-}
-
-func (bbs *LRPBBS) RemoveActualLRPForIndex(processGuid string, index int) error {
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Delete(shared.ActualLRPSchemaPath(processGuid, index))
-	})
-}

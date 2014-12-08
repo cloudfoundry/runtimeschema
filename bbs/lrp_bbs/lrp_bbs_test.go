@@ -2,7 +2,6 @@ package lrp_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
@@ -130,56 +129,6 @@ var _ = Describe("LRP", func() {
 			It("returns an ErrorKeyNotFound", func() {
 				err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
 				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
-			})
-		})
-	})
-
-	Describe("Adding and removing actual LRPs", func() {
-		Describe("RemoveActualLRP", func() {
-			var lrp models.ActualLRP
-
-			BeforeEach(func() {
-				lrp = models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateClaimed)
-				_, err := bbs.CreateActualLRP(lrp)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("should remove the LRP", func() {
-				err := bbs.RemoveActualLRP(lrp)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index))
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRP(lrp)
-				})
-			})
-		})
-
-		Describe("RemoveActualLRPForIndex", func() {
-			var lrp models.ActualLRP
-
-			BeforeEach(func() {
-				lrp = models.NewActualLRP("some-process-guid", "", "", "some-domain", 1, models.ActualLRPStateClaimed)
-				_, err := bbs.CreateActualLRP(lrp)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("should remove the LRP", func() {
-				err := bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index))
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRPForIndex(lrp.ProcessGuid, lrp.Index)
-				})
 			})
 		})
 	})

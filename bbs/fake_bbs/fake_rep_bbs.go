@@ -93,15 +93,6 @@ type FakeRepBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
-	RemoveActualLRPForIndexStub        func(processGuid string, index int) error
-	removeActualLRPForIndexMutex       sync.RWMutex
-	removeActualLRPForIndexArgsForCall []struct {
-		processGuid string
-		index       int
-	}
-	removeActualLRPForIndexReturns struct {
-		result1 error
-	}
 }
 
 func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
@@ -398,39 +389,6 @@ func (fake *FakeRepBBS) RemoveActualLRPArgsForCall(i int) models.ActualLRP {
 func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	fake.RemoveActualLRPStub = nil
 	fake.removeActualLRPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPForIndex(processGuid string, index int) error {
-	fake.removeActualLRPForIndexMutex.Lock()
-	fake.removeActualLRPForIndexArgsForCall = append(fake.removeActualLRPForIndexArgsForCall, struct {
-		processGuid string
-		index       int
-	}{processGuid, index})
-	fake.removeActualLRPForIndexMutex.Unlock()
-	if fake.RemoveActualLRPForIndexStub != nil {
-		return fake.RemoveActualLRPForIndexStub(processGuid, index)
-	} else {
-		return fake.removeActualLRPForIndexReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPForIndexCallCount() int {
-	fake.removeActualLRPForIndexMutex.RLock()
-	defer fake.removeActualLRPForIndexMutex.RUnlock()
-	return len(fake.removeActualLRPForIndexArgsForCall)
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPForIndexArgsForCall(i int) (string, int) {
-	fake.removeActualLRPForIndexMutex.RLock()
-	defer fake.removeActualLRPForIndexMutex.RUnlock()
-	return fake.removeActualLRPForIndexArgsForCall[i].processGuid, fake.removeActualLRPForIndexArgsForCall[i].index
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPForIndexReturns(result1 error) {
-	fake.RemoveActualLRPForIndexStub = nil
-	fake.removeActualLRPForIndexReturns = struct {
 		result1 error
 	}{result1}
 }

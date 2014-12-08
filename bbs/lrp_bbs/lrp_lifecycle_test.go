@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -313,6 +314,42 @@ var _ = Describe("LrpLifecycle", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(node.Value).Should(MatchJSON(expectedJSON))
+			})
+		})
+	})
+
+	Describe("RemoveActualLRP", func() {
+		var unclaimedLRP *models.ActualLRP
+
+		BeforeEach(func() {
+			lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateClaimed)
+			var err error
+			unclaimedLRP, err = bbs.CreateActualLRP(lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when the LRP matches", func() {
+			It("removes the LRP", func() {
+				err := bbs.RemoveActualLRP(*unclaimedLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(unclaimedLRP.ProcessGuid, unclaimedLRP.Index))
+				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+			})
+
+			Context("when the store is out of commission", func() {
+				itRetriesUntilStoreComesBack(func() error {
+					return bbs.RemoveActualLRP(*unclaimedLRP)
+				})
+			})
+		})
+
+		Context("when the LRP has changed in the store", func() {
+			It("does not delete the LRP", func() {
+				outOfDateLRP := *unclaimedLRP
+				outOfDateLRP.Domain = "another-domain"
+				err := bbs.RemoveActualLRP(outOfDateLRP)
+				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
 	})

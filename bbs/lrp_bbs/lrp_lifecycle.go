@@ -132,6 +132,25 @@ func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 	}
 }
 
+func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		storedLRP, index, err := bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
+		if err != nil {
+			return err
+		}
+
+		if lrp.ProcessGuid != storedLRP.ProcessGuid || lrp.Index != storedLRP.Index || lrp.Domain != storedLRP.Domain ||
+			lrp.InstanceGuid != storedLRP.InstanceGuid || lrp.CellID != storedLRP.CellID || lrp.State != storedLRP.State {
+			return bbserrors.ErrStoreComparisonFailed
+		}
+
+		return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Index: index,
+		})
+	})
+}
+
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {
 	var node storeadapter.StoreNode
 	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {

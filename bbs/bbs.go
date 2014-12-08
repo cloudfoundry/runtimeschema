@@ -70,7 +70,6 @@ type RepBBS interface {
 	ClaimActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 	StartActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 	RemoveActualLRP(lrp models.ActualLRP) error
-	RemoveActualLRPForIndex(processGuid string, index int) error
 }
 
 type ConvergerBBS interface {
