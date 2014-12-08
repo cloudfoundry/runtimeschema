@@ -58,7 +58,6 @@ type RepBBS interface {
 	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
 
 	//task
-	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
 	StartTask(taskGuid string, cellID string) error
 	TaskByGuid(taskGuid string) (*models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)
@@ -127,6 +126,9 @@ type AuctioneerBBS interface {
 	WatchForLRPStopAuction() (<-chan models.LRPStopAuction, chan<- bool, <-chan error)
 	ClaimLRPStopAuction(models.LRPStopAuction) error
 	ResolveLRPStopAuction(models.LRPStopAuction) error
+
+	//task
+	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
 
 	//lock
 	NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner

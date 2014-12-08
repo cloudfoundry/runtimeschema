@@ -66,6 +66,14 @@ type FakeAuctioneerBBS struct {
 	resolveLRPStopAuctionReturns struct {
 		result1 error
 	}
+	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
+	watchForDesiredTaskMutex       sync.RWMutex
+	watchForDesiredTaskArgsForCall []struct{}
+	watchForDesiredTaskReturns struct {
+		result1 <-chan models.Task
+		result2 chan<- bool
+		result3 <-chan error
+	}
 	NewAuctioneerLockStub        func(auctioneerID string, interval time.Duration) ifrit.Runner
 	newAuctioneerLockMutex       sync.RWMutex
 	newAuctioneerLockArgsForCall []struct {
@@ -280,6 +288,32 @@ func (fake *FakeAuctioneerBBS) ResolveLRPStopAuctionReturns(result1 error) {
 	fake.resolveLRPStopAuctionReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeAuctioneerBBS) WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error) {
+	fake.watchForDesiredTaskMutex.Lock()
+	fake.watchForDesiredTaskArgsForCall = append(fake.watchForDesiredTaskArgsForCall, struct{}{})
+	fake.watchForDesiredTaskMutex.Unlock()
+	if fake.WatchForDesiredTaskStub != nil {
+		return fake.WatchForDesiredTaskStub()
+	} else {
+		return fake.watchForDesiredTaskReturns.result1, fake.watchForDesiredTaskReturns.result2, fake.watchForDesiredTaskReturns.result3
+	}
+}
+
+func (fake *FakeAuctioneerBBS) WatchForDesiredTaskCallCount() int {
+	fake.watchForDesiredTaskMutex.RLock()
+	defer fake.watchForDesiredTaskMutex.RUnlock()
+	return len(fake.watchForDesiredTaskArgsForCall)
+}
+
+func (fake *FakeAuctioneerBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
+	fake.WatchForDesiredTaskStub = nil
+	fake.watchForDesiredTaskReturns = struct {
+		result1 <-chan models.Task
+		result2 chan<- bool
+		result3 <-chan error
+	}{result1, result2, result3}
 }
 
 func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner {
