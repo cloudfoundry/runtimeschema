@@ -4,11 +4,11 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/runtime-schema/cell_client"
+	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-type FakeClient struct {
+type FakeCellClient struct {
 	StopLRPInstanceStub        func(cellAddr string, lrp models.ActualLRP) error
 	stopLRPInstanceMutex       sync.RWMutex
 	stopLRPInstanceArgsForCall []struct {
@@ -20,7 +20,7 @@ type FakeClient struct {
 	}
 }
 
-func (fake *FakeClient) StopLRPInstance(cellAddr string, lrp models.ActualLRP) error {
+func (fake *FakeCellClient) StopLRPInstance(cellAddr string, lrp models.ActualLRP) error {
 	fake.stopLRPInstanceMutex.Lock()
 	fake.stopLRPInstanceArgsForCall = append(fake.stopLRPInstanceArgsForCall, struct {
 		cellAddr string
@@ -34,23 +34,23 @@ func (fake *FakeClient) StopLRPInstance(cellAddr string, lrp models.ActualLRP) e
 	}
 }
 
-func (fake *FakeClient) StopLRPInstanceCallCount() int {
+func (fake *FakeCellClient) StopLRPInstanceCallCount() int {
 	fake.stopLRPInstanceMutex.RLock()
 	defer fake.stopLRPInstanceMutex.RUnlock()
 	return len(fake.stopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRP) {
+func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRP) {
 	fake.stopLRPInstanceMutex.RLock()
 	defer fake.stopLRPInstanceMutex.RUnlock()
 	return fake.stopLRPInstanceArgsForCall[i].cellAddr, fake.stopLRPInstanceArgsForCall[i].lrp
 }
 
-func (fake *FakeClient) StopLRPInstanceReturns(result1 error) {
+func (fake *FakeCellClient) StopLRPInstanceReturns(result1 error) {
 	fake.StopLRPInstanceStub = nil
 	fake.stopLRPInstanceReturns = struct {
 		result1 error
 	}{result1}
 }
 
-var _ cell_client.Client = new(FakeClient)
+var _ cb.CellClient = new(FakeCellClient)

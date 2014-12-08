@@ -1,4 +1,4 @@
-package cell_client
+package cb
 
 import (
 	"bytes"
@@ -12,21 +12,21 @@ import (
 	"github.com/tedsuo/rata"
 )
 
-type Client interface {
+type CellClient interface {
 	StopLRPInstance(cellAddr string, lrp models.ActualLRP) error
 }
 
-type client struct {
+type cellClient struct {
 	httpClient *http.Client
 }
 
-func New() Client {
-	return &client{
+func NewCellClient() CellClient {
+	return &cellClient{
 		httpClient: &http.Client{},
 	}
 }
 
-func (c *client) StopLRPInstance(cellURL string, lrp models.ActualLRP) error {
+func (c *cellClient) StopLRPInstance(cellURL string, lrp models.ActualLRP) error {
 	reqGen := rata.NewRequestGenerator(cellURL, routes.StopLRPRoutes)
 
 	payload, err := json.Marshal(lrp)

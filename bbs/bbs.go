@@ -9,7 +9,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/stop_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/cell_client"
+	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
@@ -224,11 +224,11 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 
 	return &BBS{
 		LockBBS:         lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:          lrp_bbs.New(store, timeProvider, cell_client.New(), services, logger.Session("lrp-bbs")),
+		LRPBBS:          lrp_bbs.New(store, timeProvider, cb.NewCellClient(), services, logger.Session("lrp-bbs")),
 		StartAuctionBBS: start_auction_bbs.New(store, timeProvider, logger.Session("lrp-start-auction-bbs")),
 		StopAuctionBBS:  stop_auction_bbs.New(store, timeProvider, logger.Session("lrp-stop-auction-bbs")),
 		ServicesBBS:     services,
-		TaskBBS:         task_bbs.New(store, timeProvider, logger.Session("task-bbs")),
+		TaskBBS:         task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),
 	}
 }
 

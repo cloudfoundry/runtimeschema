@@ -6,17 +6,13 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
 )
 
@@ -24,22 +20,16 @@ var _ = Describe("Convergence of Tasks", func() {
 	var (
 		sender *fake.FakeMetricSender
 
-		bbs                              *TaskBBS
 		task                             models.Task
 		timeToStartInSeconds             uint64
 		convergenceIntervalInSeconds     uint64
 		timeToStart, convergenceInterval time.Duration
 		timeToResolveInterval            time.Duration
-		timeProvider                     *faketimeprovider.FakeTimeProvider
-		err                              error
-		servicesBBS                      *services_bbs.ServicesBBS
 	)
 
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
-
-		err = nil
 
 		timeToStartInSeconds = 30
 		timeToStart = time.Duration(timeToStartInSeconds) * time.Second
@@ -47,20 +37,12 @@ var _ = Describe("Convergence of Tasks", func() {
 		convergenceInterval = time.Duration(convergenceIntervalInSeconds) * time.Second
 		timeToResolveInterval = time.Hour
 
-		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
 			Stack:    "pancakes",
 			Action:   dummyAction,
 		}
-
-		logger := lagertest.NewTestLogger("test")
-
-		bbs = New(etcdClient, timeProvider, logger)
-
-		servicesBBS = services_bbs.New(etcdClient, logger)
 	})
 
 	Describe("ConvergeTask", func() {
@@ -101,7 +83,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 
 			It("should delete it", func() {
-				_, err = etcdClient.Get(nodeKey)
+				_, err := etcdClient.Get(nodeKey)
 				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
 			})
 
@@ -112,7 +94,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Context("when a Task is pending", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -170,7 +152,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			var heartbeater ifrit.Process
 
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
@@ -216,7 +198,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Context("when a Task is completed", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
@@ -273,7 +255,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Context("when a Task is resolving", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-id")

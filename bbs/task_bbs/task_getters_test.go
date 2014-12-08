@@ -1,27 +1,15 @@
 package task_bbs_test
 
 import (
-	"time"
-
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager/lagertest"
 )
 
 var _ = Describe("Task BBS", func() {
-	var bbs *TaskBBS
 	var task models.Task
-	var timeProvider *faketimeprovider.FakeTimeProvider
-	var err error
 
 	BeforeEach(func() {
-		err = nil
-		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-
-		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
@@ -33,6 +21,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("TaskByGuid", func() {
 		var guid string
 		var receivedTask *models.Task
+		var lookupErr error
 
 		BeforeEach(func() {
 			err := bbs.DesireTask(task)
@@ -40,7 +29,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		JustBeforeEach(func() {
-			receivedTask, err = bbs.TaskByGuid(guid)
+			receivedTask, lookupErr = bbs.TaskByGuid(guid)
 		})
 
 		Context("When there is a task with the given guid", func() {
@@ -49,7 +38,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("does not an error", func() {
-				Ω(err).ShouldNot(HaveOccurred())
+				Ω(lookupErr).ShouldNot(HaveOccurred())
 			})
 
 			It("returns the task", func() {
@@ -69,7 +58,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(err).Should(HaveOccurred())
+				Ω(lookupErr).Should(HaveOccurred())
 			})
 		})
 	})
@@ -77,7 +66,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("TasksByCellID", func() {
 		BeforeEach(func() {
 			task.CellID = "some-other-cell-id"
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 		Context("when there are no tasks for the given cell ID", func() {
@@ -107,8 +96,9 @@ var _ = Describe("Task BBS", func() {
 			var task2 *models.Task
 
 			BeforeEach(func() {
-				err = bbs.DesireTask(task1Request)
+				err := bbs.DesireTask(task1Request)
 				Ω(err).ShouldNot(HaveOccurred())
+
 				task1, err = bbs.TaskByGuid("some-guid-1")
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -128,7 +118,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("PendingTasks", func() {
 		BeforeEach(func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -142,7 +132,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("RunningTasks", func() {
 		BeforeEach(func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -159,7 +149,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("CompletedTasks", func() {
 		BeforeEach(func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -179,7 +169,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -203,7 +193,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("TasksByDomain", func() {
 		BeforeEach(func() {
 			task.TaskGuid = "guid-1"
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			task.TaskGuid = "guid-2"

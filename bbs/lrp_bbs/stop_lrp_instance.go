@@ -16,6 +16,7 @@ func (bbs *LRPBBS) RequestStopLRPInstance(lrp models.ActualLRP) error {
 		if err != nil {
 			return err
 		}
+
 		return nil
 	})
 }

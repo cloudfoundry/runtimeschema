@@ -121,11 +121,29 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 	if err != nil {
 		return err
 	}
+
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
 			Value: value,
 		})
+		if err != nil {
+			return err
+		}
+
+		receptorPresence, err := bbs.services.Receptor()
+		if err != nil {
+			bbs.logger.Error("could-not-fetch-receptors", err)
+			return nil
+		}
+
+		err = bbs.taskClient.CompleteTask(receptorPresence.ReceptorURL, task)
+		if err != nil {
+			bbs.logger.Error("failed-to-complete-task", err)
+			return nil
+		}
+
+		return nil
 	})
 }
 

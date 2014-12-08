@@ -20,4 +20,6 @@ var (
 	ErrStoreInvalidTTL                   = errors.New("store request has invalid TTL")
 	ErrStoreResourceExists               = errors.New("the requested store resource already exists")
 	ErrStoreComparisonFailed             = errors.New("store resource comparison failed")
+
+	ErrServiceUnavailable = errors.New("service unavailable")
 )

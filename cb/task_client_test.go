@@ -1,9 +1,9 @@
-package cell_client_test
+package cb_test
 
 import (
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/runtime-schema/cell_client"
+	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -11,46 +11,46 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("CellClient", func() {
+var _ = Describe("TaskClient", func() {
 	var fakeServer *ghttp.Server
-	var cellClient cell_client.Client
+	var client cb.TaskClient
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
-		cellClient = cell_client.New()
+		client = cb.NewTaskClient()
 	})
 
 	AfterEach(func() {
 		fakeServer.Close()
 	})
 
-	Describe("StopLRPInstance", func() {
-		const cellAddr = "cell.example.com"
-		var stopErr error
-		var actualLRP = models.ActualLRP{
-			ProcessGuid:  "some-process-guid",
-			InstanceGuid: "some-instance-guid",
-			Index:        2,
-			CellID:       "some-cell-id",
+	Describe("CompleteTask", func() {
+		var completeErr error
+
+		var task = models.Task{
+			TaskGuid:      "some-guid",
+			CellID:        "some-cell-id",
+			Failed:        true,
+			FailureReason: "because",
 		}
 
 		JustBeforeEach(func() {
-			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP)
+			completeErr = client.CompleteTask(fakeServer.URL(), &task)
 		})
 
 		Context("when the request is successful", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
+						ghttp.VerifyJSONRepresenting(task),
 						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(stopErr).ShouldNot(HaveOccurred())
+				Ω(completeErr).ShouldNot(HaveOccurred())
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})
@@ -59,15 +59,15 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
+						ghttp.VerifyJSONRepresenting(task),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),
 					),
 				)
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(stopErr).Should(HaveOccurred())
+				Ω(completeErr).Should(HaveOccurred())
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})
@@ -76,8 +76,8 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
+						ghttp.VerifyJSONRepresenting(task),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},
@@ -86,7 +86,7 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(stopErr).Should(HaveOccurred())
+				Ω(completeErr).Should(HaveOccurred())
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})

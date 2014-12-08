@@ -1,4 +1,4 @@
-package cell_client_test
+package cb_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCellClient(t *testing.T) {
+func TestCBRadio(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CellClient Suite")
+	RunSpecs(t, "CBRadio Suite")
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	fakecellclient "github.com/cloudfoundry-incubator/runtime-schema/cell_client/fakes"
+	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
@@ -22,7 +22,7 @@ var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
 var timeProvider *faketimeprovider.FakeTimeProvider
-var fakeCellClient *fakecellclient.FakeClient
+var fakeCellClient *cbfakes.FakeCellClient
 
 func TestLRPBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -42,7 +42,7 @@ var _ = BeforeEach(func() {
 	etcdRunner.Stop()
 	etcdRunner.Start()
 
-	fakeCellClient = &fakecellclient.FakeClient{}
+	fakeCellClient = &cbfakes.FakeCellClient{}
 	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
 
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))

@@ -4,7 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	"github.com/cloudfoundry-incubator/runtime-schema/cell_client"
+	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
@@ -14,12 +14,12 @@ import (
 type LRPBBS struct {
 	store        storeadapter.StoreAdapter
 	timeProvider timeprovider.TimeProvider
-	cellClient   cell_client.Client
+	cellClient   cb.CellClient
 	services     *services_bbs.ServicesBBS
 	logger       lager.Logger
 }
 
-func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, cellClient cell_client.Client, services *services_bbs.ServicesBBS, logger lager.Logger) *LRPBBS {
+func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, cellClient cb.CellClient, services *services_bbs.ServicesBBS, logger lager.Logger) *LRPBBS {
 	return &LRPBBS{
 		store:        store,
 		timeProvider: timeProvider,

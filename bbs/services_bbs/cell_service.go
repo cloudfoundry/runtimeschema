@@ -15,6 +15,7 @@ func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, inter
 	if err != nil {
 		panic(err)
 	}
+
 	return heartbeater.New(bbs.store, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
 }
 

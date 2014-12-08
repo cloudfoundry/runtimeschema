@@ -3,26 +3,16 @@ package task_bbs_test
 import (
 	"time"
 
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager/lagertest"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 )
 
 var _ = Describe("Task BBS", func() {
-	var bbs *TaskBBS
 	var task models.Task
-	var timeProvider *faketimeprovider.FakeTimeProvider
-	var err error
 
 	BeforeEach(func() {
-		err = nil
-		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-
-		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
@@ -47,7 +37,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should send an event down the pipe for creates", func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var receivedTask models.Task
@@ -58,7 +48,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should send an event down the pipe when the converge is run", func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -70,7 +60,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should not send an event down the pipe for deletes", func() {
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -101,7 +91,7 @@ var _ = Describe("Task BBS", func() {
 		BeforeEach(func() {
 			events, stop, errors = bbs.WatchForCompletedTask()
 
-			err = bbs.DesireTask(task)
+			err := bbs.DesireTask(task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -117,7 +107,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should send an event down the pipe for completed run onces", func() {
-			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
+			err := bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var receivedTask models.Task
@@ -128,7 +118,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("should not send an event down the pipe when resolved", func() {
-			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
+			err := bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())

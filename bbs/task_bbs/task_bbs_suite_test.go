@@ -1,12 +1,17 @@
 package task_bbs_test
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
+	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-golang/lager/lagertest"
 
 	"testing"
 	"time"
@@ -14,6 +19,10 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
+var servicesBBS *services_bbs.ServicesBBS
+var fakeTaskClient *cbfakes.FakeTaskClient
+var timeProvider *faketimeprovider.FakeTimeProvider
+var bbs *task_bbs.TaskBBS
 
 var dummyAction = &models.RunAction{
 	Path: "cat",
@@ -37,6 +46,11 @@ var _ = AfterSuite(func() {
 var _ = BeforeEach(func() {
 	etcdRunner.Stop()
 	etcdRunner.Start()
+
+	fakeTaskClient = new(cbfakes.FakeTaskClient)
+	timeProvider = faketimeprovider.New(time.Unix(1238, 0))
+	servicesBBS = services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
+	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, servicesBBS, lagertest.NewTestLogger("test"))
 })
 
 func itRetriesUntilStoreComesBack(action func() error) {

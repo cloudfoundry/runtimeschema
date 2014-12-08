@@ -7,24 +7,18 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-golang/lager/lagertest"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Task BBS", func() {
-	var bbs *TaskBBS
 	var task models.Task
-	var timeProvider *faketimeprovider.FakeTimeProvider
-	var err error
 
 	BeforeEach(func() {
-		err = nil
-		timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-
-		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
@@ -37,7 +31,8 @@ var _ = Describe("Task BBS", func() {
 		Context("when the Task has a CreatedAt time", func() {
 			BeforeEach(func() {
 				task.CreatedAt = 1234812
-				err = bbs.DesireTask(task)
+
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -53,7 +48,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the Task has no CreatedAt time", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -75,7 +70,7 @@ var _ = Describe("Task BBS", func() {
 		Context("Common cases", func() {
 			Context("when the Task is already pending", func() {
 				It("returns an error", func() {
-					err = bbs.DesireTask(task)
+					err := bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.DesireTask(task)
@@ -90,7 +85,8 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("bumps UpdatedAt", func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
+				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
@@ -117,12 +113,12 @@ var _ = Describe("Task BBS", func() {
 	Describe("StartTask", func() {
 		Context("when starting a pending Task", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("sets the state to running", func() {
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err := bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.RunningTasks()
@@ -135,7 +131,7 @@ var _ = Describe("Task BBS", func() {
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err := bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.RunningTasks()
@@ -153,7 +149,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("When starting a Task that is already started", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -161,7 +157,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns an error", func() {
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err := bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -201,7 +197,7 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in pending state", func() {
 				BeforeEach(func() {
-					err = bbs.DesireTask(task)
+					err := bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -210,7 +206,7 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in running state", func() {
 				BeforeEach(func() {
-					err = bbs.DesireTask(task)
+					err := bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -221,10 +217,12 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in completed state", func() {
 				BeforeEach(func() {
-					err = bbs.DesireTask(task)
+					err := bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
+
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
+
 					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -237,12 +235,15 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in resolving state", func() {
 				BeforeEach(func() {
-					err = bbs.DesireTask(task)
+					err := bbs.DesireTask(task)
 					Ω(err).ShouldNot(HaveOccurred())
+
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
+
 					err = bbs.CompleteTask(task.TaskGuid, false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
+
 					err = bbs.ResolvingTask(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -267,8 +268,9 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, timeProvider, lagertest.NewTestLogger("test"))
+					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, servicesBBS, lagertest.NewTestLogger("test"))
 				})
+
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
 					Ω(cancelError).Should(Equal(storeError))
@@ -278,7 +280,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the store is out of commission", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -291,7 +293,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("CompleteTask", func() {
 		Context("when completing a running Task", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -299,7 +301,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("sets the Task in the completed state", func() {
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
@@ -312,7 +314,7 @@ var _ = Describe("Task BBS", func() {
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
@@ -324,13 +326,65 @@ var _ = Describe("Task BBS", func() {
 			It("sets FirstCompletedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
+			})
+
+			Context("when a receptor is present", func() {
+				var receptorPresence ifrit.Process
+
+				BeforeEach(func() {
+					presence := models.ReceptorPresence{
+						ReceptorID:  "some-receptor",
+						ReceptorURL: "some-receptor-url",
+					}
+
+					heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+
+					receptorPresence = ifrit.Invoke(heartbeat)
+				})
+
+				AfterEach(func() {
+					ginkgomon.Interrupt(receptorPresence)
+				})
+
+				Context("and completing succeeds", func() {
+					It("completes the task using its address", func() {
+						err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+						receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+						Ω(receptorURL).Should(Equal("some-receptor-url"))
+						Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+						Ω(completedTask.Failed).Should(BeTrue())
+						Ω(completedTask.FailureReason).Should(Equal("because"))
+						Ω(completedTask.Result).Should(Equal("a result"))
+					})
+				})
+
+				Context("and completing fails", func() {
+					BeforeEach(func() {
+						fakeTaskClient.CompleteTaskReturns(errors.New("welp"))
+					})
+
+					It("swallows the error, as we'll retry again eventually (via convergence)", func() {
+						err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				})
+			})
+
+			Context("when no receptors are present", func() {
+				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
+					err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
 			})
 
 			Context("when the store is out of commission", func() {
@@ -342,7 +396,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("When completing a Task that is not in the running state", func() {
 			It("returns an error", func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
@@ -350,7 +404,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("has no error when Task is in running state", func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
@@ -365,7 +419,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("ResolvingTask", func() {
 		Context("when the task is complete", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -376,7 +430,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("swaps /task/<guid>'s state to resolving", func() {
-				err = bbs.ResolvingTask(task.TaskGuid)
+				err := bbs.ResolvingTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks()
@@ -388,7 +442,7 @@ var _ = Describe("Task BBS", func() {
 			It("bumps UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err = bbs.ResolvingTask(task.TaskGuid)
+				err := bbs.ResolvingTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks()
@@ -398,12 +452,12 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the Task is already resolving", func() {
 				BeforeEach(func() {
-					err = bbs.ResolvingTask(task.TaskGuid)
+					err := bbs.ResolvingTask(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("fails", func() {
-					err = bbs.ResolvingTask(task.TaskGuid)
+					err := bbs.ResolvingTask(task.TaskGuid)
 					Ω(err).Should(HaveOccurred())
 				})
 			})
@@ -411,7 +465,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the task is not complete", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -428,7 +482,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("ResolveTask", func() {
 		Context("when the task is resolving", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -442,7 +496,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("should remove /task/<guid>", func() {
-				err = bbs.ResolveTask(task.TaskGuid)
+				err := bbs.ResolveTask(task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.Tasks()
@@ -459,7 +513,7 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the task is not resolving", func() {
 			BeforeEach(func() {
-				err = bbs.DesireTask(task)
+				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
@@ -470,7 +524,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("should fail", func() {
-				err = bbs.ResolveTask(task.TaskGuid)
+				err := bbs.ResolveTask(task.TaskGuid)
 				Ω(err).Should(HaveOccurred())
 			})
 		})

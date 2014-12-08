@@ -9,6 +9,7 @@ import (
 
 const SchemaRoot = "/v1/"
 const CellSchemaRoot = SchemaRoot + "cell"
+const ReceptorSchemaRoot = SchemaRoot + "receptor"
 const LRPStartAuctionSchemaRoot = SchemaRoot + "start"
 const LRPStopAuctionSchemaRoot = SchemaRoot + "stop"
 const ActualLRPSchemaRoot = SchemaRoot + "actual"
@@ -19,6 +20,10 @@ const FreshnessSchemaRoot = SchemaRoot + "freshness"
 
 func CellSchemaPath(cellID string) string {
 	return path.Join(CellSchemaRoot, cellID)
+}
+
+func ReceptorSchemaPath(receptorID string) string {
+	return path.Join(ReceptorSchemaRoot, receptorID)
 }
 
 func LRPStartAuctionProcessDir(lrp models.LRPStartAuction) string {
