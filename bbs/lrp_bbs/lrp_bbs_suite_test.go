@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"os"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -12,7 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager/lagertest"
+	"github.com/pivotal-golang/lager"
 
 	"testing"
 	"time"
@@ -45,8 +47,11 @@ var _ = BeforeEach(func() {
 	fakeCellClient = &fakecellclient.FakeClient{}
 	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
 
-	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, lagertest.NewTestLogger("test"))
+	logger := lager.NewLogger("test")
+	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.DEBUG))
+
+	servicesBBS := services_bbs.New(etcdClient, logger)                              //lagertest.NewTestLogger("test"))
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, logger) //lagertest.NewTestLogger("test"))
 })
 
 func registerCell(cell models.CellPresence) {

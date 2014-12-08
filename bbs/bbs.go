@@ -41,8 +41,8 @@ type ReceptorBBS interface {
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	ActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
+	ActualLRPsByProcessGuidAndIndex(string, int) ([]models.ActualLRP, error) // TODO #83638696
 	RequestStopLRPInstances(stopInstances []models.ActualLRP) error
 
 	// cells
@@ -66,7 +66,7 @@ type RepBBS interface {
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lrp
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	ReportActualLRPAsStarting(processGuid, instanceGuid, cellID, domain string, index int) (models.ActualLRP, error)
 	ReportActualLRPAsRunning(lrp models.ActualLRP, cellId string) error
@@ -77,7 +77,7 @@ type RepBBS interface {
 type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs()
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	RequestStopLRPInstance(lrp models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 
@@ -98,7 +98,7 @@ type ConvergerBBS interface {
 
 type TPSBBS interface {
 	//lrp
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 }
 
 type NsyncBBS interface {
@@ -154,7 +154,7 @@ type RouteEmitterBBS interface {
 	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	RunningActualLRPs() ([]models.ActualLRP, error)
-	RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
+	RunningActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error)
 
 	//lock
 	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner

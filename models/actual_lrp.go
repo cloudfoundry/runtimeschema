@@ -28,6 +28,8 @@ type ActualLRP struct {
 	Since int64          `json:"since"`
 }
 
+type ActualLRPsByIndex map[int]ActualLRP
+
 func NewActualLRP(
 	processGuid string,
 	instanceGuid string,

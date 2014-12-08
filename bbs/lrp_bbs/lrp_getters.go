@@ -147,11 +147,18 @@ func (bbs *LRPBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
 		return []models.ActualLRP{}, err
 	}
 
-	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
+	filteredLRPs := []models.ActualLRP{}
+	for _, lrp := range lrps {
+		if lrp.State == models.ActualLRPStateRunning {
+			filteredLRPs = append(filteredLRPs, lrp)
+		}
+	}
+
+	return filteredLRPs, nil
 }
 
-func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
+func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
+	lrps := models.ActualLRPsByIndex{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
 	if err == storeadapter.ErrorKeyNotFound {
@@ -169,7 +176,7 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualL
 			if err != nil {
 				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 			} else {
-				lrps = append(lrps, lrp)
+				lrps[lrp.Index] = lrp
 			}
 		}
 	}
@@ -202,13 +209,19 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuidAndIndex(processGuid string, index int
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
+func (bbs *LRPBBS) RunningActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
 	lrps, err := bbs.ActualLRPsByProcessGuid(processGuid)
 	if err != nil {
-		return []models.ActualLRP{}, err
+		return nil, err
 	}
 
-	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
+	for i, lrp := range lrps {
+		if lrp.State != models.ActualLRPStateRunning {
+			delete(lrps, i)
+		}
+	}
+
+	return lrps, nil
 }
 
 func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
@@ -238,15 +251,4 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	}
 
 	return lrps, nil
-}
-
-func filterActualLRPs(lrps []models.ActualLRP, state models.ActualLRPState) []models.ActualLRP {
-	filteredLRPs := []models.ActualLRP{}
-	for _, lrp := range lrps {
-		if lrp.State == state {
-			filteredLRPs = append(filteredLRPs, lrp)
-		}
-	}
-
-	return filteredLRPs
 }

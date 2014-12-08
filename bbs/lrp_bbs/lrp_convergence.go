@@ -1,6 +1,7 @@
 package lrp_bbs
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -93,7 +94,7 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	}
 }
 
-func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string][]models.ActualLRP) []models.ActualLRP {
+func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, actualsByProcessGuid map[string]models.ActualLRPsByIndex) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
 
 	for processGuid, actuals := range actualsByProcessGuid {
@@ -113,14 +114,8 @@ func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]bool, act
 	return actualsToStop
 }
 
-func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {
-	var actuals delta_force.ActualInstances
-	for _, actualLRP := range actualLRPsForDesired {
-		actuals = append(actuals, delta_force.ActualInstance{
-			Index: actualLRP.Index,
-			Guid:  actualLRP.InstanceGuid,
-		})
-	}
+func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actuals models.ActualLRPsByIndex) bool {
+	log.Println("wat", actuals)
 	result := delta_force.Reconcile(desiredLRP.Instances, actuals)
 
 	if len(result.IndicesToStart) > 0 {
@@ -131,27 +126,19 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 		})
 	}
 
-	if len(result.GuidsToStop) > 0 {
-		bbs.logger.Info("detected-extra-instance", lager.Data{
-			"process-guid":      desiredLRP.ProcessGuid,
-			"desired-instances": desiredLRP.Instances,
-			"extra-guids":       result.GuidsToStop,
-		})
-	}
-
-	if len(result.IndicesToStopAllButOne) > 0 {
+	if len(result.IndicesToStop) > 0 {
 		bbs.logger.Info("detected-duplicate-instance", lager.Data{
 			"process-guid":       desiredLRP.ProcessGuid,
 			"desired-instances":  desiredLRP.Instances,
-			"duplicated-indices": result.IndicesToStopAllButOne,
+			"duplicated-indices": result.IndicesToStop,
 		})
 	}
 
 	return !result.Empty()
 }
 
-func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP, error) {
-	actualsByProcessGuid := map[string][]models.ActualLRP{}
+func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string]models.ActualLRPsByIndex, error) {
+	actualsByProcessGuid := map[string]models.ActualLRPsByIndex{}
 
 	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
@@ -176,7 +163,12 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 			return false
 		}
 
-		actualsByProcessGuid[actual.ProcessGuid] = append(actualsByProcessGuid[actual.ProcessGuid], actual)
+		if _, exists := actualsByProcessGuid[actual.ProcessGuid]; !exists {
+			actualsByProcessGuid[actual.ProcessGuid] = models.ActualLRPsByIndex{}
+		}
+
+		actualsByProcessGuid[actual.ProcessGuid][actual.Index] = actual
+
 		return true
 	})
 

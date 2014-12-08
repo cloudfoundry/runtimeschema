@@ -140,13 +140,13 @@ type FakeReceptorBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidStub        func(string) (models.ActualLRPsByIndex, error)
 	actualLRPsByProcessGuidMutex       sync.RWMutex
 	actualLRPsByProcessGuidArgsForCall []struct {
 		arg1 string
 	}
 	actualLRPsByProcessGuidReturns struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}
 	ActualLRPsByProcessGuidAndIndexStub        func(string, int) ([]models.ActualLRP, error)
@@ -682,7 +682,7 @@ func (fake *FakeReceptorBBS) ActualLRPsByDomainReturns(result1 []models.ActualLR
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuid(arg1 string) (models.ActualLRPsByIndex, error) {
 	fake.actualLRPsByProcessGuidMutex.Lock()
 	fake.actualLRPsByProcessGuidArgsForCall = append(fake.actualLRPsByProcessGuidArgsForCall, struct {
 		arg1 string
@@ -707,10 +707,10 @@ func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
 	return fake.actualLRPsByProcessGuidArgsForCall[i].arg1
 }
 
-func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 models.ActualLRPsByIndex, result2 error) {
 	fake.ActualLRPsByProcessGuidStub = nil
 	fake.actualLRPsByProcessGuidReturns = struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}{result1, result2}
 }

@@ -14,7 +14,7 @@ type FakeRouteEmitterBBS struct {
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns     struct {
+	watchForDesiredLRPChangesReturns struct {
 		result1 <-chan models.DesiredLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -22,7 +22,7 @@ type FakeRouteEmitterBBS struct {
 	WatchForActualLRPChangesStub        func() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 	watchForActualLRPChangesMutex       sync.RWMutex
 	watchForActualLRPChangesArgsForCall []struct{}
-	watchForActualLRPChangesReturns     struct {
+	watchForActualLRPChangesReturns struct {
 		result1 <-chan models.ActualLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -30,24 +30,24 @@ type FakeRouteEmitterBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	RunningActualLRPsStub        func() ([]models.ActualLRP, error)
 	runningActualLRPsMutex       sync.RWMutex
 	runningActualLRPsArgsForCall []struct{}
-	runningActualLRPsReturns     struct {
+	runningActualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	RunningActualLRPsByProcessGuidStub        func(processGuid string) ([]models.ActualLRP, error)
+	RunningActualLRPsByProcessGuidStub        func(processGuid string) (models.ActualLRPsByIndex, error)
 	runningActualLRPsByProcessGuidMutex       sync.RWMutex
 	runningActualLRPsByProcessGuidArgsForCall []struct {
 		processGuid string
 	}
 	runningActualLRPsByProcessGuidReturns struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}
 	NewRouteEmitterLockStub        func(emitterID string, interval time.Duration) ifrit.Runner
@@ -163,7 +163,7 @@ func (fake *FakeRouteEmitterBBS) RunningActualLRPsReturns(result1 []models.Actua
 	}{result1, result2}
 }
 
-func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
 	fake.runningActualLRPsByProcessGuidMutex.Lock()
 	fake.runningActualLRPsByProcessGuidArgsForCall = append(fake.runningActualLRPsByProcessGuidArgsForCall, struct {
 		processGuid string
@@ -188,10 +188,10 @@ func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidArgsForCall(i int
 	return fake.runningActualLRPsByProcessGuidArgsForCall[i].processGuid
 }
 
-func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+func (fake *FakeRouteEmitterBBS) RunningActualLRPsByProcessGuidReturns(result1 models.ActualLRPsByIndex, result2 error) {
 	fake.RunningActualLRPsByProcessGuidStub = nil
 	fake.runningActualLRPsByProcessGuidReturns = struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}{result1, result2}
 }

@@ -187,7 +187,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when there are duplicate actual LRPs", func() {
 			BeforeEach(func() {
-				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellPresence.CellID, "domain", 0)
+				bbs.ReportActualLRPAsStarting(processGuid, "instance-guid-duplicate", cellPresence.CellID, "domain", 2)
 				bbs.DesireLRP(desiredLRP)
 			})
 

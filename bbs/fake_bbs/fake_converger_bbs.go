@@ -14,13 +14,13 @@ type FakeConvergerBBS struct {
 	ConvergeLRPsStub        func()
 	convergeLRPsMutex       sync.RWMutex
 	convergeLRPsArgsForCall []struct{}
-	ActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuidStub        func(string) (models.ActualLRPsByIndex, error)
 	actualLRPsByProcessGuidMutex       sync.RWMutex
 	actualLRPsByProcessGuidArgsForCall []struct {
 		arg1 string
 	}
 	actualLRPsByProcessGuidReturns struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}
 	RequestStopLRPInstanceStub        func(lrp models.ActualLRP) error
@@ -100,7 +100,7 @@ func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
 	return len(fake.convergeLRPsArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
+func (fake *FakeConvergerBBS) ActualLRPsByProcessGuid(arg1 string) (models.ActualLRPsByIndex, error) {
 	fake.actualLRPsByProcessGuidMutex.Lock()
 	fake.actualLRPsByProcessGuidArgsForCall = append(fake.actualLRPsByProcessGuidArgsForCall, struct {
 		arg1 string
@@ -125,10 +125,10 @@ func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
 	return fake.actualLRPsByProcessGuidArgsForCall[i].arg1
 }
 
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
+func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidReturns(result1 models.ActualLRPsByIndex, result2 error) {
 	fake.ActualLRPsByProcessGuidStub = nil
 	fake.actualLRPsByProcessGuidReturns = struct {
-		result1 []models.ActualLRP
+		result1 models.ActualLRPsByIndex
 		result2 error
 	}{result1, result2}
 }

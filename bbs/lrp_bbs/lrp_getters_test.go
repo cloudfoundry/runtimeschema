@@ -250,9 +250,6 @@ var _ = Describe("LrpGetters", func() {
 			err := bbs.ReportActualLRPAsRunning(runningLrp1, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			newLrp, err = bbs.ReportActualLRPAsStarting(newLrpProcessGuid, newLrpInstanceGuid, newLrpCellId, newLrpDomain, newLrpIndex)
-			Ω(err).ShouldNot(HaveOccurred())
-
 			err = bbs.ReportActualLRPAsRunning(runningLrp2, "cell-id")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -260,9 +257,10 @@ var _ = Describe("LrpGetters", func() {
 		It("should fetch all LRPs for the specified guid", func() {
 			lrps, err := bbs.ActualLRPsByProcessGuid("guidA")
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(lrps).Should(HaveLen(2))
-			Ω(lrps).Should(ContainElement(runningLrp1))
-			Ω(lrps).Should(ContainElement(newLrp))
+
+			Ω(lrps).Should(Equal(models.ActualLRPsByIndex{
+				runningLrp1.Index: runningLrp1,
+			}))
 		})
 	})
 
