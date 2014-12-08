@@ -20,14 +20,6 @@ type FakeRepBBS struct {
 	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
 	}
-	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
-	watchForDesiredTaskMutex       sync.RWMutex
-	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}
 	StartTaskStub        func(taskGuid string, cellID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
@@ -152,32 +144,6 @@ func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {
 	fake.newCellHeartbeatReturns = struct {
 		result1 ifrit.Runner
 	}{result1}
-}
-
-func (fake *FakeRepBBS) WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error) {
-	fake.watchForDesiredTaskMutex.Lock()
-	fake.watchForDesiredTaskArgsForCall = append(fake.watchForDesiredTaskArgsForCall, struct{}{})
-	fake.watchForDesiredTaskMutex.Unlock()
-	if fake.WatchForDesiredTaskStub != nil {
-		return fake.WatchForDesiredTaskStub()
-	} else {
-		return fake.watchForDesiredTaskReturns.result1, fake.watchForDesiredTaskReturns.result2, fake.watchForDesiredTaskReturns.result3
-	}
-}
-
-func (fake *FakeRepBBS) WatchForDesiredTaskCallCount() int {
-	fake.watchForDesiredTaskMutex.RLock()
-	defer fake.watchForDesiredTaskMutex.RUnlock()
-	return len(fake.watchForDesiredTaskArgsForCall)
-}
-
-func (fake *FakeRepBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForDesiredTaskStub = nil
-	fake.watchForDesiredTaskReturns = struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
 }
 
 func (fake *FakeRepBBS) StartTask(taskGuid string, cellID string) error {

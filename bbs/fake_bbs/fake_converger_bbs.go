@@ -11,9 +11,9 @@ import (
 )
 
 type FakeConvergerBBS struct {
-	ConvergeLRPsStub        func()
-	convergeLRPsMutex       sync.RWMutex
-	convergeLRPsArgsForCall []struct{}
+	ConvergeLRPsStub                   func()
+	convergeLRPsMutex                  sync.RWMutex
+	convergeLRPsArgsForCall            []struct{}
 	ActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
 	actualLRPsByProcessGuidMutex       sync.RWMutex
 	actualLRPsByProcessGuidArgsForCall []struct {
@@ -34,7 +34,7 @@ type FakeConvergerBBS struct {
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns struct {
+	watchForDesiredLRPChangesReturns     struct {
 		result1 <-chan models.DesiredLRPChange
 		result2 chan<- bool
 		result3 <-chan error

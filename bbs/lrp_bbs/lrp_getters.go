@@ -195,15 +195,6 @@ func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int)
 	return &lrp, err
 }
 
-func (bbs *LRPBBS) RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
-	lrps, err := bbs.ActualLRPsByProcessGuid(processGuid)
-	if err != nil {
-		return []models.ActualLRP{}, err
-	}
-
-	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
-}
-
 func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 

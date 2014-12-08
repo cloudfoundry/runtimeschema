@@ -156,7 +156,6 @@ type RouteEmitterBBS interface {
 	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	RunningActualLRPs() ([]models.ActualLRP, error)
-	RunningActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error)
 
 	//lock
 	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner

@@ -218,15 +218,6 @@ var _ = Describe("LrpGetters", func() {
 			})
 		})
 
-		Describe("RunningActualLRPsByProcessGuid", func() {
-			It("should fetch all LRPs for the specified guid", func() {
-				lrps, err := bbs.RunningActualLRPsByProcessGuid("guidA")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrps).Should(HaveLen(1))
-				Ω(lrps).Should(ContainElement(runningLrp1))
-			})
-		})
-
 		Describe("ActualLRPsByDomain", func() {
 			BeforeEach(func() {
 				_, err := bbs.StartActualLRP(runningLrp3)
