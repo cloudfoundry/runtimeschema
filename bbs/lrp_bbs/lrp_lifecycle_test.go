@@ -167,8 +167,39 @@ var _ = Describe("LrpLifecycle", func() {
 					lrpToCreate.State = models.ActualLRPStateRunning
 				})
 
-				It("cannot claim the LRP", func() {
-					Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+				Context("with the same cell and instance guid", func() {
+					It("claims the LRP", func() {
+						Ω(claimErr).ShouldNot(HaveOccurred())
+
+						existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToClaim.ProcessGuid, lrpToClaim.Index)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(claimedLRP).Should(Equal(existingLRP))
+					})
+				})
+
+				Context("with a different cell", func() {
+					BeforeEach(func() {
+						lrpToCreate.CellID = "another-cell-id"
+					})
+
+					It("cannot claim the LRP", func() {
+						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+						Ω(claimedLRP.CellID).ShouldNot(Equal(lrpToClaim.CellID))
+						Ω(claimedLRP.CellID).Should(Equal(lrpToCreate.CellID))
+					})
+				})
+
+				Context("with a different instance guid", func() {
+					BeforeEach(func() {
+						lrpToCreate.InstanceGuid = "another-instance-guid"
+					})
+
+					It("cannot claim the LRP", func() {
+						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+						Ω(claimedLRP.InstanceGuid).ShouldNot(Equal(lrpToClaim.InstanceGuid))
+						Ω(claimedLRP.InstanceGuid).Should(Equal(lrpToCreate.InstanceGuid))
+					})
 				})
 			})
 		})
@@ -286,7 +317,7 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 
 					It("cannot claim the LRP", func() {
-						Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+						Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeStarted))
 					})
 				})
 
@@ -296,7 +327,7 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 
 					It("cannot claim the LRP", func() {
-						Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+						Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeStarted))
 					})
 				})
 			})
@@ -319,35 +350,35 @@ var _ = Describe("LrpLifecycle", func() {
 	})
 
 	Describe("RemoveActualLRP", func() {
-		var unclaimedLRP *models.ActualLRP
+		var runningLRP *models.ActualLRP
 
 		BeforeEach(func() {
-			lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateClaimed)
+			lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateRunning)
 			var err error
-			unclaimedLRP, err = bbs.CreateActualLRP(lrp)
+			runningLRP, err = bbs.StartActualLRP(lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(*unclaimedLRP)
+				err := bbs.RemoveActualLRP(*runningLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(unclaimedLRP.ProcessGuid, unclaimedLRP.Index))
+				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(runningLRP.ProcessGuid, runningLRP.Index))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRP(*unclaimedLRP)
+					return bbs.RemoveActualLRP(*runningLRP)
 				})
 			})
 		})
 
-		Context("when the LRP has changed in the store", func() {
+		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
-				outOfDateLRP := *unclaimedLRP
-				outOfDateLRP.Domain = "another-domain"
+				outOfDateLRP := *runningLRP
+				outOfDateLRP.InstanceGuid = "another-instance-guid"
 				err := bbs.RemoveActualLRP(outOfDateLRP)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
