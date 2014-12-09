@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -199,7 +200,7 @@ var _ = Describe("Convergence of Tasks", func() {
 		})
 
 		Describe("Completed tasks", func() {
-			Context("when a Task with a complete URL is completed", func() {
+			Context("when Tasks with a complete URL are completed", func() {
 				BeforeEach(func() {
 					task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
@@ -211,6 +212,32 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
+
+					secondTask := models.Task{
+						Domain:                "tests",
+						TaskGuid:              "some-other-guid",
+						Stack:                 "pancakes",
+						Action:                dummyAction,
+						CompletionCallbackURL: &url.URL{Host: "blah"},
+					}
+
+					err = bbs.DesireTask(secondTask)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.StartTask(secondTask.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.CompleteTask(secondTask.TaskGuid, true, "'cause I said so", "a magical result")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					wg := new(sync.WaitGroup)
+					wg.Add(2)
+
+					fakeTaskClient.CompleteTaskStub = func(string, *models.Task) error {
+						wg.Done()
+						wg.Wait()
+						return nil
+					}
 				})
 
 				Context("for > the convergence interval", func() {
@@ -236,19 +263,30 @@ var _ = Describe("Convergence of Tasks", func() {
 							ginkgomon.Interrupt(receptorPresence)
 						})
 
-						It("submits the completed task to the receptor", func() {
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+						It("submits the completed tasks to the receptor in parallel", func() {
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(2))
 
-							receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							receptorURL, firstCompletedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
 							Ω(receptorURL).Should(Equal("some-receptor-url"))
-							Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
-							Ω(completedTask.Failed).Should(BeTrue())
-							Ω(completedTask.FailureReason).Should(Equal("'cause I said so"))
-							Ω(completedTask.Result).Should(Equal("a magical result"))
+
+							Ω(firstCompletedTask.Failed).Should(BeTrue())
+							Ω(firstCompletedTask.FailureReason).Should(Equal("'cause I said so"))
+							Ω(firstCompletedTask.Result).Should(Equal("a magical result"))
+
+							receptorURL, secondCompletedTask := fakeTaskClient.CompleteTaskArgsForCall(1)
+							Ω(receptorURL).Should(Equal("some-receptor-url"))
+
+							Ω(secondCompletedTask.Failed).Should(BeTrue())
+							Ω(secondCompletedTask.FailureReason).Should(Equal("'cause I said so"))
+							Ω(secondCompletedTask.Result).Should(Equal("a magical result"))
+
+							Ω([]string{firstCompletedTask.TaskGuid, secondCompletedTask.TaskGuid}).Should(ConsistOf(
+								[]string{"some-guid", "some-other-guid"},
+							))
 						})
 
 						It("bumps the convergence tasks kicked counter", func() {
-							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
 						})
 					})
 
@@ -258,7 +296,7 @@ var _ = Describe("Convergence of Tasks", func() {
 						})
 
 						It("bumps the convergence tasks kicked counter anyway", func() {
-							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
 						})
 					})
 				})
@@ -335,6 +373,8 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Context("when a Task is resolving", func() {
 			BeforeEach(func() {
+				task.CompletionCallbackURL = &url.URL{Host: "blah"}
+
 				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -365,6 +405,33 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+				})
+
+				Context("when a receptor is present", func() {
+					var receptorPresence ifrit.Process
+
+					BeforeEach(func() {
+						presence := models.ReceptorPresence{
+							ReceptorID:  "some-receptor",
+							ReceptorURL: "some-receptor-url",
+						}
+
+						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+
+						receptorPresence = ifrit.Invoke(heartbeat)
+					})
+
+					AfterEach(func() {
+						ginkgomon.Interrupt(receptorPresence)
+					})
+
+					It("submits the completed task to the receptor", func() {
+						Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+
+						receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+						Ω(receptorURL).Should(Equal("some-receptor-url"))
+						Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+					})
 				})
 
 				It("bumps the compare-and-swap counter", func() {

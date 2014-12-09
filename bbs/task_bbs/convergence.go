@@ -7,9 +7,12 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
+
+const workerPoolSize = 20
 
 const (
 	convergeTaskRunsCounter = metric.Counter("ConvergenceTaskRuns")
@@ -26,13 +29,13 @@ type compareAndSwappableTask struct {
 
 // ConvergeTask is run by *one* cell every X seconds (doesn't really matter what X is.. pick something performant)
 // Converge will:
-// 1. Kick (by setting) any run-onces that are still pending (and have been for > convergence interval)
-// 2. Kick (by setting) any run-onces that are completed (and have been for > convergence interval)
-// 3. Delete any run-onces that are completed (and have been for > timeToResolve interval)
-// 5. Demote to completed any resolving run-onces that have been resolving for > 30s
-// 6. Mark as failed any run-onces that have been in the pending state for > timeToStart
-// 7. Mark as failed any running run-onces whose cell has stopped maintaining presence
-func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve time.Duration) {
+// 1. Kick (by setting) any tasks that are still pending (and have been for > convergence interval)
+// 2. Kick any tasks that are completed (and have been for > convergence interval)
+// 3. Delete any tasks that are completed (and have been for > timeToResolve interval)
+// 5. Demote to completed any resolving tasks that have been resolving for > 30s
+// 6. Mark as failed any tasks that have been in the pending state for > expirePendingTaskDuration
+// 7. Mark as failed any running tasks whose cell has stopped maintaining presence
+func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
 	convergeStart := bbs.timeProvider.Now()
@@ -62,6 +65,22 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 		})
 	}
 
+	completeTask := func(task models.Task) {
+		if task.CompletionCallbackURL == nil {
+			return
+		}
+
+		receptor, err := bbs.services.Receptor()
+		if err != nil {
+			return
+		}
+
+		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, &task)
+		if err != nil {
+			logError(task, "failed-to-complete")
+		}
+	}
+
 	keysToDelete := []string{}
 
 	tasksToCAS := []compareAndSwappableTask{}
@@ -72,7 +91,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 		})
 	}
 
-	tasksToComplete := []models.Task{}
+	workPool := workpool.NewWorkPool(workerPoolSize)
 
 	var tasksKicked uint64 = 0
 
@@ -93,7 +112,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 
 		switch task.State {
 		case models.TaskStatePending:
-			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= timeToStart
+			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= expirePendingTaskDuration
 			if shouldMarkAsFailed {
 				logError(task, "failed-to-start-in-time")
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
@@ -117,7 +136,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
 				logError(task, "kicking-completed-task")
-				tasksToComplete = append(tasksToComplete, task)
+				workPool.Submit(func() { completeTask(task) })
 				tasksKicked++
 			}
 		case models.TaskStateResolving:
@@ -129,7 +148,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 				logError(task, "demoting-resolving-to-completed")
 				demoted := demoteToCompleted(task)
 				scheduleForCASByIndex(node.Index, demoted)
-				tasksToComplete = append(tasksToComplete, demoted) // TODO test
+				workPool.Submit(func() { completeTask(demoted) })
 				tasksKicked++
 			}
 		}
@@ -141,21 +160,7 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
 
-	for _, task := range tasksToComplete {
-		if task.CompletionCallbackURL == nil {
-			continue
-		}
-
-		receptor, err := bbs.services.Receptor()
-		if err != nil {
-			break
-		}
-
-		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, &task)
-		if err != nil {
-			logError(task, "failed-to-complete")
-		}
-	}
+	workPool.Stop()
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {
