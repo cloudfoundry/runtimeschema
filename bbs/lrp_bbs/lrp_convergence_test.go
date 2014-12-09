@@ -39,7 +39,7 @@ var _ = Describe("LrpConvergence", func() {
 		a2 := models.NewActualLRP(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1, models.ActualLRPStateUnclaimed)
 		createAndClaim(a2)
 
-		_, err := bbs.CreateActualLRP(models.NewActualLRP(unclaimedProcessGuid, "", "", "domain", 0, models.ActualLRPStateUnclaimed))
+		_, err := bbs.CreateActualLRP(models.NewActualLRP(unclaimedProcessGuid, "instance-guid-3", "", "domain", 0, models.ActualLRPStateUnclaimed))
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 

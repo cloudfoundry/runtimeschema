@@ -110,6 +110,44 @@ var _ = Describe("ActualLRP", func() {
 	Describe("Validate", func() {
 		var actualLRP ActualLRP
 
+		itValidatesCommonRequiredFields := func() {
+			Context("when valid", func() {
+				It("returns nil", func() {
+					Ω(actualLRP.Validate()).Should(BeNil())
+				})
+			})
+
+			Context("when the ProcessGuid is blank", func() {
+				BeforeEach(func() {
+					actualLRP.ProcessGuid = ""
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"process_guid"}))
+				})
+			})
+
+			Context("when the Domain is blank", func() {
+				BeforeEach(func() {
+					actualLRP.Domain = ""
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"domain"}))
+				})
+			})
+
+			Context("when the InstanceGuid is blank", func() {
+				BeforeEach(func() {
+					actualLRP.InstanceGuid = ""
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"instance_guid"}))
+				})
+			})
+		}
+
 		BeforeEach(func() {
 			actualLRP = ActualLRP{
 				Domain:       "fake-domain",
@@ -123,33 +161,13 @@ var _ = Describe("ActualLRP", func() {
 		Context("when the State is unclaimed", func() {
 			BeforeEach(func() {
 				actualLRP.State = ActualLRPStateUnclaimed
+				actualLRP.CellID = ""
 			})
 
-			Context("when the InstanceGuid and CellID are blank", func() {
-				BeforeEach(func() {
-					actualLRP.InstanceGuid = ""
-					actualLRP.CellID = ""
-				})
-
-				It("returns nil", func() {
-					Ω(actualLRP.Validate()).Should(BeNil())
-				})
-			})
-
-			Context("when the InstanceGuid is not blank", func() {
-				BeforeEach(func() {
-					actualLRP.InstanceGuid = "fake-instance-guid"
-					actualLRP.CellID = ""
-				})
-
-				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"instance_guid"}))
-				})
-			})
+			itValidatesCommonRequiredFields()
 
 			Context("when the CellID is not blank", func() {
 				BeforeEach(func() {
-					actualLRP.InstanceGuid = ""
 					actualLRP.CellID = "fake-cell-id"
 				})
 
@@ -159,20 +177,12 @@ var _ = Describe("ActualLRP", func() {
 			})
 		})
 
-		Context("when the State is not unclaimed", func() {
+		Context("when the State is claimed", func() {
 			BeforeEach(func() {
-				actualLRP.State = ActualLRPStateRunning
+				actualLRP.State = ActualLRPStateClaimed
 			})
 
-			Context("when the InstanceGuid is blank", func() {
-				BeforeEach(func() {
-					actualLRP.InstanceGuid = ""
-				})
-
-				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"instance_guid"}))
-				})
-			})
+			itValidatesCommonRequiredFields()
 
 			Context("when the CellID is blank", func() {
 				BeforeEach(func() {
@@ -183,15 +193,22 @@ var _ = Describe("ActualLRP", func() {
 					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"cell_id"}))
 				})
 			})
+		})
 
-			Context("when the InstanceGuid and CellID are not blank", func() {
+		Context("when the State is running", func() {
+			BeforeEach(func() {
+				actualLRP.State = ActualLRPStateRunning
+			})
+
+			itValidatesCommonRequiredFields()
+
+			Context("when the CellID is blank", func() {
 				BeforeEach(func() {
-					actualLRP.InstanceGuid = "fake-instance-guid"
-					actualLRP.CellID = "fake-cell-id"
+					actualLRP.CellID = ""
 				})
 
-				It("returns nil", func() {
-					Ω(actualLRP.Validate()).Should(BeNil())
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"cell_id"}))
 				})
 			})
 		})

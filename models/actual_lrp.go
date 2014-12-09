@@ -62,19 +62,15 @@ func (actual ActualLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
-	if actual.State == ActualLRPStateUnclaimed {
-		if actual.InstanceGuid != "" {
-			validationError = append(validationError, ErrInvalidField{"instance_guid"})
-		}
+	if actual.InstanceGuid == "" {
+		validationError = append(validationError, ErrInvalidField{"instance_guid"})
+	}
 
+	if actual.State == ActualLRPStateUnclaimed {
 		if actual.CellID != "" {
 			validationError = append(validationError, ErrInvalidField{"cell_id"})
 		}
 	} else {
-		if actual.InstanceGuid == "" {
-			validationError = append(validationError, ErrInvalidField{"instance_guid"})
-		}
-
 		if actual.CellID == "" {
 			validationError = append(validationError, ErrInvalidField{"cell_id"})
 		}

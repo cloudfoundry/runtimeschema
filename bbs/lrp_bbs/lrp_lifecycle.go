@@ -10,7 +10,6 @@ import (
 func (bbs *LRPBBS) CreateActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
 	lrp.State = models.ActualLRPStateUnclaimed
 	lrp.CellID = ""
-	lrp.InstanceGuid = ""
 
 	err := lrp.Validate()
 	if err != nil {

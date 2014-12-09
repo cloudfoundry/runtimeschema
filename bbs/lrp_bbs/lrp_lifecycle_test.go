@@ -17,26 +17,29 @@ var _ = Describe("LrpLifecycle", func() {
 		var expectedActualLRP, actualLRP models.ActualLRP
 
 		BeforeEach(func() {
-			expectedActualLRP = models.ActualLRP{
-				Domain:      "tests",
-				ProcessGuid: "some-process-guid",
-				State:       models.ActualLRPStateUnclaimed,
-				Index:       2,
-			}
 			actualLRP = models.ActualLRP{
-				Domain:      "tests",
-				ProcessGuid: "some-process-guid",
-				State:       models.ActualLRPStateInvalid,
-				Index:       2,
+				Domain:       "tests",
+				ProcessGuid:  "some-process-guid",
+				InstanceGuid: "some-instance-guid",
+				State:        models.ActualLRPStateInvalid,
+				Index:        2,
+			}
+
+			expectedActualLRP = models.ActualLRP{
+				Domain:       "tests",
+				ProcessGuid:  "some-process-guid",
+				InstanceGuid: "some-instance-guid",
+				State:        models.ActualLRPStateUnclaimed,
+				Index:        2,
 			}
 		})
 
-		Context("when the LRP is invalid", func() {
+		Context("when the LRP has an invalid process guid", func() {
 			BeforeEach(func() {
 				actualLRP.ProcessGuid = ""
 			})
 
-			It("returns a validation error", func() {
+			It("returns a validation error only about the process guid", func() {
 				_, err := bbs.CreateActualLRP(actualLRP)
 				Ω(err).Should(ConsistOf(models.ErrInvalidField{"process_guid"}))
 			})
@@ -100,7 +103,6 @@ var _ = Describe("LrpLifecycle", func() {
 			Context("when the actual is Unclaimed", func() {
 				BeforeEach(func() {
 					lrpToCreate.State = models.ActualLRPStateUnclaimed
-					lrpToCreate.InstanceGuid = ""
 					lrpToCreate.CellID = ""
 				})
 
@@ -252,7 +254,6 @@ var _ = Describe("LrpLifecycle", func() {
 				BeforeEach(func() {
 					lrpToCreate.State = models.ActualLRPStateUnclaimed
 					lrpToCreate.CellID = ""
-					lrpToCreate.InstanceGuid = ""
 				})
 
 				It("starts the LRP", func() {
