@@ -58,15 +58,6 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	ActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
-	actualLRPsByProcessGuidMutex       sync.RWMutex
-	actualLRPsByProcessGuidArgsForCall []struct {
-		arg1 string
-	}
-	actualLRPsByProcessGuidReturns struct {
-		result1 []models.ActualLRP
-		result2 error
-	}
 	ActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
 	actualLRPsByCellIDMutex       sync.RWMutex
 	actualLRPsByCellIDArgsForCall []struct {
@@ -278,39 +269,6 @@ func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	fake.completeTaskReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeRepBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {
-	fake.actualLRPsByProcessGuidMutex.Lock()
-	fake.actualLRPsByProcessGuidArgsForCall = append(fake.actualLRPsByProcessGuidArgsForCall, struct {
-		arg1 string
-	}{arg1})
-	fake.actualLRPsByProcessGuidMutex.Unlock()
-	if fake.ActualLRPsByProcessGuidStub != nil {
-		return fake.ActualLRPsByProcessGuidStub(arg1)
-	} else {
-		return fake.actualLRPsByProcessGuidReturns.result1, fake.actualLRPsByProcessGuidReturns.result2
-	}
-}
-
-func (fake *FakeRepBBS) ActualLRPsByProcessGuidCallCount() int {
-	fake.actualLRPsByProcessGuidMutex.RLock()
-	defer fake.actualLRPsByProcessGuidMutex.RUnlock()
-	return len(fake.actualLRPsByProcessGuidArgsForCall)
-}
-
-func (fake *FakeRepBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
-	fake.actualLRPsByProcessGuidMutex.RLock()
-	defer fake.actualLRPsByProcessGuidMutex.RUnlock()
-	return fake.actualLRPsByProcessGuidArgsForCall[i].arg1
-}
-
-func (fake *FakeRepBBS) ActualLRPsByProcessGuidReturns(result1 []models.ActualLRP, result2 error) {
-	fake.ActualLRPsByProcessGuidStub = nil
-	fake.actualLRPsByProcessGuidReturns = struct {
-		result1 []models.ActualLRP
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {

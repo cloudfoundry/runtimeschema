@@ -64,7 +64,6 @@ type RepBBS interface {
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lrp
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	ClaimActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 	StartActualLRP(models.ActualLRP) (*models.ActualLRP, error)
