@@ -28,7 +28,6 @@ type ReceptorBBS interface {
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
 	CancelTask(taskGuid string) error
-	WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error)
 
 	//desired lrp
 	DesireLRP(models.DesiredLRP) error
@@ -51,6 +50,9 @@ type ReceptorBBS interface {
 	// freshness
 	BumpFreshness(models.Freshness) error
 	Freshnesses() ([]models.Freshness, error)
+
+	//services
+	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration) ifrit.Runner
 }
 
 type RepBBS interface {

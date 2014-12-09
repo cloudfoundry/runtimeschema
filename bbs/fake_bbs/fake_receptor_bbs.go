@@ -3,9 +3,11 @@ package fake_bbs
 
 import (
 	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/tedsuo/ifrit"
 )
 
 type FakeReceptorBBS struct {
@@ -20,7 +22,7 @@ type FakeReceptorBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns     struct {
+	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
@@ -66,14 +68,6 @@ type FakeReceptorBBS struct {
 	cancelTaskReturns struct {
 		result1 error
 	}
-	WatchForCompletedTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
-	watchForCompletedTaskMutex       sync.RWMutex
-	watchForCompletedTaskArgsForCall []struct{}
-	watchForCompletedTaskReturns     struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}
 	DesireLRPStub        func(models.DesiredLRP) error
 	desireLRPMutex       sync.RWMutex
 	desireLRPArgsForCall []struct {
@@ -102,7 +96,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -127,7 +121,7 @@ type FakeReceptorBBS struct {
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns     struct {
+	actualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -170,7 +164,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -185,9 +179,18 @@ type FakeReceptorBBS struct {
 	FreshnessesStub        func() ([]models.Freshness, error)
 	freshnessesMutex       sync.RWMutex
 	freshnessesArgsForCall []struct{}
-	freshnessesReturns     struct {
+	freshnessesReturns struct {
 		result1 []models.Freshness
 		result2 error
+	}
+	NewReceptorHeartbeatStub        func(models.ReceptorPresence, time.Duration) ifrit.Runner
+	newReceptorHeartbeatMutex       sync.RWMutex
+	newReceptorHeartbeatArgsForCall []struct {
+		arg1 models.ReceptorPresence
+		arg2 time.Duration
+	}
+	newReceptorHeartbeatReturns struct {
+		result1 ifrit.Runner
 	}
 }
 
@@ -408,32 +411,6 @@ func (fake *FakeReceptorBBS) CancelTaskReturns(result1 error) {
 	fake.cancelTaskReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeReceptorBBS) WatchForCompletedTask() (<-chan models.Task, chan<- bool, <-chan error) {
-	fake.watchForCompletedTaskMutex.Lock()
-	fake.watchForCompletedTaskArgsForCall = append(fake.watchForCompletedTaskArgsForCall, struct{}{})
-	fake.watchForCompletedTaskMutex.Unlock()
-	if fake.WatchForCompletedTaskStub != nil {
-		return fake.WatchForCompletedTaskStub()
-	} else {
-		return fake.watchForCompletedTaskReturns.result1, fake.watchForCompletedTaskReturns.result2, fake.watchForCompletedTaskReturns.result3
-	}
-}
-
-func (fake *FakeReceptorBBS) WatchForCompletedTaskCallCount() int {
-	fake.watchForCompletedTaskMutex.RLock()
-	defer fake.watchForCompletedTaskMutex.RUnlock()
-	return len(fake.watchForCompletedTaskArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) WatchForCompletedTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForCompletedTaskStub = nil
-	fake.watchForCompletedTaskReturns = struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
 }
 
 func (fake *FakeReceptorBBS) DesireLRP(arg1 models.DesiredLRP) error {
@@ -861,6 +838,39 @@ func (fake *FakeReceptorBBS) FreshnessesReturns(result1 []models.Freshness, resu
 		result1 []models.Freshness
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) NewReceptorHeartbeat(arg1 models.ReceptorPresence, arg2 time.Duration) ifrit.Runner {
+	fake.newReceptorHeartbeatMutex.Lock()
+	fake.newReceptorHeartbeatArgsForCall = append(fake.newReceptorHeartbeatArgsForCall, struct {
+		arg1 models.ReceptorPresence
+		arg2 time.Duration
+	}{arg1, arg2})
+	fake.newReceptorHeartbeatMutex.Unlock()
+	if fake.NewReceptorHeartbeatStub != nil {
+		return fake.NewReceptorHeartbeatStub(arg1, arg2)
+	} else {
+		return fake.newReceptorHeartbeatReturns.result1
+	}
+}
+
+func (fake *FakeReceptorBBS) NewReceptorHeartbeatCallCount() int {
+	fake.newReceptorHeartbeatMutex.RLock()
+	defer fake.newReceptorHeartbeatMutex.RUnlock()
+	return len(fake.newReceptorHeartbeatArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) NewReceptorHeartbeatArgsForCall(i int) (models.ReceptorPresence, time.Duration) {
+	fake.newReceptorHeartbeatMutex.RLock()
+	defer fake.newReceptorHeartbeatMutex.RUnlock()
+	return fake.newReceptorHeartbeatArgsForCall[i].arg1, fake.newReceptorHeartbeatArgsForCall[i].arg2
+}
+
+func (fake *FakeReceptorBBS) NewReceptorHeartbeatReturns(result1 ifrit.Runner) {
+	fake.NewReceptorHeartbeatStub = nil
+	fake.newReceptorHeartbeatReturns = struct {
+		result1 ifrit.Runner
+	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
