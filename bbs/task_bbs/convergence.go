@@ -72,6 +72,10 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 		})
 	}
 
+	tasksToComplete := []models.Task{}
+
+	var tasksKicked uint64 = 0
+
 	for _, node := range taskState.ChildNodes {
 		var task models.Task
 		err = models.FromJSON(node.Value, &task)
@@ -91,42 +95,67 @@ func (bbs *TaskBBS) ConvergeTask(timeToStart, convergenceInterval, timeToResolve
 		case models.TaskStatePending:
 			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= timeToStart
 			if shouldMarkAsFailed {
-				logError(task, "failed-to-start")
+				logError(task, "failed-to-start-in-time")
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
+				tasksKicked++
 			} else if shouldKickTask {
+				logError(task, "kicking-pending-task")
 				scheduleForCASByIndex(node.Index, task)
+				tasksKicked++
 			}
 		case models.TaskStateRunning:
 			_, cellIsAlive := cellState.Lookup(task.CellID)
 			if !cellIsAlive {
 				logError(task, "cell-disappeared")
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))
+				tasksKicked++
 			}
 		case models.TaskStateCompleted:
 			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
 			if shouldDeleteTask {
-				logError(task, "resolution-expired")
+				logError(task, "failed-to-start-resolving-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				scheduleForCASByIndex(node.Index, task)
+				logError(task, "kicking-completed-task")
+				tasksToComplete = append(tasksToComplete, task)
+				tasksKicked++
 			}
 		case models.TaskStateResolving:
 			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
 			if shouldDeleteTask {
-				logError(task, "resolution-expired")
+				logError(task, "failed-to-resolve-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				logError(task, "failed-to-resolve")
-				scheduleForCASByIndex(node.Index, demoteToCompleted(task))
+				logError(task, "demoting-resolving-to-completed")
+				demoted := demoteToCompleted(task)
+				scheduleForCASByIndex(node.Index, demoted)
+				tasksToComplete = append(tasksToComplete, demoted) // TODO test
+				tasksKicked++
 			}
 		}
 	}
 
-	tasksKickedCounter.Add(uint64(len(tasksToCAS)))
+	tasksKickedCounter.Add(tasksKicked)
 	bbs.batchCompareAndSwapTasks(tasksToCAS)
 
 	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
+
+	for _, task := range tasksToComplete {
+		if task.CompletionCallbackURL == nil {
+			continue
+		}
+
+		receptor, err := bbs.services.Receptor()
+		if err != nil {
+			break
+		}
+
+		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, &task)
+		if err != nil {
+			logError(task, "failed-to-complete")
+		}
+	}
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {

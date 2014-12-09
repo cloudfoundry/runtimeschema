@@ -2,6 +2,7 @@ package task_bbs_test
 
 import (
 	"errors"
+	"net/url"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -292,7 +293,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("CompleteTask", func() {
 		Context("when completing a running Task", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -354,17 +355,40 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				Context("and completing succeeds", func() {
-					It("completes the task using its address", func() {
-						err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
-						Ω(err).ShouldNot(HaveOccurred())
+					BeforeEach(func() {
+						fakeTaskClient.CompleteTaskReturns(nil)
+					})
 
-						Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
-						receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
-						Ω(receptorURL).Should(Equal("some-receptor-url"))
-						Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
-						Ω(completedTask.Failed).Should(BeTrue())
-						Ω(completedTask.FailureReason).Should(Equal("because"))
-						Ω(completedTask.Result).Should(Equal("a result"))
+					Context("and the task has a complete URL", func() {
+						BeforeEach(func() {
+							task.CompletionCallbackURL = &url.URL{Host: "bogus"}
+						})
+
+						It("completes the task using its address", func() {
+							err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+							receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							Ω(receptorURL).Should(Equal("some-receptor-url"))
+							Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+							Ω(completedTask.Failed).Should(BeTrue())
+							Ω(completedTask.FailureReason).Should(Equal("because"))
+							Ω(completedTask.Result).Should(Equal("a result"))
+						})
+					})
+
+					Context("but the task has no complete URL", func() {
+						BeforeEach(func() {
+							task.CompletionCallbackURL = nil
+						})
+
+						It("does not complete the task via the receptor", func() {
+							err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+						})
 					})
 				})
 

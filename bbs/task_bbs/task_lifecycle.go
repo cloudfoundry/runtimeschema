@@ -131,6 +131,10 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 			return err
 		}
 
+		if task.CompletionCallbackURL == nil {
+			return nil
+		}
+
 		receptorPresence, err := bbs.services.Receptor()
 		if err != nil {
 			bbs.logger.Error("could-not-fetch-receptors", err)

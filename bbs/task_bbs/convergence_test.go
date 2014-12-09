@@ -1,6 +1,7 @@
 package task_bbs_test
 
 import (
+	"net/url"
 	"os"
 	"path"
 	"time"
@@ -14,6 +15,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Convergence of Tasks", func() {
@@ -196,59 +198,137 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 		})
 
-		Context("when a Task is completed", func() {
-			BeforeEach(func() {
-				err := bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
+		Describe("Completed tasks", func() {
+			Context("when a Task with a complete URL is completed", func() {
+				BeforeEach(func() {
+					task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
-				err = bbs.StartTask(task.TaskGuid, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+					err := bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
-				Ω(err).ShouldNot(HaveOccurred())
+					err = bbs.StartTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				Context("for > the convergence interval", func() {
+					BeforeEach(func() {
+						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+					})
+
+					Context("when a receptor is present", func() {
+						var receptorPresence ifrit.Process
+
+						BeforeEach(func() {
+							presence := models.ReceptorPresence{
+								ReceptorID:  "some-receptor",
+								ReceptorURL: "some-receptor-url",
+							}
+
+							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+
+							receptorPresence = ifrit.Invoke(heartbeat)
+						})
+
+						AfterEach(func() {
+							ginkgomon.Interrupt(receptorPresence)
+						})
+
+						It("submits the completed task to the receptor", func() {
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+
+							receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							Ω(receptorURL).Should(Equal("some-receptor-url"))
+							Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+							Ω(completedTask.Failed).Should(BeTrue())
+							Ω(completedTask.FailureReason).Should(Equal("'cause I said so"))
+							Ω(completedTask.Result).Should(Equal("a magical result"))
+						})
+
+						It("bumps the convergence tasks kicked counter", func() {
+							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+						})
+					})
+
+					Context("when a receptor is not present", func() {
+						It("does not submit a completed task to anything", func() {
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+						})
+
+						It("bumps the convergence tasks kicked counter anyway", func() {
+							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+						})
+					})
+				})
 			})
 
-			Context("when the task has been completed for > the convergence interval", func() {
+			Context("when a completed task without a complete URL is present", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+					err := bbs.DesireTask(task)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.StartTask(task.TaskGuid, "cell-id")
+					Ω(err).ShouldNot(HaveOccurred())
+
+					err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
+					Ω(err).ShouldNot(HaveOccurred())
 				})
 
-				It("should kick the Task", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
+				Context("for > the convergence interval", func() {
+					BeforeEach(func() {
+						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+					})
 
-					var noticedOnce models.Task
-					Eventually(completedEvents).Should(Receive(&noticedOnce))
+					Context("when a receptor is present", func() {
+						var receptorPresence ifrit.Process
 
-					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(Equal("'cause I said so"))
-					Ω(noticedOnce.Result).Should(Equal("a magical result"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+						BeforeEach(func() {
+							presence := models.ReceptorPresence{
+								ReceptorID:  "some-receptor",
+								ReceptorURL: "some-receptor-url",
+							}
+
+							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+
+							receptorPresence = ifrit.Invoke(heartbeat)
+						})
+
+						AfterEach(func() {
+							ginkgomon.Interrupt(receptorPresence)
+						})
+
+						It("does not submit the completed task to the receptor", func() {
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+						})
+					})
+
+					It("bumps the convergence tasks kicked counter", func() {
+						Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+					})
 				})
 
-				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
-				})
-			})
+				Context("when the task has been completed for > the time to resolve interval", func() {
+					BeforeEach(func() {
+						timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+					})
 
-			Context("when the task has been completed for > the time to resolve interval", func() {
-				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
-				})
-
-				It("should delete the task", func() {
-					_, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
-				})
-			})
-
-			Context("when the task has been completed for < the convergence interval", func() {
-				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(1)
+					It("should delete the task", func() {
+						_, err := bbs.TaskByGuid(task.TaskGuid)
+						Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					})
 				})
 
-				It("should NOT kick the Task", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
-					Consistently(completedEvents).ShouldNot(Receive())
+				Context("when the task has been completed for < the convergence interval", func() {
+					BeforeEach(func() {
+						timeProvider.IncrementBySeconds(1)
+					})
+
+					It("should NOT kick the Task", func() {
+						Consistently(desiredEvents).ShouldNot(Receive())
+						Consistently(completedEvents).ShouldNot(Receive())
+					})
 				})
 			})
 		})
