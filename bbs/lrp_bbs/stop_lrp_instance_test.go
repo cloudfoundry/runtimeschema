@@ -2,6 +2,7 @@ package lrp_bbs_test
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -68,10 +69,20 @@ var _ = Describe("StopLRPInstance", func() {
 				"some-other-process-guid", "some-other-instance-guid", cellPresence.CellID,
 				"domain", 1234, models.ActualLRPStateClaimed))
 			Ω(err).ShouldNot(HaveOccurred())
+
 			anotherActualLRP = *alrp
+
+			wg := new(sync.WaitGroup)
+			wg.Add(2)
+
+			fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRP) error {
+				wg.Done()
+				wg.Wait()
+				return nil
+			}
 		})
 
-		It("stops the LRP instances on the correct cell", func() {
+		It("stops the LRP instances on the correct cell, in parallel", func() {
 			err := bbs.RequestStopLRPInstances([]models.ActualLRP{actualLRP, anotherActualLRP})
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -79,16 +90,19 @@ var _ = Describe("StopLRPInstance", func() {
 
 			addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
 			Ω(addr1).Should(Equal(cellPresence.RepAddress))
-			Ω(stop1).Should(Equal(actualLRP))
 
 			addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
 			Ω(addr2).Should(Equal(cellPresence.RepAddress))
-			Ω(stop2).Should(Equal(anotherActualLRP))
+
+			Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf([]models.ActualLRP{
+				actualLRP,
+				anotherActualLRP,
+			}))
 		})
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.RequestStopLRPInstances([]models.ActualLRP{actualLRP})
+				return bbs.RequestStopLRPInstances([]models.ActualLRP{actualLRP, anotherActualLRP})
 			})
 		})
 	})
