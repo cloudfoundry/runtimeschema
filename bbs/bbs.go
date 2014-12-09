@@ -79,6 +79,7 @@ type ConvergerBBS interface {
 	RequestStopLRPInstance(lrp models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	CreateActualLRP(models.ActualLRP) (*models.ActualLRP, error)
+	RemoveActualLRP(lrp models.ActualLRP) error
 
 	//start auction
 	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
