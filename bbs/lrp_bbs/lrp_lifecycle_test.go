@@ -277,6 +277,34 @@ var _ = Describe("LrpLifecycle", func() {
 				runningLRP, startErr = bbs.StartActualLRP(lrpToStart)
 			})
 
+			Context("when the instance guid differs", func() {
+				BeforeEach(func() {
+					lrpToCreate.InstanceGuid = "another-instance-guid"
+				})
+
+				It("returns an error", func() {
+					Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeStarted))
+				})
+
+				It("does not alter the existing actual", func() {
+					Ω(runningLRP.State).ShouldNot(Equal(models.ActualLRPStateRunning))
+				})
+			})
+
+			Context("when the domain differs", func() {
+				BeforeEach(func() {
+					lrpToCreate.Domain = "some-other-domain"
+				})
+
+				It("returns an error", func() {
+					Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeStarted))
+				})
+
+				It("does not alter the existing actual", func() {
+					Ω(runningLRP.State).ShouldNot(Equal(models.ActualLRPStateRunning))
+				})
+			})
+
 			Context("when the actual is Unclaimed", func() {
 				BeforeEach(func() {
 					lrpToCreate.State = models.ActualLRPStateUnclaimed
@@ -328,7 +356,7 @@ var _ = Describe("LrpLifecycle", func() {
 					lrpToCreate.State = models.ActualLRPStateRunning
 				})
 
-				Context("with the same cell and instance guid", func() {
+				Context("with the same cell", func() {
 					It("does not alter the existing LRP", func() {
 						Ω(startErr).ShouldNot(HaveOccurred())
 
@@ -342,16 +370,6 @@ var _ = Describe("LrpLifecycle", func() {
 				Context("with a different cell", func() {
 					BeforeEach(func() {
 						lrpToCreate.CellID = "another-cell-id"
-					})
-
-					It("cannot claim the LRP", func() {
-						Ω(startErr).Should(Equal(bbserrors.ErrActualLRPCannotBeStarted))
-					})
-				})
-
-				Context("with a different instance guid", func() {
-					BeforeEach(func() {
-						lrpToCreate.InstanceGuid = "another-instance-guid"
 					})
 
 					It("cannot claim the LRP", func() {

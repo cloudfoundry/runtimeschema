@@ -113,9 +113,13 @@ func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 		return nil, err
 	}
 
+	if existingLRP.InstanceGuid != lrp.InstanceGuid || existingLRP.Domain != lrp.Domain {
+		return existingLRP, bbserrors.ErrActualLRPCannotBeStarted
+	}
+
 	switch existingLRP.State {
 	case models.ActualLRPStateRunning:
-		if existingLRP.CellID != lrp.CellID || existingLRP.InstanceGuid != lrp.InstanceGuid {
+		if existingLRP.CellID != lrp.CellID {
 			return nil, bbserrors.ErrActualLRPCannotBeStarted
 		}
 
