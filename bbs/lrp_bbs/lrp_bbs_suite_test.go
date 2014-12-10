@@ -22,7 +22,7 @@ import (
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
-var timeProvider *faketimeprovider.FakeTimeProvider
+var timeProvider *AdvancingFakeTimeProvider
 var fakeCellClient *cbfakes.FakeCellClient
 
 var startAuctionBBS *start_auction_bbs.StartAuctionBBS
@@ -48,7 +48,10 @@ var _ = BeforeEach(func() {
 	etcdRunner.Start()
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
-	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
+	timeProvider = &AdvancingFakeTimeProvider{
+		FakeTimeProvider: faketimeprovider.New(time.Unix(0, 1138)),
+	}
+
 	logger = lagertest.NewTestLogger("test")
 
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))

@@ -30,11 +30,11 @@ type compareAndSwappableDesiredLRP struct {
 func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	convergeLRPRunsCounter.Increment()
 
-	convergeStart := time.Now()
+	convergeStart := bbs.timeProvider.Now()
 
 	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
-		convergeLRPDuration.Send(time.Since(convergeStart))
+		convergeLRPDuration.Send(bbs.timeProvider.Now().Sub(convergeStart))
 	}()
 
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells()

@@ -56,6 +56,7 @@ var _ = Describe("LrpConvergence", func() {
 	})
 
 	It("reports the duration that it took to converge", func() {
+		timeProvider.IntervalToAdvance = 500 * time.Nanosecond
 		bbs.ConvergeLRPs(pollingInterval)
 
 		reportedDuration := sender.GetValue("ConvergenceLRPDuration")
