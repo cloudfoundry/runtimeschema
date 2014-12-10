@@ -28,6 +28,10 @@ type compareAndSwappableDesiredLRP struct {
 }
 
 func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
+	logger := bbs.logger.Session("converge-lrps")
+	logger.Info("starting-convergence")
+	defer logger.Info("finished-convergence")
+
 	convergeLRPRunsCounter.Increment()
 
 	convergeStart := bbs.timeProvider.Now()
@@ -37,20 +41,20 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		convergeLRPDuration.Send(bbs.timeProvider.Now().Sub(convergeStart))
 	}()
 
-	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells()
+	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells(logger)
 	if err != nil {
-		bbs.logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
+		logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
 		return
 	}
 
 	desiredLRPRoot, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		bbs.logger.Error("failed-to-fetch-desired-lrps", err)
+		logger.Error("failed-to-fetch-desired-lrps", err)
 		return
 	}
 
 	var desiredLRPsToCAS []compareAndSwappableDesiredLRP
-	var keysToDelete []string
+	var desiredLRPKeysToDelete []string
 	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
 	for _, node := range desiredLRPRoot.ChildNodes {
@@ -58,18 +62,18 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		err := models.FromJSON(node.Value, &desiredLRP)
 
 		if err != nil {
-			bbs.logger.Info("pruning-invalid-desired-lrp-json", lager.Data{
+			logger.Info("pruning-invalid-desired-lrp-json", lager.Data{
 				"error":   err.Error(),
 				"payload": node.Value,
 			})
-			keysToDelete = append(keysToDelete, node.Key)
+			desiredLRPKeysToDelete = append(desiredLRPKeysToDelete, node.Key)
 			continue
 		}
 
 		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
-		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired) {
+		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired, logger) {
 			desiredLRPsToCAS = append(desiredLRPsToCAS, compareAndSwappableDesiredLRP{
 				OldIndex:      node.Index,
 				NewDesiredLRP: desiredLRP,
@@ -77,27 +81,28 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		}
 	}
 
-	stopLRPInstances := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid)
+	stopLRPInstances := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)
 
-	lrpsDeletedCounter.Add(uint64(len(keysToDelete)))
-	bbs.store.Delete(keysToDelete...)
+	lrpsDeletedCounter.Add(uint64(len(desiredLRPKeysToDelete)))
+	bbs.store.Delete(desiredLRPKeysToDelete...)
 
 	lrpsKickedCounter.Add(uint64(len(desiredLRPsToCAS)))
-	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
+	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS, logger)
 
-	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, bbs.logger)
+	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
 
 	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
 
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
 	if err != nil {
-		bbs.logger.Error("failed-to-request-stops", err)
+		logger.Error("failed-to-request-stops", err)
 	}
 }
 
 func (bbs *LRPBBS) instancesToStop(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
 	actualsByProcessGuid map[string][]models.ActualLRP,
+	logger lager.Logger,
 ) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
 
@@ -108,7 +113,7 @@ func (bbs *LRPBBS) instancesToStop(
 					continue
 				}
 
-				bbs.logger.Info("detected-undesired-process", lager.Data{
+				logger.Info("detected-undesired-instance", lager.Data{
 					"process-guid":  processGuid,
 					"instance-guid": actual.InstanceGuid,
 					"index":         actual.Index,
@@ -128,8 +133,6 @@ func (bbs *LRPBBS) resendStartAuctions(
 	pollingInterval time.Duration,
 	logger lager.Logger,
 ) {
-	logger = logger.Session("resending-start-auctions")
-
 	for processGuid, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
 			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(pollingInterval)) {
@@ -145,13 +148,18 @@ func (bbs *LRPBBS) resendStartAuctions(
 					Index:        actual.Index,
 				}
 
+				logger.Info("resending-start-auction", lager.Data{"process-guid": processGuid, "index": actual.Index})
 				bbs.startAuctionBBS.RequestLRPStartAuction(lrpStartAuction)
 			}
 		}
 	}
 }
 
-func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {
+func (bbs *LRPBBS) needsReconciliation(
+	desiredLRP models.DesiredLRP,
+	actualLRPsForDesired []models.ActualLRP,
+	logger lager.Logger,
+) bool {
 	var actuals delta_force.ActualInstances
 	for _, actual := range actualLRPsForDesired {
 		actuals = append(actuals, delta_force.ActualInstance{
@@ -163,7 +171,7 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 	result := delta_force.Reconcile(desiredLRP.Instances, actuals)
 
 	if len(result.IndicesToStart) > 0 {
-		bbs.logger.Info("detected-missing-instance", lager.Data{
+		logger.Info("detected-missing-instance", lager.Data{
 			"process-guid":      desiredLRP.ProcessGuid,
 			"desired-instances": desiredLRP.Instances,
 			"missing-indices":   result.IndicesToStart,
@@ -171,7 +179,7 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 	}
 
 	if len(result.GuidsToStop) > 0 {
-		bbs.logger.Info("detected-extra-instance", lager.Data{
+		logger.Info("detected-extra-instance", lager.Data{
 			"process-guid":      desiredLRP.ProcessGuid,
 			"desired-instances": desiredLRP.Instances,
 			"extra-guids":       result.GuidsToStop,
@@ -179,7 +187,7 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 	}
 
 	if len(result.IndicesToStopAllButOne) > 0 {
-		bbs.logger.Info("detected-duplicate-instance", lager.Data{
+		logger.Info("detected-duplicate-instance", lager.Data{
 			"process-guid":       desiredLRP.ProcessGuid,
 			"desired-instances":  desiredLRP.Instances,
 			"duplicated-indices": result.IndicesToStopAllButOne,
@@ -189,14 +197,14 @@ func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsF
 	return !result.Empty()
 }
 
-func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP, error) {
+func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string][]models.ActualLRP, error) {
 	actualsByProcessGuid := map[string][]models.ActualLRP{}
 
 	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		cellRoot = storeadapter.StoreNode{}
 	} else if err != nil {
-		bbs.logger.Error("failed-to-get-cells", err)
+		logger.Error("failed-to-get-cells", err)
 		return nil, err
 	}
 
@@ -209,7 +217,7 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 
 		if actual.State != models.ActualLRPStateUnclaimed {
 			if _, ok := cellRoot.Lookup(actual.CellID); !ok {
-				bbs.logger.Info("detected-actual-with-missing-cell", lager.Data{
+				logger.Info("detected-actual-with-missing-cell", lager.Data{
 					"actual":  actual,
 					"cell-id": actual.CellID,
 				})
@@ -222,14 +230,17 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells() (map[string][]models.ActualLRP
 	})
 
 	if err != nil {
-		bbs.logger.Error("failed-to-prune-actual-lrps", err)
+		logger.Error("failed-to-prune-actual-lrps", err)
 		return nil, err
 	}
 
 	return actualsByProcessGuid, nil
 }
 
-func (bbs *LRPBBS) batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS []compareAndSwappableDesiredLRP) {
+func (bbs *LRPBBS) batchCompareAndSwapDesiredLRPs(
+	desiredLRPsToCAS []compareAndSwappableDesiredLRP,
+	logger lager.Logger,
+) {
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(len(desiredLRPsToCAS))
 	for _, desiredLRPToCAS := range desiredLRPsToCAS {
@@ -244,12 +255,12 @@ func (bbs *LRPBBS) batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS []compareAndS
 		}
 
 		go func(desiredLRPToCAS compareAndSwappableDesiredLRP, newStoreNode storeadapter.StoreNode) {
+			defer waitGroup.Done()
+			logger.Info("kicking-desired-lrp", lager.Data{"key": newStoreNode.Key})
 			err := bbs.store.CompareAndSwapByIndex(desiredLRPToCAS.OldIndex, newStoreNode)
 			if err != nil {
-				bbs.logger.Error("failed-to-compare-and-swap", err)
+				logger.Error("failed-to-compare-and-swap", err)
 			}
-
-			waitGroup.Done()
 		}(desiredLRPToCAS, newStoreNode)
 	}
 

@@ -47,6 +47,17 @@ var _ = Describe("LrpConvergence", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
+	It("logs the convergence", func() {
+		bbs.ConvergeLRPs(pollingInterval)
+		logMessages := logger.TestSink.LogMessages()
+		Ω(logMessages[0]).Should(Equal(
+			"test.converge-lrps.starting-convergence",
+		))
+		Ω(logMessages[len(logMessages)-1]).Should(Equal(
+			"test.converge-lrps.finished-convergence",
+		))
+	})
+
 	It("bumps the convergence counter", func() {
 		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
 		bbs.ConvergeLRPs(pollingInterval)
@@ -92,6 +103,10 @@ var _ = Describe("LrpConvergence", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actual.ChildNodes).Should(HaveLen(1))
 				Ω(actual.ChildNodes[0].Key).Should(Equal(shared.ActualLRPProcessDir(unclaimedProcessGuid)))
+			})
+
+			It("logs", func() {
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-actual-with-missing-cell"))
 			})
 		})
 	})
@@ -140,6 +155,11 @@ var _ = Describe("LrpConvergence", func() {
 				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
 			})
+
+			It("logs", func() {
+				bbs.ConvergeLRPs(pollingInterval)
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.pruning-invalid-desired-lrp-json"))
+			})
 		})
 
 		Context("when the desired LRP has all its actual LRPs, and there are no extras", func() {
@@ -174,6 +194,11 @@ var _ = Describe("LrpConvergence", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
 				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
+			})
+
+			It("logs", func() {
+				bbs.ConvergeLRPs(pollingInterval)
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-missing-instance"))
 			})
 		})
 
@@ -210,6 +235,12 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(1))
 				})
+
+				It("logs", func() {
+					commenceWatching()
+					bbs.ConvergeLRPs(pollingInterval)
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending-start-auction"))
+				})
 			})
 		})
 
@@ -233,6 +264,12 @@ var _ = Describe("LrpConvergence", func() {
 				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
+
+			It("logs", func() {
+				bbs.ConvergeLRPs(pollingInterval)
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-extra-instance"))
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.kicking-desired-lrp"))
+			})
 		})
 	})
 
@@ -252,6 +289,11 @@ var _ = Describe("LrpConvergence", func() {
 			}))
 		})
 
+		It("logs", func() {
+			bbs.ConvergeLRPs(pollingInterval)
+			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-undesired-instance"))
+		})
+
 		It("bumps the stopped LRPs convergence counter", func() {
 			Ω(sender.GetCounter("ConvergenceLRPsStopped")).Should(Equal(uint64(0)))
 			bbs.ConvergeLRPs(pollingInterval)
@@ -269,6 +311,11 @@ var _ = Describe("LrpConvergence", func() {
 				bbs.ConvergeLRPs(pollingInterval)
 
 				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+			})
+
+			It("logs", func() {
+				bbs.ConvergeLRPs(pollingInterval)
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp"))
 			})
 		})
 	})
