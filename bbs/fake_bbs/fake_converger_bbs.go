@@ -11,9 +11,11 @@ import (
 )
 
 type FakeConvergerBBS struct {
-	ConvergeLRPsStub        func()
+	ConvergeLRPsStub        func(time.Duration)
 	convergeLRPsMutex       sync.RWMutex
-	convergeLRPsArgsForCall []struct{}
+	convergeLRPsArgsForCall []struct {
+		arg1 time.Duration
+	}
 	ActualLRPsByProcessGuidStub        func(string) ([]models.ActualLRP, error)
 	actualLRPsByProcessGuidMutex       sync.RWMutex
 	actualLRPsByProcessGuidArgsForCall []struct {
@@ -102,12 +104,14 @@ type FakeConvergerBBS struct {
 	}
 }
 
-func (fake *FakeConvergerBBS) ConvergeLRPs() {
+func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 time.Duration) {
 	fake.convergeLRPsMutex.Lock()
-	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct{}{})
+	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
+		arg1 time.Duration
+	}{arg1})
 	fake.convergeLRPsMutex.Unlock()
 	if fake.ConvergeLRPsStub != nil {
-		fake.ConvergeLRPsStub()
+		fake.ConvergeLRPsStub(arg1)
 	}
 }
 
@@ -115,6 +119,12 @@ func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
 	fake.convergeLRPsMutex.RLock()
 	defer fake.convergeLRPsMutex.RUnlock()
 	return len(fake.convergeLRPsArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) time.Duration {
+	fake.convergeLRPsMutex.RLock()
+	defer fake.convergeLRPsMutex.RUnlock()
+	return fake.convergeLRPsArgsForCall[i].arg1
 }
 
 func (fake *FakeConvergerBBS) ActualLRPsByProcessGuid(arg1 string) ([]models.ActualLRP, error) {

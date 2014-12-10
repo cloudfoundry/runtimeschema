@@ -74,7 +74,7 @@ type RepBBS interface {
 
 type ConvergerBBS interface {
 	//lrp
-	ConvergeLRPs()
+	ConvergeLRPs(time.Duration)
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RequestStopLRPInstance(lrp models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
@@ -221,11 +221,12 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, logger.Session("services-bbs"))
+	startAuctionBBS := start_auction_bbs.New(store, timeProvider, logger.Session("lrp-start-auction-bbs"))
 
 	return &BBS{
 		LockBBS:         lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:          lrp_bbs.New(store, timeProvider, cb.NewCellClient(), services, logger.Session("lrp-bbs")),
-		StartAuctionBBS: start_auction_bbs.New(store, timeProvider, logger.Session("lrp-start-auction-bbs")),
+		LRPBBS:          lrp_bbs.New(store, timeProvider, cb.NewCellClient(), services, startAuctionBBS, logger.Session("lrp-bbs")),
+		StartAuctionBBS: startAuctionBBS,
 		StopAuctionBBS:  stop_auction_bbs.New(store, timeProvider, logger.Session("lrp-stop-auction-bbs")),
 		ServicesBBS:     services,
 		TaskBBS:         task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),

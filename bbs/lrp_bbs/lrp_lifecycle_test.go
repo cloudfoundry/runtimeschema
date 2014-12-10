@@ -62,6 +62,18 @@ var _ = Describe("LrpLifecycle", func() {
 				Ω(actualActualLRP).Should(Equal(expectedActualLRP))
 			})
 		})
+
+		Context("when an LRP is already present at the desired kep", func() {
+			BeforeEach(func() {
+				_, err := bbs.CreateActualLRP(actualLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an error that the resource already exists", func() {
+				_, err := bbs.CreateActualLRP(actualLRP)
+				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceExists))
+			})
+		})
 	})
 
 	Describe("ClaimActualLRP", func() {

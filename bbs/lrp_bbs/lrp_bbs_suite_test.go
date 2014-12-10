@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
@@ -23,6 +24,10 @@ var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
 var timeProvider *faketimeprovider.FakeTimeProvider
 var fakeCellClient *cbfakes.FakeCellClient
+
+var startAuctionBBS *start_auction_bbs.StartAuctionBBS
+
+var logger *lagertest.TestLogger
 
 func TestLRPBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -44,9 +49,12 @@ var _ = BeforeEach(func() {
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
 	timeProvider = faketimeprovider.New(time.Unix(0, 1138))
+	logger = lagertest.NewTestLogger("test")
 
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, lagertest.NewTestLogger("test"))
+	startAuctionBBS = start_auction_bbs.New(etcdClient, timeProvider, logger)
+
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, startAuctionBBS, logger)
 })
 
 func registerCell(cell models.CellPresence) {

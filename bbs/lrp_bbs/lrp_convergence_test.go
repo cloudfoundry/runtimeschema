@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"time"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
@@ -12,6 +14,8 @@ import (
 )
 
 var _ = Describe("LrpConvergence", func() {
+	const pollingInterval = 5 * time.Second
+
 	var (
 		sender *fake.FakeMetricSender
 
@@ -45,14 +49,14 @@ var _ = Describe("LrpConvergence", func() {
 
 	It("bumps the convergence counter", func() {
 		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
-		bbs.ConvergeLRPs()
+		bbs.ConvergeLRPs(pollingInterval)
 		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
-		bbs.ConvergeLRPs()
+		bbs.ConvergeLRPs(pollingInterval)
 		Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
 	})
 
 	It("reports the duration that it took to converge", func() {
-		bbs.ConvergeLRPs()
+		bbs.ConvergeLRPs(pollingInterval)
 
 		reportedDuration := sender.GetValue("ConvergenceLRPDuration")
 		Ω(reportedDuration.Unit).Should(Equal("nanos"))
@@ -61,7 +65,7 @@ var _ = Describe("LrpConvergence", func() {
 
 	Describe("pruning LRPs by cell", func() {
 		JustBeforeEach(func() {
-			bbs.ConvergeLRPs()
+			bbs.ConvergeLRPs(pollingInterval)
 		})
 
 		Context("when no cell is missing", func() {
@@ -125,14 +129,14 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("should delete the bogus entry", func() {
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 				_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid("bogus-desired"))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
 			It("bumps the deleted LRPs convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
 			})
 		})
@@ -144,7 +148,7 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("should not kick the desired LRP", func() {
 				commenceWatching()
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 
 				Consistently(desiredEvents).ShouldNot(Receive())
 			})
@@ -158,7 +162,7 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("should kick the desired LRP", func() {
 				commenceWatching()
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 
 				var noticedOnce models.DesiredLRPChange
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
@@ -167,31 +171,44 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
 		})
 
-		Context("when the desired LRP has unclaimed actuals", func() {
+		Context("when the desired LRP has only unclaimed actuals", func() {
 			BeforeEach(func() {
 				desiredLRP.ProcessGuid = unclaimedProcessGuid
 				desiredLRP.Instances = 1
 				bbs.DesireLRP(desiredLRP)
 			})
 
-			It("should kick the desired LRP", func() {
+			It("does not kick the desired LRP", func() {
 				commenceWatching()
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 
-				var noticedOnce models.DesiredLRPChange
-				Eventually(desiredEvents).Should(Receive(&noticedOnce))
-				Ω(*noticedOnce.After).Should(Equal(desiredLRP))
+				Consistently(desiredEvents).ShouldNot(Receive())
 			})
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs()
-				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
+				bbs.ConvergeLRPs(pollingInterval)
+				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
+			})
+
+			Context("and the unclaimed actual is stale", func() {
+				BeforeEach(func() {
+					timeProvider.Increment(pollingInterval + 1*time.Second)
+				})
+
+				It("resends a start auction for the actual", func() {
+					Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+
+					commenceWatching()
+					bbs.ConvergeLRPs(pollingInterval)
+
+					Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(1))
+				})
 			})
 		})
 
@@ -203,7 +220,7 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("should kick the desired LRP", func() {
 				commenceWatching()
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 
 				var noticedOnce models.DesiredLRPChange
 				Eventually(desiredEvents).Should(Receive(&noticedOnce))
@@ -212,7 +229,7 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs()
+				bbs.ConvergeLRPs(pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(1)))
 			})
 		})
@@ -220,7 +237,7 @@ var _ = Describe("LrpConvergence", func() {
 
 	Context("when there is an actual LRP with no matching desired LRP", func() {
 		It("should emit a stop for the actual LRP", func() {
-			bbs.ConvergeLRPs()
+			bbs.ConvergeLRPs(pollingInterval)
 			Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(2))
 
 			addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
@@ -236,8 +253,22 @@ var _ = Describe("LrpConvergence", func() {
 
 		It("bumps the stopped LRPs convergence counter", func() {
 			Ω(sender.GetCounter("ConvergenceLRPsStopped")).Should(Equal(uint64(0)))
-			bbs.ConvergeLRPs()
+			bbs.ConvergeLRPs(pollingInterval)
 			Ω(sender.GetCounter("ConvergenceLRPsStopped")).Should(Equal(uint64(2)))
+		})
+
+		Context("and there is a stale unclaimed actual", func() {
+			BeforeEach(func() {
+				timeProvider.Increment(pollingInterval + 1*time.Second)
+			})
+
+			It("does not resends a start auction for the actual", func() {
+				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+
+				bbs.ConvergeLRPs(pollingInterval)
+
+				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+			})
 		})
 	})
 })

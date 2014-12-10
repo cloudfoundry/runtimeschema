@@ -34,7 +34,7 @@ func (bbs *LRPBBS) CreateRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP,
 		})
 	})
 
-	return lrp, nil
+	return lrp, err
 }
 
 func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {

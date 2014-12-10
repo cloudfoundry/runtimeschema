@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider"
@@ -12,20 +13,29 @@ import (
 )
 
 type LRPBBS struct {
-	store        storeadapter.StoreAdapter
-	timeProvider timeprovider.TimeProvider
-	cellClient   cb.CellClient
-	services     *services_bbs.ServicesBBS
-	logger       lager.Logger
+	store           storeadapter.StoreAdapter
+	timeProvider    timeprovider.TimeProvider
+	cellClient      cb.CellClient
+	services        *services_bbs.ServicesBBS
+	startAuctionBBS *start_auction_bbs.StartAuctionBBS
+	logger          lager.Logger
 }
 
-func New(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, cellClient cb.CellClient, services *services_bbs.ServicesBBS, logger lager.Logger) *LRPBBS {
+func New(
+	store storeadapter.StoreAdapter,
+	timeProvider timeprovider.TimeProvider,
+	cellClient cb.CellClient,
+	services *services_bbs.ServicesBBS,
+	startAuctionBBS *start_auction_bbs.StartAuctionBBS,
+	logger lager.Logger,
+) *LRPBBS {
 	return &LRPBBS{
-		store:        store,
-		timeProvider: timeProvider,
-		cellClient:   cellClient,
-		services:     services,
-		logger:       logger,
+		store:           store,
+		timeProvider:    timeProvider,
+		cellClient:      cellClient,
+		services:        services,
+		startAuctionBBS: startAuctionBBS,
+		logger:          logger,
 	}
 }
 

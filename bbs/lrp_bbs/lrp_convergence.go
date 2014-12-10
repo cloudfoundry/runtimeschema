@@ -27,7 +27,7 @@ type compareAndSwappableDesiredLRP struct {
 	NewDesiredLRP models.DesiredLRP
 }
 
-func (bbs *LRPBBS) ConvergeLRPs() {
+func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	convergeLRPRunsCounter.Increment()
 
 	convergeStart := time.Now()
@@ -85,6 +85,8 @@ func (bbs *LRPBBS) ConvergeLRPs() {
 	lrpsKickedCounter.Add(uint64(len(desiredLRPsToCAS)))
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
+	bbs.resendStartAuctions(actualsByProcessGuid, pollingInterval, bbs.logger)
+
 	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
 
 	err = bbs.RequestStopLRPInstances(stopLRPInstances)
@@ -117,12 +119,33 @@ func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]struct{},
 	return actualsToStop
 }
 
+func (bbs *LRPBBS) resendStartAuctions(actualsByProcessGuid map[string][]models.ActualLRP, pollingInterval time.Duration, logger lager.Logger) {
+	logger = logger.Session("resending-start-auctions")
+
+	for processGuid, actuals := range actualsByProcessGuid {
+		for _, actual := range actuals {
+			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(pollingInterval)) {
+				desiredLRP, err := bbs.DesiredLRPByProcessGuid(processGuid)
+				if err != nil {
+					logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})
+					continue
+				}
+
+				lrpStartAuction := models.LRPStartAuction{
+					DesiredLRP:   *desiredLRP,
+					InstanceGuid: actual.InstanceGuid,
+					Index:        actual.Index,
+				}
+
+				bbs.startAuctionBBS.RequestLRPStartAuction(lrpStartAuction)
+			}
+		}
+	}
+}
+
 func (bbs *LRPBBS) needsReconciliation(desiredLRP models.DesiredLRP, actualLRPsForDesired []models.ActualLRP) bool {
 	var actuals delta_force.ActualInstances
 	for _, actual := range actualLRPsForDesired {
-		if actual.State == models.ActualLRPStateUnclaimed {
-			continue
-		}
 		actuals = append(actuals, delta_force.ActualInstance{
 			Index: actual.Index,
 			Guid:  actual.InstanceGuid,
