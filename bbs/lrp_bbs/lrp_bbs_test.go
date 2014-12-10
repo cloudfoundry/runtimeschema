@@ -364,8 +364,8 @@ var _ = Describe("LRP", func() {
 		})
 
 		Context("When the updates are invalid", func() {
-			It("instances cannot be set to zero", func() {
-				instances := 0
+			It("instances cannot be less than zero", func() {
+				instances := -1
 
 				update := models.DesiredLRPUpdate{
 					Instances: &instances,
