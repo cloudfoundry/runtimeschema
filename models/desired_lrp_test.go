@@ -203,9 +203,17 @@ var _ = Describe("DesiredLRP", func() {
 			}
 		})
 
-		It("requires a positive number of instances", func() {
-			lrp.Instances = 0
+		It("requires a positive nonzero number of instances", func() {
+			lrp.Instances = -1
 			assertDesiredLRPValidationFailsWithMessage(lrp, "instances")
+
+			lrp.Instances = 0
+			validationErr := lrp.Validate()
+			Ω(validationErr).ShouldNot(HaveOccurred())
+
+			lrp.Instances = 1
+			validationErr = lrp.Validate()
+			Ω(validationErr).ShouldNot(HaveOccurred())
 		})
 
 		It("requires a domain", func() {

@@ -100,7 +100,7 @@ func (desired DesiredLRP) Validate() error {
 		}
 	}
 
-	if desired.Instances < 1 {
+	if desired.Instances < 0 {
 		validationError = append(validationError, ErrInvalidField{"instances"})
 	}
 
