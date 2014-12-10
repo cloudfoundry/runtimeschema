@@ -107,6 +107,123 @@ var _ = Describe("ActualLRP", func() {
 		})
 	})
 
+	FDescribe("IsEquivalentTo", func() {
+		var lhs ActualLRP
+		var rhs ActualLRP
+
+		BeforeEach(func() {
+			lhs = ActualLRP{
+				ProcessGuid:  "process-guid",
+				InstanceGuid: "instance-guid",
+				Domain:       "domain",
+				CellID:       "cell-id",
+				Index:        1,
+				State:        ActualLRPStateClaimed,
+
+				Since: 1138,
+				Ports: []PortMapping{{ContainerPort: 2357, HostPort: 3468}},
+				Host:  "cell-host",
+			}
+			rhs = lhs
+		})
+
+		Context("when the actuals are equal", func() {
+			It("is true", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeTrue())
+			})
+		})
+
+		Context("when the ProcessGuid differs", func() {
+			BeforeEach(func() {
+				rhs.ProcessGuid = "some-other-guid"
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the InstanceGuid differs", func() {
+			BeforeEach(func() {
+				rhs.InstanceGuid = "some-other-guid"
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the Domain differs", func() {
+			BeforeEach(func() {
+				rhs.Domain = "some-other-domain"
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the CellID differs", func() {
+			BeforeEach(func() {
+				rhs.CellID = "some-other-cell-id"
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the Index differs", func() {
+			BeforeEach(func() {
+				rhs.Index = 2
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the State differs", func() {
+			BeforeEach(func() {
+				rhs.State = ActualLRPStateUnclaimed
+			})
+
+			It("is false", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeFalse())
+			})
+		})
+
+		Context("when the Ports differ", func() {
+			BeforeEach(func() {
+				rhs.Ports = nil
+			})
+
+			It("is true", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeTrue())
+			})
+		})
+
+		Context("when the Host differs", func() {
+			BeforeEach(func() {
+				rhs.Host = "some-other-host"
+			})
+
+			It("is true", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeTrue())
+			})
+		})
+
+		Context("when the Since differs", func() {
+			BeforeEach(func() {
+				rhs.Since = 3417
+			})
+
+			It("is true", func() {
+				Ω(lhs.IsEquivalentTo(rhs)).Should(BeTrue())
+			})
+		})
+	})
+
 	Describe("Validate", func() {
 		var actualLRP ActualLRP
 

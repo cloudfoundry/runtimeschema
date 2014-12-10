@@ -150,8 +150,7 @@ func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
 			return err
 		}
 
-		if lrp.ProcessGuid != storedLRP.ProcessGuid || lrp.Index != storedLRP.Index || lrp.Domain != storedLRP.Domain ||
-			lrp.InstanceGuid != storedLRP.InstanceGuid || lrp.CellID != storedLRP.CellID || lrp.State != storedLRP.State {
+		if !storedLRP.IsEquivalentTo(lrp) {
 			return bbserrors.ErrStoreComparisonFailed
 		}
 

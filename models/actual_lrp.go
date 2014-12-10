@@ -51,6 +51,15 @@ func NewActualLRP(
 	return lrp
 }
 
+func (actual ActualLRP) IsEquivalentTo(other ActualLRP) bool {
+	return actual.CellID == other.CellID &&
+		actual.Domain == other.Domain &&
+		actual.Index == other.Index &&
+		actual.InstanceGuid == other.InstanceGuid &&
+		actual.ProcessGuid == other.ProcessGuid &&
+		actual.State == other.State
+}
+
 func (actual ActualLRP) Validate() error {
 	var validationError ValidationError
 
