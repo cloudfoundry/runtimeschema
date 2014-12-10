@@ -51,7 +51,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 
 	var desiredLRPsToCAS []compareAndSwappableDesiredLRP
 	var keysToDelete []string
-	knownDesiredProcessGuids := map[string]struct{}{}
+	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
 	for _, node := range desiredLRPRoot.ChildNodes {
 		var desiredLRP models.DesiredLRP
@@ -66,7 +66,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 			continue
 		}
 
-		knownDesiredProcessGuids[desiredLRP.ProcessGuid] = struct{}{}
+		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
 		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired) {
@@ -77,7 +77,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		}
 	}
 
-	stopLRPInstances := bbs.instancesToStop(knownDesiredProcessGuids, actualsByProcessGuid)
+	stopLRPInstances := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid)
 
 	lrpsDeletedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
@@ -85,7 +85,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	lrpsKickedCounter.Add(uint64(len(desiredLRPsToCAS)))
 	bbs.batchCompareAndSwapDesiredLRPs(desiredLRPsToCAS)
 
-	bbs.resendStartAuctions(actualsByProcessGuid, pollingInterval, bbs.logger)
+	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, bbs.logger)
 
 	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
 
@@ -95,11 +95,14 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	}
 }
 
-func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]struct{}, actualsByProcessGuid map[string][]models.ActualLRP) []models.ActualLRP {
+func (bbs *LRPBBS) instancesToStop(
+	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
+	actualsByProcessGuid map[string][]models.ActualLRP,
+) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
 
 	for processGuid, actuals := range actualsByProcessGuid {
-		if _, found := knownDesiredProcessGuids[processGuid]; !found {
+		if _, found := desiredLRPsByProcessGuid[processGuid]; !found {
 			for _, actual := range actuals {
 				if actual.State == models.ActualLRPStateUnclaimed {
 					continue
@@ -119,20 +122,25 @@ func (bbs *LRPBBS) instancesToStop(knownDesiredProcessGuids map[string]struct{},
 	return actualsToStop
 }
 
-func (bbs *LRPBBS) resendStartAuctions(actualsByProcessGuid map[string][]models.ActualLRP, pollingInterval time.Duration, logger lager.Logger) {
+func (bbs *LRPBBS) resendStartAuctions(
+	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
+	actualsByProcessGuid map[string][]models.ActualLRP,
+	pollingInterval time.Duration,
+	logger lager.Logger,
+) {
 	logger = logger.Session("resending-start-auctions")
 
 	for processGuid, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
 			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(pollingInterval)) {
-				desiredLRP, err := bbs.DesiredLRPByProcessGuid(processGuid)
-				if err != nil {
+				desiredLRP, found := desiredLRPsByProcessGuid[processGuid]
+				if !found {
 					logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})
 					continue
 				}
 
 				lrpStartAuction := models.LRPStartAuction{
-					DesiredLRP:   *desiredLRP,
+					DesiredLRP:   desiredLRP,
 					InstanceGuid: actual.InstanceGuid,
 					Index:        actual.Index,
 				}
