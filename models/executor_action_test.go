@@ -154,6 +154,7 @@ var _ = Describe("Actions", func() {
 			`{
 					"path": "rm",
 					"args": ["-rf", "/"],
+					"dir": "./some-dir",
 					"env": [
 						{"name":"FOO", "value":"1"},
 						{"name":"BAR", "value":"2"}
@@ -163,6 +164,7 @@ var _ = Describe("Actions", func() {
 			}`,
 			&RunAction{
 				Path: "rm",
+				Dir:  "./some-dir",
 				Args: []string{"-rf", "/"},
 				Env: []EnvironmentVariable{
 					{"FOO", "1"},
