@@ -292,6 +292,129 @@ var _ = Describe("Task BBS", func() {
 	})
 
 	Describe("CompleteTask", func() {
+		Context("when completing a pending Task", func() {
+			JustBeforeEach(func() {
+				err := bbs.DesireTask(task)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("sets the Task in the completed state", func() {
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.CompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].Failed).Should(BeTrue())
+				Ω(tasks[0].FailureReason).Should(Equal("because i said so"))
+			})
+
+			It("should bump UpdatedAt", func() {
+				timeProvider.IncrementBySeconds(1)
+
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.CompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+			})
+
+			It("sets FirstCompletedAt", func() {
+				timeProvider.IncrementBySeconds(1)
+
+				err := bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				tasks, err := bbs.CompletedTasks()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
+			})
+
+			Context("when a receptor is present", func() {
+				var receptorPresence ifrit.Process
+
+				BeforeEach(func() {
+					presence := models.ReceptorPresence{
+						ReceptorID:  "some-receptor",
+						ReceptorURL: "some-receptor-url",
+					}
+
+					heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+
+					receptorPresence = ifrit.Invoke(heartbeat)
+				})
+
+				AfterEach(func() {
+					ginkgomon.Interrupt(receptorPresence)
+				})
+
+				Context("and completing succeeds", func() {
+					BeforeEach(func() {
+						fakeTaskClient.CompleteTaskReturns(nil)
+					})
+
+					Context("and the task has a complete URL", func() {
+						BeforeEach(func() {
+							task.CompletionCallbackURL = &url.URL{Host: "bogus"}
+						})
+
+						It("completes the task using its address", func() {
+							err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+							receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							Ω(receptorURL).Should(Equal("some-receptor-url"))
+							Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+							Ω(completedTask.Failed).Should(BeTrue())
+							Ω(completedTask.FailureReason).Should(Equal("because"))
+							Ω(completedTask.Result).Should(Equal("a result"))
+						})
+					})
+
+					Context("but the task has no complete URL", func() {
+						BeforeEach(func() {
+							task.CompletionCallbackURL = nil
+						})
+
+						It("does not complete the task via the receptor", func() {
+							err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+						})
+					})
+				})
+
+				Context("and completing fails", func() {
+					BeforeEach(func() {
+						fakeTaskClient.CompleteTaskReturns(errors.New("welp"))
+					})
+
+					It("swallows the error, as we'll retry again eventually (via convergence)", func() {
+						err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				})
+			})
+
+			Context("when no receptors are present", func() {
+				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
+					err := bbs.CompleteTask(task.TaskGuid, true, "because", "a result")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+			})
+
+			Context("when the store is out of commission", func() {
+				itRetriesUntilStoreComesBack(func() error {
+					return bbs.CompleteTask(task.TaskGuid, false, "", "a result")
+				})
+			})
+		})
+
 		Context("when completing a running Task", func() {
 			JustBeforeEach(func() {
 				err := bbs.DesireTask(task)
@@ -418,24 +541,42 @@ var _ = Describe("Task BBS", func() {
 			})
 		})
 
-		Context("When completing a Task that is not in the running state", func() {
-			It("returns an error", func() {
-				err := bbs.DesireTask(task)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
-				Ω(err).Should(HaveOccurred())
-			})
-
-			It("has no error when Task is in running state", func() {
+		Context("When completing a Task that is already completed", func() {
+			BeforeEach(func() {
 				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.StartTask(task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, true, "because i said so", "a result")
+				err = bbs.CompleteTask(task.TaskGuid, true, "some failure reason", "")
 				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an error", func() {
+				err := bbs.CompleteTask(task.TaskGuid, true, "another failure reason", "")
+				Ω(err).Should(HaveOccurred())
+			})
+		})
+
+		Context("When completing a Task that is resolving", func() {
+			BeforeEach(func() {
+				err := bbs.DesireTask(task)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.CompleteTask(task.TaskGuid, false, "", "result")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.ResolvingTask(task.TaskGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an error", func() {
+				err := bbs.CompleteTask(task.TaskGuid, false, "", "another result")
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 	})

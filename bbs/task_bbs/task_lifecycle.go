@@ -111,7 +111,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 		return bbserrors.ErrTaskNotFound
 	}
 
-	if task.State != models.TaskStateRunning {
+	if task.State != models.TaskStateRunning && task.State != models.TaskStatePending {
 		return bbserrors.ErrTaskCannotBeCompleted
 	}
 

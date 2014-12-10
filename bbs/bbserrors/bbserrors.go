@@ -7,7 +7,7 @@ var (
 	ErrTaskCannotBeResolved          = errors.New("cannot resolve task from non-resolving state")
 	ErrTaskCannotBeMarkedAsResolving = errors.New("cannot mark task as resolving from non-completed state")
 	ErrTaskCannotBeStarted           = errors.New("cannot start task from non-pending state")
-	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-running state")
+	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-running or non-pending state")
 	ErrTaskCannotBeCancelled         = errors.New("cannot cancel task from non-pending/non-running state")
 
 	ErrActualLRPCannotBeClaimed = errors.New("cannot claim actual LRP")
