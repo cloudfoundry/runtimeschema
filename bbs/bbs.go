@@ -130,6 +130,7 @@ type AuctioneerBBS interface {
 
 	//task
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
+	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lock
 	NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner

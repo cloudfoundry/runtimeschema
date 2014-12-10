@@ -74,6 +74,17 @@ type FakeAuctioneerBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
+	CompleteTaskStub        func(taskGuid string, failed bool, failureReason string, result string) error
+	completeTaskMutex       sync.RWMutex
+	completeTaskArgsForCall []struct {
+		taskGuid      string
+		failed        bool
+		failureReason string
+		result        string
+	}
+	completeTaskReturns struct {
+		result1 error
+	}
 	NewAuctioneerLockStub        func(auctioneerID string, interval time.Duration) ifrit.Runner
 	newAuctioneerLockMutex       sync.RWMutex
 	newAuctioneerLockArgsForCall []struct {
@@ -314,6 +325,41 @@ func (fake *FakeAuctioneerBBS) WatchForDesiredTaskReturns(result1 <-chan models.
 		result2 chan<- bool
 		result3 <-chan error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeAuctioneerBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {
+	fake.completeTaskMutex.Lock()
+	fake.completeTaskArgsForCall = append(fake.completeTaskArgsForCall, struct {
+		taskGuid      string
+		failed        bool
+		failureReason string
+		result        string
+	}{taskGuid, failed, failureReason, result})
+	fake.completeTaskMutex.Unlock()
+	if fake.CompleteTaskStub != nil {
+		return fake.CompleteTaskStub(taskGuid, failed, failureReason, result)
+	} else {
+		return fake.completeTaskReturns.result1
+	}
+}
+
+func (fake *FakeAuctioneerBBS) CompleteTaskCallCount() int {
+	fake.completeTaskMutex.RLock()
+	defer fake.completeTaskMutex.RUnlock()
+	return len(fake.completeTaskArgsForCall)
+}
+
+func (fake *FakeAuctioneerBBS) CompleteTaskArgsForCall(i int) (string, bool, string, string) {
+	fake.completeTaskMutex.RLock()
+	defer fake.completeTaskMutex.RUnlock()
+	return fake.completeTaskArgsForCall[i].taskGuid, fake.completeTaskArgsForCall[i].failed, fake.completeTaskArgsForCall[i].failureReason, fake.completeTaskArgsForCall[i].result
+}
+
+func (fake *FakeAuctioneerBBS) CompleteTaskReturns(result1 error) {
+	fake.CompleteTaskStub = nil
+	fake.completeTaskReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner {
