@@ -53,9 +53,13 @@ func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 		return nil, err
 	}
 
+	if existingLRP.InstanceGuid != lrp.InstanceGuid || existingLRP.Domain != lrp.Domain {
+		return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
+	}
+
 	switch existingLRP.State {
 	case models.ActualLRPStateUnclaimed, models.ActualLRPStateRunning:
-		if existingLRP.State == models.ActualLRPStateRunning && (existingLRP.CellID != lrp.CellID || existingLRP.InstanceGuid != lrp.InstanceGuid) {
+		if existingLRP.State == models.ActualLRPStateRunning && (existingLRP.CellID != lrp.CellID) {
 			return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
 		}
 
@@ -71,7 +75,7 @@ func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 			})
 		})
 	case models.ActualLRPStateClaimed:
-		if existingLRP.CellID != lrp.CellID || existingLRP.InstanceGuid != lrp.InstanceGuid {
+		if existingLRP.CellID != lrp.CellID {
 			return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
 		}
 
