@@ -1,15 +1,13 @@
 package bbserrors
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
+)
 
 var (
-	ErrTaskNotFound                  = errors.New("task not found")
-	ErrTaskCannotBeResolved          = errors.New("cannot resolve task from non-resolving state")
-	ErrTaskCannotBeMarkedAsResolving = errors.New("cannot mark task as resolving from non-completed state")
-	ErrTaskCannotBeStarted           = errors.New("cannot start task from non-pending state")
-	ErrTaskCannotBeCompleted         = errors.New("cannot complete task from non-running or non-pending state")
-	ErrTaskCannotBeCancelled         = errors.New("cannot cancel task from non-pending/non-running state")
-
 	ErrActualLRPCannotBeClaimed = errors.New("cannot claim actual LRP")
 	ErrActualLRPCannotBeStarted = errors.New("cannot start actual LRP")
 
@@ -24,3 +22,51 @@ var (
 
 	ErrServiceUnavailable = errors.New("service unavailable")
 )
+
+type TaskNotFoundError struct{}
+
+func (e TaskNotFoundError) Error() string {
+	return "task not found"
+}
+
+func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {
+	return TaskStateTransitionError{from, to}
+}
+
+type TaskStateTransitionError struct {
+	from models.TaskState
+	to   models.TaskState
+}
+
+func (e TaskStateTransitionError) Error() string {
+	return "Cannot transition from " + stateString(e.from) + " to " + stateString(e.to)
+}
+
+func NewTaskCannotBeResolvedError(from models.TaskState) taskCannotBeResolvedError {
+	return taskCannotBeResolvedError{from}
+}
+
+type taskCannotBeResolvedError struct {
+	from models.TaskState
+}
+
+func (e taskCannotBeResolvedError) Error() string {
+	return "Cannot resolve task from " + stateString(e.from) + " state"
+}
+
+func stateString(state models.TaskState) string {
+	switch state {
+	case models.TaskStateCompleted:
+		return "COMPLETED"
+	case models.TaskStateInvalid:
+		return "INVALID"
+	case models.TaskStatePending:
+		return "PENDING"
+	case models.TaskStateRunning:
+		return "RUNNNING"
+	case models.TaskStateResolving:
+		return "RESOLVING"
+	default:
+		panic(fmt.Sprintf("Unknown task state: %v", state))
+	}
+}

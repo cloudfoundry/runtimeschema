@@ -230,7 +230,7 @@ var _ = Describe("Task BBS", func() {
 
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(BeAssignableToTypeOf(bbserrors.ErrTaskCannotBeCancelled))
+					Ω(cancelError).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateCompleted, models.TaskStateCompleted)))
 				})
 			})
 
@@ -251,14 +251,14 @@ var _ = Describe("Task BBS", func() {
 
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(BeAssignableToTypeOf(bbserrors.ErrTaskCannotBeCancelled))
+					Ω(cancelError).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateResolving, models.TaskStateCompleted)))
 				})
 			})
 
 			Context("when the task does not exist", func() {
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(bbserrors.ErrTaskNotFound))
+					Ω(cancelError).Should(Equal(bbserrors.TaskNotFoundError{}))
 				})
 			})
 
@@ -639,7 +639,7 @@ var _ = Describe("Task BBS", func() {
 
 			It("should fail", func() {
 				err := bbs.ResolvingTask(task.TaskGuid)
-				Ω(err).Should(Equal(bbserrors.ErrTaskCannotBeMarkedAsResolving))
+				Ω(err).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateRunning, models.TaskStateResolving)))
 			})
 		})
 	})

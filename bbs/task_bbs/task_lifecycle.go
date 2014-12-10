@@ -46,8 +46,9 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 		return fmt.Errorf("cannot start non-existing task: %s", err.Error())
 	}
 
-	if task.State != models.TaskStatePending {
-		return bbserrors.ErrTaskCannotBeStarted
+	err = validateStateTransition(task.State, models.TaskStateRunning)
+	if err != nil {
+		return err
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
@@ -74,15 +75,16 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err == bbserrors.ErrStoreResourceNotFound {
-		return bbserrors.ErrTaskNotFound
+		return bbserrors.TaskNotFoundError{}
 	} else if err != nil {
 		return err
 	} else if task == nil {
-		return bbserrors.ErrTaskNotFound
+		return bbserrors.TaskNotFoundError{}
 	}
 
-	if task.State != models.TaskStatePending && task.State != models.TaskStateRunning {
-		return bbserrors.ErrTaskCannotBeCancelled
+	err = validateStateTransition(task.State, models.TaskStateCompleted)
+	if err != nil {
+		return err
 	}
 
 	*task = bbs.markTaskCompleted(*task, true, "task was cancelled", "")
@@ -108,11 +110,12 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil || task == nil {
-		return bbserrors.ErrTaskNotFound
+		return bbserrors.TaskNotFoundError{}
 	}
 
-	if task.State != models.TaskStateRunning && task.State != models.TaskStatePending {
-		return bbserrors.ErrTaskCannotBeCompleted
+	err = validateStateTransition(task.State, models.TaskStateCompleted)
+	if err != nil {
+		return err
 	}
 
 	*task = bbs.markTaskCompleted(*task, failed, failureReason, result)
@@ -157,11 +160,12 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return bbserrors.ErrTaskNotFound
+		return bbserrors.TaskNotFoundError{}
 	}
 
-	if task.State != models.TaskStateCompleted {
-		return bbserrors.ErrTaskCannotBeMarkedAsResolving
+	err = validateStateTransition(task.State, models.TaskStateResolving)
+	if err != nil {
+		return err
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
@@ -190,11 +194,30 @@ func (bbs *TaskBBS) ResolveTask(taskGuid string) error {
 		return fmt.Errorf("cannot resolve non-existing task: %s", err.Error())
 	}
 
-	if task.State != models.TaskStateResolving {
-		return bbserrors.ErrTaskCannotBeResolved
+	err = validateCanDelete(task.State)
+	if err != nil {
+		return err
 	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.Delete(shared.TaskSchemaPath(taskGuid))
 	})
+}
+
+func validateStateTransition(from, to models.TaskState) error {
+	if (from != models.TaskStatePending && to == models.TaskStateRunning) ||
+		((from != models.TaskStatePending && from != models.TaskStateRunning) && to == models.TaskStateCompleted) ||
+		(from != models.TaskStateCompleted && to == models.TaskStateResolving) {
+		return bbserrors.NewTaskStateTransitionError(from, to)
+	} else {
+		return nil
+	}
+}
+
+func validateCanDelete(from models.TaskState) error {
+	if from != models.TaskStateResolving {
+		return bbserrors.NewTaskCannotBeResolvedError(from)
+	} else {
+		return nil
+	}
 }
