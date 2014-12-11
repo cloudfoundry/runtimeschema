@@ -202,45 +202,31 @@ var _ = Describe("LrpConvergence", func() {
 			})
 		})
 
-		Context("when the desired LRP has only unclaimed actuals", func() {
+		Context("when the desired LRP has stale unclaimed actuals", func() {
 			BeforeEach(func() {
 				desiredLRP.ProcessGuid = unclaimedProcessGuid
 				desiredLRP.Instances = 1
 				bbs.DesireLRP(desiredLRP)
+				timeProvider.Increment(pollingInterval + 1*time.Second)
 			})
 
-			It("does not kick the desired LRP", func() {
+			It("resends a start auction for the unclaimed actual", func() {
+				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+
 				commenceWatching()
 				bbs.ConvergeLRPs(pollingInterval)
 
-				Consistently(desiredEvents).ShouldNot(Receive())
+				startAuctions, err := startAuctionBBS.LRPStartAuctions()
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(startAuctions).Should(HaveLen(1))
+				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+				Ω(startAuctions[0].InstanceGuid).Should(Equal("instance-guid-3"))
 			})
 
-			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
+			It("logs", func() {
+				commenceWatching()
 				bbs.ConvergeLRPs(pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPsKicked")).Should(Equal(uint64(0)))
-			})
-
-			Context("and the unclaimed actual is stale", func() {
-				BeforeEach(func() {
-					timeProvider.Increment(pollingInterval + 1*time.Second)
-				})
-
-				It("resends a start auction for the actual", func() {
-					Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
-
-					commenceWatching()
-					bbs.ConvergeLRPs(pollingInterval)
-
-					Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(1))
-				})
-
-				It("logs", func() {
-					commenceWatching()
-					bbs.ConvergeLRPs(pollingInterval)
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending-start-auction"))
-				})
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending-start-auction"))
 			})
 		})
 
@@ -283,10 +269,10 @@ var _ = Describe("LrpConvergence", func() {
 			Ω(addr1).Should(Equal(cellPresence.RepAddress))
 			Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-			Ω([]string{stop1.InstanceGuid, stop2.InstanceGuid}).Should(ConsistOf([]string{
+			Ω([]string{stop1.InstanceGuid, stop2.InstanceGuid}).Should(ConsistOf(
 				"instance-guid-1",
 				"instance-guid-2",
-			}))
+			))
 		})
 
 		It("logs", func() {
