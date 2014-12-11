@@ -3,7 +3,6 @@ package models
 type ActualLRPState string
 
 const (
-	ActualLRPStateInvalid   ActualLRPState = "INVALID"
 	ActualLRPStateUnclaimed ActualLRPState = "UNCLAIMED"
 	ActualLRPStateClaimed   ActualLRPState = "CLAIMED"
 	ActualLRPStateRunning   ActualLRPState = "RUNNING"

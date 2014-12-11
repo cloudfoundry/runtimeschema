@@ -23,7 +23,6 @@ var _ = Describe("LrpLifecycle", func() {
 				Domain:       "tests",
 				ProcessGuid:  "some-process-guid",
 				InstanceGuid: "some-instance-guid",
-				State:        models.ActualLRPStateInvalid,
 				Index:        2,
 			}
 
