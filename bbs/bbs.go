@@ -76,7 +76,7 @@ type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs(time.Duration)
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-	RequestStopLRPInstance(lrp models.ActualLRP) error
+	RequestStopLRPInstances([]models.ActualLRP) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	CreateActualLRP(models.ActualLRP) (*models.ActualLRP, error)
 	RemoveActualLRP(lrp models.ActualLRP) error

@@ -25,12 +25,12 @@ type FakeConvergerBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	RequestStopLRPInstanceStub        func(lrp models.ActualLRP) error
-	requestStopLRPInstanceMutex       sync.RWMutex
-	requestStopLRPInstanceArgsForCall []struct {
-		lrp models.ActualLRP
+	RequestStopLRPInstancesStub        func([]models.ActualLRP) error
+	requestStopLRPInstancesMutex       sync.RWMutex
+	requestStopLRPInstancesArgsForCall []struct {
+		arg1 []models.ActualLRP
 	}
-	requestStopLRPInstanceReturns struct {
+	requestStopLRPInstancesReturns struct {
 		result1 error
 	}
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
@@ -160,34 +160,34 @@ func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidReturns(result1 []models.Ac
 	}{result1, result2}
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstance(lrp models.ActualLRP) error {
-	fake.requestStopLRPInstanceMutex.Lock()
-	fake.requestStopLRPInstanceArgsForCall = append(fake.requestStopLRPInstanceArgsForCall, struct {
-		lrp models.ActualLRP
-	}{lrp})
-	fake.requestStopLRPInstanceMutex.Unlock()
-	if fake.RequestStopLRPInstanceStub != nil {
-		return fake.RequestStopLRPInstanceStub(lrp)
+func (fake *FakeConvergerBBS) RequestStopLRPInstances(arg1 []models.ActualLRP) error {
+	fake.requestStopLRPInstancesMutex.Lock()
+	fake.requestStopLRPInstancesArgsForCall = append(fake.requestStopLRPInstancesArgsForCall, struct {
+		arg1 []models.ActualLRP
+	}{arg1})
+	fake.requestStopLRPInstancesMutex.Unlock()
+	if fake.RequestStopLRPInstancesStub != nil {
+		return fake.RequestStopLRPInstancesStub(arg1)
 	} else {
-		return fake.requestStopLRPInstanceReturns.result1
+		return fake.requestStopLRPInstancesReturns.result1
 	}
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstanceCallCount() int {
-	fake.requestStopLRPInstanceMutex.RLock()
-	defer fake.requestStopLRPInstanceMutex.RUnlock()
-	return len(fake.requestStopLRPInstanceArgsForCall)
+func (fake *FakeConvergerBBS) RequestStopLRPInstancesCallCount() int {
+	fake.requestStopLRPInstancesMutex.RLock()
+	defer fake.requestStopLRPInstancesMutex.RUnlock()
+	return len(fake.requestStopLRPInstancesArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstanceArgsForCall(i int) models.ActualLRP {
-	fake.requestStopLRPInstanceMutex.RLock()
-	defer fake.requestStopLRPInstanceMutex.RUnlock()
-	return fake.requestStopLRPInstanceArgsForCall[i].lrp
+func (fake *FakeConvergerBBS) RequestStopLRPInstancesArgsForCall(i int) []models.ActualLRP {
+	fake.requestStopLRPInstancesMutex.RLock()
+	defer fake.requestStopLRPInstancesMutex.RUnlock()
+	return fake.requestStopLRPInstancesArgsForCall[i].arg1
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstanceReturns(result1 error) {
-	fake.RequestStopLRPInstanceStub = nil
-	fake.requestStopLRPInstanceReturns = struct {
+func (fake *FakeConvergerBBS) RequestStopLRPInstancesReturns(result1 error) {
+	fake.RequestStopLRPInstancesStub = nil
+	fake.requestStopLRPInstancesReturns = struct {
 		result1 error
 	}{result1}
 }
