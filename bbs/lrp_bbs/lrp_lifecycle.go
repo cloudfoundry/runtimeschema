@@ -53,16 +53,11 @@ func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 		return nil, err
 	}
 
-	if existingLRP.InstanceGuid != lrp.InstanceGuid || existingLRP.Domain != lrp.Domain {
-		return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
+	if existingLRP.IsEquivalentTo(lrp) {
+		return existingLRP, nil
 	}
 
-	switch existingLRP.State {
-	case models.ActualLRPStateUnclaimed, models.ActualLRPStateRunning:
-		if existingLRP.State == models.ActualLRPStateRunning && (existingLRP.CellID != lrp.CellID) {
-			return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
-		}
-
+	if existingLRP.AllowsTransitionTo(lrp) {
 		value, err := models.ToJSON(lrp)
 		if err != nil {
 			return nil, err
@@ -74,15 +69,9 @@ func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 				Value: value,
 			})
 		})
-	case models.ActualLRPStateClaimed:
-		if existingLRP.CellID != lrp.CellID {
-			return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
-		}
-
-		return existingLRP, nil
-	default:
-		return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
 	}
+
+	return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
 }
 
 func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
@@ -113,34 +102,31 @@ func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 		return nil, err
 	}
 
-	if existingLRP.InstanceGuid != lrp.InstanceGuid || existingLRP.Domain != lrp.Domain {
-		return existingLRP, bbserrors.ErrActualLRPCannotBeStarted
+	if existingLRP.IsEquivalentTo(lrp) {
+		return existingLRP, nil
 	}
 
-	switch existingLRP.State {
-	case models.ActualLRPStateRunning:
-		if existingLRP.CellID != lrp.CellID {
-			return nil, bbserrors.ErrActualLRPCannotBeStarted
-		}
-
-		return existingLRP, nil
-
-	case models.ActualLRPStateUnclaimed, models.ActualLRPStateClaimed:
+	if existingLRP.AllowsTransitionTo(lrp) {
 		value, err := models.ToJSON(lrp)
 		if err != nil {
 			return nil, err
 		}
 
-		return &lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
 				Value: value,
 			})
 		})
 
-	default:
-		return nil, bbserrors.ErrActualLRPCannotBeStarted
+		if err != nil {
+			return existingLRP, err
+		}
+
+		return &lrp, nil
 	}
+
+	return existingLRP, bbserrors.ErrActualLRPCannotBeStarted
 }
 
 func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {

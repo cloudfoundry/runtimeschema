@@ -60,6 +60,37 @@ func (actual ActualLRP) IsEquivalentTo(other ActualLRP) bool {
 		actual.State == other.State
 }
 
+func (before ActualLRP) AllowsTransitionTo(after ActualLRP) bool {
+	if before.ProcessGuid != after.ProcessGuid {
+		return false
+	}
+
+	if before.InstanceGuid != after.InstanceGuid &&
+		!(before.State != ActualLRPStateRunning && after.State == ActualLRPStateRunning) {
+		return false
+	}
+
+	if before.Index != after.Index {
+		return false
+	}
+
+	if before.Domain != after.Domain {
+		return false
+	}
+
+	if before.State == ActualLRPStateClaimed && after.State == ActualLRPStateRunning {
+		return true
+	}
+
+	if (before.State == ActualLRPStateClaimed || before.State == ActualLRPStateRunning) &&
+		(after.State == ActualLRPStateClaimed || after.State == ActualLRPStateRunning) &&
+		(before.CellID != after.CellID) {
+		return false
+	}
+
+	return true
+}
+
 func (actual ActualLRP) Validate() error {
 	var validationError ValidationError
 

@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"encoding/json"
+	"fmt"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -107,7 +108,7 @@ var _ = Describe("ActualLRP", func() {
 		})
 	})
 
-	FDescribe("IsEquivalentTo", func() {
+	Describe("IsEquivalentTo", func() {
 		var lhs ActualLRP
 		var rhs ActualLRP
 
@@ -221,6 +222,136 @@ var _ = Describe("ActualLRP", func() {
 			It("is true", func() {
 				Ω(lhs.IsEquivalentTo(rhs)).Should(BeTrue())
 			})
+		})
+	})
+
+	Describe("AllowsTransitionTo", func() {
+		var (
+			before ActualLRP
+			after  ActualLRP
+		)
+
+		BeforeEach(func() {
+			before = ActualLRP{
+				ProcessGuid:  "fake-process-guid",
+				InstanceGuid: "fake-instance-guid",
+				Index:        1,
+				Domain:       "fake-domain",
+			}
+			after = before
+		})
+
+		Context("when the ProcessGuid fields differ", func() {
+			BeforeEach(func() {
+				before.ProcessGuid = "some-process-guid"
+				after.ProcessGuid = "another-process-guid"
+			})
+
+			It("is not allowed", func() {
+				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+			})
+		})
+
+		Context("when the InstanceGuid fields differ", func() {
+			BeforeEach(func() {
+				before.InstanceGuid = "some-instance-guid"
+				after.InstanceGuid = "another-instance-guid"
+			})
+
+			It("is not allowed", func() {
+				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+			})
+
+			Context("when the before state is Claimed and the after state is Running", func() {
+				BeforeEach(func() {
+					before.State = ActualLRPStateClaimed
+					after.State = ActualLRPStateRunning
+				})
+
+				It("is allowed", func() {
+					Ω(before.AllowsTransitionTo(after)).Should(BeTrue())
+				})
+			})
+
+			Context("when the before state is Unclaimed and the after state is Running", func() {
+				BeforeEach(func() {
+					before.State = ActualLRPStateUnclaimed
+					after.State = ActualLRPStateRunning
+				})
+
+				It("is allowed", func() {
+					Ω(before.AllowsTransitionTo(after)).Should(BeTrue())
+				})
+			})
+		})
+
+		Context("when the Index fields differ", func() {
+			BeforeEach(func() {
+				before.Index = 1138
+				after.Index = 3417
+			})
+
+			It("is not allowed", func() {
+				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+			})
+		})
+
+		Context("when the Domain fields differ", func() {
+			BeforeEach(func() {
+				before.Domain = "some-domain"
+				after.Domain = "another-domain"
+			})
+
+			It("is not allowed", func() {
+				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+			})
+		})
+
+		Context("when the ProcessGuid, Index, InstanceGuid and Domain are equivalent", func() {
+			type stateTableEntry struct {
+				BeforeState  ActualLRPState
+				AfterState   ActualLRPState
+				BeforeCellID string
+				AfterCellID  string
+				Allowed      bool
+			}
+
+			var EntryToString = func(entry stateTableEntry) string {
+				return fmt.Sprintf("is %t when the before has state %s and cell id '%s' and the after has state %s and cell id '%s'",
+					entry.Allowed,
+					entry.BeforeState,
+					entry.BeforeCellID,
+					entry.AfterState,
+					entry.AfterCellID,
+				)
+			}
+
+			stateTable := []stateTableEntry{
+				{ActualLRPStateUnclaimed, ActualLRPStateUnclaimed, "", "", true},
+				{ActualLRPStateUnclaimed, ActualLRPStateClaimed, "", "cell-id", true},
+				{ActualLRPStateUnclaimed, ActualLRPStateRunning, "", "cell-id", true},
+				{ActualLRPStateClaimed, ActualLRPStateUnclaimed, "cell-id", "", true},
+				{ActualLRPStateClaimed, ActualLRPStateClaimed, "cell-id", "cell-id", true},
+				{ActualLRPStateClaimed, ActualLRPStateClaimed, "cell-id", "other-cell-id", false},
+				{ActualLRPStateClaimed, ActualLRPStateRunning, "cell-id", "cell-id", true},
+				{ActualLRPStateClaimed, ActualLRPStateRunning, "cell-id", "other-cell-id", true},
+				{ActualLRPStateRunning, ActualLRPStateUnclaimed, "cell-id", "", true},
+				{ActualLRPStateRunning, ActualLRPStateClaimed, "cell-id", "cell-id", true},
+				{ActualLRPStateRunning, ActualLRPStateClaimed, "cell-id", "other-cell-id", false},
+				{ActualLRPStateRunning, ActualLRPStateRunning, "cell-id", "cell-id", true},
+				{ActualLRPStateRunning, ActualLRPStateRunning, "cell-id", "other-cell-id", false},
+			}
+
+			for _, entry := range stateTable {
+				entry := entry
+				It(EntryToString(entry), func() {
+					before.State = entry.BeforeState
+					after.State = entry.AfterState
+					before.CellID = entry.BeforeCellID
+					after.CellID = entry.AfterCellID
+					Ω(before.AllowsTransitionTo(after)).Should(Equal(entry.Allowed))
+				})
+			}
 		})
 	})
 
