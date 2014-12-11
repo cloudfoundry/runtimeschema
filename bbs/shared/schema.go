@@ -11,7 +11,6 @@ const SchemaRoot = "/v1/"
 const CellSchemaRoot = SchemaRoot + "cell"
 const ReceptorSchemaRoot = SchemaRoot + "receptor"
 const LRPStartAuctionSchemaRoot = SchemaRoot + "start"
-const LRPStopAuctionSchemaRoot = SchemaRoot + "stop"
 const ActualLRPSchemaRoot = SchemaRoot + "actual"
 const DesiredLRPSchemaRoot = SchemaRoot + "desired"
 const TaskSchemaRoot = SchemaRoot + "task"
@@ -32,14 +31,6 @@ func LRPStartAuctionProcessDir(lrp models.LRPStartAuction) string {
 
 func LRPStartAuctionSchemaPath(lrp models.LRPStartAuction) string {
 	return path.Join(LRPStartAuctionProcessDir(lrp), strconv.Itoa(lrp.Index))
-}
-
-func LRPStopAuctionProcessDir(lrp models.LRPStopAuction) string {
-	return path.Join(LRPStopAuctionSchemaRoot, lrp.ProcessGuid)
-}
-
-func LRPStopAuctionSchemaPath(lrp models.LRPStopAuction) string {
-	return path.Join(LRPStopAuctionProcessDir(lrp), strconv.Itoa(lrp.Index))
 }
 
 func ActualLRPProcessDir(processGuid string) string {

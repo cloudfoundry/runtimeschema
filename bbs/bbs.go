@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/stop_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -85,10 +84,6 @@ type ConvergerBBS interface {
 	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
 	RequestLRPStartAuction(models.LRPStartAuction) error
 
-	//stop auction
-	ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
-	RequestLRPStopAuction(models.LRPStopAuction) error
-
 	//task
 	ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration)
 
@@ -122,11 +117,6 @@ type AuctioneerBBS interface {
 	WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
 	ClaimLRPStartAuction(models.LRPStartAuction) error
 	ResolveLRPStartAuction(models.LRPStartAuction) error
-
-	//stop auction
-	WatchForLRPStopAuction() (<-chan models.LRPStopAuction, chan<- bool, <-chan error)
-	ClaimLRPStopAuction(models.LRPStopAuction) error
-	ResolveLRPStopAuction(models.LRPStopAuction) error
 
 	//task
 	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
@@ -177,9 +167,6 @@ type VeritasBBS interface {
 	//start auctions
 	LRPStartAuctions() ([]models.LRPStartAuction, error)
 
-	//stop auctions
-	LRPStopAuctions() ([]models.LRPStopAuction, error)
-
 	//services
 	Cells() ([]models.CellPresence, error)
 }
@@ -228,7 +215,6 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 		LockBBS:         lock_bbs.New(store, logger.Session("lock-bbs")),
 		LRPBBS:          lrp_bbs.New(store, timeProvider, cb.NewCellClient(), services, startAuctionBBS, logger.Session("lrp-bbs")),
 		StartAuctionBBS: startAuctionBBS,
-		StopAuctionBBS:  stop_auction_bbs.New(store, timeProvider, logger.Session("lrp-stop-auction-bbs")),
 		ServicesBBS:     services,
 		TaskBBS:         task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),
 	}
@@ -238,7 +224,6 @@ type BBS struct {
 	*lock_bbs.LockBBS
 	*lrp_bbs.LRPBBS
 	*start_auction_bbs.StartAuctionBBS
-	*stop_auction_bbs.StopAuctionBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
 }

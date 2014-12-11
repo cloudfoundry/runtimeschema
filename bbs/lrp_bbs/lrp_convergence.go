@@ -186,14 +186,6 @@ func (bbs *LRPBBS) needsReconciliation(
 		})
 	}
 
-	if len(result.IndicesToStopAllButOne) > 0 {
-		logger.Info("detected-duplicate-instance", lager.Data{
-			"process-guid":       desiredLRP.ProcessGuid,
-			"desired-instances":  desiredLRP.Instances,
-			"duplicated-indices": result.IndicesToStopAllButOne,
-		})
-	}
-
 	return !result.Empty()
 }
 

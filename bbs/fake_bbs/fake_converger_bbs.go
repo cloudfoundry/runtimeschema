@@ -72,20 +72,6 @@ type FakeConvergerBBS struct {
 	requestLRPStartAuctionReturns struct {
 		result1 error
 	}
-	ConvergeLRPStopAuctionsStub        func(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
-	convergeLRPStopAuctionsMutex       sync.RWMutex
-	convergeLRPStopAuctionsArgsForCall []struct {
-		kickPendingDuration   time.Duration
-		expireClaimedDuration time.Duration
-	}
-	RequestLRPStopAuctionStub        func(models.LRPStopAuction) error
-	requestLRPStopAuctionMutex       sync.RWMutex
-	requestLRPStopAuctionArgsForCall []struct {
-		arg1 models.LRPStopAuction
-	}
-	requestLRPStopAuctionReturns struct {
-		result1 error
-	}
 	ConvergeTaskStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
 	convergeTaskMutex       sync.RWMutex
 	convergeTaskArgsForCall []struct {
@@ -335,62 +321,6 @@ func (fake *FakeConvergerBBS) RequestLRPStartAuctionArgsForCall(i int) models.LR
 func (fake *FakeConvergerBBS) RequestLRPStartAuctionReturns(result1 error) {
 	fake.RequestLRPStartAuctionStub = nil
 	fake.requestLRPStartAuctionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPStopAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration) {
-	fake.convergeLRPStopAuctionsMutex.Lock()
-	fake.convergeLRPStopAuctionsArgsForCall = append(fake.convergeLRPStopAuctionsArgsForCall, struct {
-		kickPendingDuration   time.Duration
-		expireClaimedDuration time.Duration
-	}{kickPendingDuration, expireClaimedDuration})
-	fake.convergeLRPStopAuctionsMutex.Unlock()
-	if fake.ConvergeLRPStopAuctionsStub != nil {
-		fake.ConvergeLRPStopAuctionsStub(kickPendingDuration, expireClaimedDuration)
-	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPStopAuctionsCallCount() int {
-	fake.convergeLRPStopAuctionsMutex.RLock()
-	defer fake.convergeLRPStopAuctionsMutex.RUnlock()
-	return len(fake.convergeLRPStopAuctionsArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPStopAuctionsArgsForCall(i int) (time.Duration, time.Duration) {
-	fake.convergeLRPStopAuctionsMutex.RLock()
-	defer fake.convergeLRPStopAuctionsMutex.RUnlock()
-	return fake.convergeLRPStopAuctionsArgsForCall[i].kickPendingDuration, fake.convergeLRPStopAuctionsArgsForCall[i].expireClaimedDuration
-}
-
-func (fake *FakeConvergerBBS) RequestLRPStopAuction(arg1 models.LRPStopAuction) error {
-	fake.requestLRPStopAuctionMutex.Lock()
-	fake.requestLRPStopAuctionArgsForCall = append(fake.requestLRPStopAuctionArgsForCall, struct {
-		arg1 models.LRPStopAuction
-	}{arg1})
-	fake.requestLRPStopAuctionMutex.Unlock()
-	if fake.RequestLRPStopAuctionStub != nil {
-		return fake.RequestLRPStopAuctionStub(arg1)
-	} else {
-		return fake.requestLRPStopAuctionReturns.result1
-	}
-}
-
-func (fake *FakeConvergerBBS) RequestLRPStopAuctionCallCount() int {
-	fake.requestLRPStopAuctionMutex.RLock()
-	defer fake.requestLRPStopAuctionMutex.RUnlock()
-	return len(fake.requestLRPStopAuctionArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) RequestLRPStopAuctionArgsForCall(i int) models.LRPStopAuction {
-	fake.requestLRPStopAuctionMutex.RLock()
-	defer fake.requestLRPStopAuctionMutex.RUnlock()
-	return fake.requestLRPStopAuctionArgsForCall[i].arg1
-}
-
-func (fake *FakeConvergerBBS) RequestLRPStopAuctionReturns(result1 error) {
-	fake.RequestLRPStopAuctionStub = nil
-	fake.requestLRPStopAuctionReturns = struct {
 		result1 error
 	}{result1}
 }

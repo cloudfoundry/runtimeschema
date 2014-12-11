@@ -14,14 +14,14 @@ type FakeAuctioneerBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
 	WatchForLRPStartAuctionStub        func() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
 	watchForLRPStartAuctionMutex       sync.RWMutex
 	watchForLRPStartAuctionArgsForCall []struct{}
-	watchForLRPStartAuctionReturns     struct {
+	watchForLRPStartAuctionReturns struct {
 		result1 <-chan models.LRPStartAuction
 		result2 chan<- bool
 		result3 <-chan error
@@ -42,34 +42,10 @@ type FakeAuctioneerBBS struct {
 	resolveLRPStartAuctionReturns struct {
 		result1 error
 	}
-	WatchForLRPStopAuctionStub        func() (<-chan models.LRPStopAuction, chan<- bool, <-chan error)
-	watchForLRPStopAuctionMutex       sync.RWMutex
-	watchForLRPStopAuctionArgsForCall []struct{}
-	watchForLRPStopAuctionReturns     struct {
-		result1 <-chan models.LRPStopAuction
-		result2 chan<- bool
-		result3 <-chan error
-	}
-	ClaimLRPStopAuctionStub        func(models.LRPStopAuction) error
-	claimLRPStopAuctionMutex       sync.RWMutex
-	claimLRPStopAuctionArgsForCall []struct {
-		arg1 models.LRPStopAuction
-	}
-	claimLRPStopAuctionReturns struct {
-		result1 error
-	}
-	ResolveLRPStopAuctionStub        func(models.LRPStopAuction) error
-	resolveLRPStopAuctionMutex       sync.RWMutex
-	resolveLRPStopAuctionArgsForCall []struct {
-		arg1 models.LRPStopAuction
-	}
-	resolveLRPStopAuctionReturns struct {
-		result1 error
-	}
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns     struct {
+	watchForDesiredTaskReturns struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
@@ -207,96 +183,6 @@ func (fake *FakeAuctioneerBBS) ResolveLRPStartAuctionArgsForCall(i int) models.L
 func (fake *FakeAuctioneerBBS) ResolveLRPStartAuctionReturns(result1 error) {
 	fake.ResolveLRPStartAuctionStub = nil
 	fake.resolveLRPStartAuctionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStopAuction() (<-chan models.LRPStopAuction, chan<- bool, <-chan error) {
-	fake.watchForLRPStopAuctionMutex.Lock()
-	fake.watchForLRPStopAuctionArgsForCall = append(fake.watchForLRPStopAuctionArgsForCall, struct{}{})
-	fake.watchForLRPStopAuctionMutex.Unlock()
-	if fake.WatchForLRPStopAuctionStub != nil {
-		return fake.WatchForLRPStopAuctionStub()
-	} else {
-		return fake.watchForLRPStopAuctionReturns.result1, fake.watchForLRPStopAuctionReturns.result2, fake.watchForLRPStopAuctionReturns.result3
-	}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStopAuctionCallCount() int {
-	fake.watchForLRPStopAuctionMutex.RLock()
-	defer fake.watchForLRPStopAuctionMutex.RUnlock()
-	return len(fake.watchForLRPStopAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStopAuctionReturns(result1 <-chan models.LRPStopAuction, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForLRPStopAuctionStub = nil
-	fake.watchForLRPStopAuctionReturns = struct {
-		result1 <-chan models.LRPStopAuction
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStopAuction(arg1 models.LRPStopAuction) error {
-	fake.claimLRPStopAuctionMutex.Lock()
-	fake.claimLRPStopAuctionArgsForCall = append(fake.claimLRPStopAuctionArgsForCall, struct {
-		arg1 models.LRPStopAuction
-	}{arg1})
-	fake.claimLRPStopAuctionMutex.Unlock()
-	if fake.ClaimLRPStopAuctionStub != nil {
-		return fake.ClaimLRPStopAuctionStub(arg1)
-	} else {
-		return fake.claimLRPStopAuctionReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStopAuctionCallCount() int {
-	fake.claimLRPStopAuctionMutex.RLock()
-	defer fake.claimLRPStopAuctionMutex.RUnlock()
-	return len(fake.claimLRPStopAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStopAuctionArgsForCall(i int) models.LRPStopAuction {
-	fake.claimLRPStopAuctionMutex.RLock()
-	defer fake.claimLRPStopAuctionMutex.RUnlock()
-	return fake.claimLRPStopAuctionArgsForCall[i].arg1
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStopAuctionReturns(result1 error) {
-	fake.ClaimLRPStopAuctionStub = nil
-	fake.claimLRPStopAuctionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStopAuction(arg1 models.LRPStopAuction) error {
-	fake.resolveLRPStopAuctionMutex.Lock()
-	fake.resolveLRPStopAuctionArgsForCall = append(fake.resolveLRPStopAuctionArgsForCall, struct {
-		arg1 models.LRPStopAuction
-	}{arg1})
-	fake.resolveLRPStopAuctionMutex.Unlock()
-	if fake.ResolveLRPStopAuctionStub != nil {
-		return fake.ResolveLRPStopAuctionStub(arg1)
-	} else {
-		return fake.resolveLRPStopAuctionReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStopAuctionCallCount() int {
-	fake.resolveLRPStopAuctionMutex.RLock()
-	defer fake.resolveLRPStopAuctionMutex.RUnlock()
-	return len(fake.resolveLRPStopAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStopAuctionArgsForCall(i int) models.LRPStopAuction {
-	fake.resolveLRPStopAuctionMutex.RLock()
-	defer fake.resolveLRPStopAuctionMutex.RUnlock()
-	return fake.resolveLRPStopAuctionArgsForCall[i].arg1
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStopAuctionReturns(result1 error) {
-	fake.ResolveLRPStopAuctionStub = nil
-	fake.resolveLRPStopAuctionReturns = struct {
 		result1 error
 	}{result1}
 }
