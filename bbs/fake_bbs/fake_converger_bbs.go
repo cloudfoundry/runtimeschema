@@ -7,6 +7,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
@@ -25,18 +26,19 @@ type FakeConvergerBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	RequestStopLRPInstancesStub        func([]models.ActualLRP) error
-	requestStopLRPInstancesMutex       sync.RWMutex
-	requestStopLRPInstancesArgsForCall []struct {
+	RetireActualLRPsStub        func([]models.ActualLRP, lager.Logger) error
+	retireActualLRPsMutex       sync.RWMutex
+	retireActualLRPsArgsForCall []struct {
 		arg1 []models.ActualLRP
+		arg2 lager.Logger
 	}
-	requestStopLRPInstancesReturns struct {
+	retireActualLRPsReturns struct {
 		result1 error
 	}
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns struct {
+	watchForDesiredLRPChangesReturns     struct {
 		result1 <-chan models.DesiredLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -146,34 +148,35 @@ func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidReturns(result1 []models.Ac
 	}{result1, result2}
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstances(arg1 []models.ActualLRP) error {
-	fake.requestStopLRPInstancesMutex.Lock()
-	fake.requestStopLRPInstancesArgsForCall = append(fake.requestStopLRPInstancesArgsForCall, struct {
+func (fake *FakeConvergerBBS) RetireActualLRPs(arg1 []models.ActualLRP, arg2 lager.Logger) error {
+	fake.retireActualLRPsMutex.Lock()
+	fake.retireActualLRPsArgsForCall = append(fake.retireActualLRPsArgsForCall, struct {
 		arg1 []models.ActualLRP
-	}{arg1})
-	fake.requestStopLRPInstancesMutex.Unlock()
-	if fake.RequestStopLRPInstancesStub != nil {
-		return fake.RequestStopLRPInstancesStub(arg1)
+		arg2 lager.Logger
+	}{arg1, arg2})
+	fake.retireActualLRPsMutex.Unlock()
+	if fake.RetireActualLRPsStub != nil {
+		return fake.RetireActualLRPsStub(arg1, arg2)
 	} else {
-		return fake.requestStopLRPInstancesReturns.result1
+		return fake.retireActualLRPsReturns.result1
 	}
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstancesCallCount() int {
-	fake.requestStopLRPInstancesMutex.RLock()
-	defer fake.requestStopLRPInstancesMutex.RUnlock()
-	return len(fake.requestStopLRPInstancesArgsForCall)
+func (fake *FakeConvergerBBS) RetireActualLRPsCallCount() int {
+	fake.retireActualLRPsMutex.RLock()
+	defer fake.retireActualLRPsMutex.RUnlock()
+	return len(fake.retireActualLRPsArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstancesArgsForCall(i int) []models.ActualLRP {
-	fake.requestStopLRPInstancesMutex.RLock()
-	defer fake.requestStopLRPInstancesMutex.RUnlock()
-	return fake.requestStopLRPInstancesArgsForCall[i].arg1
+func (fake *FakeConvergerBBS) RetireActualLRPsArgsForCall(i int) ([]models.ActualLRP, lager.Logger) {
+	fake.retireActualLRPsMutex.RLock()
+	defer fake.retireActualLRPsMutex.RUnlock()
+	return fake.retireActualLRPsArgsForCall[i].arg1, fake.retireActualLRPsArgsForCall[i].arg2
 }
 
-func (fake *FakeConvergerBBS) RequestStopLRPInstancesReturns(result1 error) {
-	fake.RequestStopLRPInstancesStub = nil
-	fake.requestStopLRPInstancesReturns = struct {
+func (fake *FakeConvergerBBS) RetireActualLRPsReturns(result1 error) {
+	fake.RetireActualLRPsStub = nil
+	fake.retireActualLRPsReturns = struct {
 		result1 error
 	}{result1}
 }

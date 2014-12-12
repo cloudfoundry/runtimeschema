@@ -4,7 +4,9 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager"
 )
 
 func (bbs *LRPBBS) CreateActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
@@ -145,6 +147,49 @@ func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
 			Index: index,
 		})
 	})
+}
+
+func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) error {
+	pool := workpool.NewWorkPool(workerPoolSize)
+
+	errs := make(chan error, len(lrps))
+	for _, lrp := range lrps {
+		lrp := lrp
+		pool.Submit(func() {
+			errs <- bbs.retireActualLRP(lrp, logger)
+		})
+	}
+
+	pool.Stop()
+
+	for i := 0; i < len(lrps); i++ {
+		err := <-errs
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {
+	var err error
+
+	if lrp.State == models.ActualLRPStateUnclaimed {
+		err = bbs.RemoveActualLRP(lrp)
+	} else {
+		err = bbs.RequestStopLRPInstance(lrp)
+	}
+
+	if err != nil {
+		logger.Error("request-remove-instance-failed", err, lager.Data{
+			"instance-guid": lrp.InstanceGuid,
+		})
+		return err
+	}
+
+	return nil
 }
 
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {

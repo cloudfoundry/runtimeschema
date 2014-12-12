@@ -1,6 +1,7 @@
 package lrp_bbs_test
 
 import (
+	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -473,6 +474,94 @@ var _ = Describe("LrpLifecycle", func() {
 				outOfDateLRP.InstanceGuid = "another-instance-guid"
 				err := bbs.RemoveActualLRP(outOfDateLRP)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
+			})
+		})
+	})
+
+	Describe("RetireActualLRPs", func() {
+		Context("with an Unclaimed LRP", func() {
+			var unclaimedActualLRP *models.ActualLRP
+
+			BeforeEach(func() {
+				lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, "")
+				var err error
+				unclaimedActualLRP, err = bbs.CreateActualLRP(lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("deletes the LRP", func() {
+				err := bbs.RetireActualLRPs([]models.ActualLRP{*unclaimedActualLRP}, logger)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(unclaimedActualLRP.ProcessGuid, unclaimedActualLRP.Index)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(lrpInBBS).Should(BeNil())
+			})
+		})
+
+		Context("when the LRP is not Unclaimed", func() {
+			var claimedActualLRP1, claimedActualLRP2 *models.ActualLRP
+			var cellPresence models.CellPresence
+
+			BeforeEach(func() {
+				cellPresence = models.CellPresence{
+					CellID:     cellID,
+					Stack:      "the-stack",
+					RepAddress: "cell.example.com",
+				}
+
+				registerCell(cellPresence)
+
+				lrp1 := models.NewActualLRP("some-process-guid-1", "some-instance-guid-1", "", "some-domain", 1, "")
+				lrp2 := models.NewActualLRP("some-process-guid-2", "some-instance-guid-2", "", "some-domain", 1, "")
+
+				var err error
+				createdActualLRP1, err := bbs.CreateActualLRP(lrp1)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				createdActualLRP1.CellID = cellID
+				claimedActualLRP1, err = bbs.ClaimActualLRP(*createdActualLRP1)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				createdActualLRP2, err := bbs.CreateActualLRP(lrp2)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				createdActualLRP2.CellID = cellID
+				claimedActualLRP2, err = bbs.ClaimActualLRP(*createdActualLRP2)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				wg := new(sync.WaitGroup)
+				wg.Add(2)
+
+				fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRP) error {
+					wg.Done()
+					wg.Wait()
+					return nil
+				}
+			})
+
+			It("stops the LRPs in parallel", func() {
+				err := bbs.RetireActualLRPs(
+					[]models.ActualLRP{
+						*claimedActualLRP1,
+						*claimedActualLRP2,
+					},
+					logger,
+				)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(2))
+
+				addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+				Ω(addr1).Should(Equal(cellPresence.RepAddress))
+
+				addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+				Ω(addr2).Should(Equal(cellPresence.RepAddress))
+
+				Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf([]models.ActualLRP{
+					*claimedActualLRP1,
+					*claimedActualLRP2,
+				}))
 			})
 		})
 	})

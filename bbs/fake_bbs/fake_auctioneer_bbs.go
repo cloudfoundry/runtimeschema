@@ -14,14 +14,14 @@ type FakeAuctioneerBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}
 	WatchForLRPStartAuctionStub        func() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
 	watchForLRPStartAuctionMutex       sync.RWMutex
 	watchForLRPStartAuctionArgsForCall []struct{}
-	watchForLRPStartAuctionReturns struct {
+	watchForLRPStartAuctionReturns     struct {
 		result1 <-chan models.LRPStartAuction
 		result2 chan<- bool
 		result3 <-chan error
@@ -45,7 +45,7 @@ type FakeAuctioneerBBS struct {
 	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
 	watchForDesiredTaskMutex       sync.RWMutex
 	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns struct {
+	watchForDesiredTaskReturns     struct {
 		result1 <-chan models.Task
 		result2 chan<- bool
 		result3 <-chan error
