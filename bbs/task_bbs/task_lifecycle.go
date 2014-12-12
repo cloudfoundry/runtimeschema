@@ -73,13 +73,8 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 // Will fail if the task has already been cancelled or completed normally
 func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
-
-	if err == bbserrors.ErrStoreResourceNotFound {
-		return bbserrors.TaskNotFoundError{}
-	} else if err != nil {
+	if err != nil {
 		return err
-	} else if task == nil {
-		return bbserrors.TaskNotFoundError{}
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateCompleted)
@@ -108,9 +103,8 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
 func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {
 	task, index, err := bbs.getTask(taskGuid)
-
-	if err != nil || task == nil {
-		return bbserrors.TaskNotFoundError{}
+	if err != nil {
+		return err
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateCompleted)
@@ -158,9 +152,8 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason str
 // stager ever attempts to handle a completed task
 func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
-
 	if err != nil {
-		return bbserrors.TaskNotFoundError{}
+		return err
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateResolving)

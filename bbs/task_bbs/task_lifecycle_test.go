@@ -258,7 +258,7 @@ var _ = Describe("Task BBS", func() {
 			Context("when the task does not exist", func() {
 				It("returns an error", func() {
 					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(bbserrors.TaskNotFoundError{}))
+					Ω(cancelError).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 

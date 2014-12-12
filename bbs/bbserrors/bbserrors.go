@@ -23,12 +23,6 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 )
 
-type TaskNotFoundError struct{}
-
-func (e TaskNotFoundError) Error() string {
-	return "task not found"
-}
-
 func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {
 	return TaskStateTransitionError{from, to}
 }
