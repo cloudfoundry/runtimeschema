@@ -27,6 +27,24 @@ func NewActualLRPKey(processGuid string, index int, domain string) ActualLRPKey 
 	}
 }
 
+func (key ActualLRPKey) Validate() error {
+	var validationError ValidationError
+
+	if key.ProcessGuid == "" {
+		validationError = append(validationError, ErrInvalidField{"process_guid"})
+	}
+
+	if key.Domain == "" {
+		validationError = append(validationError, ErrInvalidField{"domain"})
+	}
+
+	if len(validationError) > 0 {
+		return validationError
+	}
+
+	return nil
+}
+
 type ActualLRPContainerKey struct {
 	InstanceGuid string `json:"instance_guid"`
 	CellID       string `json:"cell_id"`
@@ -37,6 +55,20 @@ func NewActualLRPContainerKey(instanceGuid string, cellID string) ActualLRPConta
 		InstanceGuid: instanceGuid,
 		CellID:       cellID,
 	}
+}
+
+func (key ActualLRPContainerKey) Validate() error {
+	var validationError ValidationError
+
+	if key.CellID == "" && key.InstanceGuid != "" {
+		return append(validationError, ErrInvalidField{"cell_id"})
+	}
+
+	if key.CellID != "" && key.InstanceGuid == "" {
+		return append(validationError, ErrInvalidField{"instance_guid"})
+	}
+
+	return nil
 }
 
 type ActualLRPNetInfo struct {
