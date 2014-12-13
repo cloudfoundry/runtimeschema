@@ -9,21 +9,23 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *LRPBBS) CreateActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
-	lrp.State = models.ActualLRPStateUnclaimed
-	lrp.CellID = ""
+func (bbs *LRPBBS) CreateActualLRP(key models.ActualLRPKey) (*models.ActualLRP, error) {
+	lrp := models.ActualLRP{
+		ActualLRPKey:          key,
+		ActualLRPContainerKey: models.NewActualLRPContainerKey("", ""),
+		State: models.ActualLRPStateUnclaimed,
+		Since: bbs.timeProvider.Now().UnixNano(),
+	}
 
+	return bbs.createRawActualLRP(&lrp)
+}
+
+func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP, error) {
 	err := lrp.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
-
-	return bbs.CreateRawActualLRP(&lrp)
-}
-
-func (bbs *LRPBBS) CreateRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP, error) {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		return nil, err
@@ -39,113 +41,135 @@ func (bbs *LRPBBS) CreateRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP,
 	return lrp, err
 }
 
-func (bbs *LRPBBS) ClaimActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
-	lrp.State = models.ActualLRPStateClaimed
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
-
-	err := lrp.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	existingLRP, index, err := bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
+func (bbs *LRPBBS) ClaimActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) (*models.ActualLRP, error) {
+	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return nil, bbserrors.ErrActualLRPCannotBeClaimed
 	} else if err != nil {
 		return nil, err
 	}
 
-	if existingLRP.IsEquivalentTo(lrp) {
-		return existingLRP, nil
+	if lrp.ActualLRPKey == key &&
+		lrp.ActualLRPContainerKey == containerKey &&
+		lrp.State == models.ActualLRPStateClaimed {
+		return lrp, nil
 	}
 
-	if existingLRP.AllowsTransitionTo(lrp) {
-		value, err := models.ToJSON(lrp)
-		if err != nil {
-			return nil, err
-		}
-
-		return &lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
-			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-				Value: value,
-			})
-		})
+	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateClaimed) {
+		return lrp, bbserrors.ErrActualLRPCannotBeClaimed
 	}
 
-	return existingLRP, bbserrors.ErrActualLRPCannotBeClaimed
-}
-
-func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
-	lrp.State = models.ActualLRPStateRunning
 	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.State = models.ActualLRPStateClaimed
+	lrp.ActualLRPContainerKey = containerKey
+	lrp.ActualLRPNetInfo = models.NewActualLRPNetInfo("", nil)
 
-	err := lrp.Validate()
+	err = lrp.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	existingLRP, index, err := bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return nil, err
+	}
+
+	return lrp, shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		})
+	})
+}
+
+func (bbs *LRPBBS) newRunningActualLRP(
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+	netInfo models.ActualLRPNetInfo,
+) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey:          key,
+		ActualLRPContainerKey: containerKey,
+		ActualLRPNetInfo:      netInfo,
+		Since:                 bbs.timeProvider.Now().UnixNano(),
+		State:                 models.ActualLRPStateRunning,
+	}
+}
+
+func (bbs *LRPBBS) StartActualLRP(
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+	netInfo models.ActualLRPNetInfo,
+) (*models.ActualLRP, error) {
+	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		createdLRP, err := bbs.CreateRawActualLRP(&lrp)
-
-		if err == nil {
-			return createdLRP, nil
-		}
-
-		if err == bbserrors.ErrStoreResourceExists {
-			existingLRP, index, err = bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
-		}
-
+		newLRP := bbs.newRunningActualLRP(key, containerKey, netInfo)
+		createdLRP, err := bbs.createRawActualLRP(&newLRP)
 		if err != nil {
 			return nil, err
 		}
+
+		return createdLRP, nil
+
 	} else if err != nil {
 		return nil, err
 	}
 
-	if existingLRP.IsEquivalentTo(lrp) {
-		return existingLRP, nil
+	if lrp.ActualLRPKey == key &&
+		lrp.ActualLRPContainerKey == containerKey &&
+		lrp.State == models.ActualLRPStateRunning {
+		return lrp, nil
 	}
 
-	if existingLRP.AllowsTransitionTo(lrp) {
-		value, err := models.ToJSON(lrp)
-		if err != nil {
-			return nil, err
-		}
+	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateRunning) {
+		return lrp, bbserrors.ErrActualLRPCannotBeStarted
+	}
 
-		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-				Value: value,
-			})
+	lrp.State = models.ActualLRPStateRunning
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.ActualLRPContainerKey = containerKey
+	lrp.ActualLRPNetInfo = netInfo
+
+	err = lrp.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return nil, err
+	}
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
 		})
+	})
 
-		if err != nil {
-			return existingLRP, err
-		}
-
-		return &lrp, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return existingLRP, bbserrors.ErrActualLRPCannotBeStarted
+	return lrp, nil
 }
 
-func (bbs *LRPBBS) RemoveActualLRP(lrp models.ActualLRP) error {
+func (bbs *LRPBBS) RemoveActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error {
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		storedLRP, index, err := bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
+		lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 		if err != nil {
 			return err
 		}
 
-		if !storedLRP.IsEquivalentTo(lrp) {
+		if lrp.ActualLRPKey == key &&
+			lrp.ActualLRPContainerKey == containerKey {
+			return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+				Index: storeIndex,
+			})
+		} else {
 			return bbserrors.ErrStoreComparisonFailed
 		}
-
-		return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Index: index,
-		})
 	})
 }
 
@@ -177,7 +201,7 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 	var err error
 
 	if lrp.State == models.ActualLRPStateUnclaimed {
-		err = bbs.RemoveActualLRP(lrp)
+		err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 	} else {
 		err = bbs.RequestStopLRPInstance(lrp)
 	}

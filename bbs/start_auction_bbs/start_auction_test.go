@@ -19,8 +19,7 @@ var _ = Describe("Start Auction", func() {
 
 		BeforeEach(func() {
 			auctionLRP = models.LRPStartAuction{
-				Index:        1,
-				InstanceGuid: "instance-guid",
+				Index: 1,
 
 				DesiredLRP: models.DesiredLRP{
 					Domain:      "tests",
@@ -77,8 +76,7 @@ var _ = Describe("Start Auction", func() {
 
 		BeforeEach(func() {
 			auctionLRP = models.LRPStartAuction{
-				Index:        1,
-				InstanceGuid: "instance-guid",
+				Index: 1,
 
 				DesiredLRP: models.DesiredLRP{
 					Domain:      "tests",
@@ -150,8 +148,7 @@ var _ = Describe("Start Auction", func() {
 
 		BeforeEach(func() {
 			auctionLRP = models.LRPStartAuction{
-				Index:        1,
-				InstanceGuid: "instance-guid",
+				Index: 1,
 
 				DesiredLRP: models.DesiredLRP{
 					Domain:      "tests",
@@ -220,8 +217,7 @@ var _ = Describe("Start Auction", func() {
 
 		BeforeEach(func() {
 			auctionLRP = models.LRPStartAuction{
-				Index:        1,
-				InstanceGuid: "instance-guid",
+				Index: 1,
 
 				DesiredLRP: models.DesiredLRP{
 					Domain:      "tests",

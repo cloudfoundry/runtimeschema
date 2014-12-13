@@ -68,9 +68,9 @@ type RepBBS interface {
 
 	//lrp
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
-	ClaimActualLRP(models.ActualLRP) (*models.ActualLRP, error)
-	StartActualLRP(models.ActualLRP) (*models.ActualLRP, error)
-	RemoveActualLRP(lrp models.ActualLRP) error
+	ClaimActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) (*models.ActualLRP, error)
+	StartActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) (*models.ActualLRP, error)
+	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
 }
 
 type ConvergerBBS interface {
@@ -79,8 +79,8 @@ type ConvergerBBS interface {
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RetireActualLRPs([]models.ActualLRP, lager.Logger) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	CreateActualLRP(models.ActualLRP) (*models.ActualLRP, error)
-	RemoveActualLRP(lrp models.ActualLRP) error
+	CreateActualLRP(models.ActualLRPKey) (*models.ActualLRP, error)
+	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	//start auction
 	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)

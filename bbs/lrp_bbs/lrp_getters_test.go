@@ -9,87 +9,49 @@ import (
 )
 
 var _ = Describe("LrpGetters", func() {
-	var (
-		desiredLrp1 models.DesiredLRP
-		desiredLrp2 models.DesiredLRP
-		desiredLrp3 models.DesiredLRP
-
-		runningLrp1 models.ActualLRP
-		runningLrp2 models.ActualLRP
-		runningLrp3 models.ActualLRP
-		lrpToClaim  models.ActualLRP
-
-		newLrp *models.ActualLRP
-	)
-
-	BeforeEach(func() {
-		desiredLrp1 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidA",
-			Stack:       "stack",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		desiredLrp2 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidB",
-			Stack:       "stack",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		desiredLrp3 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidC",
-			Stack:       "stack",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		runningLrp1 = models.ActualLRP{
-			ProcessGuid:  "guidA",
-			Index:        1,
-			InstanceGuid: "some-instance-guid-1",
-			Domain:       "domain-a",
-			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Now().UnixNano(),
-			CellID:       "cell-id",
-		}
-
-		runningLrp2 = models.ActualLRP{
-			ProcessGuid:  "guidB",
-			Index:        2,
-			InstanceGuid: "some-instance-guid-2",
-			Domain:       "domain-b",
-			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Now().UnixNano(),
-			CellID:       "cell-id",
-		}
-
-		runningLrp3 = models.ActualLRP{
-			ProcessGuid:  "guidC",
-			Index:        3,
-			InstanceGuid: "some-instance-guid-3",
-			Domain:       "domain-b",
-			State:        models.ActualLRPStateRunning,
-			Since:        timeProvider.Now().UnixNano(),
-			CellID:       "cell-id",
-		}
-
-		lrpToClaim = models.NewActualLRP("guidA", "some-instance-guid", "cell-id", "test", 2, models.ActualLRPStateClaimed)
-	})
 
 	Context("DesiredLRPs", func() {
+		var (
+			desiredLrp1 models.DesiredLRP
+			desiredLrp2 models.DesiredLRP
+			desiredLrp3 models.DesiredLRP
+		)
+
+		BeforeEach(func() {
+			desiredLrp1 = models.DesiredLRP{
+				Domain:      "tests",
+				ProcessGuid: "guidA",
+				Stack:       "stack",
+				Instances:   1,
+				Action: &models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			}
+
+			desiredLrp2 = models.DesiredLRP{
+				Domain:      "tests",
+				ProcessGuid: "guidB",
+				Stack:       "stack",
+				Instances:   1,
+				Action: &models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			}
+
+			desiredLrp3 = models.DesiredLRP{
+				Domain:      "tests",
+				ProcessGuid: "guidC",
+				Stack:       "stack",
+				Instances:   1,
+				Action: &models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			}
+		})
+
 		JustBeforeEach(func() {
 			err := bbs.DesireLRP(desiredLrp1)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -147,14 +109,50 @@ var _ = Describe("LrpGetters", func() {
 	})
 
 	Context("ActualLRPs", func() {
+		var (
+			runningLrp1 models.ActualLRP
+			runningLrp2 models.ActualLRP
+			runningLrp3 models.ActualLRP
+
+			newLrp *models.ActualLRP
+		)
+
 		BeforeEach(func() {
-			_, err := bbs.StartActualLRP(runningLrp1)
+			netInfo := models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}})
+
+			runningLrp1 = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("guidA", 1, "domain-a"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-1", "cell-id"),
+				ActualLRPNetInfo:      netInfo,
+				State:                 models.ActualLRPStateRunning,
+				Since:                 timeProvider.Now().UnixNano(),
+			}
+
+			runningLrp2 = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("guidB", 2, "domain-b"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-2", "cell-id"),
+				ActualLRPNetInfo:      netInfo,
+				State:                 models.ActualLRPStateRunning,
+				Since:                 timeProvider.Now().UnixNano(),
+			}
+
+			runningLrp3 = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("guidC", 3, "domain-b"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
+				ActualLRPNetInfo:      netInfo,
+				State:                 models.ActualLRPStateRunning,
+				Since:                 timeProvider.Now().UnixNano(),
+			}
+
+			lrpKeyToClaim := models.NewActualLRPKey("guidA", 2, "test")
+
+			_, err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, newLrp, err = createAndClaim(lrpToClaim)
+			_, newLrp, err = createAndClaim(lrpKeyToClaim, models.NewActualLRPContainerKey("some-instance-guid", "cell-id"))
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = bbs.StartActualLRP(runningLrp2)
+			_, err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -172,7 +170,10 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByCellID", func() {
 			BeforeEach(func() {
-				_, _, err := createAndClaim(models.NewActualLRP("some-other-process", "some-other-instance", "some-other-cell", "some-other-domain", 0, models.ActualLRPStateClaimed))
+				_, _, err := createAndClaim(
+					models.NewActualLRPKey("some-other-process", 0, "some-other-domain"),
+					models.NewActualLRPContainerKey("some-other-instance", "some-other-cell"),
+				)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -220,7 +221,7 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByDomain", func() {
 			BeforeEach(func() {
-				_, err := bbs.StartActualLRP(runningLrp3)
+				_, err := bbs.StartActualLRP(runningLrp3.ActualLRPKey, runningLrp3.ActualLRPContainerKey, runningLrp3.ActualLRPNetInfo)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

@@ -13,41 +13,50 @@ type ActualLRPChange struct {
 	After  *ActualLRP
 }
 
-type ActualLRP struct {
-	ProcessGuid  string `json:"process_guid"`
-	InstanceGuid string `json:"instance_guid"`
-	CellID       string `json:"cell_id"`
-	Domain       string `json:"domain"`
-
-	Index int `json:"index"`
-
-	Host  string        `json:"host"`
-	Ports []PortMapping `json:"ports"`
-
-	State ActualLRPState `json:"state"`
-	Since int64          `json:"since"`
+type ActualLRPKey struct {
+	ProcessGuid string `json:"process_guid"`
+	Index       int    `json:"index"`
+	Domain      string `json:"domain"`
 }
 
-func NewActualLRP(
-	processGuid string,
-	instanceGuid string,
-	cellID string,
-	domain string,
-	index int,
-	state ActualLRPState,
-) ActualLRP {
+func NewActualLRPKey(processGuid string, index int, domain string) ActualLRPKey {
+	return ActualLRPKey{
+		ProcessGuid: processGuid,
+		Index:       index,
+		Domain:      domain,
+	}
+}
 
-	lrp := ActualLRP{
-		ProcessGuid:  processGuid,
+type ActualLRPContainerKey struct {
+	InstanceGuid string `json:"instance_guid"`
+	CellID       string `json:"cell_id"`
+}
+
+func NewActualLRPContainerKey(instanceGuid string, cellID string) ActualLRPContainerKey {
+	return ActualLRPContainerKey{
 		InstanceGuid: instanceGuid,
 		CellID:       cellID,
-		Domain:       domain,
-
-		Index: index,
-		State: state,
 	}
+}
 
-	return lrp
+type ActualLRPNetInfo struct {
+	Host  string        `json:"host"`
+	Ports []PortMapping `json:"ports"`
+}
+
+func NewActualLRPNetInfo(host string, ports []PortMapping) ActualLRPNetInfo {
+	return ActualLRPNetInfo{
+		Host:  host,
+		Ports: ports,
+	}
+}
+
+type ActualLRP struct {
+	ActualLRPKey
+	ActualLRPContainerKey
+	ActualLRPNetInfo
+	State ActualLRPState `json:"state"`
+	Since int64          `json:"since"`
 }
 
 func (actual ActualLRP) IsEquivalentTo(other ActualLRP) bool {
@@ -59,31 +68,18 @@ func (actual ActualLRP) IsEquivalentTo(other ActualLRP) bool {
 		actual.State == other.State
 }
 
-func (before ActualLRP) AllowsTransitionTo(after ActualLRP) bool {
-	if before.ProcessGuid != after.ProcessGuid {
+func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey ActualLRPContainerKey, newState ActualLRPState) bool {
+	if before.ActualLRPKey != lrpKey {
 		return false
 	}
 
-	if before.InstanceGuid != after.InstanceGuid &&
-		!(before.State != ActualLRPStateRunning && after.State == ActualLRPStateRunning) {
-		return false
-	}
-
-	if before.Index != after.Index {
-		return false
-	}
-
-	if before.Domain != after.Domain {
-		return false
-	}
-
-	if before.State == ActualLRPStateClaimed && after.State == ActualLRPStateRunning {
+	if before.State == ActualLRPStateClaimed && newState == ActualLRPStateRunning {
 		return true
 	}
 
 	if (before.State == ActualLRPStateClaimed || before.State == ActualLRPStateRunning) &&
-		(after.State == ActualLRPStateClaimed || after.State == ActualLRPStateRunning) &&
-		(before.CellID != after.CellID) {
+		(newState == ActualLRPStateClaimed || newState == ActualLRPStateRunning) &&
+		(before.ActualLRPContainerKey != containerKey) {
 		return false
 	}
 
@@ -101,15 +97,19 @@ func (actual ActualLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidField{"domain"})
 	}
 
-	if actual.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidField{"instance_guid"})
-	}
-
 	if actual.State == ActualLRPStateUnclaimed {
+		if actual.InstanceGuid != "" {
+			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+		}
+
 		if actual.CellID != "" {
 			validationError = append(validationError, ErrInvalidField{"cell_id"})
 		}
 	} else {
+		if actual.InstanceGuid == "" {
+			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+		}
+
 		if actual.CellID == "" {
 			validationError = append(validationError, ErrInvalidField{"cell_id"})
 		}

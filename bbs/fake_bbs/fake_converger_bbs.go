@@ -43,19 +43,20 @@ type FakeConvergerBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
-	CreateActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	CreateActualLRPStub        func(models.ActualLRPKey) (*models.ActualLRP, error)
 	createActualLRPMutex       sync.RWMutex
 	createActualLRPArgsForCall []struct {
-		arg1 models.ActualLRP
+		arg1 models.ActualLRPKey
 	}
 	createActualLRPReturns struct {
 		result1 *models.ActualLRP
 		result2 error
 	}
-	RemoveActualLRPStub        func(lrp models.ActualLRP) error
+	RemoveActualLRPStub        func(models.ActualLRPKey, models.ActualLRPContainerKey) error
 	removeActualLRPMutex       sync.RWMutex
 	removeActualLRPArgsForCall []struct {
-		lrp models.ActualLRP
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
 	}
 	removeActualLRPReturns struct {
 		result1 error
@@ -207,10 +208,10 @@ func (fake *FakeConvergerBBS) WatchForDesiredLRPChangesReturns(result1 <-chan mo
 	}{result1, result2, result3}
 }
 
-func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.ActualLRPKey) (*models.ActualLRP, error) {
 	fake.createActualLRPMutex.Lock()
 	fake.createActualLRPArgsForCall = append(fake.createActualLRPArgsForCall, struct {
-		arg1 models.ActualLRP
+		arg1 models.ActualLRPKey
 	}{arg1})
 	fake.createActualLRPMutex.Unlock()
 	if fake.CreateActualLRPStub != nil {
@@ -226,7 +227,7 @@ func (fake *FakeConvergerBBS) CreateActualLRPCallCount() int {
 	return len(fake.createActualLRPArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) CreateActualLRPArgsForCall(i int) models.ActualLRP {
+func (fake *FakeConvergerBBS) CreateActualLRPArgsForCall(i int) models.ActualLRPKey {
 	fake.createActualLRPMutex.RLock()
 	defer fake.createActualLRPMutex.RUnlock()
 	return fake.createActualLRPArgsForCall[i].arg1
@@ -240,14 +241,15 @@ func (fake *FakeConvergerBBS) CreateActualLRPReturns(result1 *models.ActualLRP, 
 	}{result1, result2}
 }
 
-func (fake *FakeConvergerBBS) RemoveActualLRP(lrp models.ActualLRP) error {
+func (fake *FakeConvergerBBS) RemoveActualLRP(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey) error {
 	fake.removeActualLRPMutex.Lock()
 	fake.removeActualLRPArgsForCall = append(fake.removeActualLRPArgsForCall, struct {
-		lrp models.ActualLRP
-	}{lrp})
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+	}{arg1, arg2})
 	fake.removeActualLRPMutex.Unlock()
 	if fake.RemoveActualLRPStub != nil {
-		return fake.RemoveActualLRPStub(lrp)
+		return fake.RemoveActualLRPStub(arg1, arg2)
 	} else {
 		return fake.removeActualLRPReturns.result1
 	}
@@ -259,10 +261,10 @@ func (fake *FakeConvergerBBS) RemoveActualLRPCallCount() int {
 	return len(fake.removeActualLRPArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) RemoveActualLRPArgsForCall(i int) models.ActualLRP {
+func (fake *FakeConvergerBBS) RemoveActualLRPArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey) {
 	fake.removeActualLRPMutex.RLock()
 	defer fake.removeActualLRPMutex.RUnlock()
-	return fake.removeActualLRPArgsForCall[i].lrp
+	return fake.removeActualLRPArgsForCall[i].arg1, fake.removeActualLRPArgsForCall[i].arg2
 }
 
 func (fake *FakeConvergerBBS) RemoveActualLRPReturns(result1 error) {

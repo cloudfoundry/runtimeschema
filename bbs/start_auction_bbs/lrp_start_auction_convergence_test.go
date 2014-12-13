@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry-incubator/runtime-schema/models/factories"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
@@ -147,8 +146,7 @@ var auctionIndex = 0
 func newStartAuction(processGuid string) models.LRPStartAuction {
 	auctionIndex += 1
 	return models.LRPStartAuction{
-		Index:        auctionIndex,
-		InstanceGuid: factories.GenerateGuid(),
+		Index: auctionIndex,
 
 		DesiredLRP: models.DesiredLRP{
 			Domain:      "tests",

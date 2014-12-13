@@ -28,10 +28,8 @@ var _ = Describe("CellClient", func() {
 		const cellAddr = "cell.example.com"
 		var stopErr error
 		var actualLRP = models.ActualLRP{
-			ProcessGuid:  "some-process-guid",
-			InstanceGuid: "some-instance-guid",
-			Index:        2,
-			CellID:       "some-cell-id",
+			ActualLRPKey:          models.NewActualLRPKey("some-process-guid", 2, "test-domain"),
+			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id"),
 		}
 
 		JustBeforeEach(func() {

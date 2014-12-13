@@ -67,28 +67,32 @@ type FakeRepBBS struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	ClaimActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	ClaimActualLRPStub        func(models.ActualLRPKey, models.ActualLRPContainerKey) (*models.ActualLRP, error)
 	claimActualLRPMutex       sync.RWMutex
 	claimActualLRPArgsForCall []struct {
-		arg1 models.ActualLRP
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
 	}
 	claimActualLRPReturns struct {
 		result1 *models.ActualLRP
 		result2 error
 	}
-	StartActualLRPStub        func(models.ActualLRP) (*models.ActualLRP, error)
+	StartActualLRPStub        func(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) (*models.ActualLRP, error)
 	startActualLRPMutex       sync.RWMutex
 	startActualLRPArgsForCall []struct {
-		arg1 models.ActualLRP
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+		arg3 models.ActualLRPNetInfo
 	}
 	startActualLRPReturns struct {
 		result1 *models.ActualLRP
 		result2 error
 	}
-	RemoveActualLRPStub        func(lrp models.ActualLRP) error
+	RemoveActualLRPStub        func(models.ActualLRPKey, models.ActualLRPContainerKey) error
 	removeActualLRPMutex       sync.RWMutex
 	removeActualLRPArgsForCall []struct {
-		lrp models.ActualLRP
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
 	}
 	removeActualLRPReturns struct {
 		result1 error
@@ -295,14 +299,15 @@ func (fake *FakeRepBBS) ActualLRPsByCellIDReturns(result1 []models.ActualLRP, re
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) ClaimActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+func (fake *FakeRepBBS) ClaimActualLRP(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey) (*models.ActualLRP, error) {
 	fake.claimActualLRPMutex.Lock()
 	fake.claimActualLRPArgsForCall = append(fake.claimActualLRPArgsForCall, struct {
-		arg1 models.ActualLRP
-	}{arg1})
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+	}{arg1, arg2})
 	fake.claimActualLRPMutex.Unlock()
 	if fake.ClaimActualLRPStub != nil {
-		return fake.ClaimActualLRPStub(arg1)
+		return fake.ClaimActualLRPStub(arg1, arg2)
 	} else {
 		return fake.claimActualLRPReturns.result1, fake.claimActualLRPReturns.result2
 	}
@@ -314,10 +319,10 @@ func (fake *FakeRepBBS) ClaimActualLRPCallCount() int {
 	return len(fake.claimActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) ClaimActualLRPArgsForCall(i int) models.ActualLRP {
+func (fake *FakeRepBBS) ClaimActualLRPArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey) {
 	fake.claimActualLRPMutex.RLock()
 	defer fake.claimActualLRPMutex.RUnlock()
-	return fake.claimActualLRPArgsForCall[i].arg1
+	return fake.claimActualLRPArgsForCall[i].arg1, fake.claimActualLRPArgsForCall[i].arg2
 }
 
 func (fake *FakeRepBBS) ClaimActualLRPReturns(result1 *models.ActualLRP, result2 error) {
@@ -328,14 +333,16 @@ func (fake *FakeRepBBS) ClaimActualLRPReturns(result1 *models.ActualLRP, result2
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) StartActualLRP(arg1 models.ActualLRP) (*models.ActualLRP, error) {
+func (fake *FakeRepBBS) StartActualLRP(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey, arg3 models.ActualLRPNetInfo) (*models.ActualLRP, error) {
 	fake.startActualLRPMutex.Lock()
 	fake.startActualLRPArgsForCall = append(fake.startActualLRPArgsForCall, struct {
-		arg1 models.ActualLRP
-	}{arg1})
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+		arg3 models.ActualLRPNetInfo
+	}{arg1, arg2, arg3})
 	fake.startActualLRPMutex.Unlock()
 	if fake.StartActualLRPStub != nil {
-		return fake.StartActualLRPStub(arg1)
+		return fake.StartActualLRPStub(arg1, arg2, arg3)
 	} else {
 		return fake.startActualLRPReturns.result1, fake.startActualLRPReturns.result2
 	}
@@ -347,10 +354,10 @@ func (fake *FakeRepBBS) StartActualLRPCallCount() int {
 	return len(fake.startActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) StartActualLRPArgsForCall(i int) models.ActualLRP {
+func (fake *FakeRepBBS) StartActualLRPArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) {
 	fake.startActualLRPMutex.RLock()
 	defer fake.startActualLRPMutex.RUnlock()
-	return fake.startActualLRPArgsForCall[i].arg1
+	return fake.startActualLRPArgsForCall[i].arg1, fake.startActualLRPArgsForCall[i].arg2, fake.startActualLRPArgsForCall[i].arg3
 }
 
 func (fake *FakeRepBBS) StartActualLRPReturns(result1 *models.ActualLRP, result2 error) {
@@ -361,14 +368,15 @@ func (fake *FakeRepBBS) StartActualLRPReturns(result1 *models.ActualLRP, result2
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) RemoveActualLRP(lrp models.ActualLRP) error {
+func (fake *FakeRepBBS) RemoveActualLRP(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey) error {
 	fake.removeActualLRPMutex.Lock()
 	fake.removeActualLRPArgsForCall = append(fake.removeActualLRPArgsForCall, struct {
-		lrp models.ActualLRP
-	}{lrp})
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+	}{arg1, arg2})
 	fake.removeActualLRPMutex.Unlock()
 	if fake.RemoveActualLRPStub != nil {
-		return fake.RemoveActualLRPStub(lrp)
+		return fake.RemoveActualLRPStub(arg1, arg2)
 	} else {
 		return fake.removeActualLRPReturns.result1
 	}
@@ -380,10 +388,10 @@ func (fake *FakeRepBBS) RemoveActualLRPCallCount() int {
 	return len(fake.removeActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) RemoveActualLRPArgsForCall(i int) models.ActualLRP {
+func (fake *FakeRepBBS) RemoveActualLRPArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey) {
 	fake.removeActualLRPMutex.RLock()
 	defer fake.removeActualLRPMutex.RUnlock()
-	return fake.removeActualLRPArgsForCall[i].lrp
+	return fake.removeActualLRPArgsForCall[i].arg1, fake.removeActualLRPArgsForCall[i].arg2
 }
 
 func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {

@@ -37,13 +37,13 @@ var _ = Describe("LrpConvergence", func() {
 
 		registerCell(cellPresence)
 
-		a1 := models.NewActualLRP(processGuid, "instance-guid-1", cellPresence.CellID, "domain", 0, models.ActualLRPStateUnclaimed)
-		createAndClaim(a1)
+		key1 := models.NewActualLRPKey(processGuid, 0, "domain")
+		createAndClaim(key1, models.NewActualLRPContainerKey("instance-guid-1", cellPresence.CellID))
 
-		a2 := models.NewActualLRP(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1, models.ActualLRPStateUnclaimed)
-		createAndClaim(a2)
+		key2 := models.NewActualLRPKey(processGuid, 1, "domain")
+		createAndClaim(key2, models.NewActualLRPContainerKey("instance-guid-2", cellPresence.CellID))
 
-		_, err := bbs.CreateActualLRP(models.NewActualLRP(unclaimedProcessGuid, "instance-guid-3", "", "domain", 0, models.ActualLRPStateUnclaimed))
+		_, err := bbs.CreateActualLRP(models.NewActualLRPKey(unclaimedProcessGuid, 0, "domain"))
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -220,7 +220,6 @@ var _ = Describe("LrpConvergence", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(startAuctions).Should(HaveLen(1))
 				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(startAuctions[0].InstanceGuid).Should(Equal("instance-guid-3"))
 			})
 
 			It("logs", func() {

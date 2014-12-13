@@ -15,41 +15,40 @@ import (
 
 var _ = Describe("LrpLifecycle", func() {
 	const cellID = "some-cell-id"
+	var actualLRPKey models.ActualLRPKey
+	var containerKey models.ActualLRPContainerKey
+
+	BeforeEach(func() {
+		actualLRPKey = models.NewActualLRPKey("some-process-guid", 2, "tests")
+		containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+	})
 
 	Describe("CreateActualLRP", func() {
-		var expectedActualLRP, actualLRP models.ActualLRP
+		var (
+			expectedActualLRP models.ActualLRP
+		)
 
 		BeforeEach(func() {
-			actualLRP = models.ActualLRP{
-				Domain:       "tests",
-				ProcessGuid:  "some-process-guid",
-				InstanceGuid: "some-instance-guid",
-				Index:        2,
-			}
-
 			expectedActualLRP = models.ActualLRP{
-				Domain:       "tests",
-				ProcessGuid:  "some-process-guid",
-				InstanceGuid: "some-instance-guid",
+				ActualLRPKey: actualLRPKey,
 				State:        models.ActualLRPStateUnclaimed,
-				Index:        2,
 			}
 		})
 
 		Context("when the LRP has an invalid process guid", func() {
 			BeforeEach(func() {
-				actualLRP.ProcessGuid = ""
+				actualLRPKey.ProcessGuid = ""
 			})
 
 			It("returns a validation error only about the process guid", func() {
-				_, err := bbs.CreateActualLRP(actualLRP)
+				_, err := bbs.CreateActualLRP(actualLRPKey)
 				Ω(err).Should(ConsistOf(models.ErrInvalidField{"process_guid"}))
 			})
 		})
 
 		Context("when the LRP is valid", func() {
 			It("creates an unclaimed instance", func() {
-				_, err := bbs.CreateActualLRP(actualLRP)
+				_, err := bbs.CreateActualLRP(actualLRPKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get(shared.ActualLRPSchemaPath(expectedActualLRP.ProcessGuid, expectedActualLRP.Index))
@@ -67,73 +66,59 @@ var _ = Describe("LrpLifecycle", func() {
 
 		Context("when an LRP is already present at the desired kep", func() {
 			BeforeEach(func() {
-				_, err := bbs.CreateActualLRP(actualLRP)
+				_, err := bbs.CreateActualLRP(actualLRPKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("returns an error that the resource already exists", func() {
-				_, err := bbs.CreateActualLRP(actualLRP)
+				_, err := bbs.CreateActualLRP(actualLRPKey)
 				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceExists))
 			})
 		})
 	})
 
 	Describe("ClaimActualLRP", func() {
-		var lrpToClaim models.ActualLRP
-
-		BeforeEach(func() {
-			lrpToClaim = models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateUnclaimed)
-		})
-
-		Context("when the LRP is invalid", func() {
-			BeforeEach(func() {
-				lrpToClaim.ProcessGuid = ""
-			})
-
-			It("returns a validation error", func() {
-				_, err := bbs.ClaimActualLRP(lrpToClaim)
-				Ω(err).Should(ContainElement(models.ErrInvalidField{"process_guid"}))
+		Context("when the actual LRP does not exist", func() {
+			It("cannot claim the LRP", func() {
+				_, err := bbs.ClaimActualLRP(actualLRPKey, containerKey)
+				Ω(err).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
 			})
 		})
 
 		Context("when the actual LRP exists", func() {
-			var lrpToCreate models.ActualLRP
-			var createdLRP *models.ActualLRP
+			var existingLRP models.ActualLRP
 			var claimedLRP *models.ActualLRP
 			var claimErr error
 
 			BeforeEach(func() {
-				lrpToCreate = lrpToClaim
+				existingLRP = models.ActualLRP{
+					ActualLRPKey:          actualLRPKey,
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("", ""),
+					State: models.ActualLRPStateUnclaimed,
+					Since: timeProvider.Now().UnixNano() - 1337,
+				}
 			})
 
 			JustBeforeEach(func() {
-				var err error
-				createdLRP, err = bbs.CreateRawActualLRP(&lrpToCreate)
+				err := createRawActualLRP(&existingLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				claimedLRP, claimErr = bbs.ClaimActualLRP(lrpToClaim)
+				claimedLRP, claimErr = bbs.ClaimActualLRP(actualLRPKey, containerKey)
 			})
 
-			Context("when the instance guid differs", func() {
+			Context("when the LRP is invalid", func() {
 				BeforeEach(func() {
-					lrpToCreate.InstanceGuid = "another-instance-guid"
-					lrpToCreate.CellID = ""
+					containerKey.InstanceGuid = ""
 				})
 
-				It("returns an error", func() {
-					Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-				})
-
-				It("does not alter the existing actual", func() {
-					Ω(claimedLRP.CellID).ShouldNot(Equal(lrpToClaim.CellID))
-					Ω(claimedLRP.CellID).Should(Equal(lrpToCreate.CellID))
+				It("returns a validation error", func() {
+					Ω(claimErr).Should(ContainElement(models.ErrInvalidField{"instance_guid"}))
 				})
 			})
 
 			Context("when the domain differs", func() {
 				BeforeEach(func() {
-					lrpToCreate.Domain = "some-other-domain"
-					lrpToCreate.CellID = ""
+					existingLRP.Domain = "some-other-domain"
 				})
 
 				It("returns an error", func() {
@@ -141,81 +126,113 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				It("does not alter the existing actual", func() {
-					Ω(claimedLRP.CellID).ShouldNot(Equal(lrpToClaim.CellID))
-					Ω(claimedLRP.CellID).Should(Equal(lrpToCreate.CellID))
+					storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(storedLRP).Should(Equal(&existingLRP))
 				})
 			})
 
-			Context("when the actual is Unclaimed", func() {
+			Context("when the existing ActualLRP is Unclaimed", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateUnclaimed
-					lrpToCreate.CellID = ""
+					existingLRP.State = models.ActualLRPStateUnclaimed
+					existingLRP.CellID = ""
 				})
 
 				It("claims the LRP", func() {
 					Ω(claimErr).ShouldNot(HaveOccurred())
 
-					existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToClaim.ProcessGuid, lrpToClaim.Index)
+					storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(claimedLRP).Should(Equal(existingLRP))
+					Ω(claimedLRP).Should(Equal(storedLRP))
 				})
 
 				Context("when the store is out of commission", func() {
 					itRetriesUntilStoreComesBack(func() error {
-						_, err := bbs.ClaimActualLRP(lrpToClaim)
+						_, err := bbs.ClaimActualLRP(actualLRPKey, containerKey)
 						return err
 					})
 				})
 			})
 
-			Context("when the actual is Claimed", func() {
+			Context("when the existing ActualLRP is Claimed", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateClaimed
+					existingLRP.State = models.ActualLRPStateClaimed
+					existingLRP.ActualLRPContainerKey = containerKey
 				})
 
 				Context("with the same cell", func() {
-					It("does not alter the existing LRP", func() {
+					BeforeEach(func() {
+						existingLRP.CellID = cellID
+					})
+
+					It("does NOT return an error", func() {
 						Ω(claimErr).ShouldNot(HaveOccurred())
+					})
 
-						existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToClaim.ProcessGuid, lrpToClaim.Index)
+					It("does not alter the existing LRP", func() {
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 						Ω(err).ShouldNot(HaveOccurred())
-
-						Ω(createdLRP).Should(Equal(existingLRP))
+						Ω(storedLRP).Should(Equal(&existingLRP))
 					})
 				})
 
 				Context("with a different cell", func() {
 					BeforeEach(func() {
-						lrpToCreate.CellID = "another-cell-id"
+						existingLRP.CellID = "another-cell-id"
 					})
 
-					It("cannot claim the LRP", func() {
+					It("returns an error", func() {
 						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-						Ω(claimedLRP.CellID).ShouldNot(Equal(lrpToClaim.CellID))
-						Ω(claimedLRP.CellID).Should(Equal(lrpToCreate.CellID))
+					})
+
+					It("does not alter the existing LRP", func() {
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(storedLRP).Should(Equal(&existingLRP))
+					})
+				})
+
+				Context("when the instance guid differs", func() {
+					BeforeEach(func() {
+						existingLRP.InstanceGuid = "another-instance-guid"
+					})
+
+					It("returns an error", func() {
+						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+					})
+
+					It("does not alter the existing actual", func() {
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(storedLRP).Should(Equal(&existingLRP))
 					})
 				})
 			})
 
-			Context("when the actual is Running", func() {
+			Context("when the existing ActualLRP is Running", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateRunning
+					existingLRP.State = models.ActualLRPStateRunning
+					existingLRP.ActualLRPContainerKey = containerKey
 				})
 
 				Context("with the same cell", func() {
+					BeforeEach(func() {
+						existingLRP.CellID = cellID
+					})
+
 					It("claims the LRP", func() {
 						Ω(claimErr).ShouldNot(HaveOccurred())
 
-						existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToClaim.ProcessGuid, lrpToClaim.Index)
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 						Ω(err).ShouldNot(HaveOccurred())
 
-						Ω(claimedLRP).Should(Equal(existingLRP))
+						Ω(claimedLRP).Should(Equal(storedLRP))
 					})
 
 					Context("when the store is out of commission", func() {
 						itRetriesUntilStoreComesBack(func() error {
-							_, err := bbs.ClaimActualLRP(lrpToClaim)
+							_, err := bbs.ClaimActualLRP(actualLRPKey, containerKey)
 							return err
 						})
 					})
@@ -223,53 +240,64 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("with a different cell", func() {
 					BeforeEach(func() {
-						lrpToCreate.CellID = "another-cell-id"
+						existingLRP.CellID = "another-cell-id"
 					})
 
-					It("cannot claim the LRP", func() {
+					It("returns an error", func() {
 						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-						Ω(claimedLRP.CellID).ShouldNot(Equal(lrpToClaim.CellID))
-						Ω(claimedLRP.CellID).Should(Equal(lrpToCreate.CellID))
+					})
+
+					It("does not alter the existing LRP", func() {
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(storedLRP).Should(Equal(&existingLRP))
 					})
 				})
-			})
-		})
 
-		Context("when the actual LRP does not exist", func() {
-			It("cannot claim the LRP", func() {
-				_, err := bbs.ClaimActualLRP(lrpToClaim)
-				Ω(err).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+				Context("when the instance guid differs", func() {
+					BeforeEach(func() {
+						existingLRP.InstanceGuid = "another-instance-guid"
+					})
+
+					It("returns an error", func() {
+						Ω(claimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
+					})
+
+					It("does not alter the existing actual", func() {
+						storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(storedLRP).Should(Equal(&existingLRP))
+					})
+				})
 			})
 		})
 	})
 
 	Describe("StartActualLRP", func() {
-		var lrpToStart models.ActualLRP
+		var netInfo models.ActualLRPNetInfo
 
 		BeforeEach(func() {
-			lrpToStart = models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateClaimed)
+			netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 		})
 
 		Context("when the LRP is invalid", func() {
 			BeforeEach(func() {
-				lrpToStart.ProcessGuid = ""
+				containerKey.InstanceGuid = ""
 			})
 
 			It("returns a validation error", func() {
-				_, err := bbs.StartActualLRP(lrpToStart)
-				Ω(err).Should(ContainElement(models.ErrInvalidField{"process_guid"}))
+				_, err := bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
+				Ω(err).Should(ContainElement(models.ErrInvalidField{"instance_guid"}))
 			})
 		})
 
 		Context("when the actual LRP exists", func() {
 			var (
-				lrpToCreate    models.ActualLRP
-				createdLRP     *models.ActualLRP
+				existingLRP    models.ActualLRP
 				startLRPResult *models.ActualLRP
 				startErr       error
 
-				creationTime int64
-				updatedTime  int64
+				updatedTime int64
 			)
 
 			itDoesNotReturnAnError := func() {
@@ -286,49 +314,51 @@ var _ = Describe("LrpLifecycle", func() {
 
 			itDoesNotAlterTheExistingLRP := func() {
 				It("does not alter the existing LRP", func() {
-					existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToStart.ProcessGuid, lrpToStart.Index)
+					storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(existingLRP).Should(Equal(createdLRP))
+					Ω(storedLRP).Should(Equal(&existingLRP))
 				})
 			}
 
 			itReturnsTheExistingLRP := func() {
 				It("returns the existing LRP", func() {
-					Ω(startLRPResult).Should(Equal(createdLRP))
+					Ω(startLRPResult).Should(Equal(&existingLRP))
 				})
 			}
 
 			itStartsTheLRP := func() {
 				It("starts the LRP", func() {
-					existingLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpToStart.ProcessGuid, lrpToStart.Index)
+					storedLRP, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(startLRPResult).Should(Equal(existingLRP))
+					Ω(startLRPResult).Should(Equal(storedLRP))
 					Ω(startLRPResult.State).Should(Equal(models.ActualLRPStateRunning))
 					Ω(startLRPResult.Since).Should(Equal(updatedTime))
 				})
 			}
 
 			BeforeEach(func() {
-				lrpToCreate = lrpToStart
+				existingLRP = models.ActualLRP{
+					ActualLRPKey:          actualLRPKey,
+					ActualLRPContainerKey: containerKey,
+					State: models.ActualLRPStateClaimed,
+					Since: timeProvider.Now().UnixNano(),
+				}
 			})
 
 			JustBeforeEach(func() {
-				creationTime = timeProvider.Now().UnixNano()
-				lrpToCreate.Since = creationTime
-				var err error
-				createdLRP, err = bbs.CreateRawActualLRP(&lrpToCreate)
+				err := createRawActualLRP(&existingLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				timeProvider.Increment(500 * time.Nanosecond)
 				updatedTime = timeProvider.Now().UnixNano()
-				startLRPResult, startErr = bbs.StartActualLRP(lrpToStart)
+				startLRPResult, startErr = bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
 			})
 
 			Context("when the domain differs", func() {
 				BeforeEach(func() {
-					lrpToCreate.Domain = "some-other-domain"
+					existingLRP.Domain = "some-other-domain"
 				})
 
 				itReturnsACannotBeClaimedError()
@@ -338,26 +368,17 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when the actual is Unclaimed", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateUnclaimed
-					lrpToCreate.CellID = ""
+					existingLRP.State = models.ActualLRPStateUnclaimed
+					existingLRP.ActualLRPContainerKey = models.NewActualLRPContainerKey("", "")
 				})
 
 				itDoesNotReturnAnError()
 				itStartsTheLRP()
-
-				Context("with a different instance guid", func() {
-					BeforeEach(func() {
-						lrpToCreate.InstanceGuid = "another-instance-guid"
-					})
-
-					itDoesNotReturnAnError()
-					itStartsTheLRP()
-				})
 			})
 
 			Context("when the actual is Claimed", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateClaimed
+					existingLRP.State = models.ActualLRPStateClaimed
 				})
 
 				itDoesNotReturnAnError()
@@ -365,7 +386,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("with a different instance guid", func() {
 					BeforeEach(func() {
-						lrpToCreate.InstanceGuid = "another-instance-guid"
+						existingLRP.InstanceGuid = "another-instance-guid"
 					})
 
 					itDoesNotReturnAnError()
@@ -374,7 +395,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("with a different cell", func() {
 					BeforeEach(func() {
-						lrpToCreate.CellID = "another-cell-id"
+						existingLRP.CellID = "another-cell-id"
 					})
 
 					itDoesNotReturnAnError()
@@ -384,18 +405,17 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when the actual is Running", func() {
 				BeforeEach(func() {
-					lrpToCreate.State = models.ActualLRPStateRunning
+					existingLRP.State = models.ActualLRPStateRunning
 				})
 
 				Context("with the same cell", func() {
 					itDoesNotReturnAnError()
-
 					itReturnsTheExistingLRP()
 					itDoesNotAlterTheExistingLRP()
 
 					Context("when the instance guid differs", func() {
 						BeforeEach(func() {
-							lrpToCreate.InstanceGuid = "another-instance-guid"
+							existingLRP.InstanceGuid = "another-instance-guid"
 						})
 
 						itReturnsACannotBeClaimedError()
@@ -406,7 +426,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("with a different cell", func() {
 					BeforeEach(func() {
-						lrpToCreate.CellID = "another-cell-id"
+						existingLRP.CellID = "another-cell-id"
 					})
 
 					itReturnsACannotBeClaimedError()
@@ -415,7 +435,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 					Context("when the instance guid differs", func() {
 						BeforeEach(func() {
-							lrpToCreate.InstanceGuid = "another-instance-guid"
+							existingLRP.InstanceGuid = "another-instance-guid"
 						})
 
 						itReturnsACannotBeClaimedError()
@@ -428,10 +448,10 @@ var _ = Describe("LrpLifecycle", func() {
 
 		Context("when the actual LRP does not exist", func() {
 			It("creates the running LRP", func() {
-				startLRPResult, err := bbs.StartActualLRP(lrpToStart)
+				startLRPResult, err := bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				node, err := etcdClient.Get(shared.ActualLRPSchemaPath(lrpToStart.ProcessGuid, lrpToStart.Index))
+				node, err := etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
 				Ω(err).ShouldNot(HaveOccurred())
 
 				expectedJSON, err := models.ToJSON(startLRPResult)
@@ -446,15 +466,16 @@ var _ = Describe("LrpLifecycle", func() {
 		var runningLRP *models.ActualLRP
 
 		BeforeEach(func() {
-			lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, models.ActualLRPStateRunning)
+			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
 			var err error
-			runningLRP, err = bbs.StartActualLRP(lrp)
+
+			runningLRP, err = bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(*runningLRP)
+				err := bbs.RemoveActualLRP(actualLRPKey, containerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(runningLRP.ProcessGuid, runningLRP.Index))
@@ -463,16 +484,15 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRP(*runningLRP)
+					return bbs.RemoveActualLRP(actualLRPKey, containerKey)
 				})
 			})
 		})
 
 		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
-				outOfDateLRP := *runningLRP
-				outOfDateLRP.InstanceGuid = "another-instance-guid"
-				err := bbs.RemoveActualLRP(outOfDateLRP)
+				containerKey.InstanceGuid = "another-instance-guid"
+				err := bbs.RemoveActualLRP(actualLRPKey, containerKey)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
@@ -483,9 +503,9 @@ var _ = Describe("LrpLifecycle", func() {
 			var unclaimedActualLRP *models.ActualLRP
 
 			BeforeEach(func() {
-				lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, "")
+				key := models.NewActualLRPKey("some-process-guid", 1, "some-domain")
 				var err error
-				unclaimedActualLRP, err = bbs.CreateActualLRP(lrp)
+				unclaimedActualLRP, err = bbs.CreateActualLRP(key)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -511,23 +531,17 @@ var _ = Describe("LrpLifecycle", func() {
 				}
 
 				registerCell(cellPresence)
+				lrpKey1 := models.NewActualLRPKey("some-process-guid-1", 1, "some-domain")
+				lrpKey2 := models.NewActualLRPKey("some-process-guid-2", 2, "some-domain")
 
-				lrp1 := models.NewActualLRP("some-process-guid-1", "some-instance-guid-1", "", "some-domain", 1, "")
-				lrp2 := models.NewActualLRP("some-process-guid-2", "some-instance-guid-2", "", "some-domain", 1, "")
+				lrpContainerKey1 := models.NewActualLRPContainerKey("some-instance-guid-1", cellID)
+				lrpContainerKey2 := models.NewActualLRPContainerKey("some-instance-guid-2", cellID)
 
 				var err error
-				createdActualLRP1, err := bbs.CreateActualLRP(lrp1)
+				_, claimedActualLRP1, err = createAndClaim(lrpKey1, lrpContainerKey1)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				createdActualLRP1.CellID = cellID
-				claimedActualLRP1, err = bbs.ClaimActualLRP(*createdActualLRP1)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				createdActualLRP2, err := bbs.CreateActualLRP(lrp2)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				createdActualLRP2.CellID = cellID
-				claimedActualLRP2, err = bbs.ClaimActualLRP(*createdActualLRP2)
+				_, claimedActualLRP2, err = createAndClaim(lrpKey2, lrpContainerKey2)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				wg := new(sync.WaitGroup)

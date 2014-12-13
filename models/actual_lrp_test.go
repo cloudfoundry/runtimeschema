@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	. "github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ActualLRP", func() {
-	var lrp ActualLRP
+	var lrp models.ActualLRP
 
 	lrpPayload := `{
     "process_guid":"some-guid",
@@ -29,19 +29,15 @@ var _ = Describe("ActualLRP", func() {
   }`
 
 	BeforeEach(func() {
-		lrp = ActualLRP{
-			ProcessGuid:  "some-guid",
-			InstanceGuid: "some-instance-guid",
-			Host:         "1.2.3.4",
-			Ports: []PortMapping{
+		lrp = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey("some-guid", 2, "some-domain"),
+			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id"),
+			ActualLRPNetInfo: models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{
 				{ContainerPort: 8080},
 				{ContainerPort: 8081, HostPort: 1234},
-			},
-			State:  ActualLRPStateRunning,
-			Index:  2,
-			Since:  1138,
-			CellID: "some-cell-id",
-			Domain: "some-domain",
+			}),
+			State: models.ActualLRPStateRunning,
+			Since: 1138,
 		}
 	})
 
@@ -55,8 +51,8 @@ var _ = Describe("ActualLRP", func() {
 
 	Describe("FromJSON", func() {
 		It("returns a LRP with correct fields", func() {
-			aLRP := &ActualLRP{}
-			err := FromJSON([]byte(lrpPayload), aLRP)
+			aLRP := &models.ActualLRP{}
+			err := models.FromJSON([]byte(lrpPayload), aLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(aLRP).Should(Equal(&lrp))
@@ -64,8 +60,8 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("with an invalid payload", func() {
 			It("returns the error", func() {
-				aLRP := &ActualLRP{}
-				err := FromJSON([]byte("something lol"), aLRP)
+				aLRP := &models.ActualLRP{}
+				err := models.FromJSON([]byte("something lol"), aLRP)
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -81,49 +77,27 @@ var _ = Describe("ActualLRP", func() {
 
 			Context("when the json is missing a "+missingField, func() {
 				It("returns an error indicating so", func() {
-					aLRP := &ActualLRP{}
-					err := FromJSON([]byte(jsonPayload), aLRP)
+					aLRP := &models.ActualLRP{}
+					err := models.FromJSON([]byte(jsonPayload), aLRP)
 					Ω(err.Error()).Should(Equal("Invalid field: " + missingField))
 				})
 			})
 		}
 	})
 
-	Describe("NewActualLRP", func() {
-		It("returns a LRP with correct fields", func() {
-			actualLrp := NewActualLRP(
-				"processGuid",
-				"instanceGuid",
-				"cellID",
-				"domain",
-				1,
-				ActualLRPStateClaimed,
-			)
-			Ω(actualLrp.ProcessGuid).Should(Equal("processGuid"))
-			Ω(actualLrp.InstanceGuid).Should(Equal("instanceGuid"))
-			Ω(actualLrp.CellID).Should(Equal("cellID"))
-			Ω(actualLrp.Domain).Should(Equal("domain"))
-			Ω(actualLrp.Index).Should(Equal(1))
-			Ω(actualLrp.State).Should(Equal(ActualLRPStateClaimed))
-		})
-	})
-
 	Describe("IsEquivalentTo", func() {
-		var lhs ActualLRP
-		var rhs ActualLRP
+		var lhs models.ActualLRP
+		var rhs models.ActualLRP
 
 		BeforeEach(func() {
-			lhs = ActualLRP{
-				ProcessGuid:  "process-guid",
-				InstanceGuid: "instance-guid",
-				Domain:       "domain",
-				CellID:       "cell-id",
-				Index:        1,
-				State:        ActualLRPStateClaimed,
-
+			lhs = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("process-guid", 1, "domain"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", "cell-id"),
+				ActualLRPNetInfo: models.NewActualLRPNetInfo(
+					"cell-host",
+					[]models.PortMapping{{ContainerPort: 2357, HostPort: 3468}}),
+				State: models.ActualLRPStateClaimed,
 				Since: 1138,
-				Ports: []PortMapping{{ContainerPort: 2357, HostPort: 3468}},
-				Host:  "cell-host",
 			}
 			rhs = lhs
 		})
@@ -186,7 +160,7 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("when the State differs", func() {
 			BeforeEach(func() {
-				rhs.State = ActualLRPStateUnclaimed
+				rhs.State = models.ActualLRPStateUnclaimed
 			})
 
 			It("is false", func() {
@@ -227,136 +201,111 @@ var _ = Describe("ActualLRP", func() {
 
 	Describe("AllowsTransitionTo", func() {
 		var (
-			before ActualLRP
-			after  ActualLRP
+			before   models.ActualLRP
+			afterKey models.ActualLRPKey
 		)
 
 		BeforeEach(func() {
-			before = ActualLRP{
-				ProcessGuid:  "fake-process-guid",
-				InstanceGuid: "fake-instance-guid",
-				Index:        1,
-				Domain:       "fake-domain",
+			before = models.ActualLRP{
+				ActualLRPKey: models.NewActualLRPKey("fake-process-guid", 1, "fake-domain"),
 			}
-			after = before
+			afterKey = before.ActualLRPKey
 		})
 
 		Context("when the ProcessGuid fields differ", func() {
 			BeforeEach(func() {
 				before.ProcessGuid = "some-process-guid"
-				after.ProcessGuid = "another-process-guid"
+				afterKey.ProcessGuid = "another-process-guid"
 			})
 
 			It("is not allowed", func() {
-				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
-			})
-		})
-
-		Context("when the InstanceGuid fields differ", func() {
-			BeforeEach(func() {
-				before.InstanceGuid = "some-instance-guid"
-				after.InstanceGuid = "another-instance-guid"
-			})
-
-			It("is not allowed", func() {
-				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
-			})
-
-			Context("when the before state is Claimed and the after state is Running", func() {
-				BeforeEach(func() {
-					before.State = ActualLRPStateClaimed
-					after.State = ActualLRPStateRunning
-				})
-
-				It("is allowed", func() {
-					Ω(before.AllowsTransitionTo(after)).Should(BeTrue())
-				})
-			})
-
-			Context("when the before state is Unclaimed and the after state is Running", func() {
-				BeforeEach(func() {
-					before.State = ActualLRPStateUnclaimed
-					after.State = ActualLRPStateRunning
-				})
-
-				It("is allowed", func() {
-					Ω(before.AllowsTransitionTo(after)).Should(BeTrue())
-				})
+				Ω(before.AllowsTransitionTo(afterKey, before.ActualLRPContainerKey, before.State)).Should(BeFalse())
 			})
 		})
 
 		Context("when the Index fields differ", func() {
 			BeforeEach(func() {
 				before.Index = 1138
-				after.Index = 3417
+				afterKey.Index = 3417
 			})
 
 			It("is not allowed", func() {
-				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+				Ω(before.AllowsTransitionTo(afterKey, before.ActualLRPContainerKey, before.State)).Should(BeFalse())
 			})
 		})
 
 		Context("when the Domain fields differ", func() {
 			BeforeEach(func() {
 				before.Domain = "some-domain"
-				after.Domain = "another-domain"
+				afterKey.Domain = "another-domain"
 			})
 
 			It("is not allowed", func() {
-				Ω(before.AllowsTransitionTo(after)).Should(BeFalse())
+				Ω(before.AllowsTransitionTo(afterKey, before.ActualLRPContainerKey, before.State)).Should(BeFalse())
 			})
 		})
 
-		Context("when the ProcessGuid, Index, InstanceGuid and Domain are equivalent", func() {
+		Context("when the ProcessGuid, Index, and Domain are equivalent", func() {
+			var (
+				emptyKey                 = models.NewActualLRPContainerKey("", "")
+				claimedKey               = models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id")
+				differentInstanceGuidKey = models.NewActualLRPContainerKey("some-other-instance-guid", "some-cell-id")
+				differentCellIDKey       = models.NewActualLRPContainerKey("some-instance-guid", "some-other-cell-id")
+			)
+
 			type stateTableEntry struct {
-				BeforeState  ActualLRPState
-				AfterState   ActualLRPState
-				BeforeCellID string
-				AfterCellID  string
-				Allowed      bool
+				BeforeState        models.ActualLRPState
+				AfterState         models.ActualLRPState
+				BeforeContainerKey models.ActualLRPContainerKey
+				AfterContainerKey  models.ActualLRPContainerKey
+				Allowed            bool
 			}
 
 			var EntryToString = func(entry stateTableEntry) string {
-				return fmt.Sprintf("is %t when the before has state %s and cell id '%s' and the after has state %s and cell id '%s'",
+				return fmt.Sprintf("is %t when the before has state %s and instance guid '%s' and cell id '%s' and the after has state %s and instance guid '%s' and cell id '%s'",
 					entry.Allowed,
 					entry.BeforeState,
-					entry.BeforeCellID,
+					entry.BeforeContainerKey.InstanceGuid,
+					entry.BeforeContainerKey.CellID,
 					entry.AfterState,
-					entry.AfterCellID,
+					entry.AfterContainerKey.InstanceGuid,
+					entry.AfterContainerKey.CellID,
 				)
 			}
 
 			stateTable := []stateTableEntry{
-				{ActualLRPStateUnclaimed, ActualLRPStateUnclaimed, "", "", true},
-				{ActualLRPStateUnclaimed, ActualLRPStateClaimed, "", "cell-id", true},
-				{ActualLRPStateUnclaimed, ActualLRPStateRunning, "", "cell-id", true},
-				{ActualLRPStateClaimed, ActualLRPStateUnclaimed, "cell-id", "", true},
-				{ActualLRPStateClaimed, ActualLRPStateClaimed, "cell-id", "cell-id", true},
-				{ActualLRPStateClaimed, ActualLRPStateClaimed, "cell-id", "other-cell-id", false},
-				{ActualLRPStateClaimed, ActualLRPStateRunning, "cell-id", "cell-id", true},
-				{ActualLRPStateClaimed, ActualLRPStateRunning, "cell-id", "other-cell-id", true},
-				{ActualLRPStateRunning, ActualLRPStateUnclaimed, "cell-id", "", true},
-				{ActualLRPStateRunning, ActualLRPStateClaimed, "cell-id", "cell-id", true},
-				{ActualLRPStateRunning, ActualLRPStateClaimed, "cell-id", "other-cell-id", false},
-				{ActualLRPStateRunning, ActualLRPStateRunning, "cell-id", "cell-id", true},
-				{ActualLRPStateRunning, ActualLRPStateRunning, "cell-id", "other-cell-id", false},
+				{models.ActualLRPStateUnclaimed, models.ActualLRPStateUnclaimed, emptyKey, emptyKey, true},
+				{models.ActualLRPStateUnclaimed, models.ActualLRPStateClaimed, emptyKey, claimedKey, true},
+				{models.ActualLRPStateUnclaimed, models.ActualLRPStateRunning, emptyKey, claimedKey, true},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateUnclaimed, claimedKey, emptyKey, true},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateClaimed, claimedKey, claimedKey, true},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateClaimed, claimedKey, differentInstanceGuidKey, false},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateClaimed, claimedKey, differentCellIDKey, false},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateRunning, claimedKey, claimedKey, true},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateRunning, claimedKey, differentInstanceGuidKey, true},
+				{models.ActualLRPStateClaimed, models.ActualLRPStateRunning, claimedKey, differentCellIDKey, true},
+				{models.ActualLRPStateRunning, models.ActualLRPStateUnclaimed, claimedKey, emptyKey, true},
+				{models.ActualLRPStateRunning, models.ActualLRPStateClaimed, claimedKey, claimedKey, true},
+				{models.ActualLRPStateRunning, models.ActualLRPStateClaimed, claimedKey, differentInstanceGuidKey, false},
+				{models.ActualLRPStateRunning, models.ActualLRPStateClaimed, claimedKey, differentCellIDKey, false},
+				{models.ActualLRPStateRunning, models.ActualLRPStateRunning, claimedKey, claimedKey, true},
+				{models.ActualLRPStateRunning, models.ActualLRPStateClaimed, claimedKey, differentInstanceGuidKey, false},
+				{models.ActualLRPStateRunning, models.ActualLRPStateClaimed, claimedKey, differentCellIDKey, false},
 			}
 
 			for _, entry := range stateTable {
 				entry := entry
 				It(EntryToString(entry), func() {
 					before.State = entry.BeforeState
-					after.State = entry.AfterState
-					before.CellID = entry.BeforeCellID
-					after.CellID = entry.AfterCellID
-					Ω(before.AllowsTransitionTo(after)).Should(Equal(entry.Allowed))
+					before.ActualLRPContainerKey = entry.BeforeContainerKey
+					Ω(before.AllowsTransitionTo(before.ActualLRPKey, entry.AfterContainerKey, entry.AfterState)).Should(Equal(entry.Allowed))
 				})
 			}
 		})
 	})
 
 	Describe("Validate", func() {
-		var actualLRP ActualLRP
+		var actualLRP models.ActualLRP
 
 		itValidatesCommonRequiredFields := func() {
 			Context("when valid", func() {
@@ -371,7 +320,7 @@ var _ = Describe("ActualLRP", func() {
 				})
 
 				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"process_guid"}))
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"process_guid"}))
 				})
 			})
 
@@ -381,35 +330,23 @@ var _ = Describe("ActualLRP", func() {
 				})
 
 				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"domain"}))
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"domain"}))
 				})
 			})
 
-			Context("when the InstanceGuid is blank", func() {
-				BeforeEach(func() {
-					actualLRP.InstanceGuid = ""
-				})
-
-				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"instance_guid"}))
-				})
-			})
 		}
 
 		BeforeEach(func() {
-			actualLRP = ActualLRP{
-				Domain:       "fake-domain",
-				ProcessGuid:  "fake-process-guid",
-				InstanceGuid: "fake-instance-guid",
-				CellID:       "fake-cell-id",
-				Index:        2,
+			actualLRP = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("fake-process-guid", 2, "fake-domain"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("fake-instance-guid", "fake-cell-id"),
 			}
 		})
 
 		Context("when the State is unclaimed", func() {
 			BeforeEach(func() {
-				actualLRP.State = ActualLRPStateUnclaimed
-				actualLRP.CellID = ""
+				actualLRP.State = models.ActualLRPStateUnclaimed
+				actualLRP.ActualLRPContainerKey = models.NewActualLRPContainerKey("", "")
 			})
 
 			itValidatesCommonRequiredFields()
@@ -420,14 +357,24 @@ var _ = Describe("ActualLRP", func() {
 				})
 
 				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"cell_id"}))
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
+				})
+			})
+
+			Context("when the InstanceGuid is not blank", func() {
+				BeforeEach(func() {
+					actualLRP.InstanceGuid = "fake-instance-guid"
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
 				})
 			})
 		})
 
 		Context("when the State is claimed", func() {
 			BeforeEach(func() {
-				actualLRP.State = ActualLRPStateClaimed
+				actualLRP.State = models.ActualLRPStateClaimed
 			})
 
 			itValidatesCommonRequiredFields()
@@ -438,14 +385,24 @@ var _ = Describe("ActualLRP", func() {
 				})
 
 				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"cell_id"}))
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
+				})
+			})
+
+			Context("when the InstanceGuid is blank", func() {
+				BeforeEach(func() {
+					actualLRP.InstanceGuid = ""
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
 				})
 			})
 		})
 
 		Context("when the State is running", func() {
 			BeforeEach(func() {
-				actualLRP.State = ActualLRPStateRunning
+				actualLRP.State = models.ActualLRPStateRunning
 			})
 
 			itValidatesCommonRequiredFields()
@@ -456,8 +413,18 @@ var _ = Describe("ActualLRP", func() {
 				})
 
 				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"cell_id"}))
+					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
 				})
+			})
+		})
+
+		Context("when the InstanceGuid is blank", func() {
+			BeforeEach(func() {
+				actualLRP.InstanceGuid = ""
+			})
+
+			It("returns a validation error", func() {
+				Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
 			})
 		})
 	})

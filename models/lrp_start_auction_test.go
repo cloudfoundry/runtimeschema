@@ -39,15 +39,13 @@ var _ = Describe("LRPStartAuction", func() {
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
-    "instance_guid": "some-instance-guid",
     "index": 2,
     "state": 1,
     "updated_at": 1138
   }`
 
 		startAuction = LRPStartAuction{
-			Index:        2,
-			InstanceGuid: "some-instance-guid",
+			Index: 2,
 
 			DesiredLRP: DesiredLRP{
 				Domain:      "tests",
@@ -107,23 +105,5 @@ var _ = Describe("LRPStartAuction", func() {
 				Ω(err).Should(HaveOccurred())
 			})
 		})
-
-		for field, payload := range map[string]string{
-			"instance_guid": `{"process_guid": "process-guid", "index": 0}`,
-		} {
-			missingField := field
-			jsonPayload := payload
-
-			Context("when the json is missing a "+missingField, func() {
-				BeforeEach(func() {
-					startAuctionPayload = jsonPayload
-				})
-
-				It("returns an error indicating so", func() {
-					Ω(err).Should(HaveOccurred())
-					Ω(err.Error()).Should(ContainSubstring("Invalid field: " + missingField))
-				})
-			})
-		}
 	})
 })

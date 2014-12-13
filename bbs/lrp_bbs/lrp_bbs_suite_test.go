@@ -88,13 +88,25 @@ func itRetriesUntilStoreComesBack(action func() error) {
 	})
 }
 
-func createAndClaim(a models.ActualLRP) (*models.ActualLRP, *models.ActualLRP, error) {
-	c := a
-	c.State = models.ActualLRPStateUnclaimed
-	unclaimed, err := bbs.CreateActualLRP(c)
+func createAndClaim(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) (*models.ActualLRP, *models.ActualLRP, error) {
+	unclaimed, err := bbs.CreateActualLRP(key)
 	Ω(err).ShouldNot(HaveOccurred())
-	claimed, err := bbs.ClaimActualLRP(a)
+	claimed, err := bbs.ClaimActualLRP(key, containerKey)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return unclaimed, claimed, err
+}
+
+func createRawActualLRP(lrp *models.ActualLRP) error {
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		return err
+	}
+
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return etcdClient.Create(storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		})
+	})
 }

@@ -11,8 +11,7 @@ const (
 type LRPStartAuction struct {
 	DesiredLRP DesiredLRP `json:"desired_lrp"`
 
-	InstanceGuid string `json:"instance_guid"`
-	Index        int    `json:"index"`
+	Index int `json:"index"`
 
 	State     LRPStartAuctionState `json:"state"`
 	UpdatedAt int64                `json:"updated_at"`
@@ -20,10 +19,6 @@ type LRPStartAuction struct {
 
 func (auction LRPStartAuction) Validate() error {
 	var validationError ValidationError
-
-	if auction.InstanceGuid == "" {
-		validationError = append(validationError, ErrInvalidField{"instance_guid"})
-	}
 
 	err := auction.DesiredLRP.Validate()
 	if err != nil {
