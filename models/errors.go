@@ -24,6 +24,15 @@ type Validator interface {
 
 type ValidationError []error
 
+func (ve ValidationError) Append(err error) ValidationError {
+	switch err := err.(type) {
+	case ValidationError:
+		return append(ve, err...)
+	default:
+		return append(ve, err)
+	}
+}
+
 func (ve ValidationError) Error() string {
 	var buffer bytes.Buffer
 

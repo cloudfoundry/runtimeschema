@@ -1,5 +1,7 @@
 package models
 
+import "errors"
+
 type ActualLRPState string
 
 const (
@@ -31,11 +33,11 @@ func (key ActualLRPKey) Validate() error {
 	var validationError ValidationError
 
 	if key.ProcessGuid == "" {
-		validationError = append(validationError, ErrInvalidField{"process_guid"})
+		validationError = validationError.Append(ErrInvalidField{"process_guid"})
 	}
 
 	if key.Domain == "" {
-		validationError = append(validationError, ErrInvalidField{"domain"})
+		validationError = validationError.Append(ErrInvalidField{"domain"})
 	}
 
 	if len(validationError) > 0 {
@@ -50,6 +52,12 @@ type ActualLRPContainerKey struct {
 	CellID       string `json:"cell_id"`
 }
 
+var emptyActualLRPContainerKey = ActualLRPContainerKey{}
+
+func (key *ActualLRPContainerKey) Empty() bool {
+	return *key == emptyActualLRPContainerKey
+}
+
 func NewActualLRPContainerKey(instanceGuid string, cellID string) ActualLRPContainerKey {
 	return ActualLRPContainerKey{
 		InstanceGuid: instanceGuid,
@@ -60,20 +68,27 @@ func NewActualLRPContainerKey(instanceGuid string, cellID string) ActualLRPConta
 func (key ActualLRPContainerKey) Validate() error {
 	var validationError ValidationError
 
-	if key.CellID == "" && key.InstanceGuid != "" {
-		return append(validationError, ErrInvalidField{"cell_id"})
+	if key.CellID == "" {
+		validationError = validationError.Append(ErrInvalidField{"cell_id"})
 	}
 
-	if key.CellID != "" && key.InstanceGuid == "" {
-		return append(validationError, ErrInvalidField{"instance_guid"})
+	if key.InstanceGuid == "" {
+		validationError = validationError.Append(ErrInvalidField{"instance_guid"})
 	}
 
+	if len(validationError) > 0 {
+		return validationError
+	}
 	return nil
 }
 
 type ActualLRPNetInfo struct {
 	Host  string        `json:"host"`
 	Ports []PortMapping `json:"ports"`
+}
+
+func (info *ActualLRPNetInfo) Empty() bool {
+	return info.Host == "" && len(info.Ports) == 0
 }
 
 func NewActualLRPNetInfo(host string, ports []PortMapping) ActualLRPNetInfo {
@@ -122,30 +137,42 @@ func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey Act
 func (actual ActualLRP) Validate() error {
 	var validationError ValidationError
 
-	if actual.ProcessGuid == "" {
-		validationError = append(validationError, ErrInvalidField{"process_guid"})
+	err := actual.ActualLRPKey.Validate()
+	if err != nil {
+		validationError = validationError.Append(err)
 	}
 
-	if actual.Domain == "" {
-		validationError = append(validationError, ErrInvalidField{"domain"})
+	if actual.Since == 0 {
+		validationError = validationError.Append(ErrInvalidField{"since"})
 	}
 
-	if actual.State == ActualLRPStateUnclaimed {
-		if actual.InstanceGuid != "" {
-			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+	switch actual.State {
+	case ActualLRPStateUnclaimed:
+		if !actual.ActualLRPContainerKey.Empty() {
+			validationError = validationError.Append(errors.New("container key cannot be set when state is unclaimed"))
+		}
+		if !actual.ActualLRPNetInfo.Empty() {
+			validationError = validationError.Append(errors.New("net info cannot be set when state is unclaimed"))
 		}
 
-		if actual.CellID != "" {
-			validationError = append(validationError, ErrInvalidField{"cell_id"})
+	case ActualLRPStateClaimed:
+		if err := actual.ActualLRPContainerKey.Validate(); err != nil {
+			validationError = validationError.Append(err)
 		}
-	} else {
-		if actual.InstanceGuid == "" {
-			validationError = append(validationError, ErrInvalidField{"instance_guid"})
+		if !actual.ActualLRPNetInfo.Empty() {
+			validationError = validationError.Append(errors.New("net info cannot be set when state is claimed"))
 		}
 
-		if actual.CellID == "" {
-			validationError = append(validationError, ErrInvalidField{"cell_id"})
+	case ActualLRPStateRunning:
+		if err := actual.ActualLRPContainerKey.Validate(); err != nil {
+			validationError = validationError.Append(err)
 		}
+		if err := actual.ActualLRPNetInfo.Validate(); err != nil {
+			validationError = validationError.Append(err)
+		}
+
+	default:
+		validationError = validationError.Append(ErrInvalidField{"state"})
 	}
 
 	if len(validationError) > 0 {

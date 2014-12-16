@@ -17,10 +17,12 @@ var _ = Describe("LrpLifecycle", func() {
 	const cellID = "some-cell-id"
 	var actualLRPKey models.ActualLRPKey
 	var containerKey models.ActualLRPContainerKey
+	var netInfo models.ActualLRPNetInfo
 
 	BeforeEach(func() {
 		actualLRPKey = models.NewActualLRPKey("some-process-guid", 2, "tests")
 		containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+		netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 	})
 
 	Describe("CreateActualLRP", func() {
@@ -214,6 +216,7 @@ var _ = Describe("LrpLifecycle", func() {
 				BeforeEach(func() {
 					existingLRP.State = models.ActualLRPStateRunning
 					existingLRP.ActualLRPContainerKey = containerKey
+					existingLRP.ActualLRPNetInfo = netInfo
 				})
 
 				Context("with the same cell", func() {
@@ -274,12 +277,6 @@ var _ = Describe("LrpLifecycle", func() {
 	})
 
 	Describe("StartActualLRP", func() {
-		var netInfo models.ActualLRPNetInfo
-
-		BeforeEach(func() {
-			netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
-		})
-
 		Context("when the LRP is invalid", func() {
 			BeforeEach(func() {
 				containerKey.InstanceGuid = ""
@@ -340,10 +337,9 @@ var _ = Describe("LrpLifecycle", func() {
 
 			BeforeEach(func() {
 				existingLRP = models.ActualLRP{
-					ActualLRPKey:          actualLRPKey,
-					ActualLRPContainerKey: containerKey,
-					State: models.ActualLRPStateClaimed,
-					Since: timeProvider.Now().UnixNano(),
+					ActualLRPKey: actualLRPKey,
+					State:        models.ActualLRPStateUnclaimed,
+					Since:        timeProvider.Now().UnixNano(),
 				}
 			})
 
@@ -354,16 +350,6 @@ var _ = Describe("LrpLifecycle", func() {
 				timeProvider.Increment(500 * time.Nanosecond)
 				updatedTime = timeProvider.Now().UnixNano()
 				startLRPResult, startErr = bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
-			})
-
-			Context("when the domain differs", func() {
-				BeforeEach(func() {
-					existingLRP.Domain = "some-other-domain"
-				})
-
-				itReturnsACannotBeClaimedError()
-				itReturnsTheExistingLRP()
-				itDoesNotAlterTheExistingLRP()
 			})
 
 			Context("when the actual is Unclaimed", func() {
@@ -379,10 +365,13 @@ var _ = Describe("LrpLifecycle", func() {
 			Context("when the actual is Claimed", func() {
 				BeforeEach(func() {
 					existingLRP.State = models.ActualLRPStateClaimed
+					existingLRP.ActualLRPContainerKey = containerKey
 				})
 
-				itDoesNotReturnAnError()
-				itStartsTheLRP()
+				Context("and everything is the same", func() {
+					itDoesNotReturnAnError()
+					itStartsTheLRP()
+				})
 
 				Context("with a different instance guid", func() {
 					BeforeEach(func() {
@@ -401,11 +390,23 @@ var _ = Describe("LrpLifecycle", func() {
 					itDoesNotReturnAnError()
 					itStartsTheLRP()
 				})
+
+				Context("with a different domain", func() {
+					BeforeEach(func() {
+						existingLRP.Domain = "some-other-domain"
+					})
+
+					itReturnsACannotBeClaimedError()
+					itReturnsTheExistingLRP()
+					itDoesNotAlterTheExistingLRP()
+				})
 			})
 
 			Context("when the actual is Running", func() {
 				BeforeEach(func() {
 					existingLRP.State = models.ActualLRPStateRunning
+					existingLRP.ActualLRPContainerKey = containerKey
+					existingLRP.ActualLRPNetInfo = netInfo
 				})
 
 				Context("with the same cell", func() {

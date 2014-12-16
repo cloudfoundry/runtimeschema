@@ -59,9 +59,12 @@ var _ = Describe("ActualLRP", func() {
 			})
 
 			Context("when both instance guid and cell id are empty", func() {
-				It("returns nil", func() {
+				It("returns a validation error", func() {
 					actualLRPContainerKey = models.NewActualLRPContainerKey("", "")
-					Ω(actualLRPContainerKey.Validate()).Should(BeNil())
+					Ω(actualLRPContainerKey.Validate()).Should(ConsistOf(
+						models.ErrInvalidField{"cell_id"},
+						models.ErrInvalidField{"instance_guid"},
+					))
 				})
 			})
 
@@ -83,7 +86,12 @@ var _ = Describe("ActualLRP", func() {
 
 	Describe("ActualLRP", func() {
 		var lrp models.ActualLRP
+		var lrpKey models.ActualLRPKey
+		var containerKey models.ActualLRPContainerKey
+		var netInfo models.ActualLRPNetInfo
 
+		BeforeEach(func() {
+		})
 		lrpPayload := `{
     "process_guid":"some-guid",
     "instance_guid":"some-instance-guid",
@@ -100,15 +108,19 @@ var _ = Describe("ActualLRP", func() {
   }`
 
 		BeforeEach(func() {
+			lrpKey = models.NewActualLRPKey("some-guid", 2, "some-domain")
+			containerKey = models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id")
+			netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{
+				{ContainerPort: 8080},
+				{ContainerPort: 8081, HostPort: 1234},
+			})
+
 			lrp = models.ActualLRP{
-				ActualLRPKey:          models.NewActualLRPKey("some-guid", 2, "some-domain"),
-				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id"),
-				ActualLRPNetInfo: models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{
-					{ContainerPort: 8080},
-					{ContainerPort: 8081, HostPort: 1234},
-				}),
-				State: models.ActualLRPStateRunning,
-				Since: 1138,
+				ActualLRPKey:          lrpKey,
+				ActualLRPContainerKey: containerKey,
+				ActualLRPNetInfo:      netInfo,
+				State:                 models.ActualLRPStateRunning,
+				Since:                 1138,
 			}
 		})
 
@@ -139,8 +151,8 @@ var _ = Describe("ActualLRP", func() {
 
 			for field, payload := range map[string]string{
 				"process_guid":  `{"instance_guid": "instance_guid", "cell_id": "cell_id", "domain": "domain"}`,
-				"instance_guid": `{"process_guid": "process-guid", "cell_id": "cell_id", "domain": "domain"}`,
-				"cell_id":       `{"process_guid": "process-guid", "instance_guid": "instance_guid", "domain": "domain"}`,
+				"instance_guid": `{"process_guid": "process-guid", "cell_id": "cell_id", "domain": "domain","state":"CLAIMED"}`,
+				"cell_id":       `{"process_guid": "process-guid", "instance_guid": "instance_guid", "domain": "domain", "state":"RUNNING"}`,
 				"domain":        `{"process_guid": "process-guid", "cell_id": "cell_id", "instance_guid": "instance_guid"}`,
 			} {
 				missingField := field
@@ -150,7 +162,7 @@ var _ = Describe("ActualLRP", func() {
 					It("returns an error indicating so", func() {
 						aLRP := &models.ActualLRP{}
 						err := models.FromJSON([]byte(jsonPayload), aLRP)
-						Ω(err.Error()).Should(Equal("Invalid field: " + missingField))
+						Ω(err.Error()).Should(ContainSubstring(missingField))
 					})
 				})
 			}
@@ -262,128 +274,203 @@ var _ = Describe("ActualLRP", func() {
 		})
 
 		Describe("Validate", func() {
-			var actualLRP models.ActualLRP
 
-			itValidatesCommonRequiredFields := func() {
-				Context("when valid", func() {
-					It("returns nil", func() {
-						Ω(actualLRP.Validate()).Should(BeNil())
-					})
+			Context("when state is unclaimed", func() {
+				BeforeEach(func() {
+					lrp = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        models.ActualLRPStateUnclaimed,
+						Since:        1138,
+					}
 				})
 
-				Context("when the ProcessGuid is blank", func() {
-					BeforeEach(func() {
-						actualLRP.ProcessGuid = ""
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"process_guid"}))
-					})
-				})
-
-				Context("when the Domain is blank", func() {
-					BeforeEach(func() {
-						actualLRP.Domain = ""
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"domain"}))
-					})
-				})
-
-			}
-
-			BeforeEach(func() {
-				actualLRP = models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey("fake-process-guid", 2, "fake-domain"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("fake-instance-guid", "fake-cell-id"),
-				}
+				itValidatesPresenceOfTheLRPKey(&lrp)
+				itValidatesAbsenceOfTheContainerKey(&lrp)
+				itValidatesAbsenceOfNetInfo(&lrp)
 			})
 
-			Context("when the State is unclaimed", func() {
+			Context("when state is claimed", func() {
 				BeforeEach(func() {
-					actualLRP.State = models.ActualLRPStateUnclaimed
-					actualLRP.ActualLRPContainerKey = models.NewActualLRPContainerKey("", "")
+					lrp = models.ActualLRP{
+						ActualLRPKey:          lrpKey,
+						ActualLRPContainerKey: containerKey,
+						State: models.ActualLRPStateClaimed,
+						Since: 1138,
+					}
 				})
 
-				itValidatesCommonRequiredFields()
+				itValidatesPresenceOfTheLRPKey(&lrp)
+				itValidatesPresenceOfTheContainerKey(&lrp)
+				itValidatesAbsenceOfNetInfo(&lrp)
+			})
 
-				Context("when the CellID is not blank", func() {
-					BeforeEach(func() {
-						actualLRP.CellID = "fake-cell-id"
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
-					})
+			Context("when state is running", func() {
+				BeforeEach(func() {
+					lrp = models.ActualLRP{
+						ActualLRPKey:          lrpKey,
+						ActualLRPContainerKey: containerKey,
+						ActualLRPNetInfo:      netInfo,
+						State:                 models.ActualLRPStateRunning,
+						Since:                 1138,
+					}
 				})
 
-				Context("when the InstanceGuid is not blank", func() {
-					BeforeEach(func() {
-						actualLRP.InstanceGuid = "fake-instance-guid"
-					})
+				itValidatesPresenceOfTheLRPKey(&lrp)
+				itValidatesPresenceOfTheContainerKey(&lrp)
+				itValidatesPresenceOfNetInfo(&lrp)
+			})
 
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
-					})
+			Context("when state is not set", func() {
+				BeforeEach(func() {
+					lrp = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        "",
+						Since:        1138,
+					}
+				})
+
+				It("validate returns an error", func() {
+					err := lrp.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring("state"))
 				})
 			})
 
-			Context("when the State is claimed", func() {
+			Context("when since is not set", func() {
 				BeforeEach(func() {
-					actualLRP.State = models.ActualLRPStateClaimed
+					lrp = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        models.ActualLRPStateUnclaimed,
+						Since:        0,
+					}
 				})
 
-				itValidatesCommonRequiredFields()
-
-				Context("when the CellID is blank", func() {
-					BeforeEach(func() {
-						actualLRP.CellID = ""
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
-					})
-				})
-
-				Context("when the InstanceGuid is blank", func() {
-					BeforeEach(func() {
-						actualLRP.InstanceGuid = ""
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
-					})
-				})
-			})
-
-			Context("when the State is running", func() {
-				BeforeEach(func() {
-					actualLRP.State = models.ActualLRPStateRunning
-				})
-
-				itValidatesCommonRequiredFields()
-
-				Context("when the CellID is blank", func() {
-					BeforeEach(func() {
-						actualLRP.CellID = ""
-					})
-
-					It("returns a validation error", func() {
-						Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"cell_id"}))
-					})
-				})
-			})
-
-			Context("when the InstanceGuid is blank", func() {
-				BeforeEach(func() {
-					actualLRP.InstanceGuid = ""
-				})
-
-				It("returns a validation error", func() {
-					Ω(actualLRP.Validate()).Should(ConsistOf(models.ErrInvalidField{"instance_guid"}))
+				It("validate returns an error", func() {
+					err := lrp.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring("since"))
 				})
 			})
 		})
 	})
 })
+
+func itValidatesPresenceOfTheLRPKey(lrp *models.ActualLRP) {
+	Context("when the lrp key is set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPKey = models.NewActualLRPKey("some-guid", 1, "domain")
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Context("when the lrp key is not set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPKey = models.ActualLRPKey{}
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("process_guid"))
+		})
+	})
+}
+
+func itValidatesPresenceOfTheContainerKey(lrp *models.ActualLRP) {
+	Context("when the container key is set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPContainerKey = models.NewActualLRPContainerKey("some-instance", "some-cell")
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Context("when the container key is not set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("instance_guid"))
+		})
+	})
+}
+
+func itValidatesAbsenceOfTheContainerKey(lrp *models.ActualLRP) {
+	Context("when the container key is set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPContainerKey = models.NewActualLRPContainerKey("some-instance", "some-cell")
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("container"))
+		})
+	})
+
+	Context("when the container key is not set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+}
+
+func itValidatesPresenceOfNetInfo(lrp *models.ActualLRP) {
+	Context("when net info is set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPNetInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{})
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Context("when net info is not set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("host"))
+		})
+	})
+}
+
+func itValidatesAbsenceOfNetInfo(lrp *models.ActualLRP) {
+	Context("when net info is set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPNetInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{})
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("net info"))
+		})
+	})
+
+	Context("when net info is not set", func() {
+		BeforeEach(func() {
+			lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+}
