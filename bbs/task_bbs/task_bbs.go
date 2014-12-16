@@ -9,25 +9,28 @@ import (
 )
 
 type TaskBBS struct {
-	store        storeadapter.StoreAdapter
-	timeProvider timeprovider.TimeProvider
-	logger       lager.Logger
-	taskClient   cb.TaskClient
-	services     *services_bbs.ServicesBBS
+	store            storeadapter.StoreAdapter
+	timeProvider     timeprovider.TimeProvider
+	logger           lager.Logger
+	taskClient       cb.TaskClient
+	auctioneerClient cb.AuctioneerClient
+	services         *services_bbs.ServicesBBS
 }
 
 func New(
 	store storeadapter.StoreAdapter,
 	timeProvider timeprovider.TimeProvider,
 	taskClient cb.TaskClient,
+	auctioneerClient cb.AuctioneerClient,
 	services *services_bbs.ServicesBBS,
 	logger lager.Logger,
 ) *TaskBBS {
 	return &TaskBBS{
-		store:        store,
-		timeProvider: timeProvider,
-		taskClient:   taskClient,
-		services:     services,
-		logger:       logger,
+		store:            store,
+		timeProvider:     timeProvider,
+		taskClient:       taskClient,
+		auctioneerClient: auctioneerClient,
+		services:         services,
+		logger:           logger,
 	}
 }

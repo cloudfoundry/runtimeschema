@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager"
 )
 
 // The stager calls this when it wants to desire a payload
@@ -17,13 +18,13 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 	if err != nil {
 		return err
 	}
+	task.State = models.TaskStatePending
 
 	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		if task.CreatedAt == 0 {
 			task.CreatedAt = s.timeProvider.Now().UnixNano()
 		}
 		task.UpdatedAt = s.timeProvider.Now().UnixNano()
-		task.State = models.TaskStatePending
 		value, err := models.ToJSON(task)
 		if err != nil {
 			return err
@@ -33,7 +34,18 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 			Value: value,
 		})
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	err = s.requestTaskAuction(task)
+	if err != nil {
+		s.logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
+		// The creation succeeded, the auction request error can be dropped
+	}
+
+	return nil
 }
 
 // The cell calls this when it is about to run the task in the allocated container
@@ -213,4 +225,18 @@ func validateCanDelete(from models.TaskState) error {
 	} else {
 		return nil
 	}
+}
+
+func (bbs *TaskBBS) requestTaskAuction(task models.Task) error {
+	auctioneerAddress, err := bbs.services.AuctioneerAddress()
+	if err != nil {
+		return err
+	}
+
+	err = bbs.auctioneerClient.RequestTaskAuction(auctioneerAddress, task)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
