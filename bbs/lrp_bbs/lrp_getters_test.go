@@ -212,7 +212,7 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		Describe("ActualLRPByProcessGuidAndIndex", func() {
-			It("should fetch all LRPs for the specified guid", func() {
+			It("should fetch the LRP for the specified guid", func() {
 				lrp, err := bbs.ActualLRPByProcessGuidAndIndex("guidA", 1)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(lrp).Should(Equal(&runningLrp1))

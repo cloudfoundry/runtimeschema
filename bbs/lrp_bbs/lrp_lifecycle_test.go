@@ -513,9 +513,8 @@ var _ = Describe("LrpLifecycle", func() {
 				err := bbs.RetireActualLRPs([]models.ActualLRP{*unclaimedActualLRP}, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(unclaimedActualLRP.ProcessGuid, unclaimedActualLRP.Index)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrpInBBS).Should(BeNil())
+				_, err = bbs.ActualLRPByProcessGuidAndIndex(unclaimedActualLRP.ProcessGuid, unclaimedActualLRP.Index)
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -181,7 +182,7 @@ func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int)
 	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 
 	if err == storeadapter.ErrorKeyNotFound {
-		return nil, nil
+		return nil, bbserrors.ErrStoreResourceNotFound
 	} else if err != nil {
 		return nil, err
 	}

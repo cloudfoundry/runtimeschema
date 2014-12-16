@@ -83,21 +83,22 @@ func NewActualLRPNetInfo(host string, ports []PortMapping) ActualLRPNetInfo {
 	}
 }
 
+func (key ActualLRPNetInfo) Validate() error {
+	var validationError ValidationError
+
+	if key.Host == "" {
+		return append(validationError, ErrInvalidField{"host"})
+	}
+
+	return nil
+}
+
 type ActualLRP struct {
 	ActualLRPKey
 	ActualLRPContainerKey
 	ActualLRPNetInfo
 	State ActualLRPState `json:"state"`
 	Since int64          `json:"since"`
-}
-
-func (actual ActualLRP) IsEquivalentTo(other ActualLRP) bool {
-	return actual.CellID == other.CellID &&
-		actual.Domain == other.Domain &&
-		actual.Index == other.Index &&
-		actual.InstanceGuid == other.InstanceGuid &&
-		actual.ProcessGuid == other.ProcessGuid &&
-		actual.State == other.State
 }
 
 func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey ActualLRPContainerKey, newState ActualLRPState) bool {
