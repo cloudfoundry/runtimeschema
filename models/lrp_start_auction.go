@@ -2,19 +2,9 @@ package models
 
 type LRPStartAuctionState int
 
-const (
-	LRPStartAuctionStateInvalid LRPStartAuctionState = iota
-	LRPStartAuctionStatePending
-	LRPStartAuctionStateClaimed
-)
-
 type LRPStartAuction struct {
 	DesiredLRP DesiredLRP `json:"desired_lrp"`
-
-	Index int `json:"index"`
-
-	State     LRPStartAuctionState `json:"state"`
-	UpdatedAt int64                `json:"updated_at"`
+	Index      int        `json:"index"`
 }
 
 func (auction LRPStartAuction) Validate() error {

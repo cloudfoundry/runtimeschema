@@ -36,6 +36,10 @@ func (key ActualLRPKey) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"process_guid"})
 	}
 
+	if key.Index < 0 {
+		validationError = validationError.Append(ErrInvalidField{"index"})
+	}
+
 	if key.Domain == "" {
 		validationError = validationError.Append(ErrInvalidField{"domain"})
 	}

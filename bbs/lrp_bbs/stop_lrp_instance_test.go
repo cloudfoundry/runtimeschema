@@ -20,14 +20,18 @@ var _ = Describe("StopLRPInstance", func() {
 			Stack:      "the-stack",
 			RepAddress: "cell.example.com",
 		}
-
+		desiredLRP := models.DesiredLRP{
+			ProcessGuid: "some-process-guid",
+			Domain:      "domain",
+			Instances:   1,
+		}
 		registerCell(cellPresence)
 
-		_, alrp, err := createAndClaim(
-			models.NewActualLRPKey("some-process-guid", 5678, "domain"),
+		_, alrp := createAndClaim(
+			desiredLRP,
+			0,
 			models.NewActualLRPContainerKey("some-instance-guid", cellPresence.CellID),
 		)
-		Ω(err).ShouldNot(HaveOccurred())
 		actualLRP = *alrp
 	})
 
@@ -68,11 +72,16 @@ var _ = Describe("StopLRPInstance", func() {
 		var anotherActualLRP models.ActualLRP
 
 		BeforeEach(func() {
-			_, alrp, err := createAndClaim(
-				models.NewActualLRPKey("some-other-process-guid", 1234, "domain"),
+			desiredLRP := models.DesiredLRP{
+				ProcessGuid: "some-other-process-guid",
+				Domain:      "domain",
+				Instances:   1,
+			}
+			_, alrp := createAndClaim(
+				desiredLRP,
+				0,
 				models.NewActualLRPContainerKey("some-other-instance-guid", cellPresence.CellID),
 			)
-			Ω(err).ShouldNot(HaveOccurred())
 
 			anotherActualLRP = *alrp
 

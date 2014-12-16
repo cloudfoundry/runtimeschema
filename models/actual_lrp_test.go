@@ -44,6 +44,16 @@ var _ = Describe("ActualLRP", func() {
 					Ω(actualLRPKey.Validate()).Should(ConsistOf(models.ErrInvalidField{"domain"}))
 				})
 			})
+
+			Context("when the Index is negative", func() {
+				BeforeEach(func() {
+					actualLRPKey.Index = -1
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRPKey.Validate()).Should(ConsistOf(models.ErrInvalidField{"index"}))
+				})
+			})
 		})
 	})
 

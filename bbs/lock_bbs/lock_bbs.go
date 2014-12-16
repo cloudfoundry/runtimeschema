@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
@@ -24,8 +25,12 @@ func New(store storeadapter.StoreAdapter, logger lager.Logger) *LockBBS {
 	}
 }
 
-func (bbs *LockBBS) NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner {
-	return heartbeater.New(bbs.store, shared.LockSchemaPath("auctioneer_lock"), auctioneerID, interval, bbs.logger)
+func (bbs *LockBBS) NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error) {
+	auctionerPresenceJSON, err := models.ToJSON(auctioneerPresence)
+	if err != nil {
+		return nil, err
+	}
+	return heartbeater.New(bbs.store, shared.LockSchemaPath("auctioneer_lock"), string(auctionerPresenceJSON), interval, bbs.logger), nil
 }
 
 func (bbs *LockBBS) NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner {

@@ -148,9 +148,11 @@ func (bbs *LRPBBS) resendStartAuctions(
 				}
 
 				logger.Info("resending-start-auction", lager.Data{"process-guid": processGuid, "index": actual.Index})
-				err := bbs.startAuctionBBS.RequestLRPStartAuction(lrpStartAuction)
+				err := bbs.requestLRPStartAuction(lrpStartAuction)
 				if err != nil {
-					logger.Error("failed-to-resend-start-auction", err)
+					logger.Error("failed-resending-start-auction", err, lager.Data{
+						"lrp-start-auction": lrpStartAuction,
+					})
 				}
 			}
 		}

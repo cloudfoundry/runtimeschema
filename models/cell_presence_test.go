@@ -34,8 +34,8 @@ var _ = Describe("CellPresence", func() {
 		})
 	})
 
-	Describe("NewTaskFromJSON", func() {
-		It("returns a Task with correct fields", func() {
+	Describe("FromJSON", func() {
+		It("returns a CellPresence with correct fields", func() {
 			decodedCellPresence := &models.CellPresence{}
 			err := models.FromJSON([]byte(payload), decodedCellPresence)
 			Ω(err).ShouldNot(HaveOccurred())

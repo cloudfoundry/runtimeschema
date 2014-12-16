@@ -39,9 +39,7 @@ var _ = Describe("LRPStartAuction", func() {
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
-    "index": 2,
-    "state": 1,
-    "updated_at": 1138
+    "index": 2
   }`
 
 		startAuction = LRPStartAuction{
@@ -68,9 +66,6 @@ var _ = Describe("LRPStartAuction", func() {
 					To:   "/tmp/internet",
 				},
 			},
-
-			State:     LRPStartAuctionStatePending,
-			UpdatedAt: 1138,
 		}
 	})
 

@@ -18,38 +18,6 @@ type FakeAuctioneerBBS struct {
 		result1 []models.CellPresence
 		result2 error
 	}
-	WatchForLRPStartAuctionStub        func() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
-	watchForLRPStartAuctionMutex       sync.RWMutex
-	watchForLRPStartAuctionArgsForCall []struct{}
-	watchForLRPStartAuctionReturns     struct {
-		result1 <-chan models.LRPStartAuction
-		result2 chan<- bool
-		result3 <-chan error
-	}
-	ClaimLRPStartAuctionStub        func(models.LRPStartAuction) error
-	claimLRPStartAuctionMutex       sync.RWMutex
-	claimLRPStartAuctionArgsForCall []struct {
-		arg1 models.LRPStartAuction
-	}
-	claimLRPStartAuctionReturns struct {
-		result1 error
-	}
-	ResolveLRPStartAuctionStub        func(models.LRPStartAuction) error
-	resolveLRPStartAuctionMutex       sync.RWMutex
-	resolveLRPStartAuctionArgsForCall []struct {
-		arg1 models.LRPStartAuction
-	}
-	resolveLRPStartAuctionReturns struct {
-		result1 error
-	}
-	WatchForDesiredTaskStub        func() (<-chan models.Task, chan<- bool, <-chan error)
-	watchForDesiredTaskMutex       sync.RWMutex
-	watchForDesiredTaskArgsForCall []struct{}
-	watchForDesiredTaskReturns     struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}
 	CompleteTaskStub        func(taskGuid string, failed bool, failureReason string, result string) error
 	completeTaskMutex       sync.RWMutex
 	completeTaskArgsForCall []struct {
@@ -61,14 +29,15 @@ type FakeAuctioneerBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	NewAuctioneerLockStub        func(auctioneerID string, interval time.Duration) ifrit.Runner
+	NewAuctioneerLockStub        func(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
 	newAuctioneerLockMutex       sync.RWMutex
 	newAuctioneerLockArgsForCall []struct {
-		auctioneerID string
-		interval     time.Duration
+		auctioneerPresence models.AuctioneerPresence
+		interval           time.Duration
 	}
 	newAuctioneerLockReturns struct {
 		result1 ifrit.Runner
+		result2 error
 	}
 }
 
@@ -95,122 +64,6 @@ func (fake *FakeAuctioneerBBS) CellsReturns(result1 []models.CellPresence, resul
 		result1 []models.CellPresence
 		result2 error
 	}{result1, result2}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error) {
-	fake.watchForLRPStartAuctionMutex.Lock()
-	fake.watchForLRPStartAuctionArgsForCall = append(fake.watchForLRPStartAuctionArgsForCall, struct{}{})
-	fake.watchForLRPStartAuctionMutex.Unlock()
-	if fake.WatchForLRPStartAuctionStub != nil {
-		return fake.WatchForLRPStartAuctionStub()
-	} else {
-		return fake.watchForLRPStartAuctionReturns.result1, fake.watchForLRPStartAuctionReturns.result2, fake.watchForLRPStartAuctionReturns.result3
-	}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStartAuctionCallCount() int {
-	fake.watchForLRPStartAuctionMutex.RLock()
-	defer fake.watchForLRPStartAuctionMutex.RUnlock()
-	return len(fake.watchForLRPStartAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) WatchForLRPStartAuctionReturns(result1 <-chan models.LRPStartAuction, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForLRPStartAuctionStub = nil
-	fake.watchForLRPStartAuctionReturns = struct {
-		result1 <-chan models.LRPStartAuction
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStartAuction(arg1 models.LRPStartAuction) error {
-	fake.claimLRPStartAuctionMutex.Lock()
-	fake.claimLRPStartAuctionArgsForCall = append(fake.claimLRPStartAuctionArgsForCall, struct {
-		arg1 models.LRPStartAuction
-	}{arg1})
-	fake.claimLRPStartAuctionMutex.Unlock()
-	if fake.ClaimLRPStartAuctionStub != nil {
-		return fake.ClaimLRPStartAuctionStub(arg1)
-	} else {
-		return fake.claimLRPStartAuctionReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStartAuctionCallCount() int {
-	fake.claimLRPStartAuctionMutex.RLock()
-	defer fake.claimLRPStartAuctionMutex.RUnlock()
-	return len(fake.claimLRPStartAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStartAuctionArgsForCall(i int) models.LRPStartAuction {
-	fake.claimLRPStartAuctionMutex.RLock()
-	defer fake.claimLRPStartAuctionMutex.RUnlock()
-	return fake.claimLRPStartAuctionArgsForCall[i].arg1
-}
-
-func (fake *FakeAuctioneerBBS) ClaimLRPStartAuctionReturns(result1 error) {
-	fake.ClaimLRPStartAuctionStub = nil
-	fake.claimLRPStartAuctionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStartAuction(arg1 models.LRPStartAuction) error {
-	fake.resolveLRPStartAuctionMutex.Lock()
-	fake.resolveLRPStartAuctionArgsForCall = append(fake.resolveLRPStartAuctionArgsForCall, struct {
-		arg1 models.LRPStartAuction
-	}{arg1})
-	fake.resolveLRPStartAuctionMutex.Unlock()
-	if fake.ResolveLRPStartAuctionStub != nil {
-		return fake.ResolveLRPStartAuctionStub(arg1)
-	} else {
-		return fake.resolveLRPStartAuctionReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStartAuctionCallCount() int {
-	fake.resolveLRPStartAuctionMutex.RLock()
-	defer fake.resolveLRPStartAuctionMutex.RUnlock()
-	return len(fake.resolveLRPStartAuctionArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStartAuctionArgsForCall(i int) models.LRPStartAuction {
-	fake.resolveLRPStartAuctionMutex.RLock()
-	defer fake.resolveLRPStartAuctionMutex.RUnlock()
-	return fake.resolveLRPStartAuctionArgsForCall[i].arg1
-}
-
-func (fake *FakeAuctioneerBBS) ResolveLRPStartAuctionReturns(result1 error) {
-	fake.ResolveLRPStartAuctionStub = nil
-	fake.resolveLRPStartAuctionReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error) {
-	fake.watchForDesiredTaskMutex.Lock()
-	fake.watchForDesiredTaskArgsForCall = append(fake.watchForDesiredTaskArgsForCall, struct{}{})
-	fake.watchForDesiredTaskMutex.Unlock()
-	if fake.WatchForDesiredTaskStub != nil {
-		return fake.WatchForDesiredTaskStub()
-	} else {
-		return fake.watchForDesiredTaskReturns.result1, fake.watchForDesiredTaskReturns.result2, fake.watchForDesiredTaskReturns.result3
-	}
-}
-
-func (fake *FakeAuctioneerBBS) WatchForDesiredTaskCallCount() int {
-	fake.watchForDesiredTaskMutex.RLock()
-	defer fake.watchForDesiredTaskMutex.RUnlock()
-	return len(fake.watchForDesiredTaskArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) WatchForDesiredTaskReturns(result1 <-chan models.Task, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForDesiredTaskStub = nil
-	fake.watchForDesiredTaskReturns = struct {
-		result1 <-chan models.Task
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
 }
 
 func (fake *FakeAuctioneerBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {
@@ -248,17 +101,17 @@ func (fake *FakeAuctioneerBBS) CompleteTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner {
+func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error) {
 	fake.newAuctioneerLockMutex.Lock()
 	fake.newAuctioneerLockArgsForCall = append(fake.newAuctioneerLockArgsForCall, struct {
-		auctioneerID string
-		interval     time.Duration
-	}{auctioneerID, interval})
+		auctioneerPresence models.AuctioneerPresence
+		interval           time.Duration
+	}{auctioneerPresence, interval})
 	fake.newAuctioneerLockMutex.Unlock()
 	if fake.NewAuctioneerLockStub != nil {
-		return fake.NewAuctioneerLockStub(auctioneerID, interval)
+		return fake.NewAuctioneerLockStub(auctioneerPresence, interval)
 	} else {
-		return fake.newAuctioneerLockReturns.result1
+		return fake.newAuctioneerLockReturns.result1, fake.newAuctioneerLockReturns.result2
 	}
 }
 
@@ -268,17 +121,18 @@ func (fake *FakeAuctioneerBBS) NewAuctioneerLockCallCount() int {
 	return len(fake.newAuctioneerLockArgsForCall)
 }
 
-func (fake *FakeAuctioneerBBS) NewAuctioneerLockArgsForCall(i int) (string, time.Duration) {
+func (fake *FakeAuctioneerBBS) NewAuctioneerLockArgsForCall(i int) (models.AuctioneerPresence, time.Duration) {
 	fake.newAuctioneerLockMutex.RLock()
 	defer fake.newAuctioneerLockMutex.RUnlock()
-	return fake.newAuctioneerLockArgsForCall[i].auctioneerID, fake.newAuctioneerLockArgsForCall[i].interval
+	return fake.newAuctioneerLockArgsForCall[i].auctioneerPresence, fake.newAuctioneerLockArgsForCall[i].interval
 }
 
-func (fake *FakeAuctioneerBBS) NewAuctioneerLockReturns(result1 ifrit.Runner) {
+func (fake *FakeAuctioneerBBS) NewAuctioneerLockReturns(result1 ifrit.Runner, result2 error) {
 	fake.NewAuctioneerLockStub = nil
 	fake.newAuctioneerLockReturns = struct {
 		result1 ifrit.Runner
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.AuctioneerBBS = new(FakeAuctioneerBBS)

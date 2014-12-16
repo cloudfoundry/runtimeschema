@@ -144,12 +144,14 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 timeProvider.Now().UnixNano(),
 			}
 
-			lrpKeyToClaim := models.NewActualLRPKey("guidA", 2, "test")
-
 			_, err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, newLrp, err = createAndClaim(lrpKeyToClaim, models.NewActualLRPContainerKey("some-instance-guid", "cell-id"))
+			_, newLrp = createAndClaim(
+				models.DesiredLRP{ProcessGuid: "guidA", Domain: "test", Instances: 1},
+				0,
+				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
+			)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			_, err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo)
@@ -170,11 +172,11 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByCellID", func() {
 			BeforeEach(func() {
-				_, _, err := createAndClaim(
-					models.NewActualLRPKey("some-other-process", 0, "some-other-domain"),
+				createAndClaim(
+					models.DesiredLRP{ProcessGuid: "some-other-process", Domain: "some-other-domain", Instances: 1},
+					0,
 					models.NewActualLRPContainerKey("some-other-instance", "some-other-cell"),
 				)
-				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("returns actual long running processes belongs to 'cell-id'", func() {
