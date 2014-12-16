@@ -226,16 +226,16 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("resends a start auction for the unclaimed actual", func() {
-				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+				originalCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
 
 				commenceWatching()
 				bbs.ConvergeLRPs(pollingInterval)
 
-				startAuctions, err := startAuctionBBS.LRPStartAuctions()
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(startAuctions).Should(HaveLen(1))
-				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(startAuctions[0].InstanceGuid).Should(Equal("instance-guid-3"))
+				Ω(fakeAuctioneerClient.RequestLRPStartAuctionCallCount()).Should(Equal(originalCallCount + 1))
+
+				_, auction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalCallCount)
+				Ω(auction.DesiredLRP).Should(Equal(desiredLRP))
+				Ω(auction.Index).Should(Equal(0))
 			})
 
 			It("logs", func() {

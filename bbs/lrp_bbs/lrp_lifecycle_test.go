@@ -668,9 +668,9 @@ var _ = Describe("LrpLifecycle", func() {
 			var unclaimedActualLRP *models.ActualLRP
 
 			BeforeEach(func() {
-				lrp := models.NewActualLRP("some-process-guid", "some-instance-guid", cellID, "some-domain", 1, "")
+				desiredLrp := models.DesiredLRP{ProcessGuid: "some-process-guid", Domain: "some-domain", Instances: 1}
 				var err error
-				unclaimedActualLRP, err = bbs.CreateActualLRP(lrp)
+				unclaimedActualLRP, err = bbs.CreateActualLRP(desiredLrp, 0, lagertest.NewTestLogger("test"))
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -697,18 +697,18 @@ var _ = Describe("LrpLifecycle", func() {
 
 				registerCell(cellPresence)
 
-				lrp1 := models.NewActualLRP("some-process-guid-1", "some-instance-guid-1", "", "some-domain", 1, "")
-				lrp2 := models.NewActualLRP("some-process-guid-2", "some-instance-guid-2", "", "some-domain", 1, "")
-
+				lrp1 := models.DesiredLRP{ProcessGuid: "some-process-guid-1", Domain: "some-domain", Instances: 1}
+				lrp2 := models.DesiredLRP{ProcessGuid: "some-process-guid-2", Domain: "some-domain", Instances: 1}
+				logger := lagertest.NewTestLogger("test")
 				var err error
-				createdActualLRP1, err := bbs.CreateActualLRP(lrp1)
+				createdActualLRP1, err := bbs.CreateActualLRP(lrp1, 0, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdActualLRP1.CellID = cellID
 				claimedActualLRP1, err = bbs.ClaimActualLRP(*createdActualLRP1)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				createdActualLRP2, err := bbs.CreateActualLRP(lrp2)
+				createdActualLRP2, err := bbs.CreateActualLRP(lrp2, 0, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdActualLRP2.CellID = cellID
