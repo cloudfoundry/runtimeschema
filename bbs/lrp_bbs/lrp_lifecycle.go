@@ -1,29 +1,69 @@
 package lrp_bbs
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *LRPBBS) CreateActualLRP(lrp models.ActualLRP) (*models.ActualLRP, error) {
-	lrp.State = models.ActualLRPStateUnclaimed
-	lrp.CellID = ""
-
-	err := lrp.Validate()
+func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) (*models.ActualLRP, error) {
+	instanceGuid, err := uuid.NewV4()
 	if err != nil {
+		logger.Error("generating-instance-guid-failed", err)
+		return nil, err
+	}
+	instanceGuidString := instanceGuid.String()
+
+	if index >= desiredLRP.Instances {
+		err = errors.New(fmt.Sprintf("Index %d too large for desired number %d of instances", index, desiredLRP.Instances))
+		logger.Error("actual-lrp-index-too-large", err, lager.Data{"actual-index": index, "desired-instances": desiredLRP.Instances})
 		return nil, err
 	}
 
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	actualLRP := models.ActualLRP{
+		ProcessGuid:  desiredLRP.ProcessGuid,
+		InstanceGuid: instanceGuidString,
+		Domain:       desiredLRP.Domain,
+		Index:        index,
+		State:        models.ActualLRPStateUnclaimed,
+		Since:        bbs.timeProvider.Now().UnixNano(),
+	}
+	err = actualLRP.Validate()
+	if err != nil {
+		logger.Error("validating-actual-lrp-failed", err, lager.Data{"actual-lrp": actualLRP})
+		return nil, err
+	}
 
-	return bbs.CreateRawActualLRP(&lrp)
+	createdActualLRP, err := bbs.createRawActualLRP(&actualLRP)
+	if err != nil {
+		logger.Error("failed-creating-actual-lrp", err, lager.Data{"actual-lrp": actualLRP})
+		return nil, err
+	}
+
+	lrpStartAuction := models.LRPStartAuction{
+		DesiredLRP: desiredLRP,
+
+		Index:        index,
+		InstanceGuid: instanceGuidString,
+	}
+
+	err = bbs.requestLRPStartAuction(lrpStartAuction)
+	if err != nil {
+		logger.Error("failed-sending-start-auction", err, lager.Data{"lrp-start-auction": lrpStartAuction})
+		// The creation succeeded, the start request error can be dropped
+	}
+
+	return createdActualLRP, nil
 }
 
-func (bbs *LRPBBS) CreateRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP, error) {
+func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP) (*models.ActualLRP, error) {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		return nil, err
@@ -87,8 +127,7 @@ func (bbs *LRPBBS) StartActualLRP(lrp models.ActualLRP) (*models.ActualLRP, erro
 
 	existingLRP, index, err := bbs.getActualLRP(lrp.ProcessGuid, lrp.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		createdLRP, err := bbs.CreateRawActualLRP(&lrp)
-
+		createdLRP, err := bbs.createRawActualLRP(&lrp)
 		if err == nil {
 			return createdLRP, nil
 		}
@@ -209,4 +248,18 @@ func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLR
 
 	return &lrp, node.Index, err
 
+}
+
+func (bbs *LRPBBS) requestLRPStartAuction(lrpStartAuction models.LRPStartAuction) error {
+	auctioneerAddress, err := bbs.services.AuctioneerAddress()
+	if err != nil {
+		return err
+	}
+
+	err = bbs.auctioneerClient.RequestLRPStartAuction(auctioneerAddress, lrpStartAuction)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

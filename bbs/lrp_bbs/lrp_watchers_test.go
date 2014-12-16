@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/pivotal-golang/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -95,28 +96,33 @@ var _ = Describe("LrpWatchers", func() {
 			stop   chan<- bool
 			errors <-chan error
 
-			unclaimedLRP *models.ActualLRP
-			claimedLRP   *models.ActualLRP
+			lrpProcessGuid string
+			lrpDomain      string
+			desiredLRP     models.DesiredLRP
 
-			lrpProcessGuid  string
-			lrpInstanceGuid string
-			lrpCellId       string
-			lrpDomain       string
-			lrpIndex        int
+			lrpIndex int
+
+			lrpCellId string
+
+			logger *lagertest.TestLogger
 		)
 
 		BeforeEach(func() {
-			lrpProcessGuid = "some-process-guid"
-			lrpInstanceGuid = "some-instance-guid"
-			lrpCellId = "cell-id"
-			lrpDomain = "lrp-domain"
-			lrpIndex = 0
-
 			events, stop, errors = bbs.WatchForActualLRPChanges()
 
-			var err error
-			unclaimedLRP, claimedLRP, err = createAndClaim(models.NewActualLRP(lrpProcessGuid, lrpInstanceGuid, lrpCellId, lrpDomain, lrpIndex, models.ActualLRPStateClaimed))
-			Ω(err).ShouldNot(HaveOccurred())
+			lrpProcessGuid = "some-process-guid"
+			lrpDomain = "lrp-domain"
+			desiredLRP = models.DesiredLRP{
+				ProcessGuid: "some-process-guid",
+				Domain:      "domain",
+				Instances:   1,
+			}
+
+			lrpIndex = 0
+
+			lrpCellId = "cell-id"
+
+			logger = lagertest.NewTestLogger("test")
 		})
 
 		AfterEach(func() {
@@ -124,38 +130,68 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: unclaimedLRP,
-				After:  claimedLRP,
-			})))
+			_, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			var change models.ActualLRPChange
+			Eventually(events).Should(Receive(&change))
+
+			before := change.Before
+			after := change.After
+
+			Ω(before).Should(BeNil())
+
+			Ω(after.ProcessGuid).Should(Equal(lrpProcessGuid))
+			Ω(after.Index).Should(Equal(lrpIndex))
+			Ω(after.State).Should(Equal(models.ActualLRPStateUnclaimed))
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			Eventually(events).Should(Receive())
-
-			changedLRP := *claimedLRP
-			changedLRP.State = models.ActualLRPStateRunning
-			changedLRP.CellID = "cell-id"
-
-			_, err := bbs.StartActualLRP(changedLRP)
+			lrp, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: claimedLRP,
-				After:  &changedLRP,
-			})))
+			Eventually(events).Should(Receive())
+
+			lrp.CellID = lrpCellId
+			_, err = bbs.ClaimActualLRP(*lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			var change models.ActualLRPChange
+			Eventually(events).Should(Receive(&change))
+
+			before := change.Before
+			after := change.After
+
+			Ω(before.ProcessGuid).Should(Equal(after.ProcessGuid))
+			Ω(before.InstanceGuid).Should(Equal(after.InstanceGuid))
+			Ω(before.Index).Should(Equal(after.Index))
+
+			Ω(before.State).Should(Equal(models.ActualLRPStateUnclaimed))
+			Ω(after.State).Should(Equal(models.ActualLRPStateClaimed))
+
+			Ω(after.CellID).Should(Equal(lrpCellId))
 		})
 
 		It("sends an event down the pipe for delete", func() {
-			Eventually(events).Should(Receive())
-
-			err := bbs.RemoveActualLRP(*claimedLRP)
+			lrp, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(models.ActualLRPChange{
-				Before: claimedLRP,
-				After:  nil,
-			})))
+			Eventually(events).Should(Receive())
+
+			err = bbs.RemoveActualLRP(*lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			var change models.ActualLRPChange
+			Eventually(events).Should(Receive(&change))
+
+			before := change.Before
+			after := change.After
+
+			Ω(after).Should(BeNil())
+
+			Ω(before.ProcessGuid).Should(Equal(lrpProcessGuid))
+			Ω(before.Index).Should(Equal(lrpIndex))
+			Ω(before.State).Should(Equal(models.ActualLRPStateUnclaimed))
 		})
 	})
 })

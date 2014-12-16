@@ -394,6 +394,16 @@ var _ = Describe("ActualLRP", func() {
 					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"instance_guid"}))
 				})
 			})
+
+			Context("when the Index is negative", func() {
+				BeforeEach(func() {
+					actualLRP.Index = -1
+				})
+
+				It("returns a validation error", func() {
+					Ω(actualLRP.Validate()).Should(ConsistOf(ErrInvalidField{"index"}))
+				})
+			})
 		}
 
 		BeforeEach(func() {

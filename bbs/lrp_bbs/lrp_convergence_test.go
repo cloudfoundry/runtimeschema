@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,16 +35,22 @@ var _ = Describe("LrpConvergence", func() {
 			Stack:      "the-stack",
 			RepAddress: "cell.example.com",
 		}
-
 		registerCell(cellPresence)
 
-		a1 := models.NewActualLRP(processGuid, "instance-guid-1", cellPresence.CellID, "domain", 0, models.ActualLRPStateUnclaimed)
-		createAndClaim(a1)
+		auctioneerPresence := models.AuctioneerPresence{
+			AuctioneerID:      "auctioneer-id",
+			AuctioneerAddress: "example.com",
+		}
+		registerAuctioneer(auctioneerPresence)
 
-		a2 := models.NewActualLRP(processGuid, "instance-guid-2", cellPresence.CellID, "domain", 1, models.ActualLRPStateUnclaimed)
-		createAndClaim(a2)
+		desiredLRP := models.DesiredLRP{ProcessGuid: processGuid, Domain: "domain", Instances: 2}
+		_, _, err := createAndClaim(desiredLRP, cellPresence.CellID, 0)
+		Ω(err).ShouldNot(HaveOccurred())
+		_, _, err = createAndClaim(desiredLRP, cellPresence.CellID, 1)
+		Ω(err).ShouldNot(HaveOccurred())
 
-		_, err := bbs.CreateActualLRP(models.NewActualLRP(unclaimedProcessGuid, "instance-guid-3", "", "domain", 0, models.ActualLRPStateUnclaimed))
+		unclaimedDesiredLRP := models.DesiredLRP{ProcessGuid: unclaimedProcessGuid, Domain: "another-domain", Instances: 1}
+		_, err = bbs.CreateActualLRP(unclaimedDesiredLRP, 0, lagertest.NewTestLogger("test"))
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -86,7 +93,7 @@ var _ = Describe("LrpConvergence", func() {
 			})
 		})
 
-		Context("when an cell is missing", func() {
+		Context("when a cell is missing", func() {
 			BeforeEach(func() {
 				etcdClient.Delete(shared.CellSchemaPath(cellPresence.CellID))
 			})
@@ -95,7 +102,10 @@ var _ = Describe("LrpConvergence", func() {
 				lrps, err := bbs.ActualLRPs()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(lrps).Should(HaveLen(1))
+
+				Ω(lrps[0].Index).Should(Equal(0))
 				Ω(lrps[0].ProcessGuid).Should(Equal(unclaimedProcessGuid))
+				Ω(lrps[0].State).Should(Equal(models.ActualLRPStateUnclaimed))
 			})
 
 			It("should prune LRP directories for apps that are no longer running", func() {
@@ -164,7 +174,8 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the desired LRP has all its actual LRPs, and there are no extras", func() {
 			BeforeEach(func() {
-				bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(desiredLRP)
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should not kick the desired LRP", func() {
@@ -178,7 +189,8 @@ var _ = Describe("LrpConvergence", func() {
 		Context("when the desired LRP is missing actuals", func() {
 			BeforeEach(func() {
 				desiredLRP.Instances = 3
-				bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(desiredLRP)
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should kick the desired LRP", func() {
@@ -206,7 +218,10 @@ var _ = Describe("LrpConvergence", func() {
 			BeforeEach(func() {
 				desiredLRP.ProcessGuid = unclaimedProcessGuid
 				desiredLRP.Instances = 1
-				bbs.DesireLRP(desiredLRP)
+
+				err := bbs.DesireLRP(desiredLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				timeProvider.Increment(pollingInterval + 1*time.Second)
 			})
 
@@ -233,7 +248,8 @@ var _ = Describe("LrpConvergence", func() {
 		Context("when there are extra actual LRPs", func() {
 			BeforeEach(func() {
 				desiredLRP.Instances = 1
-				bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(desiredLRP)
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should kick the desired LRP", func() {
@@ -266,13 +282,13 @@ var _ = Describe("LrpConvergence", func() {
 
 			addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
 			addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+
 			Ω(addr1).Should(Equal(cellPresence.RepAddress))
 			Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-			Ω([]string{stop1.InstanceGuid, stop2.InstanceGuid}).Should(ConsistOf(
-				"instance-guid-1",
-				"instance-guid-2",
-			))
+			Ω(stop1.ProcessGuid).Should(Equal(processGuid))
+			Ω(stop2.ProcessGuid).Should(Equal(processGuid))
+			Ω([]int{stop1.Index, stop2.Index}).Should(ConsistOf([]int{0, 1}))
 		})
 
 		It("logs", func() {
@@ -292,11 +308,9 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("does not resends a start auction for the actual", func() {
-				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
-
+				originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
 				bbs.ConvergeLRPs(pollingInterval)
-
-				Ω(startAuctionBBS.LRPStartAuctions()).Should(HaveLen(0))
+				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(Equal(originalAuctionCallCount))
 			})
 
 			It("logs", func() {
@@ -304,5 +318,35 @@ var _ = Describe("LrpConvergence", func() {
 				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp"))
 			})
 		})
+	})
+
+	It("Sends start auctions for actual LRPs that are UNCLAIMED for too long", func() {
+		desiredLRP := models.DesiredLRP{
+			ProcessGuid: "some-process-guid",
+			Domain:      "some-domain",
+			Instances:   1,
+			Stack:       "pancake",
+			Action: &models.DownloadAction{
+				From: "http://example.com",
+				To:   "/tmp/internet",
+			},
+		}
+		_, err := bbs.CreateActualLRP(desiredLRP, 0, lagertest.NewTestLogger("test"))
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// make sure created (UNCLAIMED) actual LRP has been in that state for longer than
+		// the staelness threshhold of pollingInterval
+		timeProvider.Increment(pollingInterval + 1*time.Second)
+
+		err = bbs.DesireLRP(desiredLRP)
+		Ω(err).ShouldNot(HaveOccurred())
+
+		originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
+		bbs.ConvergeLRPs(pollingInterval)
+		Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(Equal(originalAuctionCallCount + 1))
+
+		_, startAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalAuctionCallCount)
+		Ω(startAuction.DesiredLRP).Should(Equal(desiredLRP))
+		Ω(startAuction.Index).Should(Equal(0))
 	})
 })

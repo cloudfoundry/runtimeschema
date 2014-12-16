@@ -4,7 +4,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
@@ -24,8 +23,7 @@ var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
 var timeProvider *AdvancingFakeTimeProvider
 var fakeCellClient *cbfakes.FakeCellClient
-
-var startAuctionBBS *start_auction_bbs.StartAuctionBBS
+var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
 
 var logger *lagertest.TestLogger
 
@@ -48,6 +46,7 @@ var _ = BeforeEach(func() {
 	etcdRunner.Start()
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
+	fakeAuctioneerClient = &cbfakes.FakeAuctioneerClient{}
 	timeProvider = &AdvancingFakeTimeProvider{
 		FakeTimeProvider: faketimeprovider.New(time.Unix(0, 1138)),
 	}
@@ -55,9 +54,8 @@ var _ = BeforeEach(func() {
 	logger = lagertest.NewTestLogger("test")
 
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
-	startAuctionBBS = start_auction_bbs.New(etcdClient, timeProvider, logger)
 
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, servicesBBS, startAuctionBBS, logger)
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, fakeAuctioneerClient, servicesBBS, logger)
 })
 
 func registerCell(cell models.CellPresence) {
@@ -66,6 +64,16 @@ func registerCell(cell models.CellPresence) {
 
 	etcdClient.Create(storeadapter.StoreNode{
 		Key:   shared.CellSchemaPath(cell.CellID),
+		Value: jsonBytes,
+	})
+}
+
+func registerAuctioneer(auctioneer models.AuctioneerPresence) {
+	jsonBytes, err := models.ToJSON(auctioneer)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.LockSchemaPath("auctioneer_lock"),
 		Value: jsonBytes,
 	})
 }
@@ -88,12 +96,11 @@ func itRetriesUntilStoreComesBack(action func() error) {
 	})
 }
 
-func createAndClaim(a models.ActualLRP) (*models.ActualLRP, *models.ActualLRP, error) {
-	c := a
-	c.State = models.ActualLRPStateUnclaimed
-	unclaimed, err := bbs.CreateActualLRP(c)
+func createAndClaim(d models.DesiredLRP, cellID string, index int) (*models.ActualLRP, *models.ActualLRP, error) {
+	unclaimed, err := bbs.CreateActualLRP(d, index, lagertest.NewTestLogger("test"))
 	Ω(err).ShouldNot(HaveOccurred())
-	claimed, err := bbs.ClaimActualLRP(a)
+	unclaimed.CellID = cellID
+	claimed, err := bbs.ClaimActualLRP(*unclaimed)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return unclaimed, claimed, err

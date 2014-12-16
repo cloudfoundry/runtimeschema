@@ -8,7 +8,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/start_auction_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -79,12 +78,8 @@ type ConvergerBBS interface {
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RetireActualLRPs([]models.ActualLRP, lager.Logger) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	CreateActualLRP(models.ActualLRP) (*models.ActualLRP, error)
+	CreateActualLRP(models.DesiredLRP, int, lager.Logger) (*models.ActualLRP, error)
 	RemoveActualLRP(lrp models.ActualLRP) error
-
-	//start auction
-	ConvergeLRPStartAuctions(kickPendingDuration time.Duration, expireClaimedDuration time.Duration)
-	RequestLRPStartAuction(models.LRPStartAuction) error
 
 	//task
 	ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration)
@@ -115,17 +110,11 @@ type AuctioneerBBS interface {
 	//services
 	Cells() ([]models.CellPresence, error)
 
-	//start auction
-	WatchForLRPStartAuction() (<-chan models.LRPStartAuction, chan<- bool, <-chan error)
-	ClaimLRPStartAuction(models.LRPStartAuction) error
-	ResolveLRPStartAuction(models.LRPStartAuction) error
-
-	//task
-	WatchForDesiredTask() (<-chan models.Task, chan<- bool, <-chan error)
+	// task
 	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
 
 	//lock
-	NewAuctioneerLock(auctioneerID string, interval time.Duration) ifrit.Runner
+	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
 }
 
 type MetricsBBS interface {
@@ -165,9 +154,6 @@ type VeritasBBS interface {
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
 	Freshnesses() ([]models.Freshness, error)
-
-	//start auctions
-	LRPStartAuctions() ([]models.LRPStartAuction, error)
 
 	//services
 	Cells() ([]models.CellPresence, error)
@@ -211,21 +197,18 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, logger.Session("services-bbs"))
-	startAuctionBBS := start_auction_bbs.New(store, timeProvider, logger.Session("lrp-start-auction-bbs"))
 
 	return &BBS{
-		LockBBS:         lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:          lrp_bbs.New(store, timeProvider, cb.NewCellClient(), services, startAuctionBBS, logger.Session("lrp-bbs")),
-		StartAuctionBBS: startAuctionBBS,
-		ServicesBBS:     services,
-		TaskBBS:         task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),
+		LockBBS:     lock_bbs.New(store, logger.Session("lock-bbs")),
+		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), cb.NewAuctioneerClient(), services, logger.Session("lrp-bbs")),
+		ServicesBBS: services,
+		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),
 	}
 }
 
 type BBS struct {
 	*lock_bbs.LockBBS
 	*lrp_bbs.LRPBBS
-	*start_auction_bbs.StartAuctionBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
 }

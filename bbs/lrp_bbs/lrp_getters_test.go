@@ -151,7 +151,11 @@ var _ = Describe("LrpGetters", func() {
 			_, err := bbs.StartActualLRP(runningLrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, newLrp, err = createAndClaim(lrpToClaim)
+			_, newLrp, err = createAndClaim(
+				models.DesiredLRP{ProcessGuid: "guidA", Domain: "test", Instances: 1},
+				"cell-id",
+				0,
+			)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			_, err = bbs.StartActualLRP(runningLrp2)
@@ -172,7 +176,11 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByCellID", func() {
 			BeforeEach(func() {
-				_, _, err := createAndClaim(models.NewActualLRP("some-other-process", "some-other-instance", "some-other-cell", "some-other-domain", 0, models.ActualLRPStateClaimed))
+				_, _, err := createAndClaim(
+					models.DesiredLRP{ProcessGuid: "some-other-process", Domain: "some-other-domain", Instances: 1},
+					"some-other-cell",
+					0,
+				)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

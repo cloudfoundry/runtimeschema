@@ -105,6 +105,10 @@ func (actual ActualLRP) Validate() error {
 		validationError = append(validationError, ErrInvalidField{"instance_guid"})
 	}
 
+	if actual.Index < 0 {
+		validationError = append(validationError, ErrInvalidField{"index"})
+	}
+
 	if actual.State == ActualLRPStateUnclaimed {
 		if actual.CellID != "" {
 			validationError = append(validationError, ErrInvalidField{"cell_id"})
