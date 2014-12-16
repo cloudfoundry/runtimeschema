@@ -120,6 +120,7 @@ func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval,
 			} else if shouldKickTask {
 				logError(task, "kicking-pending-task")
 				scheduleForCASByIndex(node.Index, task)
+				bbs.requestTaskAuction(task)
 				tasksKicked++
 			}
 		case models.TaskStateRunning:

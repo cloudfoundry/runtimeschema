@@ -269,7 +269,7 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, servicesBBS, lagertest.NewTestLogger("test"))
+					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, lagertest.NewTestLogger("test"))
 				})
 
 				It("returns an error", func() {

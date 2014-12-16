@@ -489,10 +489,6 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 		}
 
-		JustBeforeEach(func() {
-			startLRPResult, startErr = bbs.StartActualLRP(*lrpToStart)
-		})
-
 		Context("when the actual LRP exists", func() {
 			BeforeEach(func() {
 				desiredLRP := models.DesiredLRP{
@@ -507,7 +503,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			JustBeforeEach(func() {
-				_, startErr = bbs.StartActualLRP(*lrpToStart)
+				startLRPResult, startErr = bbs.StartActualLRP(*lrpToStart)
 			})
 
 			Context("when the actual is Unclaimed", func() {

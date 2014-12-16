@@ -197,12 +197,13 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, logger.Session("services-bbs"))
+	auctioneerClient := cb.NewAuctioneerClient()
 
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), cb.NewAuctioneerClient(), services, logger.Session("lrp-bbs")),
+		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services, logger.Session("lrp-bbs")),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), services, logger.Session("task-bbs")),
+		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services, logger.Session("task-bbs")),
 	}
 }
 
