@@ -43,10 +43,7 @@ var _ = Describe("Receptor Service Registry", func() {
 
 			Context("when the auctioneer address is empty", func() {
 				BeforeEach(func() {
-					auctioneerPresence = models.AuctioneerPresence{
-						AuctioneerID:      "auctioneer-id",
-						AuctioneerAddress: "",
-					}
+					auctioneerPresence = models.NewAuctioneerPresence("auctioneer-id", "")
 				})
 
 				It("returns ErrServiceUnavailable", func() {
@@ -57,10 +54,7 @@ var _ = Describe("Receptor Service Registry", func() {
 
 			Context("when the auctionner address is present", func() {
 				BeforeEach(func() {
-					auctioneerPresence = models.AuctioneerPresence{
-						AuctioneerID:      "auctioneer-id",
-						AuctioneerAddress: "auctioneer.example.com",
-					}
+					auctioneerPresence = models.NewAuctioneerPresence("auctioneer-id", "auctioneer.example.com")
 				})
 
 				It("returns the address", func() {

@@ -64,11 +64,7 @@ var _ = Describe("LrpLifecycle", func() {
 					var auctioneerPresence models.AuctioneerPresence
 
 					BeforeEach(func() {
-						auctioneerPresence = models.AuctioneerPresence{
-							AuctioneerID:      "the-auctioneer-id",
-							AuctioneerAddress: "the-address",
-						}
-
+						auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
 						registerAuctioneer(auctioneerPresence)
 					})
 

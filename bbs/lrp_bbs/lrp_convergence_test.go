@@ -33,10 +33,7 @@ var _ = Describe("LrpConvergence", func() {
 		cellPresence = models.NewCellPresence("the-cell-id", "the-stack", "cell.example.com")
 		registerCell(cellPresence)
 
-		auctioneerPresence := models.AuctioneerPresence{
-			AuctioneerID:      "auctioneer-id",
-			AuctioneerAddress: "example.com",
-		}
+		auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
 		registerAuctioneer(auctioneerPresence)
 
 		desiredLRP := models.DesiredLRP{ProcessGuid: processGuid, Domain: "domain", Instances: 2}

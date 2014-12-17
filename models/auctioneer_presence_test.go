@@ -13,10 +13,7 @@ var _ = Describe("AuctioneerPresence", func() {
 	var payload string
 
 	BeforeEach(func() {
-		auctioneerPresence = models.AuctioneerPresence{
-			AuctioneerID:      "some-id",
-			AuctioneerAddress: "some-address",
-		}
+		auctioneerPresence = models.NewAuctioneerPresence("some-id", "some-address")
 
 		payload = `{
     "auctioneer_id":      "some-id",
