@@ -26,6 +26,45 @@ var _ = Describe("CellPresence", func() {
   }`
 	})
 
+	Describe("Validate", func() {
+		Context("when cell presence is valid", func() {
+			It("does not return an error", func() {
+				Ω(cellPresence.Validate()).ShouldNot(HaveOccurred())
+			})
+		})
+		Context("when cell presence is invalid", func() {
+			Context("when cell id is invalid", func() {
+				BeforeEach(func() {
+					cellPresence.CellID = ""
+				})
+				It("returns an error", func() {
+					err := cellPresence.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring("cell_id"))
+				})
+			})
+			Context("when stack is invalid", func() {
+				BeforeEach(func() {
+					cellPresence.Stack = ""
+				})
+				It("returns an error", func() {
+					err := cellPresence.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring("stack"))
+				})
+			})
+			Context("when rep address is invalid", func() {
+				BeforeEach(func() {
+					cellPresence.RepAddress = ""
+				})
+				It("returns an error", func() {
+					err := cellPresence.Validate()
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring("rep_address"))
+				})
+			})
+		})
+	})
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
 			json, err := models.ToJSON(&cellPresence)
