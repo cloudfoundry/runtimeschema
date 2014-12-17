@@ -50,13 +50,7 @@ var _ = Describe("Convergence of Tasks", func() {
 	})
 
 	Describe("ConvergeTask", func() {
-		var desiredEvents <-chan models.Task
-		var completedEvents <-chan models.Task
-
 		JustBeforeEach(func() {
-			desiredEvents, _, _ = bbs.WatchForDesiredTask()
-			completedEvents, _, _ = bbs.WatchForCompletedTask()
-
 			bbs.ConvergeTasks(timeToStart, convergenceInterval, timeToResolveInterval)
 		})
 
@@ -177,13 +171,12 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should mark the Task as completed & failed", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
+					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
 
-					var noticedOnce models.Task
-					Eventually(completedEvents).Should(Receive(&noticedOnce))
-
-					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(ContainSubstring("time limit"))
+					Ω(returnedTask.Failed).Should(Equal(true))
+					Ω(returnedTask.FailureReason).Should(ContainSubstring("time limit"))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -214,9 +207,10 @@ var _ = Describe("Convergence of Tasks", func() {
 				heartbeater.Signal(os.Interrupt)
 			})
 
-			It("should do nothing", func() {
-				Consistently(desiredEvents).ShouldNot(Receive())
-				Consistently(completedEvents).ShouldNot(Receive())
+			It("leaves the task running", func() {
+				returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(returnedTask.State).Should(Equal(models.TaskStateRunning))
 			})
 
 			Context("when the associated cell is missing", func() {
@@ -227,14 +221,12 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should mark the Task as completed & failed", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
+					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
 
-					var noticedOnce models.Task
-					Eventually(completedEvents).Should(Receive(&noticedOnce))
-
-					Ω(noticedOnce.Failed).Should(Equal(true))
-					Ω(noticedOnce.FailureReason).Should(ContainSubstring("cell"))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(returnedTask.Failed).Should(Equal(true))
+					Ω(returnedTask.FailureReason).Should(ContainSubstring("cell"))
 				})
 
 				It("logs that the cell disappeared", func() {
@@ -427,13 +419,18 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				Context("when the task has been completed for less than the convergence interval", func() {
+					var previousTime int64
+
 					BeforeEach(func() {
+						previousTime = timeProvider.Now().UnixNano()
 						timeProvider.IncrementBySeconds(1)
 					})
 
 					It("should NOT kick the Task", func() {
-						Consistently(desiredEvents).ShouldNot(Receive())
-						Consistently(completedEvents).ShouldNot(Receive())
+						returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
+						Ω(returnedTask.UpdatedAt).Should(Equal(previousTime))
 					})
 				})
 			})
@@ -456,23 +453,32 @@ var _ = Describe("Convergence of Tasks", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("should do nothing", func() {
-				Consistently(desiredEvents).ShouldNot(Receive())
-				Consistently(completedEvents).ShouldNot(Receive())
+			Context("when the task is in resolving state for less than the convergence interval", func() {
+				var previousTime int64
+
+				BeforeEach(func() {
+					previousTime = timeProvider.Now().UnixNano()
+					timeProvider.IncrementBySeconds(1)
+				})
+
+				It("should do nothing", func() {
+					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(returnedTask.State).Should(Equal(models.TaskStateResolving))
+					Ω(returnedTask.UpdatedAt).Should(Equal(previousTime))
+				})
 			})
 
-			Context("when the run once has been resolving for longer than a convergence interval", func() {
+			Context("when the task has been resolving for longer than a convergence interval", func() {
 				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds)
 				})
 
 				It("should put the Task back into the completed state", func() {
-					var noticedOnce models.Task
-					Eventually(completedEvents).Should(Receive(&noticedOnce))
-
-					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
-					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
+					Ω(returnedTask.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
 				It("logs that it is demoting task from resolving to completed", func() {
