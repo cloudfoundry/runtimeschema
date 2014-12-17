@@ -38,7 +38,7 @@ type FakeConvergerBBS struct {
 	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns     struct {
+	watchForDesiredLRPChangesReturns struct {
 		result1 <-chan models.DesiredLRPChange
 		result2 chan<- bool
 		result3 <-chan error
@@ -63,9 +63,9 @@ type FakeConvergerBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
-	ConvergeTaskStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
-	convergeTaskMutex       sync.RWMutex
-	convergeTaskArgsForCall []struct {
+	ConvergeTasksStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	convergeTasksMutex       sync.RWMutex
+	convergeTasksArgsForCall []struct {
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
@@ -264,29 +264,29 @@ func (fake *FakeConvergerBBS) RemoveActualLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeConvergerBBS) ConvergeTask(timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
-	fake.convergeTaskMutex.Lock()
-	fake.convergeTaskArgsForCall = append(fake.convergeTaskArgsForCall, struct {
+func (fake *FakeConvergerBBS) ConvergeTasks(timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
+	fake.convergeTasksMutex.Lock()
+	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
 	}{timeToClaim, convergenceInterval, timeToResolve})
-	fake.convergeTaskMutex.Unlock()
-	if fake.ConvergeTaskStub != nil {
-		fake.ConvergeTaskStub(timeToClaim, convergenceInterval, timeToResolve)
+	fake.convergeTasksMutex.Unlock()
+	if fake.ConvergeTasksStub != nil {
+		fake.ConvergeTasksStub(timeToClaim, convergenceInterval, timeToResolve)
 	}
 }
 
-func (fake *FakeConvergerBBS) ConvergeTaskCallCount() int {
-	fake.convergeTaskMutex.RLock()
-	defer fake.convergeTaskMutex.RUnlock()
-	return len(fake.convergeTaskArgsForCall)
+func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
+	fake.convergeTasksMutex.RLock()
+	defer fake.convergeTasksMutex.RUnlock()
+	return len(fake.convergeTasksArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ConvergeTaskArgsForCall(i int) (time.Duration, time.Duration, time.Duration) {
-	fake.convergeTaskMutex.RLock()
-	defer fake.convergeTaskMutex.RUnlock()
-	return fake.convergeTaskArgsForCall[i].timeToClaim, fake.convergeTaskArgsForCall[i].convergenceInterval, fake.convergeTaskArgsForCall[i].timeToResolve
+func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (time.Duration, time.Duration, time.Duration) {
+	fake.convergeTasksMutex.RLock()
+	defer fake.convergeTasksMutex.RUnlock()
+	return fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
 }
 
 func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner {

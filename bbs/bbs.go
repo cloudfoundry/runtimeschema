@@ -82,7 +82,7 @@ type ConvergerBBS interface {
 	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	//task
-	ConvergeTask(timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	ConvergeTasks(timeToClaim, convergenceInterval, timeToResolve time.Duration)
 
 	//lock
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner

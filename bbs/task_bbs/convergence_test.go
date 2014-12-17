@@ -57,7 +57,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			desiredEvents, _, _ = bbs.WatchForDesiredTask()
 			completedEvents, _, _ = bbs.WatchForCompletedTask()
 
-			bbs.ConvergeTask(timeToStart, convergenceInterval, timeToResolveInterval)
+			bbs.ConvergeTasks(timeToStart, convergenceInterval, timeToResolveInterval)
 		})
 
 		It("bumps the convergence counter", func() {
