@@ -28,15 +28,8 @@ var _ = Describe("Receptor Service Registry", func() {
 	BeforeEach(func() {
 		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
 
-		firstReceptorPresence = models.ReceptorPresence{
-			ReceptorID:  "first-receptor",
-			ReceptorURL: "first-receptor-url",
-		}
-
-		secondReceptorPresence = models.ReceptorPresence{
-			ReceptorID:  "second-receptor",
-			ReceptorURL: "second-receptor-url",
-		}
+		firstReceptorPresence = models.NewReceptorPresence("first-receptor", "first-receptor-url")
+		secondReceptorPresence = models.NewReceptorPresence("second-receptor", "second-receptor-url")
 
 		interval = 1 * time.Second
 

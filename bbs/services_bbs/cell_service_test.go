@@ -16,9 +16,9 @@ import (
 )
 
 var _ = Describe("Cell Service Registry", func() {
+	const interval = time.Second
 	var (
 		bbs                *ServicesBBS
-		interval           = time.Second
 		heartbeat1         ifrit.Process
 		heartbeat2         ifrit.Process
 		firstCellPresence  models.CellPresence
@@ -28,17 +28,8 @@ var _ = Describe("Cell Service Registry", func() {
 	BeforeEach(func() {
 		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
 
-		firstCellPresence = models.CellPresence{
-			CellID: "first-rep",
-			Stack:  "lucid64",
-		}
-
-		secondCellPresence = models.CellPresence{
-			CellID: "second-rep",
-			Stack:  ".Net",
-		}
-
-		interval = 1 * time.Second
+		firstCellPresence = models.NewCellPresence("first-rep", "lucid64", "1.2.3.4")
+		secondCellPresence = models.NewCellPresence("second-rep", ".Net", "4.5.6.7")
 
 		heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
 		heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, interval))

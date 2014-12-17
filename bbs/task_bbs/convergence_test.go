@@ -206,9 +206,8 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(models.CellPresence{
-					CellID: "cell-id",
-				}, time.Minute))
+				cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4")
+				heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
 			})
 
 			AfterEach(func() {
@@ -302,10 +301,7 @@ var _ = Describe("Convergence of Tasks", func() {
 						var receptorPresence ifrit.Process
 
 						BeforeEach(func() {
-							presence := models.ReceptorPresence{
-								ReceptorID:  "some-receptor",
-								ReceptorURL: "some-receptor-url",
-							}
+							presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
 
 							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
 
@@ -394,10 +390,7 @@ var _ = Describe("Convergence of Tasks", func() {
 						var receptorPresence ifrit.Process
 
 						BeforeEach(func() {
-							presence := models.ReceptorPresence{
-								ReceptorID:  "some-receptor",
-								ReceptorURL: "some-receptor-url",
-							}
+							presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
 
 							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
 
@@ -490,10 +483,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					var receptorPresence ifrit.Process
 
 					BeforeEach(func() {
-						presence := models.ReceptorPresence{
-							ReceptorID:  "some-receptor",
-							ReceptorURL: "some-receptor-url",
-						}
+						presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
 
 						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
 

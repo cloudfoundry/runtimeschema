@@ -787,11 +787,7 @@ var _ = Describe("LrpLifecycle", func() {
 			var blockStopInstanceChan chan struct{}
 
 			BeforeEach(func() {
-				cellPresence = models.CellPresence{
-					CellID:     cellID,
-					Stack:      "the-stack",
-					RepAddress: "cell.example.com",
-				}
+				cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com")
 				registerCell(cellPresence)
 
 				processGuid = "some-process-guid"

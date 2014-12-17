@@ -30,11 +30,7 @@ var _ = Describe("LrpConvergence", func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
 
-		cellPresence = models.CellPresence{
-			CellID:     "the-cell-id",
-			Stack:      "the-stack",
-			RepAddress: "cell.example.com",
-		}
+		cellPresence = models.NewCellPresence("the-cell-id", "the-stack", "cell.example.com")
 		registerCell(cellPresence)
 
 		auctioneerPresence := models.AuctioneerPresence{

@@ -6,6 +6,14 @@ type CellPresence struct {
 	RepAddress string `json:"rep_address"`
 }
 
+func NewCellPresence(cellID, stack, repAddress string) CellPresence {
+	return CellPresence{
+		CellID:     cellID,
+		Stack:      stack,
+		RepAddress: repAddress,
+	}
+}
+
 func (c CellPresence) Validate() error {
 	var validationError ValidationError
 	if c.CellID == "" {
