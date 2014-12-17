@@ -72,6 +72,7 @@ func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval,
 
 		receptor, err := bbs.services.Receptor()
 		if err != nil {
+			logError(task, "failed-to-find-receptor")
 			return
 		}
 
@@ -148,7 +149,7 @@ func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval,
 				logError(task, "failed-to-resolve-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				logError(task, "demoting-resolving-to-completed")
+				taskLog.Info("demoting-resolving-to-completed", lager.Data{"task": task})
 				demoted := demoteToCompleted(task)
 				scheduleForCASByIndex(node.Index, demoted)
 				workPool.Submit(func() { completeTask(demoted) })

@@ -189,6 +189,10 @@ var _ = Describe("Convergence of Tasks", func() {
 				It("bumps the compare-and-swap counter", func() {
 					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
+
+				It("logs an error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-start-in-time"))
+				})
 			})
 		})
 
@@ -234,6 +238,10 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 				})
 
+				It("logs that the cell disappeared", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.cell-disappeared"))
+				})
+
 				It("bumps the compare-and-swap counter", func() {
 					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
@@ -242,6 +250,8 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Describe("Completed tasks", func() {
 			Context("when Tasks with a complete URL are completed", func() {
+				var completeTaskError error
+
 				BeforeEach(func() {
 					task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
@@ -271,17 +281,19 @@ var _ = Describe("Convergence of Tasks", func() {
 					err = bbs.CompleteTask(secondTask.TaskGuid, true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 
+					completeTaskError = nil
+
 					wg := new(sync.WaitGroup)
 					wg.Add(2)
 
 					fakeTaskClient.CompleteTaskStub = func(string, *models.Task) error {
 						wg.Done()
 						wg.Wait()
-						return nil
+						return completeTaskError
 					}
 				})
 
-				Context("for > the convergence interval", func() {
+				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
 						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 					})
@@ -326,8 +338,22 @@ var _ = Describe("Convergence of Tasks", func() {
 							))
 						})
 
+						It("logs that it kicks the completed task", func() {
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.kicking-completed-task"))
+						})
+
 						It("bumps the convergence tasks kicked counter", func() {
 							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
+						})
+
+						Context("when the receptor fails to complete the task", func() {
+							BeforeEach(func() {
+								completeTaskError = errors.New("whoops!")
+							})
+
+							It("logs that it failed to complete the task", func() {
+								Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-complete"))
+							})
 						})
 					})
 
@@ -338,6 +364,10 @@ var _ = Describe("Convergence of Tasks", func() {
 
 						It("bumps the convergence tasks kicked counter anyway", func() {
 							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
+						})
+
+						It("logs that it failed to find a receptor", func() {
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-find-receptor"))
 						})
 					})
 				})
@@ -355,7 +385,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
-				Context("for > the convergence interval", func() {
+				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
 						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 					})
@@ -388,7 +418,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 				})
 
-				Context("when the task has been completed for > the time to resolve interval", func() {
+				Context("when the task has been completed for longer than the time-to-resolve interval", func() {
 					BeforeEach(func() {
 						timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
 					})
@@ -397,9 +427,13 @@ var _ = Describe("Convergence of Tasks", func() {
 						_, err := bbs.TaskByGuid(task.TaskGuid)
 						Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 					})
+
+					It("logs that it failed to start resolving the task in time", func() {
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-start-resolving-in-time"))
+					})
 				})
 
-				Context("when the task has been completed for < the convergence interval", func() {
+				Context("when the task has been completed for less than the convergence interval", func() {
 					BeforeEach(func() {
 						timeProvider.IncrementBySeconds(1)
 					})
@@ -434,7 +468,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				Consistently(completedEvents).ShouldNot(Receive())
 			})
 
-			Context("when the run once has been resolving for > 30 seconds", func() {
+			Context("when the run once has been resolving for longer than a convergence interval", func() {
 				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds)
 				})
@@ -446,6 +480,10 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
 					Ω(noticedOnce.State).Should(Equal(models.TaskStateCompleted))
 					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+				})
+
+				It("logs that it is demoting task from resolving to completed", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.demoting-resolving-to-completed"))
 				})
 
 				Context("when a receptor is present", func() {
@@ -479,16 +517,20 @@ var _ = Describe("Convergence of Tasks", func() {
 					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
 				})
 			})
-		})
 
-		Context("when the resolving task has been completed for > the time to resolve interval", func() {
-			BeforeEach(func() {
-				timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
-			})
+			Context("when the resolving task has been completed for longer than the time-to-resolve interval", func() {
+				BeforeEach(func() {
+					timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+				})
 
-			It("should delete the task", func() {
-				_, err := bbs.TaskByGuid(task.TaskGuid)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				It("should delete the task", func() {
+					_, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
+
+				It("logs that has failed to resolve task in time", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-resolve-in-time"))
+				})
 			})
 		})
 	})
