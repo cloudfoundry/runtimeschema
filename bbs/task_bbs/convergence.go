@@ -118,9 +118,11 @@ func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval,
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
 				tasksKicked++
 			} else if shouldKickTask {
-				logError(task, "kicking-pending-task")
-				scheduleForCASByIndex(node.Index, task)
-				bbs.requestTaskAuction(task)
+				taskLog.Info("requesting-auction-for-pending-task", lager.Data{"task": task})
+				err := bbs.requestTaskAuction(task)
+				if err != nil {
+					taskLog.Error("failed-to-request-auction-for-pending-task", err, lager.Data{"task": task})
+				}
 				tasksKicked++
 			}
 		case models.TaskStateRunning:
@@ -136,7 +138,7 @@ func (bbs *TaskBBS) ConvergeTask(expirePendingTaskDuration, convergenceInterval,
 				logError(task, "failed-to-start-resolving-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				logError(task, "kicking-completed-task")
+				taskLog.Info("kicking-completed-task", lager.Data{"task": task})
 				workPool.Submit(func() { completeTask(task) })
 				tasksKicked++
 			}

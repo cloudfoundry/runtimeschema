@@ -1,6 +1,7 @@
 package task_bbs_test
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"path"
@@ -101,13 +102,20 @@ var _ = Describe("Convergence of Tasks", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			Context("when the Task has *not* been pending for too long", func() {
+			Context("when the Task has NOT been pending for too long", func() {
 				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds - 1)
+
+					auctioneerPresence := models.AuctioneerPresence{
+						AuctioneerID:      "the-auctioneer-id",
+						AuctioneerAddress: "the-address",
+					}
+
+					registerAuctioneer(auctioneerPresence)
 				})
 
-				It("should not kick the Task", func() {
-					Consistently(desiredEvents).ShouldNot(Receive())
+				It("does not request an auction for the task", func() {
+					Consistently(fakeAuctioneerClient.RequestTaskAuctionCallCount).Should(BeZero())
 				})
 			})
 
@@ -116,17 +124,50 @@ var _ = Describe("Convergence of Tasks", func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 				})
 
-				It("should kick the Task", func() {
-					var noticedOnce models.Task
-					Eventually(desiredEvents).Should(Receive(&noticedOnce))
-
-					Ω(noticedOnce.TaskGuid).Should(Equal(task.TaskGuid))
-					Ω(noticedOnce.State).Should(Equal(models.TaskStatePending))
-					Ω(noticedOnce.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
-				})
-
 				It("bumps the compare-and-swap counter", func() {
 					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+				})
+
+				It("logs that it sends an auction for the pending task", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.requesting-auction-for-pending-task"))
+				})
+
+				Context("when able to fetch the auctioneer address", func() {
+					var auctioneerPresence models.AuctioneerPresence
+
+					BeforeEach(func() {
+						auctioneerPresence = models.AuctioneerPresence{
+							AuctioneerID:      "the-auctioneer-id",
+							AuctioneerAddress: "the-address",
+						}
+
+						registerAuctioneer(auctioneerPresence)
+					})
+
+					It("requests an auction", func() {
+						Ω(fakeAuctioneerClient.RequestTaskAuctionCallCount()).Should(Equal(1))
+
+						requestAddress, requestedTask := fakeAuctioneerClient.RequestTaskAuctionArgsForCall(0)
+						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
+						Ω(requestedTask.TaskGuid).Should(Equal(task.TaskGuid))
+
+					})
+
+					Context("when requesting an auction is unsuccessful", func() {
+						BeforeEach(func() {
+							fakeAuctioneerClient.RequestTaskAuctionReturns(errors.New("oops"))
+						})
+
+						It("logs an error", func() {
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auction-for-pending-task"))
+						})
+					})
+				})
+
+				Context("when unable to fetch the auctioneer address", func() {
+					It("logs an error", func() {
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auction-for-pending-task"))
+					})
 				})
 			})
 

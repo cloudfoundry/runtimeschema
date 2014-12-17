@@ -20,6 +20,7 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
+var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
 var fakeTaskClient *cbfakes.FakeTaskClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
@@ -49,11 +50,13 @@ var _ = BeforeEach(func() {
 	etcdRunner.Stop()
 	etcdRunner.Start()
 
+	logger = lagertest.NewTestLogger("test")
+
 	fakeTaskClient = new(cbfakes.FakeTaskClient)
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
 	timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-	servicesBBS = services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
-	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, lagertest.NewTestLogger("test"))
+	servicesBBS = services_bbs.New(etcdClient, logger)
+	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, logger)
 })
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {
