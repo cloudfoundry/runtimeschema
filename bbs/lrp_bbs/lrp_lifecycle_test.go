@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -91,11 +92,8 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 
 					Context("when requesting an auction is unsuccessful", func() {
-						var errRequestAuction error
-
 						BeforeEach(func() {
-							errRequestAuction = errors.New("oops")
-							fakeAuctioneerClient.RequestLRPStartAuctionReturns(errRequestAuction)
+							fakeAuctioneerClient.RequestLRPStartAuctionReturns(errors.New("oops"))
 						})
 
 						It("does not return an error", func() {
@@ -139,7 +137,7 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				It("returns an error", func() {
-					Ω(errCreate).Should(HaveOccurred())
+					Ω(errCreate).Should(Equal(bbserrors.ErrStoreResourceExists))
 				})
 			})
 		})
@@ -163,7 +161,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(errCreate).Should(HaveOccurred())
+				Ω(errCreate).Should(ContainElement(models.ErrInvalidField{"index"}))
 			})
 		})
 
@@ -186,15 +184,16 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(errCreate).Should(HaveOccurred())
+				Ω(errCreate).Should(Equal(lrp_bbs.NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)))
 			})
 		})
 
-		Context("when given a desired LRP with a missing domain", func() {
+		Context("when given a desired LRP with invalid information to construct an actual LRP", func() {
 			BeforeEach(func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: "the-process-guid",
 					Instances:   3,
+					// missing Domain
 				}
 				index = 1
 			})
@@ -208,29 +207,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(errCreate).Should(HaveOccurred())
-			})
-		})
-
-		Context("when given a desired LRP with a missing process guid", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					Domain:    "the-domain",
-					Instances: 3,
-				}
-				index = 1
-			})
-
-			It("does not persist an actual LRP", func() {
-				Consistently(bbs.ActualLRPs).Should(BeEmpty())
-			})
-
-			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
-			})
-
-			It("returns an error", func() {
-				Ω(errCreate).Should(HaveOccurred())
+				Ω(errCreate).Should(ContainElement(models.ErrInvalidField{"domain"}))
 			})
 		})
 	})

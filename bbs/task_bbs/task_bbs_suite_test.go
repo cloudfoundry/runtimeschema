@@ -2,6 +2,7 @@ package task_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -54,6 +55,16 @@ var _ = BeforeEach(func() {
 	servicesBBS = services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, lagertest.NewTestLogger("test"))
 })
+
+func registerAuctioneer(auctioneer models.AuctioneerPresence) {
+	jsonBytes, err := models.ToJSON(auctioneer)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.LockSchemaPath("auctioneer_lock"),
+		Value: jsonBytes,
+	})
+}
 
 func itRetriesUntilStoreComesBack(action func() error) {
 	It("should keep trying until the store comes back", func(done Done) {

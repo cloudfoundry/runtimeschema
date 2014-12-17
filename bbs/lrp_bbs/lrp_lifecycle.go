@@ -1,7 +1,6 @@
 package lrp_bbs
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -12,10 +11,23 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
+type actualLRPIndexTooLargeError struct {
+	actualIndex      int
+	desiredInstances int
+}
+
+func (e actualLRPIndexTooLargeError) Error() string {
+	return fmt.Sprintf("Index %d too large for desired number %d of instances", e.actualIndex, e.desiredInstances)
+}
+
+func NewActualLRPIndexTooLargeError(actualIndex, desiredInstances int) error {
+	return actualLRPIndexTooLargeError{actualIndex: actualIndex, desiredInstances: desiredInstances}
+}
+
 func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) (*models.ActualLRP, error) {
 	var err error
 	if index >= desiredLRP.Instances {
-		err = errors.New(fmt.Sprintf("Index %d too large for desired number %d of instances", index, desiredLRP.Instances))
+		err = NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)
 		logger.Error("actual-lrp-index-too-large", err, lager.Data{"actual-index": index, "desired-instances": desiredLRP.Instances})
 		return nil, err
 	}
