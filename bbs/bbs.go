@@ -88,19 +88,7 @@ type ConvergerBBS interface {
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
 }
 
-type TPSBBS interface {
-	//lrp
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
-}
-
 type NsyncBBS interface {
-	// lrp
-	DesireLRP(models.DesiredLRP) error
-	RemoveDesiredLRPByProcessGuid(guid string) error
-	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
-	ChangeDesiredLRP(change models.DesiredLRPChange) error
-	BumpFreshness(freshness models.Freshness) error
-
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
 	NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner
@@ -184,10 +172,6 @@ func NewMetricsBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 }
 
 func NewRouteEmitterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) RouteEmitterBBS {
-	return NewBBS(store, timeProvider, logger)
-}
-
-func NewTPSBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) TPSBBS {
 	return NewBBS(store, timeProvider, logger)
 }
 

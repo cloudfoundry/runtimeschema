@@ -15,7 +15,6 @@ var _ = Describe("BBS", func() {
 		NewAuctioneerBBS(etcdClient, timeProvider, logger)
 		NewMetricsBBS(etcdClient, timeProvider, logger)
 		NewRouteEmitterBBS(etcdClient, timeProvider, logger)
-		NewTPSBBS(etcdClient, timeProvider, logger)
 		NewVeritasBBS(etcdClient, timeProvider, logger)
 	})
 })
