@@ -123,7 +123,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			_, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var change models.ActualLRPChange
@@ -140,7 +140,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			_, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
@@ -149,7 +149,7 @@ var _ = Describe("LrpWatchers", func() {
 			Eventually(events).Should(Receive())
 
 			containerKey := models.NewActualLRPContainerKey("instance-guid", lrpCellId)
-			_, err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey)
+			err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var change models.ActualLRPChange
@@ -168,7 +168,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for delete", func() {
-			_, err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)

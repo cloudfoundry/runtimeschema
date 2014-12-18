@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("StopLRPInstance", func() {
-	var actualLRP models.ActualLRP
+	var actualLRP *models.ActualLRP
 	var cellPresence models.CellPresence
 
 	BeforeEach(func() {
@@ -27,25 +27,29 @@ var _ = Describe("StopLRPInstance", func() {
 		}
 		registerCell(cellPresence)
 
-		_, alrp := createAndClaim(
+		index := 0
+		createAndClaim(
 			desiredLRP,
-			0,
+			index,
 			models.NewActualLRPContainerKey("some-instance-guid", cellPresence.CellID),
 		)
-		actualLRP = *alrp
+
+		var err error
+		actualLRP, err = bbs.ActualLRPByProcessGuidAndIndex(desiredLRP.ProcessGuid, index)
+		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 	Describe("RequestStopLRPInstance", func() {
 		Context("When the request is successful", func() {
 			It("makes a stop instance request to the correct cell", func() {
-				err := bbs.RequestStopLRPInstance(actualLRP)
+				err := bbs.RequestStopLRPInstance(*actualLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
 				addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
 				Ω(addr1).Should(Equal(cellPresence.RepAddress))
-				Ω(stop1).Should(Equal(actualLRP))
+				Ω(stop1).Should(Equal(*actualLRP))
 			})
 		})
 
@@ -56,34 +60,38 @@ var _ = Describe("StopLRPInstance", func() {
 			})
 
 			It("returns the error", func() {
-				err := bbs.RequestStopLRPInstance(actualLRP)
+				err := bbs.RequestStopLRPInstance(*actualLRP)
 				Ω(err).Should(Equal(expectedError))
 			})
 		})
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.RequestStopLRPInstance(actualLRP)
+				return bbs.RequestStopLRPInstance(*actualLRP)
 			})
 		})
 	})
 
 	Describe("RequestStopLRPInstances", func() {
-		var anotherActualLRP models.ActualLRP
+		var anotherActualLRP *models.ActualLRP
 
 		BeforeEach(func() {
-			desiredLRP := models.DesiredLRP{
+			anotherDesiredLRP := models.DesiredLRP{
 				ProcessGuid: "some-other-process-guid",
 				Domain:      "domain",
 				Instances:   1,
 			}
-			_, alrp := createAndClaim(
-				desiredLRP,
-				0,
+
+			index := 0
+			createAndClaim(
+				anotherDesiredLRP,
+				index,
 				models.NewActualLRPContainerKey("some-other-instance-guid", cellPresence.CellID),
 			)
 
-			anotherActualLRP = *alrp
+			var err error
+			anotherActualLRP, err = bbs.ActualLRPByProcessGuidAndIndex(anotherDesiredLRP.ProcessGuid, index)
+			Ω(err).ShouldNot(HaveOccurred())
 
 			wg := new(sync.WaitGroup)
 			wg.Add(2)
@@ -96,7 +104,7 @@ var _ = Describe("StopLRPInstance", func() {
 		})
 
 		It("stops the LRP instances on the correct cell, in parallel", func() {
-			err := bbs.RequestStopLRPInstances([]models.ActualLRP{actualLRP, anotherActualLRP})
+			err := bbs.RequestStopLRPInstances([]models.ActualLRP{*actualLRP, *anotherActualLRP})
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(2))
@@ -107,15 +115,15 @@ var _ = Describe("StopLRPInstance", func() {
 			addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
 			Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-			Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf([]models.ActualLRP{
-				actualLRP,
-				anotherActualLRP,
-			}))
+			Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf(
+				*actualLRP,
+				*anotherActualLRP,
+			))
 		})
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.RequestStopLRPInstances([]models.ActualLRP{actualLRP, anotherActualLRP})
+				return bbs.RequestStopLRPInstances([]models.ActualLRP{*actualLRP, *anotherActualLRP})
 			})
 		})
 	})

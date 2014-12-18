@@ -67,8 +67,8 @@ type RepBBS interface {
 
 	//lrp
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
-	ClaimActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) (*models.ActualLRP, error)
-	StartActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) (*models.ActualLRP, error)
+	ClaimActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
+	StartActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) error
 	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
 }
 
@@ -78,7 +78,7 @@ type ConvergerBBS interface {
 	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
 	RetireActualLRPs([]models.ActualLRP, lager.Logger) error
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	CreateActualLRP(models.DesiredLRP, int, lager.Logger) (*models.ActualLRP, error)
+	CreateActualLRP(models.DesiredLRP, int, lager.Logger) error
 	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	//task

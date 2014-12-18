@@ -41,7 +41,7 @@ var _ = Describe("LrpConvergence", func() {
 		createAndClaim(desiredLRP, 1, models.NewActualLRPContainerKey("instance-guid-2", cellPresence.CellID))
 
 		unclaimedDesiredLRP := models.DesiredLRP{ProcessGuid: unclaimedProcessGuid, Domain: "another-domain", Instances: 1}
-		_, err := bbs.CreateActualLRP(unclaimedDesiredLRP, 0, logger)
+		err := bbs.CreateActualLRP(unclaimedDesiredLRP, 0, logger)
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
@@ -322,7 +322,7 @@ var _ = Describe("LrpConvergence", func() {
 				To:   "/tmp/internet",
 			},
 		}
-		_, err := bbs.CreateActualLRP(desiredLRP, 0, lagertest.NewTestLogger("test"))
+		err := bbs.CreateActualLRP(desiredLRP, 0, lagertest.NewTestLogger("test"))
 		Ω(err).ShouldNot(HaveOccurred())
 
 		// make sure created (UNCLAIMED) actual LRP has been in that state for longer than

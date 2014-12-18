@@ -144,17 +144,18 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 timeProvider.Now().UnixNano(),
 			}
 
-			_, err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo)
+			err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, newLrp = createAndClaim(
+			createAndClaim(
 				models.DesiredLRP{ProcessGuid: "guidA", Domain: "test", Instances: 1},
 				0,
 				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
 			)
+			newLrp, err = bbs.ActualLRPByProcessGuidAndIndex("guidA", 0)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			_, err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo)
+			err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -223,7 +224,7 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByDomain", func() {
 			BeforeEach(func() {
-				_, err := bbs.StartActualLRP(runningLrp3.ActualLRPKey, runningLrp3.ActualLRPContainerKey, runningLrp3.ActualLRPNetInfo)
+				err := bbs.StartActualLRP(runningLrp3.ActualLRPKey, runningLrp3.ActualLRPContainerKey, runningLrp3.ActualLRPNetInfo)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

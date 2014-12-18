@@ -43,7 +43,7 @@ type FakeConvergerBBS struct {
 		result2 chan<- bool
 		result3 <-chan error
 	}
-	CreateActualLRPStub        func(models.DesiredLRP, int, lager.Logger) (*models.ActualLRP, error)
+	CreateActualLRPStub        func(models.DesiredLRP, int, lager.Logger) error
 	createActualLRPMutex       sync.RWMutex
 	createActualLRPArgsForCall []struct {
 		arg1 models.DesiredLRP
@@ -51,8 +51,7 @@ type FakeConvergerBBS struct {
 		arg3 lager.Logger
 	}
 	createActualLRPReturns struct {
-		result1 *models.ActualLRP
-		result2 error
+		result1 error
 	}
 	RemoveActualLRPStub        func(models.ActualLRPKey, models.ActualLRPContainerKey) error
 	removeActualLRPMutex       sync.RWMutex
@@ -196,7 +195,7 @@ func (fake *FakeConvergerBBS) WatchForDesiredLRPChangesReturns(result1 <-chan mo
 	}{result1, result2, result3}
 }
 
-func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.DesiredLRP, arg2 int, arg3 lager.Logger) (*models.ActualLRP, error) {
+func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.DesiredLRP, arg2 int, arg3 lager.Logger) error {
 	fake.createActualLRPMutex.Lock()
 	fake.createActualLRPArgsForCall = append(fake.createActualLRPArgsForCall, struct {
 		arg1 models.DesiredLRP
@@ -207,7 +206,7 @@ func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.DesiredLRP, arg2 int, 
 	if fake.CreateActualLRPStub != nil {
 		return fake.CreateActualLRPStub(arg1, arg2, arg3)
 	} else {
-		return fake.createActualLRPReturns.result1, fake.createActualLRPReturns.result2
+		return fake.createActualLRPReturns.result1
 	}
 }
 
@@ -223,12 +222,11 @@ func (fake *FakeConvergerBBS) CreateActualLRPArgsForCall(i int) (models.DesiredL
 	return fake.createActualLRPArgsForCall[i].arg1, fake.createActualLRPArgsForCall[i].arg2, fake.createActualLRPArgsForCall[i].arg3
 }
 
-func (fake *FakeConvergerBBS) CreateActualLRPReturns(result1 *models.ActualLRP, result2 error) {
+func (fake *FakeConvergerBBS) CreateActualLRPReturns(result1 error) {
 	fake.CreateActualLRPStub = nil
 	fake.createActualLRPReturns = struct {
-		result1 *models.ActualLRP
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeConvergerBBS) RemoveActualLRP(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey) error {

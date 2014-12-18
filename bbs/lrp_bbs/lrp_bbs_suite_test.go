@@ -96,17 +96,15 @@ func itRetriesUntilStoreComesBack(action func() error) {
 	})
 }
 
-func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLRPContainerKey) (*models.ActualLRP, *models.ActualLRP) {
-	_, err := bbs.CreateActualLRP(d, index, logger)
+func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLRPContainerKey) {
+	err := bbs.CreateActualLRP(d, index, logger)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	unclaimed, err := bbs.ActualLRPByProcessGuidAndIndex(d.ProcessGuid, index)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	claimed, err := bbs.ClaimActualLRP(unclaimed.ActualLRPKey, containerKey)
+	err = bbs.ClaimActualLRP(unclaimed.ActualLRPKey, containerKey)
 	Ω(err).ShouldNot(HaveOccurred())
-
-	return unclaimed, claimed
 }
 
 func createRawActualLRP(lrp *models.ActualLRP) error {
