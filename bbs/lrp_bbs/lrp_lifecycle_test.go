@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -96,6 +97,10 @@ var _ = Describe("LrpLifecycle", func() {
 							// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
 							Ω(errCreate).ShouldNot(HaveOccurred())
 						})
+
+						It("logs the error", func() {
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-request-start-auction"))
+						})
 					})
 				})
 
@@ -107,6 +112,10 @@ var _ = Describe("LrpLifecycle", func() {
 					It("does not return an error", func() {
 						// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
 						Ω(errCreate).ShouldNot(HaveOccurred())
+					})
+
+					It("logs the error", func() {
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-request-start-auction"))
 					})
 				})
 			})
@@ -135,6 +144,10 @@ var _ = Describe("LrpLifecycle", func() {
 				It("returns an error", func() {
 					Ω(errCreate).Should(Equal(bbserrors.ErrStoreResourceExists))
 				})
+
+				It("logs the error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-create-actual-lrp"))
+				})
 			})
 		})
 
@@ -159,6 +172,10 @@ var _ = Describe("LrpLifecycle", func() {
 			It("returns an error", func() {
 				Ω(errCreate).Should(ContainElement(models.ErrInvalidField{"index"}))
 			})
+
+			It("logs the error", func() {
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-marshal-actual-lrp"))
+			})
 		})
 
 		Context("when given an index that is too large relative to the desired instances", func() {
@@ -181,6 +198,10 @@ var _ = Describe("LrpLifecycle", func() {
 
 			It("returns an error", func() {
 				Ω(errCreate).Should(Equal(lrp_bbs.NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)))
+			})
+
+			It("logs the error", func() {
+				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.actual-lrp-index-too-large"))
 			})
 		})
 
@@ -214,7 +235,7 @@ var _ = Describe("LrpLifecycle", func() {
 		var containerKey models.ActualLRPContainerKey
 
 		JustBeforeEach(func() {
-			claimErr = bbs.ClaimActualLRP(lrpKey, containerKey)
+			claimErr = bbs.ClaimActualLRP(lrpKey, containerKey, logger)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -257,6 +278,10 @@ var _ = Describe("LrpLifecycle", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateUnclaimed))
+				})
+
+				It("logs the error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.claim-actual-lrp.failed-to-marshal-actual-lrp"))
 				})
 			})
 
@@ -308,6 +333,7 @@ var _ = Describe("LrpLifecycle", func() {
 					err := bbs.ClaimActualLRP(
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -388,6 +414,7 @@ var _ = Describe("LrpLifecycle", func() {
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
+						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -481,7 +508,7 @@ var _ = Describe("LrpLifecycle", func() {
 		var netInfo models.ActualLRPNetInfo
 
 		JustBeforeEach(func() {
-			startErr = bbs.StartActualLRP(lrpKey, containerKey, netInfo)
+			startErr = bbs.StartActualLRP(lrpKey, containerKey, netInfo, logger)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -525,6 +552,10 @@ var _ = Describe("LrpLifecycle", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateUnclaimed))
+				})
+
+				It("logs the error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.start-actual-lrp.failed-to-marshal-actual-lrp"))
 				})
 			})
 
@@ -578,6 +609,7 @@ var _ = Describe("LrpLifecycle", func() {
 					err := bbs.ClaimActualLRP(
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -649,6 +681,7 @@ var _ = Describe("LrpLifecycle", func() {
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
+						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -759,13 +792,13 @@ var _ = Describe("LrpLifecycle", func() {
 	Describe("RemoveActualLRP", func() {
 		BeforeEach(func() {
 			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
-			err := bbs.StartActualLRP(actualLRPKey, containerKey, netInfo)
+			err := bbs.StartActualLRP(actualLRPKey, containerKey, netInfo, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(actualLRPKey, containerKey)
+				err := bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
@@ -774,7 +807,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRP(actualLRPKey, containerKey)
+					return bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
 				})
 			})
 		})
@@ -782,7 +815,7 @@ var _ = Describe("LrpLifecycle", func() {
 		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
 				containerKey.InstanceGuid = "another-instance-guid"
-				err := bbs.RemoveActualLRP(actualLRPKey, containerKey)
+				err := bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
@@ -823,11 +856,12 @@ var _ = Describe("LrpLifecycle", func() {
 			var cellPresence models.CellPresence
 			var processGuid string
 			var blockStopInstanceChan chan struct{}
+			var errChan chan error
+
+			var claimedLRP1 *models.ActualLRP
+			var claimedLRP2 *models.ActualLRP
 
 			BeforeEach(func() {
-				cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com")
-				registerCell(cellPresence)
-
 				processGuid = "some-process-guid"
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
@@ -836,8 +870,8 @@ var _ = Describe("LrpLifecycle", func() {
 				}
 				lrpContainerKey1 := models.NewActualLRPContainerKey("some-instance-guid-1", cellID)
 				lrpContainerKey2 := models.NewActualLRPContainerKey("some-instance-guid-2", cellID)
-				createAndClaim(desiredLRP, 0, lrpContainerKey1)
-				createAndClaim(desiredLRP, 1, lrpContainerKey2)
+				createAndClaim(desiredLRP, 0, lrpContainerKey1, logger)
+				createAndClaim(desiredLRP, 1, lrpContainerKey2, logger)
 
 				blockStopInstanceChan = make(chan struct{})
 
@@ -847,33 +881,57 @@ var _ = Describe("LrpLifecycle", func() {
 				}
 			})
 
-			It("stops the LRPs in parallel", func() {
-				claimedLRP1, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, 0)
+			JustBeforeEach(func() {
+				var err error
+				claimedLRP1, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, 0)
 				Ω(err).ShouldNot(HaveOccurred())
-				claimedLRP2, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, 1)
+				claimedLRP2, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, 1)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				errChan := make(chan error)
-				go func(lrp1, lrp2 models.ActualLRP) {
+				errChan = make(chan error)
+				go func(lrp1, lrp2 models.ActualLRP, errChan chan error, logger lager.Logger) {
 					errChan <- bbs.RetireActualLRPs([]models.ActualLRP{lrp1, lrp2}, logger)
-				}(*claimedLRP1, *claimedLRP2)
+				}(*claimedLRP1, *claimedLRP2, errChan, logger)
+			})
 
-				Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(2))
+			Context("when the cell is present", func() {
+				BeforeEach(func() {
+					cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com")
+					registerCell(cellPresence)
+				})
 
-				addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
-				addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+				It("stops the LRPs in parallel", func() {
+					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(2))
 
-				Ω(addr1).Should(Equal(cellPresence.RepAddress))
-				Ω(addr2).Should(Equal(cellPresence.RepAddress))
+					addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
 
-				Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf([]models.ActualLRP{
-					*claimedLRP1,
-					*claimedLRP2,
-				}))
+					Ω(addr1).Should(Equal(cellPresence.RepAddress))
+					Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-				Consistently(errChan).ShouldNot(Receive())
-				close(blockStopInstanceChan)
-				Eventually(errChan).Should(Receive(BeNil()))
+					Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf(
+						*claimedLRP1,
+						*claimedLRP2,
+					))
+
+					Consistently(errChan).ShouldNot(Receive())
+					close(blockStopInstanceChan)
+					Eventually(errChan).Should(Receive(BeNil()))
+				})
+			})
+
+			Context("when the cell is not present", func() {
+				It("does not stop the instances", func() {
+					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(0))
+				})
+
+				It("returns an error", func() {
+					Eventually(errChan).Should(Receive(Equal(bbserrors.ErrStoreResourceNotFound)))
+				})
+
+				It("logs the error", func() {
+					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire-actual-lrp"))
+				})
 			})
 		})
 	})

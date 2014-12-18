@@ -37,8 +37,8 @@ var _ = Describe("LrpConvergence", func() {
 		registerAuctioneer(auctioneerPresence)
 
 		desiredLRP := models.DesiredLRP{ProcessGuid: processGuid, Domain: "domain", Instances: 2}
-		createAndClaim(desiredLRP, 0, models.NewActualLRPContainerKey("instance-guid-1", cellPresence.CellID))
-		createAndClaim(desiredLRP, 1, models.NewActualLRPContainerKey("instance-guid-2", cellPresence.CellID))
+		createAndClaim(desiredLRP, 0, models.NewActualLRPContainerKey("instance-guid-1", cellPresence.CellID), logger)
+		createAndClaim(desiredLRP, 1, models.NewActualLRPContainerKey("instance-guid-2", cellPresence.CellID), logger)
 
 		unclaimedDesiredLRP := models.DesiredLRP{ProcessGuid: unclaimedProcessGuid, Domain: "another-domain", Instances: 1}
 		err := bbs.CreateActualLRP(unclaimedDesiredLRP, 0, logger)

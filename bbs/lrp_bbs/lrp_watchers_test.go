@@ -149,7 +149,7 @@ var _ = Describe("LrpWatchers", func() {
 			Eventually(events).Should(Receive())
 
 			containerKey := models.NewActualLRPContainerKey("instance-guid", lrpCellId)
-			err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey)
+			err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var change models.ActualLRPChange
@@ -176,7 +176,7 @@ var _ = Describe("LrpWatchers", func() {
 
 			Eventually(events).Should(Receive())
 
-			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var change models.ActualLRPChange

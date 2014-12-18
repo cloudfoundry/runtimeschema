@@ -32,6 +32,7 @@ var _ = Describe("StopLRPInstance", func() {
 			desiredLRP,
 			index,
 			models.NewActualLRPContainerKey("some-instance-guid", cellPresence.CellID),
+			logger,
 		)
 
 		var err error
@@ -87,6 +88,7 @@ var _ = Describe("StopLRPInstance", func() {
 				anotherDesiredLRP,
 				index,
 				models.NewActualLRPContainerKey("some-other-instance-guid", cellPresence.CellID),
+				logger,
 			)
 
 			var err error
