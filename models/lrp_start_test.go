@@ -7,12 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("LRPStartAuction", func() {
-	var startAuction LRPStartAuction
-	var startAuctionPayload string
+var _ = Describe("LRPStart", func() {
+	var lrpStart LRPStart
+	var lrpStartPayload string
 
 	BeforeEach(func() {
-		startAuctionPayload = `{
+		lrpStartPayload = `{
     "desired_lrp": {
       "process_guid": "some-guid",
       "domain": "tests",
@@ -42,7 +42,7 @@ var _ = Describe("LRPStartAuction", func() {
     "index": 2
   }`
 
-		startAuction = LRPStartAuction{
+		lrpStart = LRPStart{
 			Index: 2,
 
 			DesiredLRP: DesiredLRP{
@@ -71,29 +71,29 @@ var _ = Describe("LRPStartAuction", func() {
 
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
-			jsonPayload, err := ToJSON(&startAuction)
+			jsonPayload, err := ToJSON(&lrpStart)
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(string(jsonPayload)).Should(MatchJSON(startAuctionPayload))
+			Ω(string(jsonPayload)).Should(MatchJSON(lrpStartPayload))
 		})
 	})
 
 	Describe("FromJSON", func() {
-		var decodedStartAuction *LRPStartAuction
+		var decodedLRPStart *LRPStart
 		var err error
 
 		JustBeforeEach(func() {
-			decodedStartAuction = &LRPStartAuction{}
-			err = FromJSON([]byte(startAuctionPayload), decodedStartAuction)
+			decodedLRPStart = &LRPStart{}
+			err = FromJSON([]byte(lrpStartPayload), decodedLRPStart)
 		})
 
 		It("returns a LRP with correct fields", func() {
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(decodedStartAuction).Should(Equal(&startAuction))
+			Ω(decodedLRPStart).Should(Equal(&lrpStart))
 		})
 
 		Context("with an invalid payload", func() {
 			BeforeEach(func() {
-				startAuctionPayload = "aliens lol"
+				lrpStartPayload = "aliens lol"
 			})
 
 			It("returns the error", func() {

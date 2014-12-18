@@ -12,7 +12,7 @@ import (
 )
 
 type AuctioneerClient interface {
-	RequestLRPStartAuction(auctioneerURL string, startAuction models.LRPStartAuction) error
+	RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error
 	RequestTaskAuction(auctioneerURL string, task models.Task) error
 }
 
@@ -26,10 +26,10 @@ func NewAuctioneerClient() AuctioneerClient {
 	}
 }
 
-func (c *auctioneerClient) RequestLRPStartAuction(auctioneerURL string, startAuction models.LRPStartAuction) error {
+func (c *auctioneerClient) RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error {
 	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
 
-	payload, err := json.Marshal(startAuction)
+	payload, err := json.Marshal(lrpStart)
 	if err != nil {
 		return err
 	}

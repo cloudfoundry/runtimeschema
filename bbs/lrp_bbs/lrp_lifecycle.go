@@ -49,14 +49,14 @@ func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logg
 		return err
 	}
 
-	lrpStartAuction := models.LRPStartAuction{
+	lrpStart := models.LRPStart{
 		DesiredLRP: desiredLRP,
 		Index:      index,
 	}
 
-	err = bbs.requestLRPStartAuction(lrpStartAuction)
+	err = bbs.requestLRPStartAuction(lrpStart)
 	if err != nil {
-		logger.Error("failed-to-request-start-auction", err, lager.Data{"lrp-start-auction": lrpStartAuction})
+		logger.Error("failed-to-request-start-auction", err, lager.Data{"lrp-start": lrpStart})
 		// The creation succeeded, the start request error can be dropped
 	}
 
@@ -293,11 +293,11 @@ func (bbs *LRPBBS) newRunningActualLRP(
 	}
 }
 
-func (bbs *LRPBBS) requestLRPStartAuction(lrpStartAuction models.LRPStartAuction) error {
+func (bbs *LRPBBS) requestLRPStartAuction(lrpStart models.LRPStart) error {
 	auctioneerAddress, err := bbs.services.AuctioneerAddress()
 	if err != nil {
 		return err
 	}
 
-	return bbs.auctioneerClient.RequestLRPStartAuction(auctioneerAddress, lrpStartAuction)
+	return bbs.auctioneerClient.RequestLRPStartAuction(auctioneerAddress, lrpStart)
 }

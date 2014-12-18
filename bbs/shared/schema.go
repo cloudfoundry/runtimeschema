@@ -10,12 +10,13 @@ import (
 const SchemaRoot = "/v1/"
 const CellSchemaRoot = SchemaRoot + "cell"
 const ReceptorSchemaRoot = SchemaRoot + "receptor"
-const LRPStartAuctionSchemaRoot = SchemaRoot + "start"
 const ActualLRPSchemaRoot = SchemaRoot + "actual"
 const DesiredLRPSchemaRoot = SchemaRoot + "desired"
 const TaskSchemaRoot = SchemaRoot + "task"
 const LockSchemaRoot = SchemaRoot + "locks"
 const FreshnessSchemaRoot = SchemaRoot + "freshness"
+
+const DesiredLRPInstanceKey = "instance"
 
 func CellSchemaPath(cellID string) string {
 	return path.Join(CellSchemaRoot, cellID)
@@ -23,14 +24,6 @@ func CellSchemaPath(cellID string) string {
 
 func ReceptorSchemaPath(receptorID string) string {
 	return path.Join(ReceptorSchemaRoot, receptorID)
-}
-
-func LRPStartAuctionProcessDir(lrp models.LRPStartAuction) string {
-	return path.Join(LRPStartAuctionSchemaRoot, lrp.DesiredLRP.ProcessGuid)
-}
-
-func LRPStartAuctionSchemaPath(lrp models.LRPStartAuction) string {
-	return path.Join(LRPStartAuctionProcessDir(lrp), strconv.Itoa(lrp.Index))
 }
 
 func ActualLRPProcessDir(processGuid string) string {
@@ -42,7 +35,7 @@ func ActualLRPIndexDir(processGuid string, index int) string {
 }
 
 func ActualLRPSchemaPath(processGuid string, index int) string {
-	return path.Join(ActualLRPIndexDir(processGuid, index), "instance")
+	return path.Join(ActualLRPIndexDir(processGuid, index), DesiredLRPInstanceKey)
 }
 
 func DesiredLRPSchemaPath(lrp models.DesiredLRP) string {

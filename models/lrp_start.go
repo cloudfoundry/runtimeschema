@@ -1,16 +1,14 @@
 package models
 
-type LRPStartAuctionState int
-
-type LRPStartAuction struct {
+type LRPStart struct {
 	DesiredLRP DesiredLRP `json:"desired_lrp"`
 	Index      int        `json:"index"`
 }
 
-func (auction LRPStartAuction) Validate() error {
+func (lrpstart LRPStart) Validate() error {
 	var validationError ValidationError
 
-	err := auction.DesiredLRP.Validate()
+	err := lrpstart.DesiredLRP.Validate()
 	if err != nil {
 		validationError = append(validationError, err)
 	}

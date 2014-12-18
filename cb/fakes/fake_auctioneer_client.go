@@ -9,11 +9,11 @@ import (
 )
 
 type FakeAuctioneerClient struct {
-	RequestLRPStartAuctionStub        func(auctioneerURL string, startAuction models.LRPStartAuction) error
+	RequestLRPStartAuctionStub        func(auctioneerURL string, lrpStart models.LRPStart) error
 	requestLRPStartAuctionMutex       sync.RWMutex
 	requestLRPStartAuctionArgsForCall []struct {
 		auctioneerURL string
-		startAuction  models.LRPStartAuction
+		lrpStart      models.LRPStart
 	}
 	requestLRPStartAuctionReturns struct {
 		result1 error
@@ -29,15 +29,15 @@ type FakeAuctioneerClient struct {
 	}
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuction(auctioneerURL string, startAuction models.LRPStartAuction) error {
+func (fake *FakeAuctioneerClient) RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error {
 	fake.requestLRPStartAuctionMutex.Lock()
 	fake.requestLRPStartAuctionArgsForCall = append(fake.requestLRPStartAuctionArgsForCall, struct {
 		auctioneerURL string
-		startAuction  models.LRPStartAuction
-	}{auctioneerURL, startAuction})
+		lrpStart      models.LRPStart
+	}{auctioneerURL, lrpStart})
 	fake.requestLRPStartAuctionMutex.Unlock()
 	if fake.RequestLRPStartAuctionStub != nil {
-		return fake.RequestLRPStartAuctionStub(auctioneerURL, startAuction)
+		return fake.RequestLRPStartAuctionStub(auctioneerURL, lrpStart)
 	} else {
 		return fake.requestLRPStartAuctionReturns.result1
 	}
@@ -49,10 +49,10 @@ func (fake *FakeAuctioneerClient) RequestLRPStartAuctionCallCount() int {
 	return len(fake.requestLRPStartAuctionArgsForCall)
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuctionArgsForCall(i int) (string, models.LRPStartAuction) {
+func (fake *FakeAuctioneerClient) RequestLRPStartAuctionArgsForCall(i int) (string, models.LRPStart) {
 	fake.requestLRPStartAuctionMutex.RLock()
 	defer fake.requestLRPStartAuctionMutex.RUnlock()
-	return fake.requestLRPStartAuctionArgsForCall[i].auctioneerURL, fake.requestLRPStartAuctionArgsForCall[i].startAuction
+	return fake.requestLRPStartAuctionArgsForCall[i].auctioneerURL, fake.requestLRPStartAuctionArgsForCall[i].lrpStart
 }
 
 func (fake *FakeAuctioneerClient) RequestLRPStartAuctionReturns(result1 error) {
