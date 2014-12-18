@@ -313,9 +313,14 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				Context("with the same cell and instance guid", func() {
+					var previousTime int64
+
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
 						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+
+						previousTime = timeProvider.Now().UnixNano()
+						timeProvider.IncrementBySeconds(1)
 					})
 
 					It("does not return an error", func() {
@@ -327,6 +332,13 @@ var _ = Describe("LrpLifecycle", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateClaimed))
+					})
+
+					It("does not update the timestamp of the persisted actual lrp", func() {
+						lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(lrpInBBS.Since).Should(Equal(previousTime))
 					})
 				})
 
@@ -395,6 +407,14 @@ var _ = Describe("LrpLifecycle", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateClaimed))
+					})
+
+					It("clears the net info", func() {
+						lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(lrpInBBS.Host).Should(BeEmpty())
+						Ω(lrpInBBS.Ports).Should(BeEmpty())
 					})
 				})
 
@@ -637,7 +657,7 @@ var _ = Describe("LrpLifecycle", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
 						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
-						netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
+						netInfo = models.NewActualLRPNetInfo("5.6.7.8", []models.PortMapping{{ContainerPort: 4567, HostPort: 4321}})
 					})
 
 					It("does not return an error", func() {
@@ -649,6 +669,32 @@ var _ = Describe("LrpLifecycle", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateRunning))
+					})
+
+					It("updates the net info", func() {
+						lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(netInfo))
+					})
+
+					Context("and the same net info", func() {
+						var previousTime int64
+						BeforeEach(func() {
+							lrpKey = createdLRP.ActualLRPKey
+							containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+							netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
+
+							previousTime = timeProvider.Now().UnixNano()
+							timeProvider.IncrementBySeconds(1)
+						})
+
+						It("does not update the timestamp of the persisted actual lrp", func() {
+							lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+							Ω(err).ShouldNot(HaveOccurred())
+
+							Ω(lrpInBBS.Since).Should(Equal(previousTime))
+						})
 					})
 				})
 

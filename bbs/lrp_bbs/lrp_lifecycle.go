@@ -2,6 +2,7 @@ package lrp_bbs
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -158,6 +159,8 @@ func (bbs *LRPBBS) StartActualLRP(
 
 	if lrp.ActualLRPKey == key &&
 		lrp.ActualLRPContainerKey == containerKey &&
+		lrp.Host == netInfo.Host &&
+		reflect.DeepEqual(lrp.Ports, netInfo.Ports) &&
 		lrp.State == models.ActualLRPStateRunning {
 		return nil
 	}
