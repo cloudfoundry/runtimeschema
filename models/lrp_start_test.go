@@ -100,5 +100,82 @@ var _ = Describe("LRPStart", func() {
 				Ω(err).Should(HaveOccurred())
 			})
 		})
+
+		Context("with an invalid desired lrp", func() {
+			BeforeEach(func() {
+				lrpStartPayload = `{
+    "desired_lrp": {
+      "domain": "tests",
+      "instances": 1,
+      "stack": "some-stack",
+      "start_timeout": 0,
+      "root_fs": "docker:///docker.com/docker",
+      "action": {"download": {
+          "from": "http://example.com",
+          "to": "/tmp/internet",
+          "cache_key": ""
+        }
+      },
+      "disk_mb": 512,
+      "memory_mb": 1024,
+      "cpu_weight": 42,
+      "ports": [
+        5678
+      ],
+      "routes": [
+        "route-1",
+        "route-2"
+      ],
+      "log_guid": "log-guid",
+      "log_source": "the cloud"
+    },
+    "index": 2
+  }`
+			})
+
+			It("returns a validation error", func() {
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(ContainElement(ErrInvalidField{"process_guid"}))
+			})
+		})
+
+		Context("with an invalid index", func() {
+			BeforeEach(func() {
+				lrpStartPayload = `{
+    "desired_lrp": {
+      "process_guid": "some-guid",
+      "domain": "tests",
+      "instances": 1,
+      "stack": "some-stack",
+      "start_timeout": 0,
+      "root_fs": "docker:///docker.com/docker",
+      "action": {"download": {
+          "from": "http://example.com",
+          "to": "/tmp/internet",
+          "cache_key": ""
+        }
+      },
+      "disk_mb": 512,
+      "memory_mb": 1024,
+      "cpu_weight": 42,
+      "ports": [
+        5678
+      ],
+      "routes": [
+        "route-1",
+        "route-2"
+      ],
+      "log_guid": "log-guid",
+      "log_source": "the cloud"
+    },
+    "index": -1
+  }`
+			})
+
+			It("returns a validation error", func() {
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(ContainElement(ErrInvalidField{"index"}))
+			})
+		})
 	})
 })

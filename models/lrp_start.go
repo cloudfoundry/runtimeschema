@@ -10,7 +10,11 @@ func (lrpstart LRPStart) Validate() error {
 
 	err := lrpstart.DesiredLRP.Validate()
 	if err != nil {
-		validationError = append(validationError, err)
+		validationError = validationError.Append(err)
+	}
+
+	if lrpstart.Index < 0 {
+		validationError = validationError.Append(ErrInvalidField{"index"})
 	}
 
 	if len(validationError) > 0 {
