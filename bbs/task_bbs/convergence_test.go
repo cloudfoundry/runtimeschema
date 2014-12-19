@@ -49,7 +49,7 @@ var _ = Describe("Convergence of Tasks", func() {
 		}
 	})
 
-	Describe("ConvergeTask", func() {
+	Describe("ConvergeTasks", func() {
 		JustBeforeEach(func() {
 			bbs.ConvergeTasks(timeToStart, convergenceInterval, timeToResolveInterval)
 		})
@@ -190,8 +190,6 @@ var _ = Describe("Convergence of Tasks", func() {
 		})
 
 		Context("when a Task is running", func() {
-			var heartbeater ifrit.Process
-
 			BeforeEach(func() {
 				err := bbs.DesireTask(task)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -199,27 +197,29 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4")
-				heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
 			})
 
-			AfterEach(func() {
-				heartbeater.Signal(os.Interrupt)
-			})
+			Context("when the associated cell is present", func() {
+				var heartbeater ifrit.Process
 
-			It("leaves the task running", func() {
-				returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(returnedTask.State).Should(Equal(models.TaskStateRunning))
+				BeforeEach(func() {
+					cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4")
+					heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
+
+				})
+
+				AfterEach(func() {
+					heartbeater.Signal(os.Interrupt)
+				})
+
+				It("leaves the task running", func() {
+					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(returnedTask.State).Should(Equal(models.TaskStateRunning))
+				})
 			})
 
 			Context("when the associated cell is missing", func() {
-				BeforeEach(func() {
-					heartbeater.Signal(os.Interrupt)
-
-					timeProvider.IncrementBySeconds(1)
-				})
-
 				It("should mark the Task as completed & failed", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
