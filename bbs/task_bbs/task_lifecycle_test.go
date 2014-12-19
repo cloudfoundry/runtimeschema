@@ -221,6 +221,23 @@ var _ = Describe("Task BBS", func() {
 				Ω(errDesire).Should(ContainElement(models.ErrInvalidField{"domain"}))
 			})
 		})
+
+		Context("when the store is out of commission", func() {
+			var anotherTask models.Task
+
+			BeforeEach(func() {
+				anotherTask = models.Task{
+					Domain:   "tests",
+					TaskGuid: "another-guid",
+					Stack:    "pancakes",
+					Action:   dummyAction,
+				}
+			})
+
+			itRetriesUntilStoreComesBack(func() error {
+				return bbs.DesireTask(anotherTask)
+			})
+		})
 	})
 
 	Describe("StartTask", func() {
