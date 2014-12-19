@@ -14,15 +14,18 @@ func NewAuctioneerPresence(id, address string) AuctioneerPresence {
 
 func (a AuctioneerPresence) Validate() error {
 	var validationError ValidationError
+
 	if a.AuctioneerID == "" {
 		validationError = validationError.Append(ErrInvalidField{"auctioneer_id"})
 	}
 
-	if a.AuctioneerID == "" {
+	if a.AuctioneerAddress == "" {
 		validationError = validationError.Append(ErrInvalidField{"auctioneer_address"})
 	}
-	if len(validationError) > 0 {
+
+	if !validationError.Empty() {
 		return validationError
 	}
+
 	return nil
 }

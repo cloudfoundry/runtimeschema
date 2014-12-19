@@ -98,35 +98,35 @@ func (task Task) Validate() error {
 	var validationError ValidationError
 
 	if task.Domain == "" {
-		validationError = append(validationError, ErrInvalidField{"domain"})
+		validationError = validationError.Append(ErrInvalidField{"domain"})
 	}
 
 	if !taskGuidPattern.MatchString(task.TaskGuid) {
-		validationError = append(validationError, ErrInvalidField{"task_guid"})
+		validationError = validationError.Append(ErrInvalidField{"task_guid"})
 	}
 
 	if task.Stack == "" {
-		validationError = append(validationError, ErrInvalidField{"stack"})
+		validationError = validationError.Append(ErrInvalidField{"stack"})
 	}
 
 	if task.Action == nil {
-		validationError = append(validationError, ErrInvalidActionType)
+		validationError = validationError.Append(ErrInvalidActionType)
 	} else {
 		err := task.Action.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
 	if task.CPUWeight > 100 {
-		validationError = append(validationError, ErrInvalidField{"cpu_weight"})
+		validationError = validationError.Append(ErrInvalidField{"cpu_weight"})
 	}
 
 	if len(task.Annotation) > maximumAnnotationLength {
-		validationError = append(validationError, ErrInvalidField{"annotation"})
+		validationError = validationError.Append(ErrInvalidField{"annotation"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 

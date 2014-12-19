@@ -48,3 +48,7 @@ func (ve ValidationError) Error() string {
 
 	return buffer.String()
 }
+
+func (ve ValidationError) Empty() bool {
+	return len(ve) == 0
+}

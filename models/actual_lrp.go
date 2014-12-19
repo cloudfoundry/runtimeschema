@@ -44,7 +44,7 @@ func (key ActualLRPKey) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"domain"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -80,9 +80,10 @@ func (key ActualLRPContainerKey) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"instance_guid"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
+
 	return nil
 }
 
@@ -106,7 +107,7 @@ func (key ActualLRPNetInfo) Validate() error {
 	var validationError ValidationError
 
 	if key.Host == "" {
-		return append(validationError, ErrInvalidField{"host"})
+		return validationError.Append(ErrInvalidField{"host"})
 	}
 
 	return nil
@@ -179,7 +180,7 @@ func (actual ActualLRP) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"state"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 

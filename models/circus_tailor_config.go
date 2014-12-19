@@ -112,11 +112,11 @@ func (s CircusTailorConfig) Validate() error {
 	s.FlagSet.VisitAll(func(flag *flag.Flag) {
 		value := flag.Value.String()
 		if value == "" {
-			validationError = append(validationError, fmt.Errorf("missing flag: -%s", flag.Name))
+			validationError = validationError.Append(fmt.Errorf("missing flag: -%s", flag.Name))
 		}
 	})
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 

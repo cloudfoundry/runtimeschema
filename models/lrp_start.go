@@ -17,7 +17,7 @@ func (lrpstart LRPStart) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"index"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 

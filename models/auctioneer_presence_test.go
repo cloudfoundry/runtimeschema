@@ -48,4 +48,40 @@ var _ = Describe("AuctioneerPresence", func() {
 			})
 		})
 	})
+
+	Describe("Validate", func() {
+		Context("when auctioneer presense is valid", func() {
+			BeforeEach(func() {
+				auctioneerPresence = models.NewAuctioneerPresence("some-id", "some-address")
+			})
+
+			It("returns no error", func() {
+				Ω(auctioneerPresence.Validate()).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("when ID of auctioneer presense is invalid", func() {
+			BeforeEach(func() {
+				auctioneerPresence = models.NewAuctioneerPresence("", "some-address")
+			})
+
+			It("returns no error", func() {
+				err := auctioneerPresence.Validate()
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(ContainElement(models.ErrInvalidField{"auctioneer_id"}))
+			})
+		})
+
+		Context("when address of auctioneer presense is invalid", func() {
+			BeforeEach(func() {
+				auctioneerPresence = models.NewAuctioneerPresence("some-id", "")
+			})
+
+			It("returns no error", func() {
+				err := auctioneerPresence.Validate()
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(ContainElement(models.ErrInvalidField{"auctioneer_address"}))
+			})
+		})
+	})
 })

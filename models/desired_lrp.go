@@ -66,53 +66,53 @@ func (desired DesiredLRP) Validate() error {
 	var validationError ValidationError
 
 	if desired.Domain == "" {
-		validationError = append(validationError, ErrInvalidField{"domain"})
+		validationError = validationError.Append(ErrInvalidField{"domain"})
 	}
 
 	if !processGuidPattern.MatchString(desired.ProcessGuid) {
-		validationError = append(validationError, ErrInvalidField{"process_guid"})
+		validationError = validationError.Append(ErrInvalidField{"process_guid"})
 	}
 
 	if desired.Stack == "" {
-		validationError = append(validationError, ErrInvalidField{"stack"})
+		validationError = validationError.Append(ErrInvalidField{"stack"})
 	}
 
 	if desired.Setup != nil {
 		err := desired.Setup.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
 	if desired.Action == nil {
-		validationError = append(validationError, ErrInvalidActionType)
+		validationError = validationError.Append(ErrInvalidActionType)
 	} else {
 		err := desired.Action.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
 	if desired.Monitor != nil {
 		err := desired.Monitor.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
 	if desired.Instances < 0 {
-		validationError = append(validationError, ErrInvalidField{"instances"})
+		validationError = validationError.Append(ErrInvalidField{"instances"})
 	}
 
 	if desired.CPUWeight > 100 {
-		validationError = append(validationError, ErrInvalidField{"cpu_weight"})
+		validationError = validationError.Append(ErrInvalidField{"cpu_weight"})
 	}
 
 	if len(desired.Annotation) > maximumAnnotationLength {
-		validationError = append(validationError, ErrInvalidField{"annotation"})
+		validationError = validationError.Append(ErrInvalidField{"annotation"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -123,54 +123,54 @@ func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
 	var validationError ValidationError
 
 	if desired.ProcessGuid != updatedModel.ProcessGuid {
-		validationError = append(validationError, ErrInvalidModification{"process_guid"})
+		validationError = validationError.Append(ErrInvalidModification{"process_guid"})
 	}
 
 	if desired.Domain != updatedModel.Domain {
-		validationError = append(validationError, ErrInvalidModification{"domain"})
+		validationError = validationError.Append(ErrInvalidModification{"domain"})
 	}
 
 	if desired.RootFSPath != updatedModel.RootFSPath {
-		validationError = append(validationError, ErrInvalidModification{"root_fs"})
+		validationError = validationError.Append(ErrInvalidModification{"root_fs"})
 	}
 
 	if desired.Stack != updatedModel.Stack {
-		validationError = append(validationError, ErrInvalidModification{"stack"})
+		validationError = validationError.Append(ErrInvalidModification{"stack"})
 	}
 
 	if !reflect.DeepEqual(desired.EnvironmentVariables, updatedModel.EnvironmentVariables) {
-		validationError = append(validationError, ErrInvalidModification{"env"})
+		validationError = validationError.Append(ErrInvalidModification{"env"})
 	}
 
 	if !reflect.DeepEqual(desired.Action, updatedModel.Action) {
-		validationError = append(validationError, ErrInvalidModification{"action"})
+		validationError = validationError.Append(ErrInvalidModification{"action"})
 	}
 
 	if desired.DiskMB != updatedModel.DiskMB {
-		validationError = append(validationError, ErrInvalidModification{"disk_mb"})
+		validationError = validationError.Append(ErrInvalidModification{"disk_mb"})
 	}
 
 	if desired.MemoryMB != updatedModel.MemoryMB {
-		validationError = append(validationError, ErrInvalidModification{"memory_mb"})
+		validationError = validationError.Append(ErrInvalidModification{"memory_mb"})
 	}
 
 	if desired.CPUWeight != updatedModel.CPUWeight {
-		validationError = append(validationError, ErrInvalidModification{"cpu_weight"})
+		validationError = validationError.Append(ErrInvalidModification{"cpu_weight"})
 	}
 
 	if !reflect.DeepEqual(desired.Ports, updatedModel.Ports) {
-		validationError = append(validationError, ErrInvalidModification{"ports"})
+		validationError = validationError.Append(ErrInvalidModification{"ports"})
 	}
 
 	if desired.LogSource != updatedModel.LogSource {
-		validationError = append(validationError, ErrInvalidModification{"log_source"})
+		validationError = validationError.Append(ErrInvalidModification{"log_source"})
 	}
 
 	if desired.LogGuid != updatedModel.LogGuid {
-		validationError = append(validationError, ErrInvalidModification{"log_guid"})
+		validationError = validationError.Append(ErrInvalidModification{"log_guid"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 

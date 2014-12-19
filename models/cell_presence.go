@@ -16,6 +16,7 @@ func NewCellPresence(cellID, stack, repAddress string) CellPresence {
 
 func (c CellPresence) Validate() error {
 	var validationError ValidationError
+
 	if c.CellID == "" {
 		validationError = validationError.Append(ErrInvalidField{"cell_id"})
 	}
@@ -23,13 +24,14 @@ func (c CellPresence) Validate() error {
 	if c.Stack == "" {
 		validationError = validationError.Append(ErrInvalidField{"stack"})
 	}
+
 	if c.RepAddress == "" {
 		validationError = validationError.Append(ErrInvalidField{"rep_address"})
 	}
-	if len(validationError) > 0 {
+
+	if !validationError.Empty() {
 		return validationError
 	}
-	return nil
 
 	return nil
 }

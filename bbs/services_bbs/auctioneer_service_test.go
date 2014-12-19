@@ -41,17 +41,6 @@ var _ = Describe("Receptor Service Registry", func() {
 				Eventually(heartbeater.Wait()).Should(Receive(BeNil()))
 			})
 
-			Context("when the auctioneer address is empty", func() {
-				BeforeEach(func() {
-					auctioneerPresence = models.NewAuctioneerPresence("auctioneer-id", "")
-				})
-
-				It("returns ErrServiceUnavailable", func() {
-					_, err := bbs.AuctioneerAddress()
-					Ω(err).Should(Equal(bbserrors.ErrServiceUnavailable))
-				})
-			})
-
 			Context("when the auctionner address is present", func() {
 				BeforeEach(func() {
 					auctioneerPresence = models.NewAuctioneerPresence("auctioneer-id", "auctioneer.example.com")

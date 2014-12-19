@@ -21,7 +21,7 @@ func (r ReceptorPresence) Validate() error {
 	if r.ReceptorURL == "" {
 		validationError = validationError.Append(ErrInvalidField{"address"})
 	}
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 	return nil

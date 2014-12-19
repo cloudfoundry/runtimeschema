@@ -18,9 +18,5 @@ func (bbs *ServicesBBS) AuctioneerAddress() (string, error) {
 		return "", err
 	}
 
-	if auctioneerPresence.AuctioneerAddress == "" {
-		return "", bbserrors.ErrServiceUnavailable
-	}
-
 	return auctioneerPresence.AuctioneerAddress, nil
 }

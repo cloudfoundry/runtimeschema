@@ -45,14 +45,14 @@ func (a DownloadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidField{"from"})
+		validationError = validationError.Append(ErrInvalidField{"from"})
 	}
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidField{"to"})
+		validationError = validationError.Append(ErrInvalidField{"to"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -75,14 +75,14 @@ func (a UploadAction) Validate() error {
 	var validationError ValidationError
 
 	if a.To == "" {
-		validationError = append(validationError, ErrInvalidField{"to"})
+		validationError = validationError.Append(ErrInvalidField{"to"})
 	}
 
 	if a.From == "" {
-		validationError = append(validationError, ErrInvalidField{"from"})
+		validationError = validationError.Append(ErrInvalidField{"from"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -108,10 +108,10 @@ func (a RunAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Path == "" {
-		validationError = append(validationError, ErrInvalidField{"path"})
+		validationError = validationError.Append(ErrInvalidField{"path"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -142,19 +142,19 @@ func (a TimeoutAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidField{"action"})
+		validationError = validationError.Append(ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
 	if a.Timeout <= 0 {
-		validationError = append(validationError, ErrInvalidField{"timeout"})
+		validationError = validationError.Append(ErrInvalidField{"timeout"})
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -220,15 +220,15 @@ func (a TryAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidField{"action"})
+		validationError = validationError.Append(ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -291,22 +291,22 @@ func (a ParallelAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidField{"actions"})
+		validationError = validationError.Append(ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidField{errorString})
+				validationError = validationError.Append(ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
-					validationError = append(validationError, err)
+					validationError = validationError.Append(err)
 				}
 			}
 		}
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -363,22 +363,22 @@ func (a SerialAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Actions == nil {
-		validationError = append(validationError, ErrInvalidField{"actions"})
+		validationError = validationError.Append(ErrInvalidField{"actions"})
 	} else {
 		for index, action := range a.Actions {
 			if action == nil {
 				errorString := fmt.Sprintf("action at index %d", index)
-				validationError = append(validationError, ErrInvalidField{errorString})
+				validationError = validationError.Append(ErrInvalidField{errorString})
 			} else {
 				err := action.Validate()
 				if err != nil {
-					validationError = append(validationError, err)
+					validationError = validationError.Append(err)
 				}
 			}
 		}
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
@@ -445,15 +445,15 @@ func (a EmitProgressAction) Validate() error {
 	var validationError ValidationError
 
 	if a.Action == nil {
-		validationError = append(validationError, ErrInvalidField{"action"})
+		validationError = validationError.Append(ErrInvalidField{"action"})
 	} else {
 		err := a.Action.Validate()
 		if err != nil {
-			validationError = append(validationError, err)
+			validationError = validationError.Append(err)
 		}
 	}
 
-	if len(validationError) > 0 {
+	if !validationError.Empty() {
 		return validationError
 	}
 
