@@ -57,6 +57,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	var desiredLRPKeysToDelete []string
 	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
+	actualLRPsToStop := []models.ActualLRP{}
 	for _, node := range desiredLRPRoot.ChildNodes {
 		var desiredLRP models.DesiredLRP
 		err := models.FromJSON(node.Value, &desiredLRP)
@@ -73,15 +74,39 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
-		if bbs.needsReconciliation(desiredLRP, actualLRPsForDesired, logger) {
+		delta := bbs.reconcile(desiredLRP, actualLRPsForDesired, logger)
+
+		if len(delta.IndicesToStart) > 0 {
+			// the fact that we're doing a CAS also serves to stop extra instances.
+			//
+			// once we're no longer starting via CAS, this will go away, and there will be
+			// distinct start/stop operations.
+			//
+			// [#84825516]
 			desiredLRPsToCAS = append(desiredLRPsToCAS, compareAndSwappableDesiredLRP{
 				OldIndex:      node.Index,
 				NewDesiredLRP: desiredLRP,
 			})
 		}
+
+		for _, guid := range delta.GuidsToStop {
+			for _, actual := range actualLRPsForDesired {
+				if actual.InstanceGuid == guid {
+					actualLRPsToStop = append(actualLRPsToStop, actual)
+				}
+			}
+		}
 	}
 
-	stopLRPInstances := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)
+	actualLRPsToStop = append(actualLRPsToStop, bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)...)
+
+	for _, actual := range actualLRPsToStop {
+		logger.Info("detected-undesired-instance", lager.Data{
+			"process-guid":  actual.ProcessGuid,
+			"instance-guid": actual.InstanceGuid,
+			"index":         actual.Index,
+		})
+	}
 
 	lrpsDeletedCounter.Add(uint64(len(desiredLRPKeysToDelete)))
 	bbs.store.Delete(desiredLRPKeysToDelete...)
@@ -91,9 +116,8 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 
 	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
 
-	lrpsStoppedCounter.Add(uint64(len(stopLRPInstances)))
-
-	err = bbs.RequestStopLRPInstances(stopLRPInstances)
+	lrpsStoppedCounter.Add(uint64(len(actualLRPsToStop)))
+	err = bbs.RetireActualLRPs(actualLRPsToStop, logger)
 	if err != nil {
 		logger.Error("failed-to-request-stops", err)
 	}
@@ -109,16 +133,6 @@ func (bbs *LRPBBS) instancesToStop(
 	for processGuid, actuals := range actualsByProcessGuid {
 		if _, found := desiredLRPsByProcessGuid[processGuid]; !found {
 			for _, actual := range actuals {
-				if actual.State == models.ActualLRPStateUnclaimed {
-					continue
-				}
-
-				logger.Info("detected-undesired-instance", lager.Data{
-					"process-guid":  processGuid,
-					"instance-guid": actual.InstanceGuid,
-					"index":         actual.Index,
-				})
-
 				actualsToStop = append(actualsToStop, actual)
 			}
 		}
@@ -159,11 +173,11 @@ func (bbs *LRPBBS) resendStartAuctions(
 	}
 }
 
-func (bbs *LRPBBS) needsReconciliation(
+func (bbs *LRPBBS) reconcile(
 	desiredLRP models.DesiredLRP,
 	actualLRPsForDesired []models.ActualLRP,
 	logger lager.Logger,
-) bool {
+) delta_force.Result {
 	var actuals delta_force.ActualInstances
 	for _, actual := range actualLRPsForDesired {
 		actuals = append(actuals, delta_force.ActualInstance{
@@ -190,7 +204,7 @@ func (bbs *LRPBBS) needsReconciliation(
 		})
 	}
 
-	return !result.Empty()
+	return result
 }
 
 func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string][]models.ActualLRP, error) {
