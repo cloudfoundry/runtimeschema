@@ -2,6 +2,14 @@ package models
 
 import "bytes"
 
+type ErrInvalidParameter struct {
+	Parameter string
+}
+
+func (err ErrInvalidParameter) Error() string {
+	return "Invalid parameter: " + err.Parameter
+}
+
 type ErrInvalidField struct {
 	Field string
 }

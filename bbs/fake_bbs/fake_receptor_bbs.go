@@ -22,7 +22,7 @@ type FakeReceptorBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns     struct {
+	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
@@ -96,7 +96,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -121,7 +121,7 @@ type FakeReceptorBBS struct {
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns     struct {
+	actualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -164,23 +164,24 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
-	BumpFreshnessStub        func(models.Freshness) error
-	bumpFreshnessMutex       sync.RWMutex
-	bumpFreshnessArgsForCall []struct {
-		arg1 models.Freshness
+	UpsertDomainStub        func(domain string, ttlInSeconds int) error
+	upsertDomainMutex       sync.RWMutex
+	upsertDomainArgsForCall []struct {
+		domain       string
+		ttlInSeconds int
 	}
-	bumpFreshnessReturns struct {
+	upsertDomainReturns struct {
 		result1 error
 	}
-	FreshnessesStub        func() ([]models.Freshness, error)
-	freshnessesMutex       sync.RWMutex
-	freshnessesArgsForCall []struct{}
-	freshnessesReturns     struct {
-		result1 []models.Freshness
+	DomainsStub        func() ([]string, error)
+	domainsMutex       sync.RWMutex
+	domainsArgsForCall []struct{}
+	domainsReturns struct {
+		result1 []string
 		result2 error
 	}
 	NewReceptorHeartbeatStub        func(models.ReceptorPresence, time.Duration) ifrit.Runner
@@ -783,59 +784,60 @@ func (fake *FakeReceptorBBS) CellsReturns(result1 []models.CellPresence, result2
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) BumpFreshness(arg1 models.Freshness) error {
-	fake.bumpFreshnessMutex.Lock()
-	fake.bumpFreshnessArgsForCall = append(fake.bumpFreshnessArgsForCall, struct {
-		arg1 models.Freshness
-	}{arg1})
-	fake.bumpFreshnessMutex.Unlock()
-	if fake.BumpFreshnessStub != nil {
-		return fake.BumpFreshnessStub(arg1)
+func (fake *FakeReceptorBBS) UpsertDomain(domain string, ttlInSeconds int) error {
+	fake.upsertDomainMutex.Lock()
+	fake.upsertDomainArgsForCall = append(fake.upsertDomainArgsForCall, struct {
+		domain       string
+		ttlInSeconds int
+	}{domain, ttlInSeconds})
+	fake.upsertDomainMutex.Unlock()
+	if fake.UpsertDomainStub != nil {
+		return fake.UpsertDomainStub(domain, ttlInSeconds)
 	} else {
-		return fake.bumpFreshnessReturns.result1
+		return fake.upsertDomainReturns.result1
 	}
 }
 
-func (fake *FakeReceptorBBS) BumpFreshnessCallCount() int {
-	fake.bumpFreshnessMutex.RLock()
-	defer fake.bumpFreshnessMutex.RUnlock()
-	return len(fake.bumpFreshnessArgsForCall)
+func (fake *FakeReceptorBBS) UpsertDomainCallCount() int {
+	fake.upsertDomainMutex.RLock()
+	defer fake.upsertDomainMutex.RUnlock()
+	return len(fake.upsertDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) BumpFreshnessArgsForCall(i int) models.Freshness {
-	fake.bumpFreshnessMutex.RLock()
-	defer fake.bumpFreshnessMutex.RUnlock()
-	return fake.bumpFreshnessArgsForCall[i].arg1
+func (fake *FakeReceptorBBS) UpsertDomainArgsForCall(i int) (string, int) {
+	fake.upsertDomainMutex.RLock()
+	defer fake.upsertDomainMutex.RUnlock()
+	return fake.upsertDomainArgsForCall[i].domain, fake.upsertDomainArgsForCall[i].ttlInSeconds
 }
 
-func (fake *FakeReceptorBBS) BumpFreshnessReturns(result1 error) {
-	fake.BumpFreshnessStub = nil
-	fake.bumpFreshnessReturns = struct {
+func (fake *FakeReceptorBBS) UpsertDomainReturns(result1 error) {
+	fake.UpsertDomainStub = nil
+	fake.upsertDomainReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) Freshnesses() ([]models.Freshness, error) {
-	fake.freshnessesMutex.Lock()
-	fake.freshnessesArgsForCall = append(fake.freshnessesArgsForCall, struct{}{})
-	fake.freshnessesMutex.Unlock()
-	if fake.FreshnessesStub != nil {
-		return fake.FreshnessesStub()
+func (fake *FakeReceptorBBS) Domains() ([]string, error) {
+	fake.domainsMutex.Lock()
+	fake.domainsArgsForCall = append(fake.domainsArgsForCall, struct{}{})
+	fake.domainsMutex.Unlock()
+	if fake.DomainsStub != nil {
+		return fake.DomainsStub()
 	} else {
-		return fake.freshnessesReturns.result1, fake.freshnessesReturns.result2
+		return fake.domainsReturns.result1, fake.domainsReturns.result2
 	}
 }
 
-func (fake *FakeReceptorBBS) FreshnessesCallCount() int {
-	fake.freshnessesMutex.RLock()
-	defer fake.freshnessesMutex.RUnlock()
-	return len(fake.freshnessesArgsForCall)
+func (fake *FakeReceptorBBS) DomainsCallCount() int {
+	fake.domainsMutex.RLock()
+	defer fake.domainsMutex.RUnlock()
+	return len(fake.domainsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) FreshnessesReturns(result1 []models.Freshness, result2 error) {
-	fake.FreshnessesStub = nil
-	fake.freshnessesReturns = struct {
-		result1 []models.Freshness
+func (fake *FakeReceptorBBS) DomainsReturns(result1 []string, result2 error) {
+	fake.DomainsStub = nil
+	fake.domainsReturns = struct {
+		result1 []string
 		result2 error
 	}{result1, result2}
 }

@@ -14,35 +14,35 @@ type FakeMetricsBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns     struct {
+	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
 	ServiceRegistrationsStub        func() (models.ServiceRegistrations, error)
 	serviceRegistrationsMutex       sync.RWMutex
 	serviceRegistrationsArgsForCall []struct{}
-	serviceRegistrationsReturns     struct {
+	serviceRegistrationsReturns struct {
 		result1 models.ServiceRegistrations
 		result2 error
 	}
-	FreshnessesStub        func() ([]models.Freshness, error)
-	freshnessesMutex       sync.RWMutex
-	freshnessesArgsForCall []struct{}
-	freshnessesReturns     struct {
-		result1 []models.Freshness
+	DomainsStub        func() ([]string, error)
+	domainsMutex       sync.RWMutex
+	domainsArgsForCall []struct{}
+	domainsReturns struct {
+		result1 []string
 		result2 error
 	}
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns     struct {
+	actualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
@@ -107,27 +107,27 @@ func (fake *FakeMetricsBBS) ServiceRegistrationsReturns(result1 models.ServiceRe
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsBBS) Freshnesses() ([]models.Freshness, error) {
-	fake.freshnessesMutex.Lock()
-	fake.freshnessesArgsForCall = append(fake.freshnessesArgsForCall, struct{}{})
-	fake.freshnessesMutex.Unlock()
-	if fake.FreshnessesStub != nil {
-		return fake.FreshnessesStub()
+func (fake *FakeMetricsBBS) Domains() ([]string, error) {
+	fake.domainsMutex.Lock()
+	fake.domainsArgsForCall = append(fake.domainsArgsForCall, struct{}{})
+	fake.domainsMutex.Unlock()
+	if fake.DomainsStub != nil {
+		return fake.DomainsStub()
 	} else {
-		return fake.freshnessesReturns.result1, fake.freshnessesReturns.result2
+		return fake.domainsReturns.result1, fake.domainsReturns.result2
 	}
 }
 
-func (fake *FakeMetricsBBS) FreshnessesCallCount() int {
-	fake.freshnessesMutex.RLock()
-	defer fake.freshnessesMutex.RUnlock()
-	return len(fake.freshnessesArgsForCall)
+func (fake *FakeMetricsBBS) DomainsCallCount() int {
+	fake.domainsMutex.RLock()
+	defer fake.domainsMutex.RUnlock()
+	return len(fake.domainsArgsForCall)
 }
 
-func (fake *FakeMetricsBBS) FreshnessesReturns(result1 []models.Freshness, result2 error) {
-	fake.FreshnessesStub = nil
-	fake.freshnessesReturns = struct {
-		result1 []models.Freshness
+func (fake *FakeMetricsBBS) DomainsReturns(result1 []string, result2 error) {
+	fake.DomainsStub = nil
+	fake.domainsReturns = struct {
+		result1 []string
 		result2 error
 	}{result1, result2}
 }

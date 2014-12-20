@@ -1,10 +1,17 @@
 package bbs
 
+//go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
+//go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS
+//go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
+//go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
+//go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
+//go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 
 import (
 	"time"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -47,9 +54,9 @@ type ReceptorBBS interface {
 	// cells
 	Cells() ([]models.CellPresence, error)
 
-	// freshness
-	BumpFreshness(models.Freshness) error
-	Freshnesses() ([]models.Freshness, error)
+	// domains
+	UpsertDomain(domain string, ttlInSeconds int) error
+	Domains() ([]string, error)
 
 	//services
 	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration) ifrit.Runner
@@ -111,8 +118,10 @@ type MetricsBBS interface {
 	//services
 	ServiceRegistrations() (models.ServiceRegistrations, error)
 
+	// domains
+	Domains() ([]string, error)
+
 	//lrps
-	Freshnesses() ([]models.Freshness, error)
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	ActualLRPs() ([]models.ActualLRP, error)
 
@@ -140,7 +149,9 @@ type VeritasBBS interface {
 	ActualLRPs() ([]models.ActualLRP, error)
 	DesireLRP(models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(guid string) error
-	Freshnesses() ([]models.Freshness, error)
+
+	// domains
+	Domains() ([]string, error)
 
 	//services
 	Cells() ([]models.CellPresence, error)
@@ -188,6 +199,7 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services, logger.Session("lrp-bbs")),
 		ServicesBBS: services,
 		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services, logger.Session("task-bbs")),
+		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }
 
@@ -196,4 +208,5 @@ type BBS struct {
 	*lrp_bbs.LRPBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
+	*domain_bbs.DomainBBS
 }
