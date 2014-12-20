@@ -144,6 +144,7 @@ type VeritasBBS interface {
 
 	//services
 	Cells() ([]models.CellPresence, error)
+	AuctioneerAddress() (string, error)
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {
