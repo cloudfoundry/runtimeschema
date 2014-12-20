@@ -5,6 +5,7 @@ package bbs
 import (
 	"time"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -146,6 +147,10 @@ type VeritasBBS interface {
 	Cells() ([]models.CellPresence, error)
 }
 
+type DomainBBS interface {
+	UpsertBBS(string, int) error
+}
+
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {
 	return NewBBS(store, timeProvider, logger)
 }
@@ -178,6 +183,10 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.Ti
 	return NewBBS(store, timeProvider, logger)
 }
 
+func NewDomainBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) DomainBBS {
+	return NewBBS(store, logger)
+}
+
 func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
@@ -195,4 +204,5 @@ type BBS struct {
 	*lrp_bbs.LRPBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
+	*domain_bbs.DomainBBS
 }

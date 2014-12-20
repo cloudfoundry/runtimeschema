@@ -15,6 +15,7 @@ const DesiredLRPSchemaRoot = SchemaRoot + "desired"
 const TaskSchemaRoot = SchemaRoot + "task"
 const LockSchemaRoot = SchemaRoot + "locks"
 const FreshnessSchemaRoot = SchemaRoot + "freshness"
+const DomainSchemaRoot = SchemaRoot + "domain"
 
 const DesiredLRPInstanceKey = "instance"
 
@@ -56,4 +57,8 @@ func LockSchemaPath(lockName string) string {
 
 func FreshnessSchemaPath(domain string) string {
 	return path.Join(FreshnessSchemaRoot, domain)
+}
+
+func DomainSchemaPath(domain string) string {
+	return path.Join(DomainSchemaRoot, domain)
 }
