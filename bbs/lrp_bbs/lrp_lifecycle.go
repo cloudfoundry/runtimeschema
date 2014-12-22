@@ -229,7 +229,7 @@ func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger
 		})
 	}
 
-	pool.Stop()
+	defer pool.Stop()
 
 	for i := 0; i < len(lrps); i++ {
 		err := <-errs
