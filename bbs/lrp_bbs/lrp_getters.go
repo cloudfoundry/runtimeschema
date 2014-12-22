@@ -151,8 +151,8 @@ func (bbs *LRPBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
 	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
 }
 
-func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
+func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
+	lrps := models.ActualLRPsByIndex{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
 	if err == storeadapter.ErrorKeyNotFound {
@@ -170,7 +170,7 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) ([]models.ActualL
 			if err != nil {
 				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 			} else {
-				lrps = append(lrps, lrp)
+				lrps[lrp.Index] = lrp
 			}
 		}
 	}

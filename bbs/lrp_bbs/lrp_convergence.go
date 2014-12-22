@@ -89,16 +89,15 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 			})
 		}
 
-		for _, guid := range delta.GuidsToStop {
-			for _, actual := range actualLRPsForDesired {
-				if actual.InstanceGuid == guid {
-					actualLRPsToStop = append(actualLRPsToStop, actual)
-				}
-			}
+		for _, index := range delta.IndicesToStop {
+			actualLRPsToStop = append(actualLRPsToStop, actualLRPsForDesired[index])
 		}
 	}
 
-	actualLRPsToStop = append(actualLRPsToStop, bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)...)
+	actualLRPsToStop = append(
+		actualLRPsToStop,
+		bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)...,
+	)
 
 	for _, actual := range actualLRPsToStop {
 		logger.Info("detected-undesired-instance", lager.Data{
@@ -125,7 +124,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 
 func (bbs *LRPBBS) instancesToStop(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
-	actualsByProcessGuid map[string][]models.ActualLRP,
+	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
 	logger lager.Logger,
 ) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
@@ -143,7 +142,7 @@ func (bbs *LRPBBS) instancesToStop(
 
 func (bbs *LRPBBS) resendStartAuctions(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
-	actualsByProcessGuid map[string][]models.ActualLRP,
+	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
 	pollingInterval time.Duration,
 	logger lager.Logger,
 ) {
@@ -175,18 +174,10 @@ func (bbs *LRPBBS) resendStartAuctions(
 
 func (bbs *LRPBBS) reconcile(
 	desiredLRP models.DesiredLRP,
-	actualLRPsForDesired []models.ActualLRP,
+	actualLRPs models.ActualLRPsByIndex,
 	logger lager.Logger,
 ) delta_force.Result {
-	var actuals delta_force.ActualInstances
-	for _, actual := range actualLRPsForDesired {
-		actuals = append(actuals, delta_force.ActualInstance{
-			Index: actual.Index,
-			Guid:  actual.InstanceGuid,
-		})
-	}
-
-	result := delta_force.Reconcile(desiredLRP.Instances, actuals)
+	result := delta_force.Reconcile(desiredLRP.Instances, actualLRPs)
 
 	if len(result.IndicesToStart) > 0 {
 		logger.Info("detected-missing-instance", lager.Data{
@@ -196,19 +187,19 @@ func (bbs *LRPBBS) reconcile(
 		})
 	}
 
-	if len(result.GuidsToStop) > 0 {
+	if len(result.IndicesToStart) > 0 {
 		logger.Info("detected-extra-instance", lager.Data{
 			"process-guid":      desiredLRP.ProcessGuid,
 			"desired-instances": desiredLRP.Instances,
-			"extra-guids":       result.GuidsToStop,
+			"extra-guids":       result.IndicesToStop,
 		})
 	}
 
 	return result
 }
 
-func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string][]models.ActualLRP, error) {
-	actualsByProcessGuid := map[string][]models.ActualLRP{}
+func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string]models.ActualLRPsByIndex, error) {
+	actualsByProcessGuid := map[string]models.ActualLRPsByIndex{}
 
 	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
@@ -235,7 +226,14 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string
 			}
 		}
 
-		actualsByProcessGuid[actual.ProcessGuid] = append(actualsByProcessGuid[actual.ProcessGuid], actual)
+		actuals, found := actualsByProcessGuid[actual.ProcessGuid]
+		if !found {
+			actuals = models.ActualLRPsByIndex{}
+			actualsByProcessGuid[actual.ProcessGuid] = actuals
+		}
+
+		actuals[actual.Index] = actual
+
 		return true
 	})
 

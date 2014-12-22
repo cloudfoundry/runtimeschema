@@ -47,7 +47,7 @@ type ReceptorBBS interface {
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (*models.ActualLRP, error)
 	RequestStopLRPInstance(stopInstances models.ActualLRP) error
 
@@ -82,7 +82,7 @@ type RepBBS interface {
 type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs(time.Duration)
-	ActualLRPsByProcessGuid(string) ([]models.ActualLRP, error)
+	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 	CreateActualLRP(models.DesiredLRP, int, lager.Logger) error
 	RetireActualLRPs([]models.ActualLRP, lager.Logger) error

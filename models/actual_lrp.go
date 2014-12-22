@@ -2,6 +2,8 @@ package models
 
 import "errors"
 
+type ActualLRPsByIndex map[int]ActualLRP
+
 type ActualLRPState string
 
 const (
