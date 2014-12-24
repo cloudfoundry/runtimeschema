@@ -286,13 +286,15 @@ var _ = Describe("LrpConvergence", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(lrps).Should(HaveLen(2))
 
-				Ω(lrps[0].Index).Should(Equal(0))
-				Ω(lrps[0].ProcessGuid).Should(Equal(processGuid))
-				Ω(lrps[0].State).Should(Equal(models.ActualLRPStateUnclaimed))
+				indices := make([]int, len(lrps))
+				for i, lrp := range lrps {
+					Ω(lrp.ProcessGuid).Should(Equal(processGuid))
+					Ω(lrp.State).Should(Equal(models.ActualLRPStateUnclaimed))
 
-				Ω(lrps[1].Index).Should(Equal(1))
-				Ω(lrps[1].ProcessGuid).Should(Equal(processGuid))
-				Ω(lrps[1].State).Should(Equal(models.ActualLRPStateUnclaimed))
+					indices[i] = lrp.Index
+				}
+
+				Ω(indices).Should(ConsistOf([]int{0, 1}))
 			})
 
 			It("should prune LRP directories for apps that are no longer running", func() {
