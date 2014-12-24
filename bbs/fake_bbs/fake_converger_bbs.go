@@ -6,60 +6,10 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
 type FakeConvergerBBS struct {
-	ConvergeLRPsStub        func(time.Duration)
-	convergeLRPsMutex       sync.RWMutex
-	convergeLRPsArgsForCall []struct {
-		arg1 time.Duration
-	}
-	ActualLRPsByProcessGuidStub        func(string) (models.ActualLRPsByIndex, error)
-	actualLRPsByProcessGuidMutex       sync.RWMutex
-	actualLRPsByProcessGuidArgsForCall []struct {
-		arg1 string
-	}
-	actualLRPsByProcessGuidReturns struct {
-		result1 models.ActualLRPsByIndex
-		result2 error
-	}
-	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	watchForDesiredLRPChangesMutex       sync.RWMutex
-	watchForDesiredLRPChangesArgsForCall []struct{}
-	watchForDesiredLRPChangesReturns struct {
-		result1 <-chan models.DesiredLRPChange
-		result2 chan<- bool
-		result3 <-chan error
-	}
-	CreateActualLRPStub        func(models.DesiredLRP, int, lager.Logger) error
-	createActualLRPMutex       sync.RWMutex
-	createActualLRPArgsForCall []struct {
-		arg1 models.DesiredLRP
-		arg2 int
-		arg3 lager.Logger
-	}
-	createActualLRPReturns struct {
-		result1 error
-	}
-	RetireActualLRPsStub        func([]models.ActualLRP, lager.Logger) error
-	retireActualLRPsMutex       sync.RWMutex
-	retireActualLRPsArgsForCall []struct {
-		arg1 []models.ActualLRP
-		arg2 lager.Logger
-	}
-	retireActualLRPsReturns struct {
-		result1 error
-	}
-	ConvergeTasksStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
-	convergeTasksMutex       sync.RWMutex
-	convergeTasksArgsForCall []struct {
-		timeToClaim         time.Duration
-		convergenceInterval time.Duration
-		timeToResolve       time.Duration
-	}
 	NewConvergeLockStub        func(convergerID string, interval time.Duration) ifrit.Runner
 	newConvergeLockMutex       sync.RWMutex
 	newConvergeLockArgsForCall []struct {
@@ -69,180 +19,18 @@ type FakeConvergerBBS struct {
 	newConvergeLockReturns struct {
 		result1 ifrit.Runner
 	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 time.Duration) {
-	fake.convergeLRPsMutex.Lock()
-	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
+	ConvergeLRPsStub        func(time.Duration)
+	convergeLRPsMutex       sync.RWMutex
+	convergeLRPsArgsForCall []struct {
 		arg1 time.Duration
-	}{arg1})
-	fake.convergeLRPsMutex.Unlock()
-	if fake.ConvergeLRPsStub != nil {
-		fake.ConvergeLRPsStub(arg1)
 	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
-	fake.convergeLRPsMutex.RLock()
-	defer fake.convergeLRPsMutex.RUnlock()
-	return len(fake.convergeLRPsArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) time.Duration {
-	fake.convergeLRPsMutex.RLock()
-	defer fake.convergeLRPsMutex.RUnlock()
-	return fake.convergeLRPsArgsForCall[i].arg1
-}
-
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuid(arg1 string) (models.ActualLRPsByIndex, error) {
-	fake.actualLRPsByProcessGuidMutex.Lock()
-	fake.actualLRPsByProcessGuidArgsForCall = append(fake.actualLRPsByProcessGuidArgsForCall, struct {
-		arg1 string
-	}{arg1})
-	fake.actualLRPsByProcessGuidMutex.Unlock()
-	if fake.ActualLRPsByProcessGuidStub != nil {
-		return fake.ActualLRPsByProcessGuidStub(arg1)
-	} else {
-		return fake.actualLRPsByProcessGuidReturns.result1, fake.actualLRPsByProcessGuidReturns.result2
-	}
-}
-
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidCallCount() int {
-	fake.actualLRPsByProcessGuidMutex.RLock()
-	defer fake.actualLRPsByProcessGuidMutex.RUnlock()
-	return len(fake.actualLRPsByProcessGuidArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidArgsForCall(i int) string {
-	fake.actualLRPsByProcessGuidMutex.RLock()
-	defer fake.actualLRPsByProcessGuidMutex.RUnlock()
-	return fake.actualLRPsByProcessGuidArgsForCall[i].arg1
-}
-
-func (fake *FakeConvergerBBS) ActualLRPsByProcessGuidReturns(result1 models.ActualLRPsByIndex, result2 error) {
-	fake.ActualLRPsByProcessGuidStub = nil
-	fake.actualLRPsByProcessGuidReturns = struct {
-		result1 models.ActualLRPsByIndex
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeConvergerBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
-	fake.watchForDesiredLRPChangesMutex.Lock()
-	fake.watchForDesiredLRPChangesArgsForCall = append(fake.watchForDesiredLRPChangesArgsForCall, struct{}{})
-	fake.watchForDesiredLRPChangesMutex.Unlock()
-	if fake.WatchForDesiredLRPChangesStub != nil {
-		return fake.WatchForDesiredLRPChangesStub()
-	} else {
-		return fake.watchForDesiredLRPChangesReturns.result1, fake.watchForDesiredLRPChangesReturns.result2, fake.watchForDesiredLRPChangesReturns.result3
-	}
-}
-
-func (fake *FakeConvergerBBS) WatchForDesiredLRPChangesCallCount() int {
-	fake.watchForDesiredLRPChangesMutex.RLock()
-	defer fake.watchForDesiredLRPChangesMutex.RUnlock()
-	return len(fake.watchForDesiredLRPChangesArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) WatchForDesiredLRPChangesReturns(result1 <-chan models.DesiredLRPChange, result2 chan<- bool, result3 <-chan error) {
-	fake.WatchForDesiredLRPChangesStub = nil
-	fake.watchForDesiredLRPChangesReturns = struct {
-		result1 <-chan models.DesiredLRPChange
-		result2 chan<- bool
-		result3 <-chan error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeConvergerBBS) CreateActualLRP(arg1 models.DesiredLRP, arg2 int, arg3 lager.Logger) error {
-	fake.createActualLRPMutex.Lock()
-	fake.createActualLRPArgsForCall = append(fake.createActualLRPArgsForCall, struct {
-		arg1 models.DesiredLRP
-		arg2 int
-		arg3 lager.Logger
-	}{arg1, arg2, arg3})
-	fake.createActualLRPMutex.Unlock()
-	if fake.CreateActualLRPStub != nil {
-		return fake.CreateActualLRPStub(arg1, arg2, arg3)
-	} else {
-		return fake.createActualLRPReturns.result1
-	}
-}
-
-func (fake *FakeConvergerBBS) CreateActualLRPCallCount() int {
-	fake.createActualLRPMutex.RLock()
-	defer fake.createActualLRPMutex.RUnlock()
-	return len(fake.createActualLRPArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) CreateActualLRPArgsForCall(i int) (models.DesiredLRP, int, lager.Logger) {
-	fake.createActualLRPMutex.RLock()
-	defer fake.createActualLRPMutex.RUnlock()
-	return fake.createActualLRPArgsForCall[i].arg1, fake.createActualLRPArgsForCall[i].arg2, fake.createActualLRPArgsForCall[i].arg3
-}
-
-func (fake *FakeConvergerBBS) CreateActualLRPReturns(result1 error) {
-	fake.CreateActualLRPStub = nil
-	fake.createActualLRPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeConvergerBBS) RetireActualLRPs(arg1 []models.ActualLRP, arg2 lager.Logger) error {
-	fake.retireActualLRPsMutex.Lock()
-	fake.retireActualLRPsArgsForCall = append(fake.retireActualLRPsArgsForCall, struct {
-		arg1 []models.ActualLRP
-		arg2 lager.Logger
-	}{arg1, arg2})
-	fake.retireActualLRPsMutex.Unlock()
-	if fake.RetireActualLRPsStub != nil {
-		return fake.RetireActualLRPsStub(arg1, arg2)
-	} else {
-		return fake.retireActualLRPsReturns.result1
-	}
-}
-
-func (fake *FakeConvergerBBS) RetireActualLRPsCallCount() int {
-	fake.retireActualLRPsMutex.RLock()
-	defer fake.retireActualLRPsMutex.RUnlock()
-	return len(fake.retireActualLRPsArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) RetireActualLRPsArgsForCall(i int) ([]models.ActualLRP, lager.Logger) {
-	fake.retireActualLRPsMutex.RLock()
-	defer fake.retireActualLRPsMutex.RUnlock()
-	return fake.retireActualLRPsArgsForCall[i].arg1, fake.retireActualLRPsArgsForCall[i].arg2
-}
-
-func (fake *FakeConvergerBBS) RetireActualLRPsReturns(result1 error) {
-	fake.RetireActualLRPsStub = nil
-	fake.retireActualLRPsReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasks(timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
-	fake.convergeTasksMutex.Lock()
-	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
+	ConvergeTasksStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	convergeTasksMutex       sync.RWMutex
+	convergeTasksArgsForCall []struct {
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
-	}{timeToClaim, convergenceInterval, timeToResolve})
-	fake.convergeTasksMutex.Unlock()
-	if fake.ConvergeTasksStub != nil {
-		fake.ConvergeTasksStub(timeToClaim, convergenceInterval, timeToResolve)
 	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
-	fake.convergeTasksMutex.RLock()
-	defer fake.convergeTasksMutex.RUnlock()
-	return len(fake.convergeTasksArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (time.Duration, time.Duration, time.Duration) {
-	fake.convergeTasksMutex.RLock()
-	defer fake.convergeTasksMutex.RUnlock()
-	return fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
 }
 
 func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner {
@@ -276,6 +64,54 @@ func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
 	fake.newConvergeLockReturns = struct {
 		result1 ifrit.Runner
 	}{result1}
+}
+
+func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 time.Duration) {
+	fake.convergeLRPsMutex.Lock()
+	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
+		arg1 time.Duration
+	}{arg1})
+	fake.convergeLRPsMutex.Unlock()
+	if fake.ConvergeLRPsStub != nil {
+		fake.ConvergeLRPsStub(arg1)
+	}
+}
+
+func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
+	fake.convergeLRPsMutex.RLock()
+	defer fake.convergeLRPsMutex.RUnlock()
+	return len(fake.convergeLRPsArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) time.Duration {
+	fake.convergeLRPsMutex.RLock()
+	defer fake.convergeLRPsMutex.RUnlock()
+	return fake.convergeLRPsArgsForCall[i].arg1
+}
+
+func (fake *FakeConvergerBBS) ConvergeTasks(timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
+	fake.convergeTasksMutex.Lock()
+	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
+		timeToClaim         time.Duration
+		convergenceInterval time.Duration
+		timeToResolve       time.Duration
+	}{timeToClaim, convergenceInterval, timeToResolve})
+	fake.convergeTasksMutex.Unlock()
+	if fake.ConvergeTasksStub != nil {
+		fake.ConvergeTasksStub(timeToClaim, convergenceInterval, timeToResolve)
+	}
+}
+
+func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
+	fake.convergeTasksMutex.RLock()
+	defer fake.convergeTasksMutex.RUnlock()
+	return len(fake.convergeTasksArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (time.Duration, time.Duration, time.Duration) {
+	fake.convergeTasksMutex.RLock()
+	defer fake.convergeTasksMutex.RUnlock()
+	return fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
 }
 
 var _ bbs.ConvergerBBS = new(FakeConvergerBBS)

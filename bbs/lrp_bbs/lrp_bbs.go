@@ -73,7 +73,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 			return err
 		}
 
-		return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 			return bbs.store.SetMulti([]storeadapter.StoreNode{
 				{
 					Key:   shared.DesiredLRPSchemaPath(lrp),
@@ -81,6 +81,24 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 				},
 			})
 		})
+		if err != nil {
+			return err
+		}
+
+		bbs.processDesiredChange(models.DesiredLRPChange{
+			Before: existingLRP,
+			After:  &lrp,
+		}, bbs.logger)
+
+		return nil
+
+	case nil:
+		bbs.processDesiredChange(models.DesiredLRPChange{
+			Before: nil,
+			After:  &lrp,
+		}, bbs.logger)
+
+		return nil
 
 	default:
 		return err
@@ -88,9 +106,24 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 }
 
 func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+	lrp, err := bbs.DesiredLRPByProcessGuid(processGuid)
+	if err != nil {
+		return err
+	}
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.Delete(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
 	})
+	if err != nil {
+		return err
+	}
+
+	bbs.processDesiredChange(models.DesiredLRPChange{
+		Before: lrp,
+		After:  nil,
+	}, bbs.logger)
+
+	return nil
 }
 
 func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
@@ -157,11 +190,21 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.SetMulti([]storeadapter.StoreNode{
+		err := bbs.store.SetMulti([]storeadapter.StoreNode{
 			{
 				Key:   shared.DesiredLRPSchemaPath(updatedLRP),
 				Value: value,
 			},
 		})
+		if err != nil {
+			return err
+		}
+
+		bbs.processDesiredChange(models.DesiredLRPChange{
+			Before: existing,
+			After:  &updatedLRP,
+		}, bbs.logger)
+
+		return nil
 	})
 }

@@ -1,13 +1,5 @@
 package bbs
 
-//go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
-//go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
-//go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS
-//go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
-//go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
-//go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
-//go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
-
 import (
 	"time"
 
@@ -26,6 +18,7 @@ import (
 
 //Bulletin Board System/Store
 
+//go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
 type ReceptorBBS interface {
 	//task
 	DesireTask(models.Task) error
@@ -62,6 +55,7 @@ type ReceptorBBS interface {
 	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration) ifrit.Runner
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
 type RepBBS interface {
 	//services
 	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
@@ -79,27 +73,26 @@ type RepBBS interface {
 	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, lager.Logger) error
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
 type ConvergerBBS interface {
+	//lock
+	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
+
 	//lrp
 	ConvergeLRPs(time.Duration)
-	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
-	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	CreateActualLRP(models.DesiredLRP, int, lager.Logger) error
-	RetireActualLRPs([]models.ActualLRP, lager.Logger) error
 
 	//task
 	ConvergeTasks(timeToClaim, convergenceInterval, timeToResolve time.Duration)
-
-	//lock
-	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
 type NsyncBBS interface {
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
 	NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
 type AuctioneerBBS interface {
 	//services
 	Cells() ([]models.CellPresence, error)
@@ -111,6 +104,7 @@ type AuctioneerBBS interface {
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS
 type MetricsBBS interface {
 	//task
 	Tasks() ([]models.Task, error)
@@ -129,6 +123,7 @@ type MetricsBBS interface {
 	NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 type RouteEmitterBBS interface {
 	// lrp
 	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
