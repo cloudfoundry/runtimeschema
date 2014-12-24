@@ -76,7 +76,7 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 			return
 		}
 
-		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, &task)
+		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, task)
 		if err != nil {
 			logError(task, "failed-to-complete")
 		}

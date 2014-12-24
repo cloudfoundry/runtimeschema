@@ -90,7 +90,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&newLRP))
+					Ω(current).Should(Equal(newLRP))
 				})
 
 				Context("when scaling up", func() {
@@ -178,7 +178,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&lrp))
+					Ω(current).Should(Equal(lrp))
 				})
 			})
 		})
@@ -312,7 +312,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&after))
+					Ω(current).Should(Equal(after))
 				})
 			})
 
@@ -329,7 +329,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&prevValue))
+					Ω(current).Should(Equal(prevValue))
 				})
 			})
 		})
@@ -370,7 +370,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&prevValue))
+					Ω(current).Should(Equal(prevValue))
 				})
 			})
 		})
@@ -394,7 +394,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&after))
+					Ω(current).Should(Equal(after))
 				})
 			})
 
@@ -412,7 +412,7 @@ var _ = Describe("LRP", func() {
 					current, err := bbs.DesiredLRPByProcessGuid("some-guid")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(current).Should(Equal(&prevValue))
+					Ω(current).Should(Equal(prevValue))
 				})
 			})
 		})
@@ -474,7 +474,7 @@ var _ = Describe("LRP", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						_, startAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalAuctionCallCount)
-						Ω(startAuction.DesiredLRP).Should(Equal(*updated))
+						Ω(startAuction.DesiredLRP).Should(Equal(updated))
 						Ω(startAuction.Index).Should(Equal(5))
 					})
 				})
@@ -542,7 +542,7 @@ var _ = Describe("LRP", func() {
 
 				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(updated).Should(Equal(&lrp))
+				Ω(updated).Should(Equal(lrp))
 			})
 		})
 

@@ -24,7 +24,7 @@ type ReceptorBBS interface {
 	DesireTask(models.Task) error
 	Tasks() ([]models.Task, error)
 	TasksByDomain(domain string) ([]models.Task, error)
-	TaskByGuid(taskGuid string) (*models.Task, error)
+	TaskByGuid(taskGuid string) (models.Task, error)
 	ResolvingTask(taskGuid string) error
 	ResolveTask(taskGuid string) error
 	CancelTask(taskGuid string) error
@@ -35,13 +35,13 @@ type ReceptorBBS interface {
 	RemoveDesiredLRPByProcessGuid(processGuid string) error
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
-	DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error)
+	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
-	ActualLRPByProcessGuidAndIndex(string, int) (*models.ActualLRP, error)
+	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RequestStopLRPInstance(stopInstances models.ActualLRP) error
 
 	// cells
@@ -62,7 +62,7 @@ type RepBBS interface {
 
 	//task
 	StartTask(taskGuid string, cellID string) error
-	TaskByGuid(taskGuid string) (*models.Task, error)
+	TaskByGuid(taskGuid string) (models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)
 	CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error
 

@@ -35,7 +35,7 @@ var _ = Describe("TaskClient", func() {
 		}
 
 		JustBeforeEach(func() {
-			completeErr = client.CompleteTask(fakeServer.URL(), &task)
+			completeErr = client.CompleteTask(fakeServer.URL(), task)
 		})
 
 		Context("when the request is successful", func() {

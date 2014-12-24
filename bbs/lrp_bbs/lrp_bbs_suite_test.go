@@ -108,7 +108,7 @@ func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLR
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawActualLRP(lrp *models.ActualLRP) error {
+func createRawActualLRP(lrp models.ActualLRP) error {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		return err

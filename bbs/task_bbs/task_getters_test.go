@@ -20,7 +20,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("TaskByGuid", func() {
 		var guid string
-		var receivedTask *models.Task
+		var receivedTask models.Task
 		var lookupErr error
 
 		BeforeEach(func() {
@@ -48,7 +48,7 @@ var _ = Describe("Task BBS", func() {
 			It("is consistent with collection getters", func() {
 				pendingTasks, err := bbs.PendingTasks()
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(pendingTasks).Should(Equal([]models.Task{*receivedTask}))
+				Ω(pendingTasks).Should(Equal([]models.Task{receivedTask}))
 			})
 		})
 
@@ -85,7 +85,7 @@ var _ = Describe("Task BBS", func() {
 				Stack:    "pancakes",
 				Action:   dummyAction,
 			}
-			var task1 *models.Task
+			var task1 models.Task
 			var task2Request = models.Task{
 				TaskGuid: "some-guid-2",
 				CellID:   "cell-id",
@@ -93,7 +93,7 @@ var _ = Describe("Task BBS", func() {
 				Stack:    "pancakes",
 				Action:   dummyAction,
 			}
-			var task2 *models.Task
+			var task2 models.Task
 
 			BeforeEach(func() {
 				err := bbs.DesireTask(task1Request)
@@ -111,7 +111,7 @@ var _ = Describe("Task BBS", func() {
 			It("returns only those tasks", func() {
 				tasks, err := bbs.TasksByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks).Should(ConsistOf(*task1, *task2))
+				Ω(tasks).Should(ConsistOf(task1, task2))
 			})
 		})
 	})

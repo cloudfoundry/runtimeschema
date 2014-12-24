@@ -98,7 +98,7 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 		return err
 	}
 
-	*task = bbs.markTaskCompleted(*task, true, "task was cancelled", "")
+	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
 
 	value, err := models.ToJSON(task)
 	if err != nil {
@@ -132,7 +132,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, cellID string, failed bool, fa
 		return err
 	}
 
-	*task = bbs.markTaskCompleted(*task, failed, failureReason, result)
+	task = bbs.markTaskCompleted(task, failed, failureReason, result)
 
 	value, err := models.ToJSON(task)
 	if err != nil {

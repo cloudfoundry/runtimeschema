@@ -11,6 +11,7 @@ import (
 	"github.com/tedsuo/rata"
 )
 
+//go:generate counterfeiter . AuctioneerClient
 type AuctioneerClient interface {
 	RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error
 	RequestTaskAuction(auctioneerURL string, task models.Task) error

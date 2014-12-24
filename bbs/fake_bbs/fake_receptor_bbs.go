@@ -35,13 +35,13 @@ type FakeReceptorBBS struct {
 		result1 []models.Task
 		result2 error
 	}
-	TaskByGuidStub        func(taskGuid string) (*models.Task, error)
+	TaskByGuidStub        func(taskGuid string) (models.Task, error)
 	taskByGuidMutex       sync.RWMutex
 	taskByGuidArgsForCall []struct {
 		taskGuid string
 	}
 	taskByGuidReturns struct {
-		result1 *models.Task
+		result1 models.Task
 		result2 error
 	}
 	ResolvingTaskStub        func(taskGuid string) error
@@ -109,13 +109,13 @@ type FakeReceptorBBS struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	DesiredLRPByProcessGuidStub        func(processGuid string) (*models.DesiredLRP, error)
+	DesiredLRPByProcessGuidStub        func(processGuid string) (models.DesiredLRP, error)
 	desiredLRPByProcessGuidMutex       sync.RWMutex
 	desiredLRPByProcessGuidArgsForCall []struct {
 		processGuid string
 	}
 	desiredLRPByProcessGuidReturns struct {
-		result1 *models.DesiredLRP
+		result1 models.DesiredLRP
 		result2 error
 	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
@@ -143,14 +143,14 @@ type FakeReceptorBBS struct {
 		result1 models.ActualLRPsByIndex
 		result2 error
 	}
-	ActualLRPByProcessGuidAndIndexStub        func(string, int) (*models.ActualLRP, error)
+	ActualLRPByProcessGuidAndIndexStub        func(string, int) (models.ActualLRP, error)
 	actualLRPByProcessGuidAndIndexMutex       sync.RWMutex
 	actualLRPByProcessGuidAndIndexArgsForCall []struct {
 		arg1 string
 		arg2 int
 	}
 	actualLRPByProcessGuidAndIndexReturns struct {
-		result1 *models.ActualLRP
+		result1 models.ActualLRP
 		result2 error
 	}
 	RequestStopLRPInstanceStub        func(stopInstances models.ActualLRP) error
@@ -285,7 +285,7 @@ func (fake *FakeReceptorBBS) TasksByDomainReturns(result1 []models.Task, result2
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) TaskByGuid(taskGuid string) (*models.Task, error) {
+func (fake *FakeReceptorBBS) TaskByGuid(taskGuid string) (models.Task, error) {
 	fake.taskByGuidMutex.Lock()
 	fake.taskByGuidArgsForCall = append(fake.taskByGuidArgsForCall, struct {
 		taskGuid string
@@ -310,10 +310,10 @@ func (fake *FakeReceptorBBS) TaskByGuidArgsForCall(i int) string {
 	return fake.taskByGuidArgsForCall[i].taskGuid
 }
 
-func (fake *FakeReceptorBBS) TaskByGuidReturns(result1 *models.Task, result2 error) {
+func (fake *FakeReceptorBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
 	fake.TaskByGuidStub = nil
 	fake.taskByGuidReturns = struct {
-		result1 *models.Task
+		result1 models.Task
 		result2 error
 	}{result1, result2}
 }
@@ -569,7 +569,7 @@ func (fake *FakeReceptorBBS) DesiredLRPsByDomainReturns(result1 []models.Desired
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	fake.desiredLRPByProcessGuidMutex.Lock()
 	fake.desiredLRPByProcessGuidArgsForCall = append(fake.desiredLRPByProcessGuidArgsForCall, struct {
 		processGuid string
@@ -594,10 +594,10 @@ func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidArgsForCall(i int) string {
 	return fake.desiredLRPByProcessGuidArgsForCall[i].processGuid
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 *models.DesiredLRP, result2 error) {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
 	fake.DesiredLRPByProcessGuidStub = nil
 	fake.desiredLRPByProcessGuidReturns = struct {
-		result1 *models.DesiredLRP
+		result1 models.DesiredLRP
 		result2 error
 	}{result1, result2}
 }
@@ -693,7 +693,7 @@ func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 models.Actua
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndex(arg1 string, arg2 int) (*models.ActualLRP, error) {
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndex(arg1 string, arg2 int) (models.ActualLRP, error) {
 	fake.actualLRPByProcessGuidAndIndexMutex.Lock()
 	fake.actualLRPByProcessGuidAndIndexArgsForCall = append(fake.actualLRPByProcessGuidAndIndexArgsForCall, struct {
 		arg1 string
@@ -719,10 +719,10 @@ func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexArgsForCall(i int) (s
 	return fake.actualLRPByProcessGuidAndIndexArgsForCall[i].arg1, fake.actualLRPByProcessGuidAndIndexArgsForCall[i].arg2
 }
 
-func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexReturns(result1 *models.ActualLRP, result2 error) {
+func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexReturns(result1 models.ActualLRP, result2 error) {
 	fake.ActualLRPByProcessGuidAndIndexStub = nil
 	fake.actualLRPByProcessGuidAndIndexReturns = struct {
-		result1 *models.ActualLRP
+		result1 models.ActualLRP
 		result2 error
 	}{result1, result2}
 }

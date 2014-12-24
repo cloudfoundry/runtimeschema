@@ -30,13 +30,13 @@ type FakeRepBBS struct {
 	startTaskReturns struct {
 		result1 error
 	}
-	TaskByGuidStub        func(taskGuid string) (*models.Task, error)
+	TaskByGuidStub        func(taskGuid string) (models.Task, error)
 	taskByGuidMutex       sync.RWMutex
 	taskByGuidArgsForCall []struct {
 		taskGuid string
 	}
 	taskByGuidReturns struct {
-		result1 *models.Task
+		result1 models.Task
 		result2 error
 	}
 	TasksByCellIDStub        func(cellID string) ([]models.Task, error)
@@ -168,7 +168,7 @@ func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) TaskByGuid(taskGuid string) (*models.Task, error) {
+func (fake *FakeRepBBS) TaskByGuid(taskGuid string) (models.Task, error) {
 	fake.taskByGuidMutex.Lock()
 	fake.taskByGuidArgsForCall = append(fake.taskByGuidArgsForCall, struct {
 		taskGuid string
@@ -193,10 +193,10 @@ func (fake *FakeRepBBS) TaskByGuidArgsForCall(i int) string {
 	return fake.taskByGuidArgsForCall[i].taskGuid
 }
 
-func (fake *FakeRepBBS) TaskByGuidReturns(result1 *models.Task, result2 error) {
+func (fake *FakeRepBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
 	fake.TaskByGuidStub = nil
 	fake.taskByGuidReturns = struct {
-		result1 *models.Task
+		result1 models.Task
 		result2 error
 	}{result1, result2}
 }

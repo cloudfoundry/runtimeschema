@@ -9,22 +9,22 @@ import (
 )
 
 type FakeTaskClient struct {
-	CompleteTaskStub        func(receptorURL string, task *models.Task) error
+	CompleteTaskStub        func(receptorURL string, task models.Task) error
 	completeTaskMutex       sync.RWMutex
 	completeTaskArgsForCall []struct {
 		receptorURL string
-		task        *models.Task
+		task        models.Task
 	}
 	completeTaskReturns struct {
 		result1 error
 	}
 }
 
-func (fake *FakeTaskClient) CompleteTask(receptorURL string, task *models.Task) error {
+func (fake *FakeTaskClient) CompleteTask(receptorURL string, task models.Task) error {
 	fake.completeTaskMutex.Lock()
 	fake.completeTaskArgsForCall = append(fake.completeTaskArgsForCall, struct {
 		receptorURL string
-		task        *models.Task
+		task        models.Task
 	}{receptorURL, task})
 	fake.completeTaskMutex.Unlock()
 	if fake.CompleteTaskStub != nil {
@@ -40,7 +40,7 @@ func (fake *FakeTaskClient) CompleteTaskCallCount() int {
 	return len(fake.completeTaskArgsForCall)
 }
 
-func (fake *FakeTaskClient) CompleteTaskArgsForCall(i int) (string, *models.Task) {
+func (fake *FakeTaskClient) CompleteTaskArgsForCall(i int) (string, models.Task) {
 	fake.completeTaskMutex.RLock()
 	defer fake.completeTaskMutex.RUnlock()
 	return fake.completeTaskArgsForCall[i].receptorURL, fake.completeTaskArgsForCall[i].task

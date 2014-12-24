@@ -11,8 +11,9 @@ import (
 	"github.com/tedsuo/rata"
 )
 
+//go:generate counterfeiter . TaskClient
 type TaskClient interface {
-	CompleteTask(receptorURL string, task *models.Task) error
+	CompleteTask(receptorURL string, task models.Task) error
 }
 
 type taskClient struct {
@@ -25,7 +26,7 @@ func NewTaskClient() TaskClient {
 	}
 }
 
-func (c *taskClient) CompleteTask(receptorURL string, task *models.Task) error {
+func (c *taskClient) CompleteTask(receptorURL string, task models.Task) error {
 	reqGen := rata.NewRequestGenerator(receptorURL, routes.CompleteTaskRoutes)
 
 	payload, err := json.Marshal(task)

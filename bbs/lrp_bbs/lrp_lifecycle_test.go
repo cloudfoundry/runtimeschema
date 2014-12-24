@@ -244,7 +244,7 @@ var _ = Describe("LrpLifecycle", func() {
 			var processGuid string
 			var desiredLRP models.DesiredLRP
 			var index int
-			var createdLRP *models.ActualLRP
+			var createdLRP models.ActualLRP
 
 			BeforeEach(func() {
 				index = 1
@@ -517,7 +517,7 @@ var _ = Describe("LrpLifecycle", func() {
 			var processGuid string
 			var desiredLRP models.DesiredLRP
 			var index int
-			var createdLRP *models.ActualLRP
+			var createdLRP models.ActualLRP
 
 			BeforeEach(func() {
 				index = 1
@@ -846,7 +846,7 @@ var _ = Describe("LrpLifecycle", func() {
 				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.RetireActualLRPs([]models.ActualLRP{*lrpInBBS}, logger)
+				err = bbs.RetireActualLRPs([]models.ActualLRP{lrpInBBS}, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -860,8 +860,8 @@ var _ = Describe("LrpLifecycle", func() {
 			var blockStopInstanceChan chan struct{}
 			var errChan chan error
 
-			var claimedLRP1 *models.ActualLRP
-			var claimedLRP2 *models.ActualLRP
+			var claimedLRP1 models.ActualLRP
+			var claimedLRP2 models.ActualLRP
 
 			BeforeEach(func() {
 				processGuid = "some-process-guid"
@@ -887,13 +887,14 @@ var _ = Describe("LrpLifecycle", func() {
 				var err error
 				claimedLRP1, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, 0)
 				Ω(err).ShouldNot(HaveOccurred())
+
 				claimedLRP2, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, 1)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				errChan = make(chan error)
 				go func(lrp1, lrp2 models.ActualLRP, errChan chan error, logger lager.Logger) {
 					errChan <- bbs.RetireActualLRPs([]models.ActualLRP{lrp1, lrp2}, logger)
-				}(*claimedLRP1, *claimedLRP2, errChan, logger)
+				}(claimedLRP1, claimedLRP2, errChan, logger)
 			})
 
 			Context("when the cell is present", func() {
@@ -912,8 +913,8 @@ var _ = Describe("LrpLifecycle", func() {
 					Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
 					Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf(
-						*claimedLRP1,
-						*claimedLRP2,
+						claimedLRP1,
+						claimedLRP2,
 					))
 
 					Consistently(errChan).ShouldNot(Receive())
@@ -1001,7 +1002,8 @@ var _ = Describe("LrpLifecycle", func() {
 
 		Context("RetireActualLRPs", func() {
 			Context("when actual LRP is in unclaimed state", func() {
-				var actualLRP *models.ActualLRP
+				var actualLRP models.ActualLRP
+
 				BeforeEach(func() {
 					err := bbs.CreateActualLRP(desiredLRP, index, logger)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -1011,12 +1013,12 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RetireActualLRPs([]models.ActualLRP{*actualLRP}, logger)
+					return bbs.RetireActualLRPs([]models.ActualLRP{actualLRP}, logger)
 				})
 			})
 
 			Context("when actual LRP is in not unclaimed state", func() {
-				var actualLRP *models.ActualLRP
+				var actualLRP models.ActualLRP
 
 				BeforeEach(func() {
 					cellPresence := models.NewCellPresence(cellID, "the-stack", "cell.example.com")
@@ -1033,7 +1035,7 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RetireActualLRPs([]models.ActualLRP{*actualLRP}, logger)
+					return bbs.RetireActualLRPs([]models.ActualLRP{actualLRP}, logger)
 				})
 			})
 		})

@@ -277,7 +277,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					wg := new(sync.WaitGroup)
 					wg.Add(2)
 
-					fakeTaskClient.CompleteTaskStub = func(string, *models.Task) error {
+					fakeTaskClient.CompleteTaskStub = func(string, models.Task) error {
 						wg.Done()
 						wg.Wait()
 						return completeTaskError

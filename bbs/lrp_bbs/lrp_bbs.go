@@ -86,7 +86,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 		}
 
 		bbs.processDesiredChange(models.DesiredLRPChange{
-			Before: existingLRP,
+			Before: &existingLRP,
 			After:  &lrp,
 		}, bbs.logger)
 
@@ -119,7 +119,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
 	}
 
 	bbs.processDesiredChange(models.DesiredLRPChange{
-		Before: lrp,
+		Before: &lrp,
 		After:  nil,
 	}, bbs.logger)
 
@@ -201,7 +201,7 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 		}
 
 		bbs.processDesiredChange(models.DesiredLRPChange{
-			Before: existing,
+			Before: &existing,
 			After:  &updatedLRP,
 		}, bbs.logger)
 

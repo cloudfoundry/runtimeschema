@@ -9,7 +9,6 @@ import (
 )
 
 var _ = Describe("LrpGetters", func() {
-
 	Context("DesiredLRPs", func() {
 		var (
 			desiredLrp1 models.DesiredLRP
@@ -103,7 +102,7 @@ var _ = Describe("LrpGetters", func() {
 				desiredLrp, err := bbs.DesiredLRPByProcessGuid("guidA")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(desiredLrp).Should(Equal(&desiredLrp1))
+				Ω(desiredLrp).Should(Equal(desiredLrp1))
 			})
 		})
 	})
@@ -114,7 +113,7 @@ var _ = Describe("LrpGetters", func() {
 			runningLrp2 models.ActualLRP
 			runningLrp3 models.ActualLRP
 
-			newLrp *models.ActualLRP
+			newLrp models.ActualLRP
 		)
 
 		BeforeEach(func() {
@@ -153,6 +152,7 @@ var _ = Describe("LrpGetters", func() {
 				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
 				logger,
 			)
+
 			newLrp, err = bbs.ActualLRPByProcessGuidAndIndex("guidA", 0)
 			Ω(err).ShouldNot(HaveOccurred())
 
@@ -167,7 +167,7 @@ var _ = Describe("LrpGetters", func() {
 
 				Ω(all).Should(HaveLen(3))
 				Ω(all).Should(ContainElement(runningLrp1))
-				Ω(all).Should(ContainElement(*newLrp))
+				Ω(all).Should(ContainElement(newLrp))
 				Ω(all).Should(ContainElement(runningLrp2))
 			})
 		})
@@ -186,7 +186,7 @@ var _ = Describe("LrpGetters", func() {
 				actualLrpsForMainCell, err := bbs.ActualLRPsByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(actualLrpsForMainCell).Should(ConsistOf(runningLrp1, *newLrp, runningLrp2))
+				Ω(actualLrpsForMainCell).Should(ConsistOf(runningLrp1, newLrp, runningLrp2))
 
 				actualLrpsForOtherCell, err := bbs.ActualLRPsByCellID("some-other-cell")
 				Ω(err).ShouldNot(HaveOccurred())
@@ -212,7 +212,7 @@ var _ = Describe("LrpGetters", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(lrps).Should(HaveLen(2))
 				Ω(lrps).Should(ContainElement(runningLrp1))
-				Ω(lrps).Should(ContainElement(*newLrp))
+				Ω(lrps).Should(ContainElement(newLrp))
 			})
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("LrpGetters", func() {
 			It("should fetch the LRP for the specified guid", func() {
 				lrp, err := bbs.ActualLRPByProcessGuidAndIndex("guidA", 1)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrp).Should(Equal(&runningLrp1))
+				Ω(lrp).Should(Equal(runningLrp1))
 			})
 		})
 

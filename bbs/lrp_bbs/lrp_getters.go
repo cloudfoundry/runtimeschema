@@ -66,7 +66,7 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (*models.DesiredLRP, error) {
+func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
 	var node storeadapter.StoreNode
 	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		var err error
@@ -75,13 +75,13 @@ func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (*models.DesiredL
 	})
 
 	if err != nil {
-		return nil, err
+		return models.DesiredLRP{}, err
 	}
 
 	var lrp models.DesiredLRP
 	err = models.FromJSON(node.Value, &lrp)
 
-	return &lrp, err
+	return lrp, err
 }
 
 func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
@@ -178,22 +178,22 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (*models.ActualLRP, error) {
+func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
 	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 
 	if err == storeadapter.ErrorKeyNotFound {
-		return nil, bbserrors.ErrStoreResourceNotFound
+		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
 	} else if err != nil {
-		return nil, err
+		return models.ActualLRP{}, err
 	}
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
 	if err != nil {
-		return nil, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+		return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
 	}
 
-	return &lrp, err
+	return lrp, err
 }
 
 func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {

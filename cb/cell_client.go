@@ -12,6 +12,7 @@ import (
 	"github.com/tedsuo/rata"
 )
 
+//go:generate counterfeiter . CellClient
 type CellClient interface {
 	StopLRPInstance(cellAddr string, lrp models.ActualLRP) error
 }
