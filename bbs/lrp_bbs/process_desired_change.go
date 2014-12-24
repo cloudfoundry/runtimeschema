@@ -1,7 +1,6 @@
 package lrp_bbs
 
 import (
-	"github.com/cloudfoundry-incubator/delta_force/delta_force"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
@@ -36,7 +35,7 @@ func (bbs *LRPBBS) processDesiredChange(desiredChange models.DesiredLRPChange, l
 }
 
 func (bbs *LRPBBS) reconcile(desiredLRP models.DesiredLRP, actuals models.ActualLRPsByIndex, logger lager.Logger) {
-	delta := delta_force.Reconcile(desiredLRP.Instances, actuals)
+	delta := Reconcile(desiredLRP.Instances, actuals)
 
 	for _, lrpIndex := range delta.IndicesToStart {
 		logger.Info("request-start", lager.Data{
