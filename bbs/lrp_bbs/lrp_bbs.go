@@ -171,7 +171,7 @@ func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
 }
 
 func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
-	existing, err := bbs.DesiredLRPByProcessGuid(processGuid)
+	existing, index, err := bbs.desiredLRPByProcessGuidWithIndex(processGuid)
 	if err != nil {
 		return err
 	}
@@ -188,11 +188,9 @@ func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRP
 	}
 
 	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		err := bbs.store.SetMulti([]storeadapter.StoreNode{
-			{
-				Key:   shared.DesiredLRPSchemaPath(updatedLRP),
-				Value: value,
-			},
+		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.DesiredLRPSchemaPath(updatedLRP),
+			Value: value,
 		})
 		if err != nil {
 			return err
