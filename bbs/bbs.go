@@ -70,7 +70,7 @@ type RepBBS interface {
 	StartTask(taskGuid string, cellID string) error
 	TaskByGuid(taskGuid string) (*models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)
-	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
+	CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
@@ -105,7 +105,7 @@ type AuctioneerBBS interface {
 	Cells() ([]models.CellPresence, error)
 
 	// task
-	CompleteTask(taskGuid string, failed bool, failureReason string, result string) error
+	CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)

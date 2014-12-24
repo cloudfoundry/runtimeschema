@@ -21,6 +21,8 @@ var (
 	ErrStoreComparisonFailed             = errors.New("store resource comparison failed")
 
 	ErrServiceUnavailable = errors.New("service unavailable")
+
+	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")
 )
 
 func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {

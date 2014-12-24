@@ -155,7 +155,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -175,7 +175,7 @@ var _ = Describe("Task BBS", func() {
 			err = bbs.StartTask(task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.TaskGuid, true, "a reason", "a result")
+			err = bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ResolvingTask(task.TaskGuid)

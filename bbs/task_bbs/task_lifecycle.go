@@ -117,10 +117,14 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
-func (bbs *TaskBBS) CompleteTask(taskGuid string, failed bool, failureReason string, result string) error {
+func (bbs *TaskBBS) CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error {
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
 		return err
+	}
+
+	if task.State == models.TaskStateRunning && task.CellID != cellID {
+		return bbserrors.ErrTaskRunningOnDifferentCell
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateCompleted)

@@ -252,7 +252,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					secondTask := models.Task{
@@ -269,7 +269,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err = bbs.StartTask(secondTask.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(secondTask.TaskGuid, true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(secondTask.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					completeTaskError = nil
@@ -369,7 +369,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err = bbs.StartTask(task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -446,7 +446,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err = bbs.StartTask(task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, true, "'cause I said so", "a result")
+				err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.ResolvingTask(task.TaskGuid)
