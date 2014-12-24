@@ -57,7 +57,7 @@ func stateString(state models.TaskState) string {
 	case models.TaskStatePending:
 		return "PENDING"
 	case models.TaskStateRunning:
-		return "RUNNNING"
+		return "RUNNING"
 	case models.TaskStateResolving:
 		return "RESOLVING"
 	default:
