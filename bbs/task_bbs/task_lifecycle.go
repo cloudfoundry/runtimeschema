@@ -58,6 +58,10 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 		return fmt.Errorf("cannot start non-existing task: %s", err.Error())
 	}
 
+	if task.State == models.TaskStateRunning && task.CellID == cellID {
+		return nil
+	}
+
 	err = validateStateTransition(task.State, models.TaskStateRunning)
 	if err != nil {
 		return err

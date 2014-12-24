@@ -296,9 +296,34 @@ var _ = Describe("Task BBS", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("returns an error", func() {
-				err := bbs.StartTask(task.TaskGuid, "cell-ID")
-				Ω(err).Should(HaveOccurred())
+			Context("on the same cell", func() {
+				var startErr error
+				var previousTime int64
+
+				BeforeEach(func() {
+					previousTime = timeProvider.Now().UnixNano()
+					timeProvider.IncrementBySeconds(1)
+
+					startErr = bbs.StartTask(task.TaskGuid, "cell-ID")
+				})
+
+				It("does not return an error", func() {
+					Ω(startErr).ShouldNot(HaveOccurred())
+				})
+
+				It("does not change the Task in the store", func() {
+					task, err := bbs.TaskByGuid(task.TaskGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(task.UpdatedAt).Should(Equal(previousTime))
+				})
+			})
+
+			Context("on another cell", func() {
+				It("returns an error", func() {
+					err := bbs.StartTask(task.TaskGuid, "another-cell-ID")
+					Ω(err).Should(HaveOccurred())
+				})
 			})
 		})
 	})
