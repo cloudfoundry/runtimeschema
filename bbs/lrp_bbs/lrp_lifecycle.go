@@ -3,6 +3,7 @@ package lrp_bbs
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -217,29 +218,31 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	})
 }
 
-func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) error {
+func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) {
 	logger = logger.Session("retire-actual-lrps")
+
 	pool := workpool.NewWorkPool(workerPoolSize)
 
-	errs := make(chan error, len(lrps))
+	wg := new(sync.WaitGroup)
+	wg.Add(len(lrps))
+
 	for _, lrp := range lrps {
 		lrp := lrp
 		pool.Submit(func() {
-			errs <- bbs.retireActualLRP(lrp, logger)
+			defer wg.Done()
+
+			err := bbs.retireActualLRP(lrp, logger)
+			if err != nil {
+				logger.Error("failed-to-retire", err, lager.Data{
+					"lrp": lrp,
+				})
+			}
 		})
 	}
 
-	defer pool.Stop()
+	wg.Wait()
 
-	for i := 0; i < len(lrps); i++ {
-		err := <-errs
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-
+	pool.Stop()
 }
 
 func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {

@@ -2,6 +2,7 @@ package lrp_bbs_test
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
@@ -846,8 +847,7 @@ var _ = Describe("LrpLifecycle", func() {
 				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.RetireActualLRPs([]models.ActualLRP{lrpInBBS}, logger)
-				Ω(err).ShouldNot(HaveOccurred())
+				bbs.RetireActualLRPs([]models.ActualLRP{lrpInBBS}, logger)
 
 				_, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
@@ -858,7 +858,7 @@ var _ = Describe("LrpLifecycle", func() {
 			var cellPresence models.CellPresence
 			var processGuid string
 			var blockStopInstanceChan chan struct{}
-			var errChan chan error
+			var doneRetiring chan struct{}
 
 			var claimedLRP1 models.ActualLRP
 			var claimedLRP2 models.ActualLRP
@@ -891,10 +891,12 @@ var _ = Describe("LrpLifecycle", func() {
 				claimedLRP2, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, 1)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				errChan = make(chan error)
-				go func(lrp1, lrp2 models.ActualLRP, errChan chan error, logger lager.Logger) {
-					errChan <- bbs.RetireActualLRPs([]models.ActualLRP{lrp1, lrp2}, logger)
-				}(claimedLRP1, claimedLRP2, errChan, logger)
+				doneRetiring = make(chan struct{})
+
+				go func(lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
+					bbs.RetireActualLRPs([]models.ActualLRP{lrp1, lrp2}, logger)
+					close(doneRetiring)
+				}(claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})
 
 			Context("when the cell is present", func() {
@@ -917,19 +919,31 @@ var _ = Describe("LrpLifecycle", func() {
 						claimedLRP2,
 					))
 
-					Consistently(errChan).ShouldNot(Receive())
+					Consistently(doneRetiring).ShouldNot(BeClosed())
+
 					close(blockStopInstanceChan)
-					Eventually(errChan).Should(Receive(BeNil()))
+
+					Eventually(doneRetiring).Should(BeClosed())
+				})
+
+				Context("when stopping any of the LRPs fails", func() {
+					BeforeEach(func() {
+						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, lrp models.ActualLRP) error {
+							return fmt.Errorf("failed to stop %d", lrp.Index)
+						}
+					})
+
+					It("logs the failure", func() {
+						Eventually(doneRetiring).Should(BeClosed())
+
+						Ω(logger.LogMessages()).Should(ContainElement("test.retire-actual-lrps.failed-to-retire"))
+					})
 				})
 			})
 
 			Context("when the cell is not present", func() {
 				It("does not stop the instances", func() {
 					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(0))
-				})
-
-				It("returns an error", func() {
-					Eventually(errChan).Should(Receive(Equal(bbserrors.ErrStoreResourceNotFound)))
 				})
 
 				It("logs the error", func() {
@@ -997,46 +1011,6 @@ var _ = Describe("LrpLifecycle", func() {
 
 			itRetriesUntilStoreComesBack(func() error {
 				return bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
-			})
-		})
-
-		Context("RetireActualLRPs", func() {
-			Context("when actual LRP is in unclaimed state", func() {
-				var actualLRP models.ActualLRP
-
-				BeforeEach(func() {
-					err := bbs.CreateActualLRP(desiredLRP, index, logger)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					actualLRP, err = bbs.ActualLRPByProcessGuidAndIndex(desiredLRP.ProcessGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RetireActualLRPs([]models.ActualLRP{actualLRP}, logger)
-				})
-			})
-
-			Context("when actual LRP is in not unclaimed state", func() {
-				var actualLRP models.ActualLRP
-
-				BeforeEach(func() {
-					cellPresence := models.NewCellPresence(cellID, "the-stack", "cell.example.com")
-					registerCell(cellPresence)
-
-					err := bbs.CreateActualLRP(desiredLRP, index, logger)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					err = bbs.ClaimActualLRP(actualLRPKey, containerKey, logger)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					actualLRP, err = bbs.ActualLRPByProcessGuidAndIndex(desiredLRP.ProcessGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RetireActualLRPs([]models.ActualLRP{actualLRP}, logger)
-				})
 			})
 		})
 	})

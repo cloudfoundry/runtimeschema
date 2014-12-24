@@ -82,10 +82,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
 
 	lrpStopInstanceCounter.Add(uint64(len(actualLRPsToStop)))
-	err = bbs.RetireActualLRPs(actualLRPsToStop, logger)
-	if err != nil {
-		logger.Error("failed-to-request-stops", err)
-	}
+	bbs.RetireActualLRPs(actualLRPsToStop, logger)
 }
 
 func (bbs *LRPBBS) instancesToStop(

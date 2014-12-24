@@ -63,8 +63,5 @@ func (bbs *LRPBBS) reconcile(desiredLRP models.DesiredLRP, actuals models.Actual
 
 	lrpStopInstanceCounter.Add(uint64(len(lrpsToRetire)))
 
-	err := bbs.RetireActualLRPs(lrpsToRetire, logger)
-	if err != nil {
-		logger.Error("failed-to-retire-actual-lrps", err)
-	}
+	bbs.RetireActualLRPs(lrpsToRetire, logger)
 }
