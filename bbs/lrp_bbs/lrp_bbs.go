@@ -58,7 +58,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 
 	switch err {
 	case bbserrors.ErrStoreResourceExists:
-		existingLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+		existingLRP, index, err := bbs.desiredLRPByProcessGuidWithIndex(lrp.ProcessGuid)
 		if err != nil {
 			return err
 		}
@@ -74,11 +74,9 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 		}
 
 		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-			return bbs.store.SetMulti([]storeadapter.StoreNode{
-				{
-					Key:   shared.DesiredLRPSchemaPath(lrp),
-					Value: value,
-				},
+			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+				Key:   shared.DesiredLRPSchemaPath(lrp),
+				Value: value,
 			})
 		})
 		if err != nil {

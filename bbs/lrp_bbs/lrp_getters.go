@@ -67,20 +67,7 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 }
 
 func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
-		return err
-	})
-
-	if err != nil {
-		return models.DesiredLRP{}, err
-	}
-
-	var lrp models.DesiredLRP
-	err = models.FromJSON(node.Value, &lrp)
-
+	lrp, _, err := bbs.desiredLRPByProcessGuidWithIndex(processGuid)
 	return lrp, err
 }
 
@@ -223,6 +210,24 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	}
 
 	return lrps, nil
+}
+
+func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
+	var node storeadapter.StoreNode
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		var err error
+		node, err = bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
+		return err
+	})
+
+	if err != nil {
+		return models.DesiredLRP{}, 0, err
+	}
+
+	var lrp models.DesiredLRP
+	err = models.FromJSON(node.Value, &lrp)
+
+	return lrp, node.Index, err
 }
 
 func filterActualLRPs(lrps []models.ActualLRP, state models.ActualLRPState) []models.ActualLRP {
