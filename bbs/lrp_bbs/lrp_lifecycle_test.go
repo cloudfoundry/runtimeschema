@@ -103,7 +103,7 @@ var _ = Describe("LrpLifecycle", func() {
 						})
 
 						It("logs the error", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-request-start-auction"))
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.failed-to-request-start-auctions"))
 						})
 					})
 				})
@@ -119,7 +119,7 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 
 					It("logs the error", func() {
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-request-start-auction"))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.failed-to-request-start-auctions"))
 					})
 				})
 			})

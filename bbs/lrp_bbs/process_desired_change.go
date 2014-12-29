@@ -11,6 +11,12 @@ var (
 	lrpStopInstanceCounter  = metric.Counter("LRPInstanceStopRequests")
 )
 
+type reconcileInfo struct {
+	desiredLRP models.DesiredLRP
+	actualLRPs models.ActualLRPsByIndex
+	Result
+}
+
 func (bbs *LRPBBS) processDesiredChange(desiredChange models.DesiredLRPChange, logger lager.Logger) {
 	var desiredLRP models.DesiredLRP
 
@@ -31,37 +37,59 @@ func (bbs *LRPBBS) processDesiredChange(desiredChange models.DesiredLRPChange, l
 		return
 	}
 
-	bbs.reconcile(desiredLRP, actuals, logger)
+	bbs.reconcile([]reconcileInfo{{desiredLRP, actuals, Reconcile(desiredLRP.Instances, actuals)}}, logger)
 }
 
-func (bbs *LRPBBS) reconcile(desiredLRP models.DesiredLRP, actuals models.ActualLRPsByIndex, logger lager.Logger) {
-	delta := Reconcile(desiredLRP.Instances, actuals)
+func (bbs *LRPBBS) reconcile(infos []reconcileInfo, logger lager.Logger) {
+	startAuctions := []models.LRPStart{}
+	lrpsToRetire := []models.ActualLRP{}
 
-	for _, lrpIndex := range delta.IndicesToStart {
-		logger.Info("request-start", lager.Data{
-			"index": lrpIndex,
-		})
-
-		lrpStartInstanceCounter.Increment()
-
-		err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
-		if err != nil {
-			logger.Error("failed-to-create-actual-lrp", err, lager.Data{
-				"index": lrpIndex,
+	for _, delta := range infos {
+		for _, lrpIndex := range delta.IndicesToStart {
+			logger.Info("request-start", lager.Data{
+				"process-guid": delta.desiredLRP.ProcessGuid,
+				"index":        lrpIndex,
 			})
+
+			lrpStartInstanceCounter.Increment()
+
+			err := bbs.createActualLRP(delta.desiredLRP, lrpIndex, logger)
+			if err != nil {
+				logger.Error("failed-to-create-actual-lrp", err, lager.Data{
+					"process-guid": delta.desiredLRP.ProcessGuid,
+					"index":        lrpIndex,
+				})
+				continue
+			}
+
+			startAuctions = append(startAuctions, models.LRPStart{
+				DesiredLRP: delta.desiredLRP,
+				Index:      lrpIndex,
+			})
+		}
+
+		for _, index := range delta.IndicesToStop {
+			actualLRP := delta.actualLRPs[index]
+			logger.Info("request-stop", lager.Data{
+				"process-guid":  actualLRP.ProcessGuid,
+				"instance-guid": actualLRP.InstanceGuid,
+				"index":         index,
+			})
+
+			lrpsToRetire = append(lrpsToRetire, actualLRP)
 		}
 	}
 
-	lrpsToRetire := []models.ActualLRP{}
-	for _, index := range delta.IndicesToStop {
-		logger.Info("request-stop", lager.Data{
-			"index": index,
-		})
-
-		lrpsToRetire = append(lrpsToRetire, actuals[index])
+	if len(startAuctions) > 0 {
+		err := bbs.requestLRPStartAuctions(startAuctions)
+		if err != nil {
+			logger.Error("failed-to-request-start-auctions", err, lager.Data{"lrp-starts": startAuctions})
+			// The creation succeeded, the start request error can be dropped
+		}
 	}
 
-	lrpStopInstanceCounter.Add(uint64(len(lrpsToRetire)))
-
-	bbs.RetireActualLRPs(lrpsToRetire, logger)
+	if len(lrpsToRetire) > 0 {
+		lrpStopInstanceCounter.Add(uint64(len(lrpsToRetire)))
+		bbs.RetireActualLRPs(lrpsToRetire, logger)
+	}
 }

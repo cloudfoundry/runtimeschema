@@ -107,7 +107,7 @@ var _ = Describe("Task BBS", func() {
 
 						Context("when requesting a task auction fails", func() {
 							BeforeEach(func() {
-								fakeAuctioneerClient.RequestLRPStartAuctionReturns(errors.New("oops"))
+								fakeAuctioneerClient.RequestTaskAuctionsReturns(errors.New("oops"))
 							})
 
 							It("does not return an error", func() {

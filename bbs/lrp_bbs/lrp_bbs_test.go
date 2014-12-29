@@ -56,13 +56,13 @@ var _ = Describe("LRP", func() {
 					err := bbs.DesireLRP(lrp)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 5))
+					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
+					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+					Ω(startAuctions).Should(HaveLen(5))
 					for i := 0; i < 5; i++ {
-						_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount + i)
-						Ω(startAuctions).Should(HaveLen(1))
-						Ω(startAuctions[0].DesiredLRP).Should(Equal(lrp))
-						Ω(startAuctions[0].Index).Should(Equal(i))
+						Ω(startAuctions[i].DesiredLRP).Should(Equal(lrp))
+						Ω(startAuctions[i].Index).Should(Equal(i))
 					}
 				})
 			})

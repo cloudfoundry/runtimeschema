@@ -47,6 +47,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	var malformedDesiredLRPs []string
 	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
+	infos := []reconcileInfo{}
 	for _, node := range desiredLRPRoot.ChildNodes {
 		var desiredLRP models.DesiredLRP
 		err := models.FromJSON(node.Value, &desiredLRP)
@@ -63,8 +64,12 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
-		bbs.reconcile(desiredLRP, actualLRPsForDesired, logger)
+		if delta := Reconcile(desiredLRP.Instances, actualLRPsForDesired); !delta.Empty() {
+			infos = append(infos, reconcileInfo{desiredLRP, actualLRPsForDesired, delta})
+		}
 	}
+
+	bbs.reconcile(infos, logger)
 
 	actualLRPsToStop := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)
 

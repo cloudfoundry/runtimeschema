@@ -27,6 +27,26 @@ func NewActualLRPIndexTooLargeError(actualIndex, desiredInstances int) error {
 }
 
 func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
+	err := bbs.createActualLRP(desiredLRP, index, logger)
+	if err != nil {
+		return err
+	}
+
+	lrpStart := models.LRPStart{
+		DesiredLRP: desiredLRP,
+		Index:      index,
+	}
+
+	err = bbs.requestLRPStartAuctions([]models.LRPStart{lrpStart})
+	if err != nil {
+		logger.Error("failed-to-request-start-auctions", err, lager.Data{"lrp-start": lrpStart})
+		// The creation succeeded, the start request error can be dropped
+	}
+
+	return nil
+}
+
+func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
 	logger = logger.Session("create-actual-lrp")
 	var err error
 	if index >= desiredLRP.Instances {
@@ -48,17 +68,6 @@ func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	err = bbs.createRawActualLRP(&actualLRP, logger)
 	if err != nil {
 		return err
-	}
-
-	lrpStart := models.LRPStart{
-		DesiredLRP: desiredLRP,
-		Index:      index,
-	}
-
-	err = bbs.requestLRPStartAuctions([]models.LRPStart{lrpStart})
-	if err != nil {
-		logger.Error("failed-to-request-start-auction", err, lager.Data{"lrp-start": lrpStart})
-		// The creation succeeded, the start request error can be dropped
 	}
 
 	return nil

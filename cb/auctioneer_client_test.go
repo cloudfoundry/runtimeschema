@@ -24,16 +24,16 @@ var _ = Describe("AuctioneerClient", func() {
 		fakeServer.Close()
 	})
 
-	Describe("RequestLRPStartAuction", func() {
+	Describe("RequestLRPStartAuctions", func() {
 		const auctioneerAddr = "auctioneer.example.com"
-		var lrpStart = models.LRPStart{
+		var lrpStarts = []models.LRPStart{{
 			DesiredLRP: models.DesiredLRP{},
 			Index:      2,
-		}
+		}}
 		var err error
 
 		JustBeforeEach(func() {
-			err = auctioneerClient.RequestLRPStartAuction(fakeServer.URL(), lrpStart)
+			err = auctioneerClient.RequestLRPStartAuctions(fakeServer.URL(), lrpStarts)
 		})
 
 		Context("when the request is successful", func() {
@@ -41,8 +41,8 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/lrps"),
-						ghttp.VerifyJSONRepresenting(lrpStart),
-						ghttp.RespondWith(http.StatusCreated, ""),
+						ghttp.VerifyJSONRepresenting(lrpStarts),
+						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
 			})
@@ -58,7 +58,7 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/lrps"),
-						ghttp.VerifyJSONRepresenting(lrpStart),
+						ghttp.VerifyJSONRepresenting(lrpStarts),
 						ghttp.RespondWith(http.StatusBadRequest, ""),
 					),
 				)
@@ -76,7 +76,7 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/lrps"),
-						ghttp.VerifyJSONRepresenting(lrpStart),
+						ghttp.VerifyJSONRepresenting(lrpStarts),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},
