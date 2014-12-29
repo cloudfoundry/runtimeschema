@@ -9,13 +9,13 @@ import (
 )
 
 type FakeAuctioneerClient struct {
-	RequestLRPStartAuctionStub        func(auctioneerURL string, lrpStart models.LRPStart) error
-	requestLRPStartAuctionMutex       sync.RWMutex
-	requestLRPStartAuctionArgsForCall []struct {
+	RequestLRPStartAuctionsStub        func(auctioneerURL string, lrpStart []models.LRPStart) error
+	requestLRPStartAuctionsMutex       sync.RWMutex
+	requestLRPStartAuctionsArgsForCall []struct {
 		auctioneerURL string
-		lrpStart      models.LRPStart
+		lrpStart      []models.LRPStart
 	}
-	requestLRPStartAuctionReturns struct {
+	requestLRPStartAuctionsReturns struct {
 		result1 error
 	}
 	RequestTaskAuctionsStub        func(auctioneerURL string, tasks []models.Task) error
@@ -29,35 +29,35 @@ type FakeAuctioneerClient struct {
 	}
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error {
-	fake.requestLRPStartAuctionMutex.Lock()
-	fake.requestLRPStartAuctionArgsForCall = append(fake.requestLRPStartAuctionArgsForCall, struct {
+func (fake *FakeAuctioneerClient) RequestLRPStartAuctions(auctioneerURL string, lrpStart []models.LRPStart) error {
+	fake.requestLRPStartAuctionsMutex.Lock()
+	fake.requestLRPStartAuctionsArgsForCall = append(fake.requestLRPStartAuctionsArgsForCall, struct {
 		auctioneerURL string
-		lrpStart      models.LRPStart
+		lrpStart      []models.LRPStart
 	}{auctioneerURL, lrpStart})
-	fake.requestLRPStartAuctionMutex.Unlock()
-	if fake.RequestLRPStartAuctionStub != nil {
-		return fake.RequestLRPStartAuctionStub(auctioneerURL, lrpStart)
+	fake.requestLRPStartAuctionsMutex.Unlock()
+	if fake.RequestLRPStartAuctionsStub != nil {
+		return fake.RequestLRPStartAuctionsStub(auctioneerURL, lrpStart)
 	} else {
-		return fake.requestLRPStartAuctionReturns.result1
+		return fake.requestLRPStartAuctionsReturns.result1
 	}
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuctionCallCount() int {
-	fake.requestLRPStartAuctionMutex.RLock()
-	defer fake.requestLRPStartAuctionMutex.RUnlock()
-	return len(fake.requestLRPStartAuctionArgsForCall)
+func (fake *FakeAuctioneerClient) RequestLRPStartAuctionsCallCount() int {
+	fake.requestLRPStartAuctionsMutex.RLock()
+	defer fake.requestLRPStartAuctionsMutex.RUnlock()
+	return len(fake.requestLRPStartAuctionsArgsForCall)
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuctionArgsForCall(i int) (string, models.LRPStart) {
-	fake.requestLRPStartAuctionMutex.RLock()
-	defer fake.requestLRPStartAuctionMutex.RUnlock()
-	return fake.requestLRPStartAuctionArgsForCall[i].auctioneerURL, fake.requestLRPStartAuctionArgsForCall[i].lrpStart
+func (fake *FakeAuctioneerClient) RequestLRPStartAuctionsArgsForCall(i int) (string, []models.LRPStart) {
+	fake.requestLRPStartAuctionsMutex.RLock()
+	defer fake.requestLRPStartAuctionsMutex.RUnlock()
+	return fake.requestLRPStartAuctionsArgsForCall[i].auctioneerURL, fake.requestLRPStartAuctionsArgsForCall[i].lrpStart
 }
 
-func (fake *FakeAuctioneerClient) RequestLRPStartAuctionReturns(result1 error) {
-	fake.RequestLRPStartAuctionStub = nil
-	fake.requestLRPStartAuctionReturns = struct {
+func (fake *FakeAuctioneerClient) RequestLRPStartAuctionsReturns(result1 error) {
+	fake.RequestLRPStartAuctionsStub = nil
+	fake.requestLRPStartAuctionsReturns = struct {
 		result1 error
 	}{result1}
 }

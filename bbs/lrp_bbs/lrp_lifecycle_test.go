@@ -73,17 +73,18 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 
 					It("requests an auction", func() {
-						Ω(fakeAuctioneerClient.RequestLRPStartAuctionCallCount()).Should(Equal(1))
+						Ω(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()).Should(Equal(1))
 
-						requestAddress, requestedAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(0)
+						requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(0)
 						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-						Ω(requestedAuction.DesiredLRP).Should(Equal(desiredLRP))
-						Ω(requestedAuction.Index).Should(Equal(index))
+						Ω(requestedAuctions).Should(HaveLen(1))
+						Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+						Ω(requestedAuctions[0].Index).Should(Equal(index))
 					})
 
 					Context("when requesting an auction is successful", func() {
 						BeforeEach(func() {
-							fakeAuctioneerClient.RequestLRPStartAuctionReturns(nil)
+							fakeAuctioneerClient.RequestLRPStartAuctionsReturns(nil)
 						})
 
 						It("does not return an error", func() {
@@ -93,7 +94,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 					Context("when requesting an auction is unsuccessful", func() {
 						BeforeEach(func() {
-							fakeAuctioneerClient.RequestLRPStartAuctionReturns(errors.New("oops"))
+							fakeAuctioneerClient.RequestLRPStartAuctionsReturns(errors.New("oops"))
 						})
 
 						It("does not return an error", func() {
@@ -109,7 +110,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("when unable to fetch the auctioneer address", func() {
 					It("does not request an auction", func() {
-						Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
+						Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(BeZero())
 					})
 
 					It("does not return an error", func() {
@@ -141,7 +142,7 @@ var _ = Describe("LrpLifecycle", func() {
 				})
 
 				It("does not request an auction", func() {
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
+					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(BeZero())
 				})
 
 				It("returns an error", func() {
@@ -169,7 +170,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
+				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(BeZero())
 			})
 
 			It("returns an error", func() {
@@ -196,7 +197,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
+				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(BeZero())
 			})
 
 			It("returns an error", func() {
@@ -223,7 +224,7 @@ var _ = Describe("LrpLifecycle", func() {
 			})
 
 			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(BeZero())
+				Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(BeZero())
 			})
 
 			It("returns an error", func() {

@@ -109,6 +109,8 @@ func (bbs *LRPBBS) resendStartAuctions(
 	pollingInterval time.Duration,
 	logger lager.Logger,
 ) {
+	starts := make([]models.LRPStart, 0, len(actualsByProcessGuid))
+
 	for processGuid, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
 			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(pollingInterval)) {
@@ -122,15 +124,18 @@ func (bbs *LRPBBS) resendStartAuctions(
 					DesiredLRP: desiredLRP,
 					Index:      actual.Index,
 				}
-
+				starts = append(starts, lrpStart)
 				logger.Info("resending-start-auction", lager.Data{"process-guid": processGuid, "index": actual.Index})
-				err := bbs.requestLRPStartAuction(lrpStart)
-				if err != nil {
-					logger.Error("failed-resending-start-auction", err, lager.Data{
-						"lrp-start-auction": lrpStart,
-					})
-				}
 			}
+		}
+	}
+
+	if len(starts) > 0 {
+		err := bbs.requestLRPStartAuctions(starts)
+		if err != nil {
+			logger.Error("failed-resending-start-auctions", err, lager.Data{
+				"lrp-start-auctions": starts,
+			})
 		}
 	}
 }

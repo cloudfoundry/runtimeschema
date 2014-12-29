@@ -68,15 +68,16 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
+					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
 
 					bbs.ConvergeLRPs(pollingInterval)
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(Equal(originalAuctionCallCount + 1))
+					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-					_, startAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalAuctionCallCount)
-					Ω(startAuction.DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuction.Index).Should(Equal(0))
+					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+					Ω(startAuctions).Should(HaveLen(1))
+					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+					Ω(startAuctions[0].Index).Should(Equal(0))
 				})
 
 				It("bumps the compare-and-swapped LRPs convergence counter", func() {
@@ -147,15 +148,16 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
+					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
 
 					bbs.ConvergeLRPs(pollingInterval)
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(Equal(originalAuctionCallCount + 1))
+					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-					_, startAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalAuctionCallCount)
-					Ω(startAuction.DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuction.Index).Should(Equal(1))
+					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+					Ω(startAuctions).Should(HaveLen(1))
+					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+					Ω(startAuctions[0].Index).Should(Equal(1))
 				})
 			})
 
@@ -660,14 +662,15 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("re-emits start auction requests", func() {
-			originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionCallCount()
+			originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
 			bbs.ConvergeLRPs(pollingInterval)
 
-			Consistently(fakeAuctioneerClient.RequestLRPStartAuctionCallCount).Should(Equal(originalAuctionCallCount + 1))
+			Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-			_, startAuction := fakeAuctioneerClient.RequestLRPStartAuctionArgsForCall(originalAuctionCallCount)
-			Ω(startAuction.DesiredLRP).Should(Equal(desiredLRP))
-			Ω(startAuction.Index).Should(Equal(0))
+			_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+			Ω(startAuctions).Should(HaveLen(1))
+			Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+			Ω(startAuctions[0].Index).Should(Equal(0))
 		})
 	})
 })

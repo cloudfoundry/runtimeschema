@@ -14,35 +14,35 @@ type FakeMetricsBBS struct {
 	TasksStub        func() ([]models.Task, error)
 	tasksMutex       sync.RWMutex
 	tasksArgsForCall []struct{}
-	tasksReturns     struct {
+	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
 	ServiceRegistrationsStub        func() (models.ServiceRegistrations, error)
 	serviceRegistrationsMutex       sync.RWMutex
 	serviceRegistrationsArgsForCall []struct{}
-	serviceRegistrationsReturns     struct {
+	serviceRegistrationsReturns struct {
 		result1 models.ServiceRegistrations
 		result2 error
 	}
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns     struct {
+	domainsReturns struct {
 		result1 []string
 		result2 error
 	}
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns     struct {
+	actualLRPsReturns struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
