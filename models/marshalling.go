@@ -25,6 +25,21 @@ func ToJSON(v Validator) ([]byte, error) {
 	return json.Marshal(v)
 }
 
+func ToJSONArray(vs ...Validator) ([]byte, error) {
+	msgs := make([]*json.RawMessage, len(vs))
+
+	for i, v := range vs {
+		msg, err := ToJSON(v)
+		if err != nil {
+			return nil, err
+		}
+
+		msgs[i] = (*json.RawMessage)(&msg)
+	}
+
+	return json.Marshal(msgs)
+}
+
 func isNil(a interface{}) bool {
 	if a == nil {
 		return true

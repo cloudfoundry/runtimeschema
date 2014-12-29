@@ -9,46 +9,46 @@ import (
 )
 
 type FakeTaskClient struct {
-	CompleteTaskStub        func(receptorURL string, task models.Task) error
-	completeTaskMutex       sync.RWMutex
-	completeTaskArgsForCall []struct {
+	CompleteTasksStub        func(receptorURL string, tasks []models.Task) error
+	completeTasksMutex       sync.RWMutex
+	completeTasksArgsForCall []struct {
 		receptorURL string
-		task        models.Task
+		tasks       []models.Task
 	}
-	completeTaskReturns struct {
+	completeTasksReturns struct {
 		result1 error
 	}
 }
 
-func (fake *FakeTaskClient) CompleteTask(receptorURL string, task models.Task) error {
-	fake.completeTaskMutex.Lock()
-	fake.completeTaskArgsForCall = append(fake.completeTaskArgsForCall, struct {
+func (fake *FakeTaskClient) CompleteTasks(receptorURL string, tasks []models.Task) error {
+	fake.completeTasksMutex.Lock()
+	fake.completeTasksArgsForCall = append(fake.completeTasksArgsForCall, struct {
 		receptorURL string
-		task        models.Task
-	}{receptorURL, task})
-	fake.completeTaskMutex.Unlock()
-	if fake.CompleteTaskStub != nil {
-		return fake.CompleteTaskStub(receptorURL, task)
+		tasks       []models.Task
+	}{receptorURL, tasks})
+	fake.completeTasksMutex.Unlock()
+	if fake.CompleteTasksStub != nil {
+		return fake.CompleteTasksStub(receptorURL, tasks)
 	} else {
-		return fake.completeTaskReturns.result1
+		return fake.completeTasksReturns.result1
 	}
 }
 
-func (fake *FakeTaskClient) CompleteTaskCallCount() int {
-	fake.completeTaskMutex.RLock()
-	defer fake.completeTaskMutex.RUnlock()
-	return len(fake.completeTaskArgsForCall)
+func (fake *FakeTaskClient) CompleteTasksCallCount() int {
+	fake.completeTasksMutex.RLock()
+	defer fake.completeTasksMutex.RUnlock()
+	return len(fake.completeTasksArgsForCall)
 }
 
-func (fake *FakeTaskClient) CompleteTaskArgsForCall(i int) (string, models.Task) {
-	fake.completeTaskMutex.RLock()
-	defer fake.completeTaskMutex.RUnlock()
-	return fake.completeTaskArgsForCall[i].receptorURL, fake.completeTaskArgsForCall[i].task
+func (fake *FakeTaskClient) CompleteTasksArgsForCall(i int) (string, []models.Task) {
+	fake.completeTasksMutex.RLock()
+	defer fake.completeTasksMutex.RUnlock()
+	return fake.completeTasksArgsForCall[i].receptorURL, fake.completeTasksArgsForCall[i].tasks
 }
 
-func (fake *FakeTaskClient) CompleteTaskReturns(result1 error) {
-	fake.CompleteTaskStub = nil
-	fake.completeTaskReturns = struct {
+func (fake *FakeTaskClient) CompleteTasksReturns(result1 error) {
+	fake.CompleteTasksStub = nil
+	fake.completeTasksReturns = struct {
 		result1 error
 	}{result1}
 }

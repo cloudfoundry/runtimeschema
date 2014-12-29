@@ -39,7 +39,7 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 		return err
 	}
 
-	err = s.requestTaskAuction(task)
+	err = s.requestTaskAuctions([]models.Task{task})
 	if err != nil {
 		s.logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
 		// The creation succeeded, the auction request error can be dropped
@@ -158,7 +158,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, cellID string, failed bool, fa
 			return nil
 		}
 
-		err = bbs.taskClient.CompleteTask(receptorPresence.ReceptorURL, task)
+		err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
 		if err != nil {
 			bbs.logger.Error("failed-to-complete-task", err)
 			return nil
@@ -235,13 +235,13 @@ func validateCanDelete(from models.TaskState) error {
 	}
 }
 
-func (bbs *TaskBBS) requestTaskAuction(task models.Task) error {
+func (bbs *TaskBBS) requestTaskAuctions(tasks []models.Task) error {
 	auctioneerAddress, err := bbs.services.AuctioneerAddress()
 	if err != nil {
 		return err
 	}
 
-	err = bbs.auctioneerClient.RequestTaskAuction(auctioneerAddress, task)
+	err = bbs.auctioneerClient.RequestTaskAuctions(auctioneerAddress, tasks)
 	if err != nil {
 		return err
 	}

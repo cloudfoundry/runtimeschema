@@ -100,7 +100,7 @@ var _ = Describe("AuctioneerClient", func() {
 		var err error
 
 		JustBeforeEach(func() {
-			err = auctioneerClient.RequestTaskAuction(fakeServer.URL(), task)
+			err = auctioneerClient.RequestTaskAuctions(fakeServer.URL(), []models.Task{task})
 		})
 
 		Context("when the request is successful", func() {
@@ -108,8 +108,8 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/tasks"),
-						ghttp.VerifyJSONRepresenting(task),
-						ghttp.RespondWith(http.StatusCreated, ""),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
+						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
 			})
@@ -125,7 +125,7 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/tasks"),
-						ghttp.VerifyJSONRepresenting(task),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
 						ghttp.RespondWith(http.StatusBadRequest, ""),
 					),
 				)
@@ -143,7 +143,7 @@ var _ = Describe("AuctioneerClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", "/tasks"),
-						ghttp.VerifyJSONRepresenting(task),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},

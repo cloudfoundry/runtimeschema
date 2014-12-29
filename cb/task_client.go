@@ -13,7 +13,7 @@ import (
 
 //go:generate counterfeiter . TaskClient
 type TaskClient interface {
-	CompleteTask(receptorURL string, task models.Task) error
+	CompleteTasks(receptorURL string, tasks []models.Task) error
 }
 
 type taskClient struct {
@@ -26,15 +26,15 @@ func NewTaskClient() TaskClient {
 	}
 }
 
-func (c *taskClient) CompleteTask(receptorURL string, task models.Task) error {
-	reqGen := rata.NewRequestGenerator(receptorURL, routes.CompleteTaskRoutes)
+func (c *taskClient) CompleteTasks(receptorURL string, tasks []models.Task) error {
+	reqGen := rata.NewRequestGenerator(receptorURL, routes.CompleteTasksRoutes)
 
-	payload, err := json.Marshal(task)
+	payload, err := json.Marshal(tasks)
 	if err != nil {
 		return err
 	}
 
-	req, err := reqGen.CreateRequest(routes.CompleteTask, nil, bytes.NewBuffer(payload))
+	req, err := reqGen.CreateRequest(routes.CompleteTasks, nil, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}

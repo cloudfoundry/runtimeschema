@@ -87,16 +87,17 @@ var _ = Describe("Task BBS", func() {
 						})
 
 						It("requests an auction", func() {
-							Ω(fakeAuctioneerClient.RequestTaskAuctionCallCount()).Should(Equal(1))
+							Ω(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).Should(Equal(1))
 
-							requestAddress, requestedTask := fakeAuctioneerClient.RequestTaskAuctionArgsForCall(0)
+							requestAddress, requestedTasks := fakeAuctioneerClient.RequestTaskAuctionsArgsForCall(0)
 							Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-							Ω(requestedTask.TaskGuid).Should(Equal(taskGuid))
+							Ω(requestedTasks).Should(HaveLen(1))
+							Ω(requestedTasks[0].TaskGuid).Should(Equal(taskGuid))
 						})
 
 						Context("when requesting a task auction succeeds", func() {
 							BeforeEach(func() {
-								fakeAuctioneerClient.RequestTaskAuctionReturns(nil)
+								fakeAuctioneerClient.RequestTaskAuctionsReturns(nil)
 							})
 
 							It("does not return an error", func() {
@@ -118,7 +119,7 @@ var _ = Describe("Task BBS", func() {
 
 					Context("when unable to fetch the Auctioneer address", func() {
 						It("does not request an auction", func() {
-							Consistently(fakeAuctioneerClient.RequestTaskAuctionCallCount).Should(BeZero())
+							Consistently(fakeAuctioneerClient.RequestTaskAuctionsCallCount).Should(BeZero())
 						})
 
 						It("does not return an error", func() {
@@ -190,7 +191,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("does not request an auction", func() {
-					Consistently(fakeAuctioneerClient.RequestTaskAuctionCallCount).Should(BeZero())
+					Consistently(fakeAuctioneerClient.RequestTaskAuctionsCallCount).Should(BeZero())
 				})
 
 				It("returns an error", func() {
@@ -214,7 +215,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestTaskAuctionCallCount).Should(BeZero())
+				Consistently(fakeAuctioneerClient.RequestTaskAuctionsCallCount).Should(BeZero())
 			})
 
 			It("returns an error", func() {
@@ -537,7 +538,7 @@ var _ = Describe("Task BBS", func() {
 
 				Context("and completing succeeds", func() {
 					BeforeEach(func() {
-						fakeTaskClient.CompleteTaskReturns(nil)
+						fakeTaskClient.CompleteTasksReturns(nil)
 					})
 
 					Context("and the task has a complete URL", func() {
@@ -549,13 +550,14 @@ var _ = Describe("Task BBS", func() {
 							err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
 							Ω(err).ShouldNot(HaveOccurred())
 
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
-							receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+							receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
 							Ω(receptorURL).Should(Equal("some-receptor-url"))
-							Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
-							Ω(completedTask.Failed).Should(BeTrue())
-							Ω(completedTask.FailureReason).Should(Equal("because"))
-							Ω(completedTask.Result).Should(Equal("a result"))
+							Ω(completedTasks).Should(HaveLen(1))
+							Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+							Ω(completedTasks[0].Failed).Should(BeTrue())
+							Ω(completedTasks[0].FailureReason).Should(Equal("because"))
+							Ω(completedTasks[0].Result).Should(Equal("a result"))
 						})
 					})
 
@@ -568,14 +570,14 @@ var _ = Describe("Task BBS", func() {
 							err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
 							Ω(err).ShouldNot(HaveOccurred())
 
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
 						})
 					})
 				})
 
 				Context("and completing fails", func() {
 					BeforeEach(func() {
-						fakeTaskClient.CompleteTaskReturns(errors.New("welp"))
+						fakeTaskClient.CompleteTasksReturns(errors.New("welp"))
 					})
 
 					It("swallows the error, as we'll retry again eventually (via convergence)", func() {
@@ -671,7 +673,7 @@ var _ = Describe("Task BBS", func() {
 
 					Context("and completing succeeds", func() {
 						BeforeEach(func() {
-							fakeTaskClient.CompleteTaskReturns(nil)
+							fakeTaskClient.CompleteTasksReturns(nil)
 						})
 
 						Context("and the task has a complete URL", func() {
@@ -683,13 +685,14 @@ var _ = Describe("Task BBS", func() {
 								err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
 								Ω(err).ShouldNot(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
-								receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+								receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
 								Ω(receptorURL).Should(Equal("some-receptor-url"))
-								Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
-								Ω(completedTask.Failed).Should(BeTrue())
-								Ω(completedTask.FailureReason).Should(Equal("because"))
-								Ω(completedTask.Result).Should(Equal("a result"))
+								Ω(completedTasks).Should(HaveLen(1))
+								Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+								Ω(completedTasks[0].Failed).Should(BeTrue())
+								Ω(completedTasks[0].FailureReason).Should(Equal("because"))
+								Ω(completedTasks[0].Result).Should(Equal("a result"))
 							})
 						})
 
@@ -702,14 +705,14 @@ var _ = Describe("Task BBS", func() {
 								err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
 								Ω(err).ShouldNot(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
 							})
 						})
 					})
 
 					Context("and completing fails", func() {
 						BeforeEach(func() {
-							fakeTaskClient.CompleteTaskReturns(errors.New("welp"))
+							fakeTaskClient.CompleteTasksReturns(errors.New("welp"))
 						})
 
 						It("swallows the error, as we'll retry again eventually (via convergence)", func() {

@@ -14,7 +14,7 @@ import (
 //go:generate counterfeiter . AuctioneerClient
 type AuctioneerClient interface {
 	RequestLRPStartAuction(auctioneerURL string, lrpStart models.LRPStart) error
-	RequestTaskAuction(auctioneerURL string, task models.Task) error
+	RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error
 }
 
 type auctioneerClient struct {
@@ -55,15 +55,15 @@ func (c *auctioneerClient) RequestLRPStartAuction(auctioneerURL string, lrpStart
 	return nil
 }
 
-func (c *auctioneerClient) RequestTaskAuction(auctioneerURL string, task models.Task) error {
+func (c *auctioneerClient) RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error {
 	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
 
-	payload, err := json.Marshal(task)
+	payload, err := json.Marshal(tasks)
 	if err != nil {
 		return err
 	}
 
-	req, err := reqGen.CreateRequest(auctioneer.CreateTaskAuctionRoute, rata.Params{}, bytes.NewBuffer(payload))
+	req, err := reqGen.CreateRequest(auctioneer.CreateTaskAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (c *auctioneerClient) RequestTaskAuction(auctioneerURL string, task models.
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("http error: status code %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 

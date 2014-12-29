@@ -35,7 +35,7 @@ var _ = Describe("TaskClient", func() {
 		}
 
 		JustBeforeEach(func() {
-			completeErr = client.CompleteTask(fakeServer.URL(), task)
+			completeErr = client.CompleteTasks(fakeServer.URL(), []models.Task{task})
 		})
 
 		Context("when the request is successful", func() {
@@ -43,7 +43,7 @@ var _ = Describe("TaskClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
-						ghttp.VerifyJSONRepresenting(task),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
 						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
@@ -60,7 +60,7 @@ var _ = Describe("TaskClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
-						ghttp.VerifyJSONRepresenting(task),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),
 					),
 				)
@@ -77,7 +77,7 @@ var _ = Describe("TaskClient", func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("PUT", "/internal/tasks/complete"),
-						ghttp.VerifyJSONRepresenting(task),
+						ghttp.VerifyJSONRepresenting([]models.Task{task}),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},

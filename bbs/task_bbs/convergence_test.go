@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -90,9 +89,22 @@ var _ = Describe("Convergence of Tasks", func() {
 			})
 		})
 
-		Context("when a Task is pending", func() {
+		Context("when Tasks are pending", func() {
+			var secondTask models.Task
+
 			BeforeEach(func() {
 				err := bbs.DesireTask(task)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				secondTask = models.Task{
+					Domain:                "tests",
+					TaskGuid:              "some-other-guid",
+					Stack:                 "pancakes",
+					Action:                dummyAction,
+					CompletionCallbackURL: &url.URL{Host: "blah"},
+				}
+
+				err = bbs.DesireTask(secondTask)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -109,17 +121,17 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("does not request an auction for the task", func() {
-					Consistently(fakeAuctioneerClient.RequestTaskAuctionCallCount).Should(BeZero())
+					Consistently(fakeAuctioneerClient.RequestTaskAuctionsCallCount).Should(BeZero())
 				})
 			})
 
-			Context("when the Task has been pending for longer than the convergence interval", func() {
+			Context("when the Tasks have been pending for longer than the convergence interval", func() {
 				BeforeEach(func() {
 					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
 				})
 
 				It("logs that it sends an auction for the pending task", func() {
@@ -139,28 +151,29 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					It("requests an auction", func() {
-						Ω(fakeAuctioneerClient.RequestTaskAuctionCallCount()).Should(Equal(1))
+						Ω(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).Should(Equal(1))
 
-						requestAddress, requestedTask := fakeAuctioneerClient.RequestTaskAuctionArgsForCall(0)
+						requestAddress, requestedTasks := fakeAuctioneerClient.RequestTaskAuctionsArgsForCall(0)
 						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-						Ω(requestedTask.TaskGuid).Should(Equal(task.TaskGuid))
-
+						Ω(requestedTasks).Should(HaveLen(2))
+						Ω(requestedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+						Ω(requestedTasks[1].TaskGuid).Should(Equal(secondTask.TaskGuid))
 					})
 
 					Context("when requesting an auction is unsuccessful", func() {
 						BeforeEach(func() {
-							fakeAuctioneerClient.RequestTaskAuctionReturns(errors.New("oops"))
+							fakeAuctioneerClient.RequestTaskAuctionsReturns(errors.New("oops"))
 						})
 
 						It("logs an error", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auction-for-pending-task"))
+							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
 						})
 					})
 				})
 
 				Context("when unable to fetch the auctioneer address", func() {
 					It("logs an error", func() {
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auction-for-pending-task"))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
 					})
 				})
 			})
@@ -180,7 +193,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
 				})
 
 				It("logs an error", func() {
@@ -274,12 +287,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					completeTaskError = nil
 
-					wg := new(sync.WaitGroup)
-					wg.Add(2)
-
-					fakeTaskClient.CompleteTaskStub = func(string, models.Task) error {
-						wg.Done()
-						wg.Wait()
+					fakeTaskClient.CompleteTasksStub = func(string, []models.Task) error {
 						return completeTaskError
 					}
 				})
@@ -304,19 +312,19 @@ var _ = Describe("Convergence of Tasks", func() {
 							ginkgomon.Interrupt(receptorPresence)
 						})
 
-						It("submits the completed tasks to the receptor in parallel", func() {
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(2))
+						It("submits the completed tasks to the receptor in batch", func() {
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
 
-							receptorURL, firstCompletedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+							receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
 							Ω(receptorURL).Should(Equal("some-receptor-url"))
+							Ω(completedTasks).Should(HaveLen(2))
 
+							firstCompletedTask := completedTasks[0]
 							Ω(firstCompletedTask.Failed).Should(BeTrue())
 							Ω(firstCompletedTask.FailureReason).Should(Equal("'cause I said so"))
 							Ω(firstCompletedTask.Result).Should(Equal("a magical result"))
 
-							receptorURL, secondCompletedTask := fakeTaskClient.CompleteTaskArgsForCall(1)
-							Ω(receptorURL).Should(Equal("some-receptor-url"))
-
+							secondCompletedTask := completedTasks[1]
 							Ω(secondCompletedTask.Failed).Should(BeTrue())
 							Ω(secondCompletedTask.FailureReason).Should(Equal("'cause I said so"))
 							Ω(secondCompletedTask.Result).Should(Equal("a magical result"))
@@ -340,14 +348,14 @@ var _ = Describe("Convergence of Tasks", func() {
 							})
 
 							It("logs that it failed to complete the task", func() {
-								Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-complete"))
+								Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-complete-tasks"))
 							})
 						})
 					})
 
 					Context("when a receptor is not present", func() {
 						It("does not submit a completed task to anything", func() {
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
 						})
 
 						It("bumps the convergence tasks kicked counter anyway", func() {
@@ -394,7 +402,7 @@ var _ = Describe("Convergence of Tasks", func() {
 						})
 
 						It("does not submit the completed task to the receptor", func() {
-							Ω(fakeTaskClient.CompleteTaskCallCount()).Should(BeZero())
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
 						})
 					})
 
@@ -501,11 +509,27 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					It("submits the completed task to the receptor", func() {
-						Ω(fakeTaskClient.CompleteTaskCallCount()).Should(Equal(1))
+						Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
 
-						receptorURL, completedTask := fakeTaskClient.CompleteTaskArgsForCall(0)
+						receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
 						Ω(receptorURL).Should(Equal("some-receptor-url"))
-						Ω(completedTask.TaskGuid).Should(Equal(task.TaskGuid))
+						Ω(completedTasks).Should(HaveLen(1))
+						Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+					})
+
+					Context("Tasks are completed after they are demoted", func() {
+						BeforeEach(func() {
+							fakeTaskClient.CompleteTasksStub = func(string, []models.Task) error {
+								returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+								Ω(err).ShouldNot(HaveOccurred())
+								Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
+								return nil
+							}
+						})
+
+						It("is completed after demoted", func() {
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+						})
 					})
 				})
 

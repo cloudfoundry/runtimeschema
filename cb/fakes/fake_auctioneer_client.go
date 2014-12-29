@@ -18,13 +18,13 @@ type FakeAuctioneerClient struct {
 	requestLRPStartAuctionReturns struct {
 		result1 error
 	}
-	RequestTaskAuctionStub        func(auctioneerURL string, task models.Task) error
-	requestTaskAuctionMutex       sync.RWMutex
-	requestTaskAuctionArgsForCall []struct {
+	RequestTaskAuctionsStub        func(auctioneerURL string, tasks []models.Task) error
+	requestTaskAuctionsMutex       sync.RWMutex
+	requestTaskAuctionsArgsForCall []struct {
 		auctioneerURL string
-		task          models.Task
+		tasks         []models.Task
 	}
-	requestTaskAuctionReturns struct {
+	requestTaskAuctionsReturns struct {
 		result1 error
 	}
 }
@@ -62,35 +62,35 @@ func (fake *FakeAuctioneerClient) RequestLRPStartAuctionReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAuctioneerClient) RequestTaskAuction(auctioneerURL string, task models.Task) error {
-	fake.requestTaskAuctionMutex.Lock()
-	fake.requestTaskAuctionArgsForCall = append(fake.requestTaskAuctionArgsForCall, struct {
+func (fake *FakeAuctioneerClient) RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error {
+	fake.requestTaskAuctionsMutex.Lock()
+	fake.requestTaskAuctionsArgsForCall = append(fake.requestTaskAuctionsArgsForCall, struct {
 		auctioneerURL string
-		task          models.Task
-	}{auctioneerURL, task})
-	fake.requestTaskAuctionMutex.Unlock()
-	if fake.RequestTaskAuctionStub != nil {
-		return fake.RequestTaskAuctionStub(auctioneerURL, task)
+		tasks         []models.Task
+	}{auctioneerURL, tasks})
+	fake.requestTaskAuctionsMutex.Unlock()
+	if fake.RequestTaskAuctionsStub != nil {
+		return fake.RequestTaskAuctionsStub(auctioneerURL, tasks)
 	} else {
-		return fake.requestTaskAuctionReturns.result1
+		return fake.requestTaskAuctionsReturns.result1
 	}
 }
 
-func (fake *FakeAuctioneerClient) RequestTaskAuctionCallCount() int {
-	fake.requestTaskAuctionMutex.RLock()
-	defer fake.requestTaskAuctionMutex.RUnlock()
-	return len(fake.requestTaskAuctionArgsForCall)
+func (fake *FakeAuctioneerClient) RequestTaskAuctionsCallCount() int {
+	fake.requestTaskAuctionsMutex.RLock()
+	defer fake.requestTaskAuctionsMutex.RUnlock()
+	return len(fake.requestTaskAuctionsArgsForCall)
 }
 
-func (fake *FakeAuctioneerClient) RequestTaskAuctionArgsForCall(i int) (string, models.Task) {
-	fake.requestTaskAuctionMutex.RLock()
-	defer fake.requestTaskAuctionMutex.RUnlock()
-	return fake.requestTaskAuctionArgsForCall[i].auctioneerURL, fake.requestTaskAuctionArgsForCall[i].task
+func (fake *FakeAuctioneerClient) RequestTaskAuctionsArgsForCall(i int) (string, []models.Task) {
+	fake.requestTaskAuctionsMutex.RLock()
+	defer fake.requestTaskAuctionsMutex.RUnlock()
+	return fake.requestTaskAuctionsArgsForCall[i].auctioneerURL, fake.requestTaskAuctionsArgsForCall[i].tasks
 }
 
-func (fake *FakeAuctioneerClient) RequestTaskAuctionReturns(result1 error) {
-	fake.RequestTaskAuctionStub = nil
-	fake.requestTaskAuctionReturns = struct {
+func (fake *FakeAuctioneerClient) RequestTaskAuctionsReturns(result1 error) {
+	fake.RequestTaskAuctionsStub = nil
+	fake.requestTaskAuctionsReturns = struct {
 		result1 error
 	}{result1}
 }

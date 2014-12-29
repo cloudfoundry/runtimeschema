@@ -65,21 +65,12 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 		})
 	}
 
-	completeTask := func(task models.Task) {
+	tasksToComplete := []models.Task{}
+	scheduleForCompletion := func(task models.Task) {
 		if task.CompletionCallbackURL == nil {
 			return
 		}
-
-		receptor, err := bbs.services.Receptor()
-		if err != nil {
-			logError(task, "failed-to-find-receptor")
-			return
-		}
-
-		err = bbs.taskClient.CompleteTask(receptor.ReceptorURL, task)
-		if err != nil {
-			logError(task, "failed-to-complete")
-		}
+		tasksToComplete = append(tasksToComplete, task)
 	}
 
 	keysToDelete := []string{}
@@ -92,7 +83,7 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 		})
 	}
 
-	workPool := workpool.NewWorkPool(workerPoolSize)
+	tasksToAuction := []models.Task{}
 
 	var tasksKicked uint64 = 0
 
@@ -120,10 +111,7 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 				tasksKicked++
 			} else if shouldKickTask {
 				taskLog.Info("requesting-auction-for-pending-task", lager.Data{"task": task})
-				err := bbs.requestTaskAuction(task)
-				if err != nil {
-					taskLog.Error("failed-to-request-auction-for-pending-task", err, lager.Data{"task": task})
-				}
+				tasksToAuction = append(tasksToAuction, task)
 				tasksKicked++
 			}
 		case models.TaskStateRunning:
@@ -140,7 +128,7 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
 				taskLog.Info("kicking-completed-task", lager.Data{"task": task})
-				workPool.Submit(func() { completeTask(task) })
+				scheduleForCompletion(task)
 				tasksKicked++
 			}
 		case models.TaskStateResolving:
@@ -152,19 +140,29 @@ func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval
 				taskLog.Info("demoting-resolving-to-completed", lager.Data{"task": task})
 				demoted := demoteToCompleted(task)
 				scheduleForCASByIndex(node.Index, demoted)
-				workPool.Submit(func() { completeTask(demoted) })
+				scheduleForCompletion(demoted)
 				tasksKicked++
 			}
 		}
 	}
 
+	if len(tasksToAuction) > 0 {
+		if err := bbs.requestTaskAuctions(tasksToAuction); err != nil {
+			taskLog.Error("failed-to-request-auctions-for-pending-tasks", err,
+				lager.Data{"tasks": tasksToAuction})
+		}
+	}
+
+	workPool := workpool.NewWorkPool(workerPoolSize)
 	tasksKickedCounter.Add(tasksKicked)
-	bbs.batchCompareAndSwapTasks(tasksToCAS)
+	bbs.batchCompareAndSwapTasks(tasksToCAS, workPool, taskLog)
+	workPool.Stop()
+
+	bbs.completeTasks(tasksToComplete, taskLog)
 
 	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
 	bbs.store.Delete(keysToDelete...)
 
-	workPool.Stop()
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {
@@ -201,31 +199,59 @@ func demoteToCompleted(task models.Task) models.Task {
 	return task
 }
 
-func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTask) {
+func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTask, pool *workpool.WorkPool, taskLog lager.Logger) {
+	if len(tasksToCAS) == 0 {
+		return
+	}
+
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(len(tasksToCAS))
+
 	for _, taskToCAS := range tasksToCAS {
 		task := taskToCAS.NewTask
 		task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 		value, err := models.ToJSON(task)
 		if err != nil {
-			panic(err)
+			taskLog.Error("failed-to-marshal", err, lager.Data{
+				"task": task,
+			})
+			continue
 		}
 
 		newStoreNode := storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(task.TaskGuid),
 			Value: value,
 		}
-
-		go func(taskToCAS compareAndSwappableTask, newStoreNode storeadapter.StoreNode) {
-			err := bbs.store.CompareAndSwapByIndex(taskToCAS.OldIndex, newStoreNode)
+		index := taskToCAS.OldIndex
+		pool.Submit(func() {
+			defer waitGroup.Done()
+			err := bbs.store.CompareAndSwapByIndex(index, newStoreNode)
 			if err != nil {
-				bbs.logger.Error("failed-to-compare-and-swap", err)
+				taskLog.Error("failed-to-compare-and-swap", err, lager.Data{
+					"task": task,
+				})
 			}
-
-			waitGroup.Done()
-		}(taskToCAS, newStoreNode)
+		})
 	}
 
 	waitGroup.Wait()
+}
+
+func (bbs *TaskBBS) completeTasks(tasksToComplete []models.Task, taskLog lager.Logger) {
+	if len(tasksToComplete) == 0 {
+		return
+	}
+
+	receptor, err := bbs.services.Receptor()
+	if err != nil {
+		taskLog.Error("failed-to-find-receptor", err)
+		return
+	}
+
+	err = bbs.taskClient.CompleteTasks(receptor.ReceptorURL, tasksToComplete)
+	if err != nil {
+		taskLog.Error("failed-to-complete-tasks", err, lager.Data{
+			"tasks": tasksToComplete,
+		})
+	}
 }

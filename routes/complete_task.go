@@ -3,9 +3,9 @@ package routes
 import "github.com/tedsuo/rata"
 
 const (
-	CompleteTask = "CompleteTask"
+	CompleteTasks = "CompleteTasks"
 )
 
-var CompleteTaskRoutes = rata.Routes{
-	{Name: CompleteTask, Method: "PUT", Path: "/internal/tasks/complete"},
+var CompleteTasksRoutes = rata.Routes{
+	{Name: CompleteTasks, Method: "PUT", Path: "/internal/tasks/complete"},
 }
