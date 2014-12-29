@@ -151,7 +151,7 @@ func (bbs *LRPBBS) StartActualLRP(
 
 	if lrp.ActualLRPKey == key &&
 		lrp.ActualLRPContainerKey == containerKey &&
-		lrp.Host == netInfo.Host &&
+		lrp.Address == netInfo.Address &&
 		reflect.DeepEqual(lrp.Ports, netInfo.Ports) &&
 		lrp.State == models.ActualLRPStateRunning {
 		return nil

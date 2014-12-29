@@ -443,7 +443,7 @@ var _ = Describe("LrpLifecycle", func() {
 						lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
 
-						Ω(lrpInBBS.Host).Should(BeEmpty())
+						Ω(lrpInBBS.Address).Should(BeEmpty())
 						Ω(lrpInBBS.Ports).Should(BeEmpty())
 					})
 				})

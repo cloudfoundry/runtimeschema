@@ -90,26 +90,26 @@ func (key ActualLRPContainerKey) Validate() error {
 }
 
 type ActualLRPNetInfo struct {
-	Host  string        `json:"host"`
-	Ports []PortMapping `json:"ports"`
+	Address string        `json:"address"`
+	Ports   []PortMapping `json:"ports"`
 }
 
 func (info *ActualLRPNetInfo) Empty() bool {
-	return info.Host == "" && len(info.Ports) == 0
+	return info.Address == "" && len(info.Ports) == 0
 }
 
-func NewActualLRPNetInfo(host string, ports []PortMapping) ActualLRPNetInfo {
+func NewActualLRPNetInfo(address string, ports []PortMapping) ActualLRPNetInfo {
 	return ActualLRPNetInfo{
-		Host:  host,
-		Ports: ports,
+		Address: address,
+		Ports:   ports,
 	}
 }
 
 func (key ActualLRPNetInfo) Validate() error {
 	var validationError ValidationError
 
-	if key.Host == "" {
-		return validationError.Append(ErrInvalidField{"host"})
+	if key.Address == "" {
+		return validationError.Append(ErrInvalidField{"address"})
 	}
 
 	return nil

@@ -105,7 +105,7 @@ var _ = Describe("ActualLRP", func() {
 		lrpPayload := `{
     "process_guid":"some-guid",
     "instance_guid":"some-instance-guid",
-    "host": "1.2.3.4",
+    "address": "1.2.3.4",
     "ports": [
       { "container_port": 8080 },
       { "container_port": 8081, "host_port": 1234 }
@@ -456,7 +456,7 @@ func itValidatesPresenceOfNetInfo(lrp *models.ActualLRP) {
 		It("validate returns an error", func() {
 			err := lrp.Validate()
 			Ω(err).Should(HaveOccurred())
-			Ω(err.Error()).Should(ContainSubstring("host"))
+			Ω(err.Error()).Should(ContainSubstring("address"))
 		})
 	})
 }
