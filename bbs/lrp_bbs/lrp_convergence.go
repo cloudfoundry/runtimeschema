@@ -32,6 +32,12 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		convergeLRPDuration.Send(bbs.timeProvider.Now().Sub(convergeStart))
 	}()
 
+	domainRoot, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
+	if err != nil && err != storeadapter.ErrorKeyNotFound {
+		logger.Error("failed-to-fetch-domains", err)
+		return
+	}
+
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells(logger)
 	if err != nil {
 		logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
@@ -41,12 +47,6 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	desiredLRPRoot, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
 		logger.Error("failed-to-fetch-desired-lrps", err)
-		return
-	}
-
-	domainRoot, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
-	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		logger.Error("failed-to-fetch-domains", err)
 		return
 	}
 
@@ -96,10 +96,10 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 	lrpsDeletedCounter.Add(uint64(len(malformedDesiredLRPs)))
 	bbs.store.Delete(malformedDesiredLRPs...)
 
-	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
-
 	lrpStopInstanceCounter.Add(uint64(len(actualLRPsToStop)))
 	bbs.RetireActualLRPs(actualLRPsToStop, logger)
+
+	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
 }
 
 func (bbs *LRPBBS) instancesToStop(
