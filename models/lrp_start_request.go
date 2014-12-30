@@ -1,11 +1,11 @@
 package models
 
-type LRPStart struct {
+type LRPStartRequest struct {
 	DesiredLRP DesiredLRP `json:"desired_lrp"`
-	Index      int        `json:"index"`
+	Indices    []uint     `json:"indices"`
 }
 
-func (lrpstart LRPStart) Validate() error {
+func (lrpstart LRPStartRequest) Validate() error {
 	var validationError ValidationError
 
 	err := lrpstart.DesiredLRP.Validate()
@@ -13,8 +13,8 @@ func (lrpstart LRPStart) Validate() error {
 		validationError = validationError.Append(err)
 	}
 
-	if lrpstart.Index < 0 {
-		validationError = validationError.Append(ErrInvalidField{"index"})
+	if len(lrpstart.Indices) == 0 {
+		validationError = validationError.Append(ErrInvalidField{"indices"})
 	}
 
 	if !validationError.Empty() {

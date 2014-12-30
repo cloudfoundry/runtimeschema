@@ -26,14 +26,14 @@ var _ = Describe("AuctioneerClient", func() {
 
 	Describe("RequestLRPStartAuctions", func() {
 		const auctioneerAddr = "auctioneer.example.com"
-		var lrpStarts = []models.LRPStart{{
+		var lrpStarts = []models.LRPStartRequest{{
 			DesiredLRP: models.DesiredLRP{},
-			Index:      2,
+			Indices:    []uint{2},
 		}}
 		var err error
 
 		JustBeforeEach(func() {
-			err = auctioneerClient.RequestLRPStartAuctions(fakeServer.URL(), lrpStarts)
+			err = auctioneerClient.RequestLRPAuctions(fakeServer.URL(), lrpStarts)
 		})
 
 		Context("when the request is successful", func() {

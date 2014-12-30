@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
-	"github.com/pivotal-golang/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -68,16 +67,16 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 					bbs.ConvergeLRPs(pollingInterval)
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 					Ω(startAuctions).Should(HaveLen(1))
 					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuctions[0].Index).Should(Equal(0))
+					Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0)))
 				})
 
 				It("bumps the compare-and-swapped LRPs convergence counter", func() {
@@ -148,16 +147,16 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 					bbs.ConvergeLRPs(pollingInterval)
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 					Ω(startAuctions).Should(HaveLen(1))
 					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuctions[0].Index).Should(Equal(1))
+					Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
 				})
 			})
 
@@ -641,18 +640,15 @@ var _ = Describe("LrpConvergence", func() {
 				Action:      dummyAction,
 			}
 
+			err := bbs.DesireLRP(desiredLRP)
+			Ω(err).ShouldNot(HaveOccurred())
+
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
 			registerAuctioneer(auctioneerPresence)
-
-			err := bbs.CreateActualLRP(desiredLRP, 0, lagertest.NewTestLogger("test"))
-			Ω(err).ShouldNot(HaveOccurred())
 
 			// make sure created (UNCLAIMED) actual LRP has been in that state for longer than
 			// the staleness threshhold of pollingInterval
 			timeProvider.Increment(pollingInterval + 1*time.Second)
-
-			err = bbs.DesireLRP(desiredLRP)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("logs", func() {
@@ -662,15 +658,14 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("re-emits start auction requests", func() {
-			originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+			originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 			bbs.ConvergeLRPs(pollingInterval)
+			Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-			Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
-
-			_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+			_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 			Ω(startAuctions).Should(HaveLen(1))
 			Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-			Ω(startAuctions[0].Index).Should(Equal(0))
+			Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0)))
 		})
 	})
 })

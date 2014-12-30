@@ -1,14 +1,16 @@
 package models_test
 
 import (
+	"encoding/json"
+
 	. "github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("LRPStart", func() {
-	var lrpStart LRPStart
+var _ = Describe("LRPStartRequest", func() {
+	var lrpStart LRPStartRequest
 	var lrpStartPayload string
 
 	BeforeEach(func() {
@@ -39,11 +41,11 @@ var _ = Describe("LRPStart", func() {
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
-    "index": 2
+    "indices": [2]
   }`
 
-		lrpStart = LRPStart{
-			Index: 2,
+		lrpStart = LRPStartRequest{
+			Indices: []uint{2},
 
 			DesiredLRP: DesiredLRP{
 				Domain:      "tests",
@@ -78,17 +80,17 @@ var _ = Describe("LRPStart", func() {
 	})
 
 	Describe("FromJSON", func() {
-		var decodedLRPStart *LRPStart
+		var decodedLRPStartRequest *LRPStartRequest
 		var err error
 
 		JustBeforeEach(func() {
-			decodedLRPStart = &LRPStart{}
-			err = FromJSON([]byte(lrpStartPayload), decodedLRPStart)
+			decodedLRPStartRequest = &LRPStartRequest{}
+			err = FromJSON([]byte(lrpStartPayload), decodedLRPStartRequest)
 		})
 
 		It("returns a LRP with correct fields", func() {
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(decodedLRPStart).Should(Equal(&lrpStart))
+			Ω(decodedLRPStartRequest).Should(Equal(&lrpStart))
 		})
 
 		Context("with an invalid payload", func() {
@@ -139,6 +141,44 @@ var _ = Describe("LRPStart", func() {
 			})
 		})
 
+		Context("with no indices", func() {
+			BeforeEach(func() {
+				lrpStartPayload = `{
+    "desired_lrp": {
+      "process_guid": "some-guid",
+      "domain": "tests",
+      "instances": 1,
+      "stack": "some-stack",
+      "start_timeout": 0,
+      "root_fs": "docker:///docker.com/docker",
+      "action": {"download": {
+          "from": "http://example.com",
+          "to": "/tmp/internet",
+          "cache_key": ""
+        }
+      },
+      "disk_mb": 512,
+      "memory_mb": 1024,
+      "cpu_weight": 42,
+      "ports": [
+        5678
+      ],
+      "routes": [
+        "route-1",
+        "route-2"
+      ],
+      "log_guid": "log-guid",
+      "log_source": "the cloud"
+    }
+  }`
+			})
+
+			It("returns a validation error", func() {
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(ContainElement(ErrInvalidField{"indices"}))
+			})
+		})
+
 		Context("with an invalid index", func() {
 			BeforeEach(func() {
 				lrpStartPayload = `{
@@ -168,14 +208,14 @@ var _ = Describe("LRPStart", func() {
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
-    "index": -1
+    "indices": [-1]
   }`
 			})
 
 			It("returns a validation error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(ContainElement(ErrInvalidField{"index"}))
+				Ω(err).Should(BeAssignableToTypeOf(&json.UnmarshalTypeError{}))
 			})
 		})
+
 	})
 })

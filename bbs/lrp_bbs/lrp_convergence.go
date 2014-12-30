@@ -114,7 +114,7 @@ func (bbs *LRPBBS) resendStartAuctions(
 	pollingInterval time.Duration,
 	logger lager.Logger,
 ) {
-	starts := make([]models.LRPStart, 0, len(actualsByProcessGuid))
+	startsByProcessGuid := make(map[string]models.LRPStartRequest)
 
 	for processGuid, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
@@ -125,18 +125,29 @@ func (bbs *LRPBBS) resendStartAuctions(
 					continue
 				}
 
-				lrpStart := models.LRPStart{
-					DesiredLRP: desiredLRP,
-					Index:      actual.Index,
+				start, found := startsByProcessGuid[processGuid]
+				if !found {
+					start = models.LRPStartRequest{
+						DesiredLRP: desiredLRP,
+						Indices:    []uint{uint(actual.Index)},
+					}
+				} else {
+					start.Indices = append(start.Indices, uint(actual.Index))
 				}
-				starts = append(starts, lrpStart)
+
+				startsByProcessGuid[processGuid] = start
 				logger.Info("resending-start-auction", lager.Data{"process-guid": processGuid, "index": actual.Index})
 			}
 		}
 	}
 
-	if len(starts) > 0 {
-		err := bbs.requestLRPStartAuctions(starts)
+	if len(startsByProcessGuid) > 0 {
+		starts := make([]models.LRPStartRequest, 0, len(startsByProcessGuid))
+		for _, v := range startsByProcessGuid {
+			starts = append(starts, v)
+		}
+
+		err := bbs.requestLRPAuctions(starts)
 		if err != nil {
 			logger.Error("failed-resending-start-auctions", err, lager.Data{
 				"lrp-start-auctions": starts,

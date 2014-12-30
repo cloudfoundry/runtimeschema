@@ -13,7 +13,7 @@ import (
 
 //go:generate counterfeiter . AuctioneerClient
 type AuctioneerClient interface {
-	RequestLRPStartAuctions(auctioneerURL string, lrpStart []models.LRPStart) error
+	RequestLRPAuctions(auctioneerURL string, lrpStart []models.LRPStartRequest) error
 	RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error
 }
 
@@ -27,7 +27,7 @@ func NewAuctioneerClient() AuctioneerClient {
 	}
 }
 
-func (c *auctioneerClient) RequestLRPStartAuctions(auctioneerURL string, lrpStarts []models.LRPStart) error {
+func (c *auctioneerClient) RequestLRPAuctions(auctioneerURL string, lrpStarts []models.LRPStartRequest) error {
 	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
 
 	payload, err := json.Marshal(lrpStarts)

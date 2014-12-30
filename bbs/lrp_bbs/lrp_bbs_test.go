@@ -51,18 +51,19 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 					err := bbs.DesireLRP(lrp)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-					_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
-					Ω(startAuctions).Should(HaveLen(5))
-					for i := 0; i < 5; i++ {
-						Ω(startAuctions[i].DesiredLRP).Should(Equal(lrp))
-						Ω(startAuctions[i].Index).Should(Equal(i))
+					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
+					Ω(startAuctions).Should(HaveLen(1))
+					Ω(startAuctions[0].DesiredLRP).Should(Equal(lrp))
+					Ω(startAuctions[0].Indices).Should(HaveLen(5))
+					for i := uint(0); i < 5; i++ {
+						Ω(startAuctions[0].Indices).Should(ContainElement(i))
 					}
 				})
 			})
@@ -106,17 +107,17 @@ var _ = Describe("LRP", func() {
 						})
 
 						It("emits start auction requests", func() {
-							originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+							originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 							err := bbs.DesireLRP(newLRP)
 							Ω(err).ShouldNot(HaveOccurred())
 
-							Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+							Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-							_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+							_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 							Ω(startAuctions).Should(HaveLen(1))
 							Ω(startAuctions[0].DesiredLRP).Should(Equal(newLRP))
-							Ω(startAuctions[0].Index).Should(Equal(5))
+							Ω(startAuctions[0].Indices).Should(ConsistOf(uint(5)))
 						})
 					})
 				})
@@ -465,20 +466,21 @@ var _ = Describe("LRP", func() {
 					})
 
 					It("emits start auction requests", func() {
-						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPStartAuctionsCallCount()
+						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 						err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
 						Ω(err).ShouldNot(HaveOccurred())
 
-						Consistently(fakeAuctioneerClient.RequestLRPStartAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 						updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 						Ω(err).ShouldNot(HaveOccurred())
 
-						_, startAuctions := fakeAuctioneerClient.RequestLRPStartAuctionsArgsForCall(originalAuctionCallCount)
+						_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 						Ω(startAuctions).Should(HaveLen(1))
 						Ω(startAuctions[0].DesiredLRP).Should(Equal(updated))
-						Ω(startAuctions[0].Index).Should(Equal(5))
+						Ω(startAuctions[0].Indices).Should(HaveLen(1))
+						Ω(startAuctions[0].Indices).Should(ContainElement(uint(5)))
 					})
 				})
 			})

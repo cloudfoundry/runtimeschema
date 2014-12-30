@@ -41,31 +41,39 @@ func (bbs *LRPBBS) processDesiredChange(desiredChange models.DesiredLRPChange, l
 }
 
 func (bbs *LRPBBS) reconcile(infos []reconcileInfo, logger lager.Logger) {
-	startAuctions := []models.LRPStart{}
+	startAuctions := []models.LRPStartRequest{}
 	lrpsToRetire := []models.ActualLRP{}
 
 	for _, delta := range infos {
-		for _, lrpIndex := range delta.IndicesToStart {
-			logger.Info("request-start", lager.Data{
-				"process-guid": delta.desiredLRP.ProcessGuid,
-				"index":        lrpIndex,
-			})
+		if len(delta.IndicesToStart) > 0 {
+			lrpStartInstanceCounter.Add(uint64(len(delta.IndicesToStart)))
 
-			lrpStartInstanceCounter.Increment()
+			indices := make([]uint, 0, len(delta.IndicesToStart))
 
-			err := bbs.createActualLRP(delta.desiredLRP, lrpIndex, logger)
-			if err != nil {
-				logger.Error("failed-to-create-actual-lrp", err, lager.Data{
+			for _, lrpIndex := range delta.IndicesToStart {
+				err := bbs.createActualLRP(delta.desiredLRP, lrpIndex, logger)
+				if err != nil {
+					logger.Error("failed-to-create-actual-lrp", err, lager.Data{
+						"process-guid": delta.desiredLRP.ProcessGuid,
+						"index":        lrpIndex,
+					})
+					continue
+				}
+
+				logger.Info("request-start", lager.Data{
 					"process-guid": delta.desiredLRP.ProcessGuid,
 					"index":        lrpIndex,
 				})
-				continue
+
+				indices = append(indices, uint(lrpIndex))
 			}
 
-			startAuctions = append(startAuctions, models.LRPStart{
-				DesiredLRP: delta.desiredLRP,
-				Index:      lrpIndex,
-			})
+			if len(indices) > 0 {
+				startAuctions = append(startAuctions, models.LRPStartRequest{
+					DesiredLRP: delta.desiredLRP,
+					Indices:    indices,
+				})
+			}
 		}
 
 		for _, index := range delta.IndicesToStop {
@@ -81,7 +89,7 @@ func (bbs *LRPBBS) reconcile(infos []reconcileInfo, logger lager.Logger) {
 	}
 
 	if len(startAuctions) > 0 {
-		err := bbs.requestLRPStartAuctions(startAuctions)
+		err := bbs.requestLRPAuctions(startAuctions)
 		if err != nil {
 			logger.Error("failed-to-request-start-auctions", err, lager.Data{"lrp-starts": startAuctions})
 			// The creation succeeded, the start request error can be dropped
