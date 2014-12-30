@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry-incubator/auctioneer"
+	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/tedsuo/rata"
 )
@@ -23,7 +24,7 @@ type auctioneerClient struct {
 
 func NewAuctioneerClient() AuctioneerClient {
 	return &auctioneerClient{
-		httpClient: &http.Client{},
+		httpClient: cf_http.NewClient(),
 	}
 }
 
