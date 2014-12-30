@@ -2,6 +2,7 @@ package cb_test
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -87,6 +88,26 @@ var _ = Describe("CellClient", func() {
 			It("makes the request and returns an error", func() {
 				Ω(stopErr).Should(HaveOccurred())
 				Ω(stopErr.Error()).Should(ContainSubstring("EOF"))
+				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+			})
+		})
+
+		Context("when the connection times out", func() {
+			BeforeEach(func() {
+				fakeServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/lrps/stop"),
+						ghttp.VerifyJSONRepresenting(actualLRP),
+						func(w http.ResponseWriter, r *http.Request) {
+							time.Sleep(cfHttpTimeout + 100*time.Millisecond)
+						},
+					),
+				)
+			})
+
+			It("makes the request and returns an error", func() {
+				Ω(stopErr).Should(HaveOccurred())
+				Ω(stopErr.Error()).Should(ContainSubstring("use of closed network connection"))
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})

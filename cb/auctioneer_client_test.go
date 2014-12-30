@@ -2,6 +2,7 @@ package cb_test
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -90,6 +91,26 @@ var _ = Describe("AuctioneerClient", func() {
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})
+
+		Context("when the connection times out", func() {
+			BeforeEach(func() {
+				fakeServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/lrps"),
+						ghttp.VerifyJSONRepresenting(lrpStart),
+						func(w http.ResponseWriter, r *http.Request) {
+							time.Sleep(cfHttpTimeout + 100*time.Millisecond)
+						},
+					),
+				)
+			})
+
+			It("makes the request and returns an error", func() {
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("use of closed network connection"))
+				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+			})
+		})
 	})
 
 	Describe("RequestTaskAuction", func() {
@@ -154,6 +175,26 @@ var _ = Describe("AuctioneerClient", func() {
 			It("makes the request and returns an error", func() {
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("EOF"))
+				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+			})
+		})
+
+		Context("when the connection times out", func() {
+			BeforeEach(func() {
+				fakeServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", "/tasks"),
+						ghttp.VerifyJSONRepresenting(task),
+						func(w http.ResponseWriter, r *http.Request) {
+							time.Sleep(cfHttpTimeout + 100*time.Millisecond)
+						},
+					),
+				)
+			})
+
+			It("makes the request and returns an error", func() {
+				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("use of closed network connection"))
 				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
 			})
 		})

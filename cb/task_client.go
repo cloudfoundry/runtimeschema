@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/cloudfoundry-incubator/cf-http"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/routes"
 	"github.com/tedsuo/rata"
@@ -22,7 +23,7 @@ type taskClient struct {
 
 func NewTaskClient() TaskClient {
 	return &taskClient{
-		httpClient: &http.Client{},
+		httpClient: cf_http.NewClient(),
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/cloudfoundry-incubator/cf-http"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/routes"
 	"github.com/tedsuo/rata"
@@ -23,7 +24,7 @@ type cellClient struct {
 
 func NewCellClient() CellClient {
 	return &cellClient{
-		httpClient: &http.Client{},
+		httpClient: cf_http.NewClient(),
 	}
 }
 
