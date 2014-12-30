@@ -16,6 +16,7 @@ import (
 
 var _ = Describe("LrpConvergence", func() {
 	const pollingInterval = 5 * time.Second
+	const freshDomain = "some-fresh-domain"
 	var dummyAction = &models.DownloadAction{
 		From: "http://example.com",
 		To:   "/tmp/internet",
@@ -28,6 +29,9 @@ var _ = Describe("LrpConvergence", func() {
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
+
+		err := domainBBS.UpsertDomain(freshDomain, 0)
+		Ω(err).ShouldNot(HaveOccurred())
 	})
 
 	Describe("converging missing actual LRPs", func() {
@@ -43,7 +47,7 @@ var _ = Describe("LrpConvergence", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Instances:   1,
-					Domain:      "some-domain",
+					Domain:      freshDomain,
 					Stack:       "pancake",
 					Action:      dummyAction,
 				}
@@ -125,7 +129,7 @@ var _ = Describe("LrpConvergence", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Instances:   2,
-					Domain:      "some-domain",
+					Domain:      freshDomain,
 					Stack:       "pancake",
 					Action:      dummyAction,
 				}
@@ -249,7 +253,7 @@ var _ = Describe("LrpConvergence", func() {
 			desiredLRP = models.DesiredLRP{
 				ProcessGuid: processGuid,
 				Instances:   2,
-				Domain:      "some-domain",
+				Domain:      freshDomain,
 				Stack:       "pancake",
 				Action:      dummyAction,
 			}
@@ -323,7 +327,7 @@ var _ = Describe("LrpConvergence", func() {
 					nonPersistedDesiredLRP := models.DesiredLRP{
 						ProcessGuid: processGuid,
 						Instances:   1,
-						Domain:      "some-domain",
+						Domain:      freshDomain,
 						Stack:       "pancake",
 						Action:      dummyAction,
 					}
@@ -364,7 +368,7 @@ var _ = Describe("LrpConvergence", func() {
 					nonPersistedDesiredLRP := models.DesiredLRP{
 						ProcessGuid: processGuid,
 						Instances:   1,
-						Domain:      "some-domain",
+						Domain:      freshDomain,
 						Stack:       "pancake",
 						Action:      dummyAction,
 					}
@@ -418,7 +422,7 @@ var _ = Describe("LrpConvergence", func() {
 					nonPersistedDesiredLRP := models.DesiredLRP{
 						ProcessGuid: processGuid,
 						Instances:   1,
-						Domain:      "some-domain",
+						Domain:      freshDomain,
 						Stack:       "pancake",
 						Action:      dummyAction,
 					}
@@ -472,15 +476,19 @@ var _ = Describe("LrpConvergence", func() {
 		Context("when the actual LRP index is too large for its corresponding desired LRP", func() {
 			var desiredLRP models.DesiredLRP
 			var numInstances int
+			var domain string
 
 			BeforeEach(func() {
 				processGuid = "process-guid"
 				numInstances = 2
+				domain = freshDomain
+			})
 
+			JustBeforeEach(func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Instances:   numInstances,
-					Domain:      "domain",
+					Domain:      domain,
 					Stack:       "pancake",
 					Action:      dummyAction,
 				}
@@ -490,7 +498,7 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			Context("when the actual LRP is UNCLAIMED", func() {
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					index = numInstances
 
 					fakeBiggerLRP := desiredLRP
@@ -518,12 +526,25 @@ var _ = Describe("LrpConvergence", func() {
 					bbs.ConvergeLRPs(pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
+
+				Context("when the LRP domain is not fresh", func() {
+					BeforeEach(func() {
+						domain = "expired-domain"
+					})
+
+					It("does not delete the actual LRP", func() {
+						bbs.ConvergeLRPs(pollingInterval)
+
+						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				})
 			})
 
 			Context("when the actual LRP is CLAIMED", func() {
 				var cellPresence models.CellPresence
 
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com")
 					registerCell(cellPresence)
 
@@ -567,12 +588,25 @@ var _ = Describe("LrpConvergence", func() {
 					bbs.ConvergeLRPs(pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
+
+				Context("when the LRP domain is not fresh", func() {
+					BeforeEach(func() {
+						domain = "expired-domain"
+					})
+
+					It("does not delete the actual LRP", func() {
+						bbs.ConvergeLRPs(pollingInterval)
+
+						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				})
 			})
 
 			Context("when the actual LRP is RUNNING", func() {
 				var cellPresence models.CellPresence
 
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com")
 					registerCell(cellPresence)
 
@@ -624,6 +658,19 @@ var _ = Describe("LrpConvergence", func() {
 					bbs.ConvergeLRPs(pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
+
+				Context("when the LRP domain is not fresh", func() {
+					BeforeEach(func() {
+						domain = "expired-domain"
+					})
+
+					It("does not delete the actual LRP", func() {
+						bbs.ConvergeLRPs(pollingInterval)
+
+						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+				})
 			})
 		})
 	})
@@ -634,7 +681,7 @@ var _ = Describe("LrpConvergence", func() {
 		BeforeEach(func() {
 			desiredLRP = models.DesiredLRP{
 				ProcessGuid: "process-guid-for-unclaimed",
-				Domain:      "some-domain",
+				Domain:      freshDomain,
 				Instances:   1,
 				Stack:       "pancake",
 				Action:      dummyAction,

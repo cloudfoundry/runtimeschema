@@ -1,6 +1,7 @@
 package lrp_bbs_test
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -22,6 +23,7 @@ import (
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
+var domainBBS *domain_bbs.DomainBBS
 var timeProvider *AdvancingFakeTimeProvider
 var fakeCellClient *cbfakes.FakeCellClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
@@ -57,6 +59,8 @@ var _ = BeforeEach(func() {
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 
 	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, fakeAuctioneerClient, servicesBBS, logger)
+
+	domainBBS = domain_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 })
 
 func registerCell(cell models.CellPresence) {

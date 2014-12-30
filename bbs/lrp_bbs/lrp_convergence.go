@@ -44,6 +44,12 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		return
 	}
 
+	domainRoot, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
+	if err != nil && err != storeadapter.ErrorKeyNotFound {
+		logger.Error("failed-to-fetch-domains", err)
+		return
+	}
+
 	var malformedDesiredLRPs []string
 	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
@@ -64,7 +70,13 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
 		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
 
-		if delta := Reconcile(desiredLRP.Instances, actualLRPsForDesired); !delta.Empty() {
+		delta := Reconcile(desiredLRP.Instances, actualLRPsForDesired)
+		if len(delta.IndicesToStop) > 0 {
+			if _, found := domainRoot.Lookup(desiredLRP.Domain); !found {
+				delta.IndicesToStop = []int{}
+			}
+		}
+		if !delta.Empty() {
 			infos = append(infos, reconcileInfo{desiredLRP, actualLRPsForDesired, delta})
 		}
 	}
