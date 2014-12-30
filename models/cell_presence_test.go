@@ -13,12 +13,13 @@ var _ = Describe("CellPresence", func() {
 	var payload string
 
 	BeforeEach(func() {
-		cellPresence = models.NewCellPresence("some-id", "some-stack", "some-address")
+		cellPresence = models.NewCellPresence("some-id", "some-stack", "some-address", "some-zone")
 
 		payload = `{
     "cell_id":"some-id",
     "stack": "some-stack",
-    "rep_address": "some-address"
+    "rep_address": "some-address",
+    "zone": "some-zone"
   }`
 	})
 

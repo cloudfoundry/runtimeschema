@@ -4,13 +4,15 @@ type CellPresence struct {
 	CellID     string `json:"cell_id"`
 	Stack      string `json:"stack"`
 	RepAddress string `json:"rep_address"`
+	Zone       string `json:"zone"`
 }
 
-func NewCellPresence(cellID, stack, repAddress string) CellPresence {
+func NewCellPresence(cellID, stack, repAddress, zone string) CellPresence {
 	return CellPresence{
 		CellID:     cellID,
 		Stack:      stack,
 		RepAddress: repAddress,
+		Zone:       zone,
 	}
 }
 
