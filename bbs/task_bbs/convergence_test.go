@@ -156,8 +156,7 @@ var _ = Describe("Convergence of Tasks", func() {
 						requestAddress, requestedTasks := fakeAuctioneerClient.RequestTaskAuctionsArgsForCall(0)
 						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
 						Ω(requestedTasks).Should(HaveLen(2))
-						Ω(requestedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-						Ω(requestedTasks[1].TaskGuid).Should(Equal(secondTask.TaskGuid))
+						Ω([]string{requestedTasks[0].TaskGuid, requestedTasks[1].TaskGuid}).Should(ConsistOf(task.TaskGuid, secondTask.TaskGuid))
 					})
 
 					Context("when requesting an auction is unsuccessful", func() {
