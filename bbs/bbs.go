@@ -36,6 +36,7 @@ type ReceptorBBS interface {
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
@@ -43,6 +44,7 @@ type ReceptorBBS interface {
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RequestStopLRPInstance(stopInstances models.ActualLRP) error
+	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
 
 	// cells
 	Cells() ([]models.CellPresence, error)
