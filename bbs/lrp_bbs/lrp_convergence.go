@@ -83,7 +83,7 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 
 	bbs.reconcile(infos, logger)
 
-	actualLRPsToStop := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, logger)
+	actualLRPsToStop := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, domainRoot, logger)
 
 	for _, actual := range actualLRPsToStop {
 		logger.Info("detected-undesired-instance", lager.Data{
@@ -105,12 +105,16 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 func (bbs *LRPBBS) instancesToStop(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
 	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
+	domainRoot storeadapter.StoreNode,
 	logger lager.Logger,
 ) []models.ActualLRP {
 	var actualsToStop []models.ActualLRP
 
 	for processGuid, actuals := range actualsByProcessGuid {
 		if _, found := desiredLRPsByProcessGuid[processGuid]; !found {
+			if _, domainFound := domainRoot.Lookup(actuals[0].Domain); !domainFound {
+				continue
+			}
 			for _, actual := range actuals {
 				actualsToStop = append(actualsToStop, actual)
 			}
