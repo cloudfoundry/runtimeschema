@@ -38,6 +38,9 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		return
 	}
 
+	// Obtain Actuals before Desired to guarantee the most current state of
+	// Desired when performing convergence -- minimize any extraneous stops
+
 	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells(logger)
 	if err != nil {
 		logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
