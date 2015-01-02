@@ -1,8 +1,6 @@
 package task_bbs
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -55,7 +53,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return fmt.Errorf("cannot start non-existing task: %s", err.Error())
+		return err
 	}
 
 	if task.State == models.TaskStateRunning && task.CellID == cellID {
@@ -204,7 +202,7 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 	task, _, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return fmt.Errorf("cannot resolve non-existing task: %s", err.Error())
+		return err
 	}
 
 	err = validateCanDelete(task.State)
