@@ -13,7 +13,7 @@ import (
 // The stager calls this when it wants to desire a payload
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
-func (s *TaskBBS) DesireTask(task models.Task) error {
+func (bbs *TaskBBS) DesireTask(task models.Task) error {
 	err := task.Validate()
 	if err != nil {
 		return err
@@ -22,14 +22,14 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 
 	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		if task.CreatedAt == 0 {
-			task.CreatedAt = s.timeProvider.Now().UnixNano()
+			task.CreatedAt = bbs.timeProvider.Now().UnixNano()
 		}
-		task.UpdatedAt = s.timeProvider.Now().UnixNano()
+		task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
 		value, err := models.ToJSON(task)
 		if err != nil {
 			return err
 		}
-		return s.store.Create(storeadapter.StoreNode{
+		return bbs.store.Create(storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(task.TaskGuid),
 			Value: value,
 		})
@@ -39,9 +39,9 @@ func (s *TaskBBS) DesireTask(task models.Task) error {
 		return err
 	}
 
-	err = s.requestTaskAuctions([]models.Task{task})
+	err = bbs.requestTaskAuctions([]models.Task{task})
 	if err != nil {
-		s.logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
+		bbs.logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
 		// The creation succeeded, the auction request error can be dropped
 	}
 
