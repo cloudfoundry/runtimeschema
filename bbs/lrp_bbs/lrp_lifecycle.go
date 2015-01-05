@@ -260,7 +260,7 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 	if lrp.State == models.ActualLRPStateUnclaimed {
 		err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
 	} else {
-		err = bbs.RequestStopLRPInstance(lrp)
+		err = bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 	}
 
 	if err != nil {
@@ -288,7 +288,6 @@ func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLR
 	err = models.FromJSON(node.Value, &lrp)
 
 	return &lrp, node.Index, err
-
 }
 
 func (bbs *LRPBBS) newRunningActualLRP(

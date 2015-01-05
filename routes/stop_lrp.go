@@ -7,5 +7,5 @@ const (
 )
 
 var StopLRPRoutes = rata.Routes{
-	{Name: StopLRPInstance, Method: "POST", Path: "/lrps/stop"},
+	{Name: StopLRPInstance, Method: "POST", Path: "/lrps/:process_guid/instance/:instance_guid/index/:index/stop"},
 }

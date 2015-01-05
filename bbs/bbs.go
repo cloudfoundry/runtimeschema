@@ -42,7 +42,7 @@ type ReceptorBBS interface {
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
-	RequestStopLRPInstance(stopInstances models.ActualLRP) error
+	RequestStopLRPInstance(models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	// cells
 	Cells() ([]models.CellPresence, error)

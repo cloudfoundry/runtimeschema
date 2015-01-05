@@ -157,10 +157,10 @@ var _ = Describe("LRP", func() {
 
 							stoppedActuals := make([]int, lrp.Instances-newLRP.Instances)
 							for i := 0; i < (lrp.Instances - newLRP.Instances); i++ {
-								addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
+								addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
 								Ω(addr).Should(Equal(cellPresence.RepAddress))
 
-								stoppedActuals[i] = stop.Index
+								stoppedActuals[i] = key.Index
 							}
 
 							Ω(stoppedActuals).Should(ConsistOf([]int{2, 3, 4}))
@@ -252,10 +252,10 @@ var _ = Describe("LRP", func() {
 
 					stoppedActuals := make([]int, lrp.Instances)
 					for i := 0; i < lrp.Instances; i++ {
-						addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
+						addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
 						Ω(addr).Should(Equal(cellPresence.RepAddress))
 
-						stoppedActuals[i] = stop.Index
+						stoppedActuals[i] = key.Index
 					}
 
 					Ω(stoppedActuals).Should(ConsistOf([]int{0, 1, 2, 3, 4}))
@@ -521,10 +521,10 @@ var _ = Describe("LRP", func() {
 
 						stoppedActuals := make([]int, lrp.Instances-*update.Instances)
 						for i := 0; i < (lrp.Instances - *update.Instances); i++ {
-							addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
+							addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
 							Ω(addr).Should(Equal(cellPresence.RepAddress))
 
-							stoppedActuals[i] = stop.Index
+							stoppedActuals[i] = key.Index
 						}
 
 						Ω(stoppedActuals).Should(ConsistOf([]int{2, 3, 4}))

@@ -9,26 +9,28 @@ import (
 )
 
 type FakeCellClient struct {
-	StopLRPInstanceStub        func(cellAddr string, lrp models.ActualLRP) error
+	StopLRPInstanceStub        func(cellAddr string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
 	stopLRPInstanceMutex       sync.RWMutex
 	stopLRPInstanceArgsForCall []struct {
-		cellAddr string
-		lrp      models.ActualLRP
+		cellAddr     string
+		key          models.ActualLRPKey
+		containerKey models.ActualLRPContainerKey
 	}
 	stopLRPInstanceReturns struct {
 		result1 error
 	}
 }
 
-func (fake *FakeCellClient) StopLRPInstance(cellAddr string, lrp models.ActualLRP) error {
+func (fake *FakeCellClient) StopLRPInstance(cellAddr string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error {
 	fake.stopLRPInstanceMutex.Lock()
 	fake.stopLRPInstanceArgsForCall = append(fake.stopLRPInstanceArgsForCall, struct {
-		cellAddr string
-		lrp      models.ActualLRP
-	}{cellAddr, lrp})
+		cellAddr     string
+		key          models.ActualLRPKey
+		containerKey models.ActualLRPContainerKey
+	}{cellAddr, key, containerKey})
 	fake.stopLRPInstanceMutex.Unlock()
 	if fake.StopLRPInstanceStub != nil {
-		return fake.StopLRPInstanceStub(cellAddr, lrp)
+		return fake.StopLRPInstanceStub(cellAddr, key, containerKey)
 	} else {
 		return fake.stopLRPInstanceReturns.result1
 	}
@@ -40,10 +42,10 @@ func (fake *FakeCellClient) StopLRPInstanceCallCount() int {
 	return len(fake.stopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRP) {
+func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRPKey, models.ActualLRPContainerKey) {
 	fake.stopLRPInstanceMutex.RLock()
 	defer fake.stopLRPInstanceMutex.RUnlock()
-	return fake.stopLRPInstanceArgsForCall[i].cellAddr, fake.stopLRPInstanceArgsForCall[i].lrp
+	return fake.stopLRPInstanceArgsForCall[i].cellAddr, fake.stopLRPInstanceArgsForCall[i].key, fake.stopLRPInstanceArgsForCall[i].containerKey
 }
 
 func (fake *FakeCellClient) StopLRPInstanceReturns(result1 error) {

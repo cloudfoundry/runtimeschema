@@ -1,8 +1,6 @@
 package cb
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,7 +12,7 @@ import (
 
 //go:generate counterfeiter . CellClient
 type CellClient interface {
-	StopLRPInstance(cellAddr string, lrp models.ActualLRP) error
+	StopLRPInstance(cellAddr string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
 }
 
 type cellClient struct {
@@ -27,15 +25,14 @@ func NewCellClient() CellClient {
 	}
 }
 
-func (c *cellClient) StopLRPInstance(cellURL string, lrp models.ActualLRP) error {
+func (c *cellClient) StopLRPInstance(
+	cellURL string,
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+) error {
 	reqGen := rata.NewRequestGenerator(cellURL, routes.StopLRPRoutes)
 
-	payload, err := json.Marshal(lrp)
-	if err != nil {
-		return err
-	}
-
-	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(lrp), bytes.NewBuffer(payload))
+	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(key, containerKey), nil)
 	if err != nil {
 		return err
 	}
@@ -55,10 +52,13 @@ func (c *cellClient) StopLRPInstance(cellURL string, lrp models.ActualLRP) error
 	return nil
 }
 
-func stopParamsFromLRP(lrp models.ActualLRP) rata.Params {
+func stopParamsFromLRP(
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+) rata.Params {
 	return rata.Params{
-		"process_guid":  lrp.ProcessGuid,
-		"instance_guid": lrp.InstanceGuid,
-		"index":         strconv.Itoa(lrp.Index),
+		"process_guid":  key.ProcessGuid,
+		"instance_guid": containerKey.InstanceGuid,
+		"index":         strconv.Itoa(key.Index),
 	}
 }

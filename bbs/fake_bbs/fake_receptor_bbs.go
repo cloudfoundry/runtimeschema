@@ -153,10 +153,11 @@ type FakeReceptorBBS struct {
 		result1 models.ActualLRP
 		result2 error
 	}
-	RequestStopLRPInstanceStub        func(stopInstances models.ActualLRP) error
+	RequestStopLRPInstanceStub        func(models.ActualLRPKey, models.ActualLRPContainerKey) error
 	requestStopLRPInstanceMutex       sync.RWMutex
 	requestStopLRPInstanceArgsForCall []struct {
-		stopInstances models.ActualLRP
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
 	}
 	requestStopLRPInstanceReturns struct {
 		result1 error
@@ -727,14 +728,15 @@ func (fake *FakeReceptorBBS) ActualLRPByProcessGuidAndIndexReturns(result1 model
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstance(stopInstances models.ActualLRP) error {
+func (fake *FakeReceptorBBS) RequestStopLRPInstance(arg1 models.ActualLRPKey, arg2 models.ActualLRPContainerKey) error {
 	fake.requestStopLRPInstanceMutex.Lock()
 	fake.requestStopLRPInstanceArgsForCall = append(fake.requestStopLRPInstanceArgsForCall, struct {
-		stopInstances models.ActualLRP
-	}{stopInstances})
+		arg1 models.ActualLRPKey
+		arg2 models.ActualLRPContainerKey
+	}{arg1, arg2})
 	fake.requestStopLRPInstanceMutex.Unlock()
 	if fake.RequestStopLRPInstanceStub != nil {
-		return fake.RequestStopLRPInstanceStub(stopInstances)
+		return fake.RequestStopLRPInstanceStub(arg1, arg2)
 	} else {
 		return fake.requestStopLRPInstanceReturns.result1
 	}
@@ -746,10 +748,10 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstanceCallCount() int {
 	return len(fake.requestStopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) RequestStopLRPInstanceArgsForCall(i int) models.ActualLRP {
+func (fake *FakeReceptorBBS) RequestStopLRPInstanceArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey) {
 	fake.requestStopLRPInstanceMutex.RLock()
 	defer fake.requestStopLRPInstanceMutex.RUnlock()
-	return fake.requestStopLRPInstanceArgsForCall[i].stopInstances
+	return fake.requestStopLRPInstanceArgsForCall[i].arg1, fake.requestStopLRPInstanceArgsForCall[i].arg2
 }
 
 func (fake *FakeReceptorBBS) RequestStopLRPInstanceReturns(result1 error) {

@@ -397,10 +397,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(stop.ProcessGuid).Should(Equal(processGuid))
-					Ω(stop.Index).Should(Equal(index))
+					Ω(key.ProcessGuid).Should(Equal(processGuid))
+					Ω(key.Index).Should(Equal(index))
+					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -458,10 +459,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(stop.ProcessGuid).Should(Equal(processGuid))
-					Ω(stop.Index).Should(Equal(index))
+					Ω(key.ProcessGuid).Should(Equal(processGuid))
+					Ω(key.Index).Should(Equal(index))
+					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -587,10 +589,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(stop.ProcessGuid).Should(Equal(processGuid))
-					Ω(stop.Index).Should(Equal(index))
+					Ω(key.ProcessGuid).Should(Equal(processGuid))
+					Ω(key.Index).Should(Equal(index))
+					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -656,10 +659,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, stop := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(stop.ProcessGuid).Should(Equal(processGuid))
-					Ω(stop.Index).Should(Equal(index))
+					Ω(key.ProcessGuid).Should(Equal(processGuid))
+					Ω(key.Index).Should(Equal(index))
+					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {

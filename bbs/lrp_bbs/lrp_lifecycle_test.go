@@ -878,7 +878,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 				blockStopInstanceChan = make(chan struct{})
 
-				fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRP) error {
+				fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRPKey, models.ActualLRPContainerKey) error {
 					<-blockStopInstanceChan
 					return nil
 				}
@@ -909,15 +909,20 @@ var _ = Describe("LrpLifecycle", func() {
 				It("stops the LRPs in parallel", func() {
 					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(2))
 
-					addr1, stop1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					addr2, stop2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+					addr1, key1, cnrKey1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr2, key2, cnrKey2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
 
 					Ω(addr1).Should(Equal(cellPresence.RepAddress))
 					Ω(addr2).Should(Equal(cellPresence.RepAddress))
 
-					Ω([]models.ActualLRP{stop1, stop2}).Should(ConsistOf(
-						claimedLRP1,
-						claimedLRP2,
+					Ω([]models.ActualLRPKey{key1, key2}).Should(ConsistOf(
+						claimedLRP1.ActualLRPKey,
+						claimedLRP2.ActualLRPKey,
+					))
+
+					Ω([]models.ActualLRPContainerKey{cnrKey1, cnrKey2}).Should(ConsistOf(
+						claimedLRP1.ActualLRPContainerKey,
+						claimedLRP2.ActualLRPContainerKey,
 					))
 
 					Consistently(doneRetiring).ShouldNot(BeClosed())
@@ -929,8 +934,8 @@ var _ = Describe("LrpLifecycle", func() {
 
 				Context("when stopping any of the LRPs fails", func() {
 					BeforeEach(func() {
-						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, lrp models.ActualLRP) error {
-							return fmt.Errorf("failed to stop %d", lrp.Index)
+						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, key models.ActualLRPKey, _ models.ActualLRPContainerKey) error {
+							return fmt.Errorf("failed to stop %d", key.Index)
 						}
 					})
 

@@ -33,15 +33,14 @@ var _ = Describe("CellClient", func() {
 		}
 
 		JustBeforeEach(func() {
-			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP)
+			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP.ActualLRPKey, actualLRP.ActualLRPContainerKey)
 		})
 
 		Context("when the request is successful", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
 						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
@@ -57,8 +56,7 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),
 					),
 				)
@@ -75,8 +73,7 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/stop"),
-						ghttp.VerifyJSONRepresenting(actualLRP),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},
