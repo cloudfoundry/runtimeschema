@@ -40,7 +40,7 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instances/some-instance-guid/stop"),
 						ghttp.RespondWith(http.StatusAccepted, ""),
 					),
 				)
@@ -56,7 +56,7 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instances/some-instance-guid/stop"),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),
 					),
 				)
@@ -73,7 +73,7 @@ var _ = Describe("CellClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instance/some-instance-guid/index/2/stop"),
+						ghttp.VerifyRequest("POST", "/lrps/some-process-guid/instances/some-instance-guid/stop"),
 						func(w http.ResponseWriter, r *http.Request) {
 							fakeServer.CloseClientConnections()
 						},
