@@ -563,7 +563,7 @@ var _ = Describe("LrpConvergence", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})
@@ -627,7 +627,7 @@ var _ = Describe("LrpConvergence", func() {
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})
@@ -699,7 +699,7 @@ var _ = Describe("LrpConvergence", func() {
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})

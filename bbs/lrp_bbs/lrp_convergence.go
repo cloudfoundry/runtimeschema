@@ -76,10 +76,14 @@ func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
 		delta := Reconcile(desiredLRP.Instances, actualLRPsForDesired)
 		if len(delta.IndicesToStop) > 0 {
 			if _, found := domainRoot.Lookup(desiredLRP.Domain); !found {
-				logger.Info("not-stopping-undesired-indices-domain-not-fresh", lager.Data{
-					"process-guid": desiredLRP.ProcessGuid,
-					"indices":      delta.IndicesToStop,
-				})
+				for _, index := range delta.IndicesToStop {
+					actual := actualLRPsForDesired[index]
+					logger.Info("not-stopping-actual-instance-domain-not-fresh", lager.Data{
+						"process-guid":  actual.ProcessGuid,
+						"instance-guid": actual.InstanceGuid,
+						"index":         actual.Index,
+					})
+				}
 				delta.IndicesToStop = []int{}
 			}
 		}
