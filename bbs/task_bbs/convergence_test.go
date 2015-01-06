@@ -50,7 +50,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 	Describe("ConvergeTasks", func() {
 		JustBeforeEach(func() {
-			bbs.ConvergeTasks(timeToStart, convergenceInterval, timeToResolveInterval)
+			bbs.ConvergeTasks(logger, timeToStart, convergenceInterval, timeToResolveInterval)
 		})
 
 		It("bumps the convergence counter", func() {
@@ -93,7 +93,7 @@ var _ = Describe("Convergence of Tasks", func() {
 			var secondTask models.Task
 
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				secondTask = models.Task{
@@ -104,7 +104,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					CompletionCallbackURL: &url.URL{Host: "blah"},
 				}
 
-				err = bbs.DesireTask(secondTask)
+				err = bbs.DesireTask(logger, secondTask)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -203,10 +203,10 @@ var _ = Describe("Convergence of Tasks", func() {
 
 		Context("when a Task is running", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 			})
@@ -258,13 +258,13 @@ var _ = Describe("Convergence of Tasks", func() {
 				BeforeEach(func() {
 					task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(task.TaskGuid, "cell-id")
+					err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					secondTask := models.Task{
@@ -275,13 +275,13 @@ var _ = Describe("Convergence of Tasks", func() {
 						CompletionCallbackURL: &url.URL{Host: "blah"},
 					}
 
-					err = bbs.DesireTask(secondTask)
+					err = bbs.DesireTask(logger, secondTask)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(secondTask.TaskGuid, "cell-id")
+					err = bbs.StartTask(logger, secondTask.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(secondTask.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(logger, secondTask.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					completeTaskError = nil
@@ -370,13 +370,13 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when a completed task without a complete URL is present", func() {
 				BeforeEach(func() {
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(task.TaskGuid, "cell-id")
+					err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
+					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -447,16 +447,16 @@ var _ = Describe("Convergence of Tasks", func() {
 			BeforeEach(func() {
 				task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "cell-id", true, "'cause I said so", "a result")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ResolvingTask(task.TaskGuid)
+				err = bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

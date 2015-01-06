@@ -21,9 +21,10 @@ type FakeRepBBS struct {
 	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
 	}
-	StartTaskStub        func(taskGuid string, cellID string) error
+	StartTaskStub        func(logger lager.Logger, taskGuid string, cellID string) error
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
+		logger   lager.Logger
 		taskGuid string
 		cellID   string
 	}
@@ -48,9 +49,10 @@ type FakeRepBBS struct {
 		result1 []models.Task
 		result2 error
 	}
-	CompleteTaskStub        func(taskGuid string, cellID string, failed bool, failureReason string, result string) error
+	CompleteTaskStub        func(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 	completeTaskMutex       sync.RWMutex
 	completeTaskArgsForCall []struct {
+		logger        lager.Logger
 		taskGuid      string
 		cellID        string
 		failed        bool
@@ -135,15 +137,16 @@ func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) StartTask(taskGuid string, cellID string) error {
+func (fake *FakeRepBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) error {
 	fake.startTaskMutex.Lock()
 	fake.startTaskArgsForCall = append(fake.startTaskArgsForCall, struct {
+		logger   lager.Logger
 		taskGuid string
 		cellID   string
-	}{taskGuid, cellID})
+	}{logger, taskGuid, cellID})
 	fake.startTaskMutex.Unlock()
 	if fake.StartTaskStub != nil {
-		return fake.StartTaskStub(taskGuid, cellID)
+		return fake.StartTaskStub(logger, taskGuid, cellID)
 	} else {
 		return fake.startTaskReturns.result1
 	}
@@ -155,10 +158,10 @@ func (fake *FakeRepBBS) StartTaskCallCount() int {
 	return len(fake.startTaskArgsForCall)
 }
 
-func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (string, string) {
+func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (lager.Logger, string, string) {
 	fake.startTaskMutex.RLock()
 	defer fake.startTaskMutex.RUnlock()
-	return fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].cellID
+	return fake.startTaskArgsForCall[i].logger, fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].cellID
 }
 
 func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
@@ -234,18 +237,19 @@ func (fake *FakeRepBBS) TasksByCellIDReturns(result1 []models.Task, result2 erro
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error {
+func (fake *FakeRepBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
 	fake.completeTaskMutex.Lock()
 	fake.completeTaskArgsForCall = append(fake.completeTaskArgsForCall, struct {
+		logger        lager.Logger
 		taskGuid      string
 		cellID        string
 		failed        bool
 		failureReason string
 		result        string
-	}{taskGuid, cellID, failed, failureReason, result})
+	}{logger, taskGuid, cellID, failed, failureReason, result})
 	fake.completeTaskMutex.Unlock()
 	if fake.CompleteTaskStub != nil {
-		return fake.CompleteTaskStub(taskGuid, cellID, failed, failureReason, result)
+		return fake.CompleteTaskStub(logger, taskGuid, cellID, failed, failureReason, result)
 	} else {
 		return fake.completeTaskReturns.result1
 	}
@@ -257,10 +261,10 @@ func (fake *FakeRepBBS) CompleteTaskCallCount() int {
 	return len(fake.completeTaskArgsForCall)
 }
 
-func (fake *FakeRepBBS) CompleteTaskArgsForCall(i int) (string, string, bool, string, string) {
+func (fake *FakeRepBBS) CompleteTaskArgsForCall(i int) (lager.Logger, string, string, bool, string, string) {
 	fake.completeTaskMutex.RLock()
 	defer fake.completeTaskMutex.RUnlock()
-	return fake.completeTaskArgsForCall[i].taskGuid, fake.completeTaskArgsForCall[i].cellID, fake.completeTaskArgsForCall[i].failed, fake.completeTaskArgsForCall[i].failureReason, fake.completeTaskArgsForCall[i].result
+	return fake.completeTaskArgsForCall[i].logger, fake.completeTaskArgsForCall[i].taskGuid, fake.completeTaskArgsForCall[i].cellID, fake.completeTaskArgsForCall[i].failed, fake.completeTaskArgsForCall[i].failureReason, fake.completeTaskArgsForCall[i].result
 }
 
 func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {

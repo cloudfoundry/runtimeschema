@@ -23,7 +23,7 @@ var _ = Describe("Task BBS", func() {
 		var errDesire error
 
 		JustBeforeEach(func() {
-			errDesire = bbs.DesireTask(task)
+			errDesire = bbs.DesireTask(logger, task)
 		})
 
 		Context("when given a valid task", func() {
@@ -182,7 +182,7 @@ var _ = Describe("Task BBS", func() {
 						Action:   dummyAction,
 					}
 
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -236,7 +236,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireTask(anotherTask)
+				return bbs.DesireTask(logger, anotherTask)
 			})
 		})
 	})
@@ -254,12 +254,12 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when starting a pending Task", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("sets the state to running", func() {
-				err := bbs.StartTask(task.TaskGuid, "cell-ID")
+				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.RunningTasks()
@@ -272,7 +272,7 @@ var _ = Describe("Task BBS", func() {
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.StartTask(task.TaskGuid, "cell-ID")
+				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.RunningTasks()
@@ -283,17 +283,17 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartTask(task.TaskGuid, "cell-ID")
+					return bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				})
 			})
 		})
 
 		Context("When starting a Task that is already started", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -305,7 +305,7 @@ var _ = Describe("Task BBS", func() {
 					previousTime = timeProvider.Now().UnixNano()
 					timeProvider.IncrementBySeconds(1)
 
-					startErr = bbs.StartTask(task.TaskGuid, "cell-ID")
+					startErr = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				})
 
 				It("does not return an error", func() {
@@ -322,7 +322,7 @@ var _ = Describe("Task BBS", func() {
 
 			Context("on another cell", func() {
 				It("returns an error", func() {
-					err := bbs.StartTask(task.TaskGuid, "another-cell-ID")
+					err := bbs.StartTask(logger, task.TaskGuid, "another-cell-ID")
 					Ω(err).Should(HaveOccurred())
 				})
 			})
@@ -345,7 +345,7 @@ var _ = Describe("Task BBS", func() {
 			var taskAfterCancel models.Task
 
 			JustBeforeEach(func() {
-				cancelError = bbs.CancelTask(task.TaskGuid)
+				cancelError = bbs.CancelTask(logger, task.TaskGuid)
 				taskAfterCancel, _ = bbs.TaskByGuid(task.TaskGuid)
 			})
 
@@ -373,7 +373,7 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in pending state", func() {
 				BeforeEach(func() {
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -382,9 +382,9 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in running state", func() {
 				BeforeEach(func() {
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.StartTask(task.TaskGuid, "cell-ID")
+					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -393,13 +393,13 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in completed state", func() {
 				BeforeEach(func() {
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(task.TaskGuid, "cell-ID")
+					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, "cell-ID", false, "", "")
+					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -411,16 +411,16 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the task is in resolving state", func() {
 				BeforeEach(func() {
-					err := bbs.DesireTask(task)
+					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(task.TaskGuid, "cell-ID")
+					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.CompleteTask(task.TaskGuid, "cell-ID", false, "", "")
+					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.ResolvingTask(task.TaskGuid)
+					err = bbs.ResolvingTask(logger, task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -456,12 +456,12 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the store is out of commission", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.CancelTask(task.TaskGuid)
+				return bbs.CancelTask(logger, task.TaskGuid)
 			})
 		})
 	})
@@ -479,12 +479,12 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when completing a pending Task", func() {
 			JustBeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("sets the Task in the completed state", func() {
-				err := bbs.CompleteTask(task.TaskGuid, "", true, "because i said so", "a result")
+				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
@@ -497,7 +497,7 @@ var _ = Describe("Task BBS", func() {
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.CompleteTask(task.TaskGuid, "", true, "because i said so", "a result")
+				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
@@ -509,7 +509,7 @@ var _ = Describe("Task BBS", func() {
 			It("sets FirstCompletedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.CompleteTask(task.TaskGuid, "", true, "because i said so", "a result")
+				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.CompletedTasks()
@@ -547,7 +547,7 @@ var _ = Describe("Task BBS", func() {
 						})
 
 						It("completes the task using its address", func() {
-							err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
+							err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because", "a result")
 							Ω(err).ShouldNot(HaveOccurred())
 
 							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
@@ -567,7 +567,7 @@ var _ = Describe("Task BBS", func() {
 						})
 
 						It("does not complete the task via the receptor", func() {
-							err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
+							err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because", "a result")
 							Ω(err).ShouldNot(HaveOccurred())
 
 							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
@@ -581,7 +581,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("swallows the error, as we'll retry again eventually (via convergence)", func() {
-						err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
+						err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because", "a result")
 						Ω(err).ShouldNot(HaveOccurred())
 					})
 				})
@@ -589,37 +589,37 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when no receptors are present", func() {
 				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
-					err := bbs.CompleteTask(task.TaskGuid, "", true, "because", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.CompleteTask(task.TaskGuid, "", false, "", "a result")
+					return bbs.CompleteTask(logger, task.TaskGuid, "", false, "", "a result")
 				})
 			})
 		})
 
 		Context("when completing a running Task", func() {
 			JustBeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			Context("when the cell id is not the same", func() {
 				It("returns an error", func() {
-					err := bbs.CompleteTask(task.TaskGuid, "another-cell-ID", true, "because i said so", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "another-cell-ID", true, "because i said so", "a result")
 					Ω(err).Should(Equal(bbserrors.ErrTaskRunningOnDifferentCell))
 				})
 			})
 
 			Context("when the cell id is the same", func() {
 				It("sets the Task in the completed state", func() {
-					err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because i said so", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks()
@@ -632,7 +632,7 @@ var _ = Describe("Task BBS", func() {
 				It("should bump UpdatedAt", func() {
 					timeProvider.IncrementBySeconds(1)
 
-					err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because i said so", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks()
@@ -644,7 +644,7 @@ var _ = Describe("Task BBS", func() {
 				It("sets FirstCompletedAt", func() {
 					timeProvider.IncrementBySeconds(1)
 
-					err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because i said so", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks()
@@ -682,7 +682,7 @@ var _ = Describe("Task BBS", func() {
 							})
 
 							It("completes the task using its address", func() {
-								err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
+								err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
 								Ω(err).ShouldNot(HaveOccurred())
 
 								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
@@ -702,7 +702,7 @@ var _ = Describe("Task BBS", func() {
 							})
 
 							It("does not complete the task via the receptor", func() {
-								err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
+								err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
 								Ω(err).ShouldNot(HaveOccurred())
 
 								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
@@ -716,7 +716,7 @@ var _ = Describe("Task BBS", func() {
 						})
 
 						It("swallows the error, as we'll retry again eventually (via convergence)", func() {
-							err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
+							err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
 							Ω(err).ShouldNot(HaveOccurred())
 						})
 					})
@@ -726,53 +726,53 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when no receptors are present", func() {
 				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
-					err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "because", "a result")
+					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 			})
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.CompleteTask(task.TaskGuid, "cell-ID", false, "", "a result")
+					return bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "a result")
 				})
 			})
 		})
 
 		Context("When completing a Task that is already completed", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "some failure reason", "")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "some failure reason", "")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("returns an error", func() {
-				err := bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "another failure reason", "")
+				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "another failure reason", "")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
 
 		Context("When completing a Task that is resolving", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "cell-ID")
+				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "cell-ID", false, "", "result")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ResolvingTask(task.TaskGuid)
+				err = bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("returns an error", func() {
-				err := bbs.CompleteTask(task.TaskGuid, "cell-ID", false, "", "another result")
+				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "another result")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -791,18 +791,18 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the task is complete", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("swaps /task/<guid>'s state to resolving", func() {
-				err := bbs.ResolvingTask(task.TaskGuid)
+				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks()
@@ -814,7 +814,7 @@ var _ = Describe("Task BBS", func() {
 			It("bumps UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.ResolvingTask(task.TaskGuid)
+				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks()
@@ -824,12 +824,12 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the Task is already resolving", func() {
 				BeforeEach(func() {
-					err := bbs.ResolvingTask(task.TaskGuid)
+					err := bbs.ResolvingTask(logger, task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("fails", func() {
-					err := bbs.ResolvingTask(task.TaskGuid)
+					err := bbs.ResolvingTask(logger, task.TaskGuid)
 					Ω(err).Should(HaveOccurred())
 				})
 			})
@@ -837,15 +837,15 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the task is not complete", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should fail", func() {
-				err := bbs.ResolvingTask(task.TaskGuid)
+				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateRunning, models.TaskStateResolving)))
 			})
 		})
@@ -864,21 +864,21 @@ var _ = Describe("Task BBS", func() {
 
 		Context("when the task is resolving", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.ResolvingTask(task.TaskGuid)
+				err = bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should remove /task/<guid>", func() {
-				err := bbs.ResolveTask(task.TaskGuid)
+				err := bbs.ResolveTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.Tasks()
@@ -888,25 +888,25 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ResolveTask(task.TaskGuid)
+					return bbs.ResolveTask(logger, task.TaskGuid)
 				})
 			})
 		})
 
 		Context("when the task is not resolving", func() {
 			BeforeEach(func() {
-				err := bbs.DesireTask(task)
+				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(task.TaskGuid, "some-cell-id")
+				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.CompleteTask(task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
+				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should fail", func() {
-				err := bbs.ResolveTask(task.TaskGuid)
+				err := bbs.ResolveTask(logger, task.TaskGuid)
 				Ω(err).Should(HaveOccurred())
 			})
 		})

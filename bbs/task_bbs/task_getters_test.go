@@ -24,7 +24,7 @@ var _ = Describe("Task BBS", func() {
 		var lookupErr error
 
 		BeforeEach(func() {
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -66,7 +66,7 @@ var _ = Describe("Task BBS", func() {
 	Describe("TasksByCellID", func() {
 		BeforeEach(func() {
 			task.CellID = "some-other-cell-id"
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 		Context("when there are no tasks for the given cell ID", func() {
@@ -96,13 +96,13 @@ var _ = Describe("Task BBS", func() {
 			var task2 models.Task
 
 			BeforeEach(func() {
-				err := bbs.DesireTask(task1Request)
+				err := bbs.DesireTask(logger, task1Request)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				task1, err = bbs.TaskByGuid("some-guid-1")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.DesireTask(task2Request)
+				err = bbs.DesireTask(logger, task2Request)
 				Ω(err).ShouldNot(HaveOccurred())
 				task2, err = bbs.TaskByGuid("some-guid-2")
 				Ω(err).ShouldNot(HaveOccurred())
@@ -118,7 +118,7 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("PendingTasks", func() {
 		BeforeEach(func() {
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -132,10 +132,10 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("RunningTasks", func() {
 		BeforeEach(func() {
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "cell-ID")
+			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -149,13 +149,13 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("CompletedTasks", func() {
 		BeforeEach(func() {
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "cell-ID")
+			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "a reason", "a result")
+			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -169,16 +169,16 @@ var _ = Describe("Task BBS", func() {
 
 	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(task.TaskGuid, "cell-ID")
+			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.CompleteTask(task.TaskGuid, "cell-ID", true, "a reason", "a result")
+			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.ResolvingTask(task.TaskGuid)
+			err = bbs.ResolvingTask(logger, task.TaskGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -193,17 +193,17 @@ var _ = Describe("Task BBS", func() {
 	Describe("TasksByDomain", func() {
 		BeforeEach(func() {
 			task.TaskGuid = "guid-1"
-			err := bbs.DesireTask(task)
+			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			task.TaskGuid = "guid-2"
 			task.Domain = "other-domain"
-			err = bbs.DesireTask(task)
+			err = bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			task.TaskGuid = "guid-3"
 			task.Domain = "tests"
-			err = bbs.DesireTask(task)
+			err = bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

@@ -35,7 +35,7 @@ type compareAndSwappableTask struct {
 // 5. Demote to completed any resolving tasks that have been resolving for > 30s
 // 6. Mark as failed any tasks that have been in the pending state for > expirePendingTaskDuration
 // 7. Mark as failed any running tasks whose cell has stopped maintaining presence
-func (bbs *TaskBBS) ConvergeTasks(expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration) {
+func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration) {
 	convergeTaskRunsCounter.Increment()
 
 	convergeStart := bbs.timeProvider.Now()

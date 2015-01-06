@@ -21,13 +21,13 @@ import (
 //go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
 type ReceptorBBS interface {
 	//task
-	DesireTask(models.Task) error
+	DesireTask(lager.Logger, models.Task) error
 	Tasks() ([]models.Task, error)
 	TasksByDomain(domain string) ([]models.Task, error)
 	TaskByGuid(taskGuid string) (models.Task, error)
-	ResolvingTask(taskGuid string) error
-	ResolveTask(taskGuid string) error
-	CancelTask(taskGuid string) error
+	ResolvingTask(logger lager.Logger, taskGuid string) error
+	ResolveTask(logger lager.Logger, taskGuid string) error
+	CancelTask(logger lager.Logger, taskGuid string) error
 
 	//desired lrp
 	DesireLRP(models.DesiredLRP) error
@@ -61,10 +61,10 @@ type RepBBS interface {
 	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
 
 	//task
-	StartTask(taskGuid string, cellID string) error
+	StartTask(logger lager.Logger, taskGuid string, cellID string) error
 	TaskByGuid(taskGuid string) (models.Task, error)
 	TasksByCellID(cellID string) ([]models.Task, error)
-	CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error
+	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
@@ -82,7 +82,7 @@ type ConvergerBBS interface {
 	ConvergeLRPs(time.Duration)
 
 	//task
-	ConvergeTasks(timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
@@ -98,7 +98,7 @@ type AuctioneerBBS interface {
 	Cells() ([]models.CellPresence, error)
 
 	// task
-	CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error
+	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)

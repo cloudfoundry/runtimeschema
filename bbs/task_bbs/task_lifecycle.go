@@ -13,7 +13,7 @@ import (
 // The stager calls this when it wants to desire a payload
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
-func (bbs *TaskBBS) DesireTask(task models.Task) error {
+func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 	err := task.Validate()
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (bbs *TaskBBS) DesireTask(task models.Task) error {
 // The cell calls this when it is about to run the task in the allocated container
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the cell should assume that someone else will run it and should clean up and bail
-func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
+func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) error {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -87,7 +87,7 @@ func (bbs *TaskBBS) StartTask(taskGuid string, cellID string) error {
 // The cell calls this when the user requested to cancel the task
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // Will fail if the task has already been cancelled or completed normally
-func (bbs *TaskBBS) CancelTask(taskGuid string) error {
+func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (bbs *TaskBBS) CancelTask(taskGuid string) error {
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
-func (bbs *TaskBBS) CompleteTask(taskGuid string, cellID string, failed bool, failureReason string, result string) error {
+func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func (bbs *TaskBBS) CompleteTask(taskGuid string, cellID string, failed bool, fa
 
 // The stager calls this when it wants to claim a completed task.  This ensures that only one
 // stager ever attempts to handle a completed task
-func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
+func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
 		return err
@@ -200,7 +200,7 @@ func (bbs *TaskBBS) ResolvingTask(taskGuid string) error {
 // The stager calls this when it wants to signal that it has received a completion and is handling it
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should assume that someone else is handling the completion and should bail
-func (bbs *TaskBBS) ResolveTask(taskGuid string) error {
+func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 	task, _, err := bbs.getTask(taskGuid)
 
 	if err != nil {

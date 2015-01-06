@@ -7,14 +7,16 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
 type FakeReceptorBBS struct {
-	DesireTaskStub        func(models.Task) error
+	DesireTaskStub        func(lager.Logger, models.Task) error
 	desireTaskMutex       sync.RWMutex
 	desireTaskArgsForCall []struct {
-		arg1 models.Task
+		arg1 lager.Logger
+		arg2 models.Task
 	}
 	desireTaskReturns struct {
 		result1 error
@@ -44,25 +46,28 @@ type FakeReceptorBBS struct {
 		result1 models.Task
 		result2 error
 	}
-	ResolvingTaskStub        func(taskGuid string) error
+	ResolvingTaskStub        func(logger lager.Logger, taskGuid string) error
 	resolvingTaskMutex       sync.RWMutex
 	resolvingTaskArgsForCall []struct {
+		logger   lager.Logger
 		taskGuid string
 	}
 	resolvingTaskReturns struct {
 		result1 error
 	}
-	ResolveTaskStub        func(taskGuid string) error
+	ResolveTaskStub        func(logger lager.Logger, taskGuid string) error
 	resolveTaskMutex       sync.RWMutex
 	resolveTaskArgsForCall []struct {
+		logger   lager.Logger
 		taskGuid string
 	}
 	resolveTaskReturns struct {
 		result1 error
 	}
-	CancelTaskStub        func(taskGuid string) error
+	CancelTaskStub        func(logger lager.Logger, taskGuid string) error
 	cancelTaskMutex       sync.RWMutex
 	cancelTaskArgsForCall []struct {
+		logger   lager.Logger
 		taskGuid string
 	}
 	cancelTaskReturns struct {
@@ -196,14 +201,15 @@ type FakeReceptorBBS struct {
 	}
 }
 
-func (fake *FakeReceptorBBS) DesireTask(arg1 models.Task) error {
+func (fake *FakeReceptorBBS) DesireTask(arg1 lager.Logger, arg2 models.Task) error {
 	fake.desireTaskMutex.Lock()
 	fake.desireTaskArgsForCall = append(fake.desireTaskArgsForCall, struct {
-		arg1 models.Task
-	}{arg1})
+		arg1 lager.Logger
+		arg2 models.Task
+	}{arg1, arg2})
 	fake.desireTaskMutex.Unlock()
 	if fake.DesireTaskStub != nil {
-		return fake.DesireTaskStub(arg1)
+		return fake.DesireTaskStub(arg1, arg2)
 	} else {
 		return fake.desireTaskReturns.result1
 	}
@@ -215,10 +221,10 @@ func (fake *FakeReceptorBBS) DesireTaskCallCount() int {
 	return len(fake.desireTaskArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) DesireTaskArgsForCall(i int) models.Task {
+func (fake *FakeReceptorBBS) DesireTaskArgsForCall(i int) (lager.Logger, models.Task) {
 	fake.desireTaskMutex.RLock()
 	defer fake.desireTaskMutex.RUnlock()
-	return fake.desireTaskArgsForCall[i].arg1
+	return fake.desireTaskArgsForCall[i].arg1, fake.desireTaskArgsForCall[i].arg2
 }
 
 func (fake *FakeReceptorBBS) DesireTaskReturns(result1 error) {
@@ -319,14 +325,15 @@ func (fake *FakeReceptorBBS) TaskByGuidReturns(result1 models.Task, result2 erro
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ResolvingTask(taskGuid string) error {
+func (fake *FakeReceptorBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 	fake.resolvingTaskMutex.Lock()
 	fake.resolvingTaskArgsForCall = append(fake.resolvingTaskArgsForCall, struct {
+		logger   lager.Logger
 		taskGuid string
-	}{taskGuid})
+	}{logger, taskGuid})
 	fake.resolvingTaskMutex.Unlock()
 	if fake.ResolvingTaskStub != nil {
-		return fake.ResolvingTaskStub(taskGuid)
+		return fake.ResolvingTaskStub(logger, taskGuid)
 	} else {
 		return fake.resolvingTaskReturns.result1
 	}
@@ -338,10 +345,10 @@ func (fake *FakeReceptorBBS) ResolvingTaskCallCount() int {
 	return len(fake.resolvingTaskArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ResolvingTaskArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ResolvingTaskArgsForCall(i int) (lager.Logger, string) {
 	fake.resolvingTaskMutex.RLock()
 	defer fake.resolvingTaskMutex.RUnlock()
-	return fake.resolvingTaskArgsForCall[i].taskGuid
+	return fake.resolvingTaskArgsForCall[i].logger, fake.resolvingTaskArgsForCall[i].taskGuid
 }
 
 func (fake *FakeReceptorBBS) ResolvingTaskReturns(result1 error) {
@@ -351,14 +358,15 @@ func (fake *FakeReceptorBBS) ResolvingTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) ResolveTask(taskGuid string) error {
+func (fake *FakeReceptorBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 	fake.resolveTaskMutex.Lock()
 	fake.resolveTaskArgsForCall = append(fake.resolveTaskArgsForCall, struct {
+		logger   lager.Logger
 		taskGuid string
-	}{taskGuid})
+	}{logger, taskGuid})
 	fake.resolveTaskMutex.Unlock()
 	if fake.ResolveTaskStub != nil {
-		return fake.ResolveTaskStub(taskGuid)
+		return fake.ResolveTaskStub(logger, taskGuid)
 	} else {
 		return fake.resolveTaskReturns.result1
 	}
@@ -370,10 +378,10 @@ func (fake *FakeReceptorBBS) ResolveTaskCallCount() int {
 	return len(fake.resolveTaskArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ResolveTaskArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ResolveTaskArgsForCall(i int) (lager.Logger, string) {
 	fake.resolveTaskMutex.RLock()
 	defer fake.resolveTaskMutex.RUnlock()
-	return fake.resolveTaskArgsForCall[i].taskGuid
+	return fake.resolveTaskArgsForCall[i].logger, fake.resolveTaskArgsForCall[i].taskGuid
 }
 
 func (fake *FakeReceptorBBS) ResolveTaskReturns(result1 error) {
@@ -383,14 +391,15 @@ func (fake *FakeReceptorBBS) ResolveTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) CancelTask(taskGuid string) error {
+func (fake *FakeReceptorBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 	fake.cancelTaskMutex.Lock()
 	fake.cancelTaskArgsForCall = append(fake.cancelTaskArgsForCall, struct {
+		logger   lager.Logger
 		taskGuid string
-	}{taskGuid})
+	}{logger, taskGuid})
 	fake.cancelTaskMutex.Unlock()
 	if fake.CancelTaskStub != nil {
-		return fake.CancelTaskStub(taskGuid)
+		return fake.CancelTaskStub(logger, taskGuid)
 	} else {
 		return fake.cancelTaskReturns.result1
 	}
@@ -402,10 +411,10 @@ func (fake *FakeReceptorBBS) CancelTaskCallCount() int {
 	return len(fake.cancelTaskArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) CancelTaskArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) CancelTaskArgsForCall(i int) (lager.Logger, string) {
 	fake.cancelTaskMutex.RLock()
 	defer fake.cancelTaskMutex.RUnlock()
-	return fake.cancelTaskArgsForCall[i].taskGuid
+	return fake.cancelTaskArgsForCall[i].logger, fake.cancelTaskArgsForCall[i].taskGuid
 }
 
 func (fake *FakeReceptorBBS) CancelTaskReturns(result1 error) {

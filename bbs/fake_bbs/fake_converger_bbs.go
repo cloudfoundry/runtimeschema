@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
@@ -24,9 +25,10 @@ type FakeConvergerBBS struct {
 	convergeLRPsArgsForCall []struct {
 		arg1 time.Duration
 	}
-	ConvergeTasksStub        func(timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	ConvergeTasksStub        func(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
 	convergeTasksMutex       sync.RWMutex
 	convergeTasksArgsForCall []struct {
+		logger              lager.Logger
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
@@ -89,16 +91,17 @@ func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) time.Duration {
 	return fake.convergeLRPsArgsForCall[i].arg1
 }
 
-func (fake *FakeConvergerBBS) ConvergeTasks(timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeTasks(logger lager.Logger, timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
 	fake.convergeTasksMutex.Lock()
 	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
+		logger              lager.Logger
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
-	}{timeToClaim, convergenceInterval, timeToResolve})
+	}{logger, timeToClaim, convergenceInterval, timeToResolve})
 	fake.convergeTasksMutex.Unlock()
 	if fake.ConvergeTasksStub != nil {
-		fake.ConvergeTasksStub(timeToClaim, convergenceInterval, timeToResolve)
+		fake.ConvergeTasksStub(logger, timeToClaim, convergenceInterval, timeToResolve)
 	}
 }
 
@@ -108,10 +111,10 @@ func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
 	return len(fake.convergeTasksArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (time.Duration, time.Duration, time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, time.Duration, time.Duration, time.Duration) {
 	fake.convergeTasksMutex.RLock()
 	defer fake.convergeTasksMutex.RUnlock()
-	return fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
+	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
 }
 
 var _ bbs.ConvergerBBS = new(FakeConvergerBBS)
