@@ -18,8 +18,8 @@ const (
 	lrpsDeletedCounter = metric.Counter("ConvergenceLRPsDeleted")
 )
 
-func (bbs *LRPBBS) ConvergeLRPs(pollingInterval time.Duration) {
-	logger := bbs.logger.Session("converge-lrps")
+func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, pollingInterval time.Duration) {
+	logger = bbs.logger.Session("converge-lrps")
 	logger.Info("starting-convergence")
 	defer logger.Info("finished-convergence")
 

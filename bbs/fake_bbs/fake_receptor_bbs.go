@@ -76,26 +76,29 @@ type FakeReceptorBBS struct {
 	cancelTaskReturns struct {
 		result1 error
 	}
-	DesireLRPStub        func(models.DesiredLRP) error
+	DesireLRPStub        func(lager.Logger, models.DesiredLRP) error
 	desireLRPMutex       sync.RWMutex
 	desireLRPArgsForCall []struct {
-		arg1 models.DesiredLRP
+		arg1 lager.Logger
+		arg2 models.DesiredLRP
 	}
 	desireLRPReturns struct {
 		result1 error
 	}
-	UpdateDesiredLRPStub        func(processGuid string, update models.DesiredLRPUpdate) error
+	UpdateDesiredLRPStub        func(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
 	updateDesiredLRPMutex       sync.RWMutex
 	updateDesiredLRPArgsForCall []struct {
+		logger      lager.Logger
 		processGuid string
 		update      models.DesiredLRPUpdate
 	}
 	updateDesiredLRPReturns struct {
 		result1 error
 	}
-	RemoveDesiredLRPByProcessGuidStub        func(processGuid string) error
+	RemoveDesiredLRPByProcessGuidStub        func(logger lager.Logger, processGuid string) error
 	removeDesiredLRPByProcessGuidMutex       sync.RWMutex
 	removeDesiredLRPByProcessGuidArgsForCall []struct {
+		logger      lager.Logger
 		processGuid string
 	}
 	removeDesiredLRPByProcessGuidReturns struct {
@@ -436,14 +439,15 @@ func (fake *FakeReceptorBBS) CancelTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) DesireLRP(arg1 models.DesiredLRP) error {
+func (fake *FakeReceptorBBS) DesireLRP(arg1 lager.Logger, arg2 models.DesiredLRP) error {
 	fake.desireLRPMutex.Lock()
 	fake.desireLRPArgsForCall = append(fake.desireLRPArgsForCall, struct {
-		arg1 models.DesiredLRP
-	}{arg1})
+		arg1 lager.Logger
+		arg2 models.DesiredLRP
+	}{arg1, arg2})
 	fake.desireLRPMutex.Unlock()
 	if fake.DesireLRPStub != nil {
-		return fake.DesireLRPStub(arg1)
+		return fake.DesireLRPStub(arg1, arg2)
 	} else {
 		return fake.desireLRPReturns.result1
 	}
@@ -455,10 +459,10 @@ func (fake *FakeReceptorBBS) DesireLRPCallCount() int {
 	return len(fake.desireLRPArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) DesireLRPArgsForCall(i int) models.DesiredLRP {
+func (fake *FakeReceptorBBS) DesireLRPArgsForCall(i int) (lager.Logger, models.DesiredLRP) {
 	fake.desireLRPMutex.RLock()
 	defer fake.desireLRPMutex.RUnlock()
-	return fake.desireLRPArgsForCall[i].arg1
+	return fake.desireLRPArgsForCall[i].arg1, fake.desireLRPArgsForCall[i].arg2
 }
 
 func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
@@ -468,15 +472,16 @@ func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
+func (fake *FakeReceptorBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error {
 	fake.updateDesiredLRPMutex.Lock()
 	fake.updateDesiredLRPArgsForCall = append(fake.updateDesiredLRPArgsForCall, struct {
+		logger      lager.Logger
 		processGuid string
 		update      models.DesiredLRPUpdate
-	}{processGuid, update})
+	}{logger, processGuid, update})
 	fake.updateDesiredLRPMutex.Unlock()
 	if fake.UpdateDesiredLRPStub != nil {
-		return fake.UpdateDesiredLRPStub(processGuid, update)
+		return fake.UpdateDesiredLRPStub(logger, processGuid, update)
 	} else {
 		return fake.updateDesiredLRPReturns.result1
 	}
@@ -488,10 +493,10 @@ func (fake *FakeReceptorBBS) UpdateDesiredLRPCallCount() int {
 	return len(fake.updateDesiredLRPArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) UpdateDesiredLRPArgsForCall(i int) (string, models.DesiredLRPUpdate) {
+func (fake *FakeReceptorBBS) UpdateDesiredLRPArgsForCall(i int) (lager.Logger, string, models.DesiredLRPUpdate) {
 	fake.updateDesiredLRPMutex.RLock()
 	defer fake.updateDesiredLRPMutex.RUnlock()
-	return fake.updateDesiredLRPArgsForCall[i].processGuid, fake.updateDesiredLRPArgsForCall[i].update
+	return fake.updateDesiredLRPArgsForCall[i].logger, fake.updateDesiredLRPArgsForCall[i].processGuid, fake.updateDesiredLRPArgsForCall[i].update
 }
 
 func (fake *FakeReceptorBBS) UpdateDesiredLRPReturns(result1 error) {
@@ -501,14 +506,15 @@ func (fake *FakeReceptorBBS) UpdateDesiredLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error {
 	fake.removeDesiredLRPByProcessGuidMutex.Lock()
 	fake.removeDesiredLRPByProcessGuidArgsForCall = append(fake.removeDesiredLRPByProcessGuidArgsForCall, struct {
+		logger      lager.Logger
 		processGuid string
-	}{processGuid})
+	}{logger, processGuid})
 	fake.removeDesiredLRPByProcessGuidMutex.Unlock()
 	if fake.RemoveDesiredLRPByProcessGuidStub != nil {
-		return fake.RemoveDesiredLRPByProcessGuidStub(processGuid)
+		return fake.RemoveDesiredLRPByProcessGuidStub(logger, processGuid)
 	} else {
 		return fake.removeDesiredLRPByProcessGuidReturns.result1
 	}
@@ -520,10 +526,10 @@ func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidCallCount() int {
 	return len(fake.removeDesiredLRPByProcessGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidArgsForCall(i int) (lager.Logger, string) {
 	fake.removeDesiredLRPByProcessGuidMutex.RLock()
 	defer fake.removeDesiredLRPByProcessGuidMutex.RUnlock()
-	return fake.removeDesiredLRPByProcessGuidArgsForCall[i].processGuid
+	return fake.removeDesiredLRPByProcessGuidArgsForCall[i].logger, fake.removeDesiredLRPByProcessGuidArgsForCall[i].processGuid
 }
 
 func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error) {

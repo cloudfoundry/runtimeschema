@@ -43,7 +43,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.DesireLRP(lrp)
+			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
@@ -53,7 +53,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.DesireLRP(lrp)
+			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())
@@ -71,7 +71,7 @@ var _ = Describe("LrpWatchers", func() {
 		})
 
 		It("sends an event down the pipe for deletes", func() {
-			err := bbs.DesireLRP(lrp)
+			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive())

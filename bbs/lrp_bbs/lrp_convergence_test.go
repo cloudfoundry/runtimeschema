@@ -52,7 +52,7 @@ var _ = Describe("LrpConvergence", func() {
 					Action:      dummyAction,
 				}
 
-				err := bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				actuals, err := bbs.ActualLRPsByProcessGuid(desiredLRP.ProcessGuid)
@@ -73,7 +73,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("emits start auction requests", func() {
 					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
@@ -85,18 +85,18 @@ var _ = Describe("LrpConvergence", func() {
 
 				It("bumps the compare-and-swapped LRPs convergence counter", func() {
 					requestsBefore := sender.GetCounter("LRPInstanceStartRequests")
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(requestsBefore + 1))
 				})
 			})
 
 			It("logs", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-start"))
 			})
 
 			It("logs the convergence", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				logMessages := logger.TestSink.LogMessages()
 				Ω(logMessages).Should(ContainElement(
 					"test.converge-lrps.starting-convergence",
@@ -108,15 +108,15 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("bumps the convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
 			})
 
 			It("reports the duration that it took to converge", func() {
 				timeProvider.IntervalToAdvance = 500 * time.Nanosecond
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 
 				reportedDuration := sender.GetValue("ConvergenceLRPDuration")
 				Ω(reportedDuration.Unit).Should(Equal("nanos"))
@@ -134,7 +134,7 @@ var _ = Describe("LrpConvergence", func() {
 					Action:      dummyAction,
 				}
 
-				err := bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				actualLRPs, err := bbs.ActualLRPsByProcessGuid(processGuid)
@@ -153,7 +153,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("emits start auction requests", func() {
 					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
@@ -166,17 +166,17 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("bumps the LRP start request counter", func() {
 				requestsBefore := sender.GetCounter("LRPInstanceStartRequests")
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(requestsBefore + 1))
 			})
 
 			It("logs", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-start"))
 			})
 
 			It("logs the convergence", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				logMessages := logger.TestSink.LogMessages()
 				Ω(logMessages).Should(ContainElement(
 					"test.converge-lrps.starting-convergence",
@@ -188,15 +188,15 @@ var _ = Describe("LrpConvergence", func() {
 
 			It("bumps the convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
 			})
 
 			It("reports the duration that it took to converge", func() {
 				timeProvider.IntervalToAdvance = 500 * time.Nanosecond
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 
 				reportedDuration := sender.GetValue("ConvergenceLRPDuration")
 				Ω(reportedDuration.Unit).Should(Equal("nanos"))
@@ -217,19 +217,19 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("should delete the bogus entry", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid("bogus-desired"))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
 			It("bumps the deleted LRPs convergence counter", func() {
 				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
 			})
 
 			It("logs", func() {
-				bbs.ConvergeLRPs(pollingInterval)
+				bbs.ConvergeLRPs(logger, pollingInterval)
 				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.pruning-invalid-desired-lrp-json"))
 			})
 		})
@@ -242,7 +242,7 @@ var _ = Describe("LrpConvergence", func() {
 		var index int
 
 		JustBeforeEach(func() {
-			bbs.ConvergeLRPs(pollingInterval)
+			bbs.ConvergeLRPs(logger, pollingInterval)
 		})
 
 		BeforeEach(func() {
@@ -258,7 +258,7 @@ var _ = Describe("LrpConvergence", func() {
 				Action:      dummyAction,
 			}
 
-			err := bbs.DesireLRP(desiredLRP)
+			err := bbs.DesireLRP(logger, desiredLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
@@ -342,21 +342,21 @@ var _ = Describe("LrpConvergence", func() {
 
 			Context("when the actual LRP is UNCLAIMED", func() {
 				It("removes the actual LRP", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-undesired-instance"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -366,7 +366,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not delete the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
@@ -396,7 +396,7 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
@@ -408,13 +408,13 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-undesired-instance"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -424,7 +424,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not stop the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -460,7 +460,7 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
@@ -472,13 +472,13 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.detected-undesired-instance"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -488,7 +488,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not stop the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -517,7 +517,7 @@ var _ = Describe("LrpConvergence", func() {
 					Action:      dummyAction,
 				}
 
-				err := bbs.DesireLRP(desiredLRP)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -533,21 +533,21 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("removes the actual LRP", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-stop"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -557,7 +557,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not delete the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
@@ -595,7 +595,7 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
@@ -607,13 +607,13 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-stop"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -623,7 +623,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not stop the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -667,7 +667,7 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
@@ -679,13 +679,13 @@ var _ = Describe("LrpConvergence", func() {
 				})
 
 				It("logs", func() {
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-stop"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-					bbs.ConvergeLRPs(pollingInterval)
+					bbs.ConvergeLRPs(logger, pollingInterval)
 					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
 				})
 
@@ -695,7 +695,7 @@ var _ = Describe("LrpConvergence", func() {
 					})
 
 					It("does not stop the actual LRP", func() {
-						bbs.ConvergeLRPs(pollingInterval)
+						bbs.ConvergeLRPs(logger, pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -718,7 +718,7 @@ var _ = Describe("LrpConvergence", func() {
 				Action:      dummyAction,
 			}
 
-			err := bbs.DesireLRP(desiredLRP)
+			err := bbs.DesireLRP(logger, desiredLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
@@ -730,14 +730,14 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("logs", func() {
-			bbs.ConvergeLRPs(pollingInterval)
+			bbs.ConvergeLRPs(logger, pollingInterval)
 
 			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending-start-auction"))
 		})
 
 		It("re-emits start auction requests", func() {
 			originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
-			bbs.ConvergeLRPs(pollingInterval)
+			bbs.ConvergeLRPs(logger, pollingInterval)
 			Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 			_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)

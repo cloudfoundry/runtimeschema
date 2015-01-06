@@ -38,7 +38,7 @@ func New(
 	}
 }
 
-func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
+func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 	err := lrp.Validate()
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func (bbs *LRPBBS) DesireLRP(lrp models.DesiredLRP) error {
 	}
 }
 
-func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
+func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error {
 	lrp, err := bbs.DesiredLRPByProcessGuid(processGuid)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
 	return nil
 }
 
-func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
+func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error {
 	existing, index, err := bbs.desiredLRPByProcessGuidWithIndex(processGuid)
 	if err != nil {
 		return err

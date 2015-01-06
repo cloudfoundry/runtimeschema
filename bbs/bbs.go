@@ -30,9 +30,9 @@ type ReceptorBBS interface {
 	CancelTask(logger lager.Logger, taskGuid string) error
 
 	//desired lrp
-	DesireLRP(models.DesiredLRP) error
-	UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error
-	RemoveDesiredLRPByProcessGuid(processGuid string) error
+	DesireLRP(lager.Logger, models.DesiredLRP) error
+	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
+	RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
@@ -79,7 +79,7 @@ type ConvergerBBS interface {
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
 
 	//lrp
-	ConvergeLRPs(time.Duration)
+	ConvergeLRPs(lager.Logger, time.Duration)
 
 	//task
 	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
@@ -142,8 +142,8 @@ type VeritasBBS interface {
 	//lrp
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	ActualLRPs() ([]models.ActualLRP, error)
-	DesireLRP(models.DesiredLRP) error
-	RemoveDesiredLRPByProcessGuid(guid string) error
+	DesireLRP(lager.Logger, models.DesiredLRP) error
+	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 
 	// domains
 	Domains() ([]string, error)

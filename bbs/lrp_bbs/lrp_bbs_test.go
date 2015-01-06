@@ -34,7 +34,7 @@ var _ = Describe("LRP", func() {
 	Describe("DesireLRP", func() {
 		Context("when the desired LRP does not yet exist", func() {
 			It("creates /v1/desired/<process-guid>", func() {
-				err := bbs.DesireLRP(lrp)
+				err := bbs.DesireLRP(logger, lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				node, err := etcdClient.Get("/v1/desired/some-process-guid")
@@ -53,7 +53,7 @@ var _ = Describe("LRP", func() {
 				It("emits start auction requests", func() {
 					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
-					err := bbs.DesireLRP(lrp)
+					err := bbs.DesireLRP(logger, lrp)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
@@ -73,7 +73,7 @@ var _ = Describe("LRP", func() {
 			var newLRP models.DesiredLRP
 
 			BeforeEach(func() {
-				err := bbs.DesireLRP(lrp)
+				err := bbs.DesireLRP(logger, lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				newLRP = lrp
@@ -86,7 +86,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("updates the desired lrp", func() {
-					err := bbs.DesireLRP(newLRP)
+					err := bbs.DesireLRP(logger, newLRP)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
@@ -109,7 +109,7 @@ var _ = Describe("LRP", func() {
 						It("emits start auction requests", func() {
 							originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
-							err := bbs.DesireLRP(newLRP)
+							err := bbs.DesireLRP(logger, newLRP)
 							Ω(err).ShouldNot(HaveOccurred())
 
 							Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
@@ -150,7 +150,7 @@ var _ = Describe("LRP", func() {
 						It("stops the instances at the removed indices", func() {
 							originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
 
-							err := bbs.DesireLRP(newLRP)
+							err := bbs.DesireLRP(logger, newLRP)
 							Ω(err).ShouldNot(HaveOccurred())
 
 							Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances - newLRP.Instances)))
@@ -175,7 +175,7 @@ var _ = Describe("LRP", func() {
 				})
 
 				It("fails to update the desired lrp", func() {
-					err := bbs.DesireLRP(newLRP)
+					err := bbs.DesireLRP(logger, newLRP)
 					Ω(err).Should(HaveOccurred())
 
 					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
@@ -191,7 +191,7 @@ var _ = Describe("LRP", func() {
 
 			BeforeEach(func() {
 				lrp.Domain = ""
-				desireError = bbs.DesireLRP(lrp)
+				desireError = bbs.DesireLRP(logger, lrp)
 			})
 
 			It("returns an error", func() {
@@ -202,7 +202,7 @@ var _ = Describe("LRP", func() {
 
 		Context("when the store is out of commission", func() {
 			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireLRP(lrp)
+				return bbs.DesireLRP(logger, lrp)
 			})
 		})
 	})
@@ -210,12 +210,12 @@ var _ = Describe("LRP", func() {
 	Describe("RemoveDesiredLRPByProcessGuid", func() {
 		Context("when the desired LRP exists", func() {
 			BeforeEach(func() {
-				err := bbs.DesireLRP(lrp)
+				err := bbs.DesireLRP(logger, lrp)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should delete it", func() {
-				err := bbs.RemoveDesiredLRPByProcessGuid(lrp.ProcessGuid)
+				err := bbs.RemoveDesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get("/v1/desired/some-process-guid")
@@ -245,7 +245,7 @@ var _ = Describe("LRP", func() {
 				It("stops all actual lrps for the desired lrp", func() {
 					originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
 
-					err := bbs.RemoveDesiredLRPByProcessGuid(lrp.ProcessGuid)
+					err := bbs.RemoveDesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances)))
@@ -265,7 +265,7 @@ var _ = Describe("LRP", func() {
 
 		Context("when the desired LRP does not exist", func() {
 			It("returns an ErrorKeyNotFound", func() {
-				err := bbs.RemoveDesiredLRPByProcessGuid("monkey")
+				err := bbs.RemoveDesiredLRPByProcessGuid(logger, "monkey")
 				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
@@ -275,7 +275,7 @@ var _ = Describe("LRP", func() {
 		var update models.DesiredLRPUpdate
 
 		BeforeEach(func() {
-			err := bbs.DesireLRP(lrp)
+			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			update = models.DesiredLRPUpdate{}
@@ -292,7 +292,7 @@ var _ = Describe("LRP", func() {
 			})
 
 			It("updates an existing DesireLRP", func() {
-				err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+				err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
@@ -318,7 +318,7 @@ var _ = Describe("LRP", func() {
 					It("emits start auction requests", func() {
 						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
-						err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+						err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
@@ -364,7 +364,7 @@ var _ = Describe("LRP", func() {
 					It("stops the instances at the removed indices", func() {
 						originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
 
-						err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+						err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances - *update.Instances)))
@@ -391,7 +391,7 @@ var _ = Describe("LRP", func() {
 					Instances: &instances,
 				}
 
-				err := bbs.UpdateDesiredLRP(lrp.ProcessGuid, update)
+				err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("instances"))
 
@@ -405,7 +405,7 @@ var _ = Describe("LRP", func() {
 			It("returns an ErrorKeyNotFound", func() {
 				instances := 0
 
-				err := bbs.UpdateDesiredLRP("garbage-guid", models.DesiredLRPUpdate{
+				err := bbs.UpdateDesiredLRP(logger, "garbage-guid", models.DesiredLRPUpdate{
 					Instances: &instances,
 				})
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))

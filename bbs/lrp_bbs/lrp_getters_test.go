@@ -52,13 +52,13 @@ var _ = Describe("LrpGetters", func() {
 		})
 
 		JustBeforeEach(func() {
-			err := bbs.DesireLRP(desiredLrp1)
+			err := bbs.DesireLRP(logger, desiredLrp1)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLRP(desiredLrp2)
+			err = bbs.DesireLRP(logger, desiredLrp2)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.DesireLRP(desiredLrp3)
+			err = bbs.DesireLRP(logger, desiredLrp3)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
