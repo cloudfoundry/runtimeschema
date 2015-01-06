@@ -58,7 +58,7 @@ var _ = BeforeEach(func() {
 
 	servicesBBS := services_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, fakeAuctioneerClient, servicesBBS, logger)
+	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, fakeAuctioneerClient, servicesBBS)
 
 	domainBBS = domain_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 })

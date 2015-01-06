@@ -17,7 +17,6 @@ type LRPBBS struct {
 	cellClient       cb.CellClient
 	auctioneerClient cb.AuctioneerClient
 	services         *services_bbs.ServicesBBS
-	logger           lager.Logger
 }
 
 func New(
@@ -26,7 +25,6 @@ func New(
 	cellClient cb.CellClient,
 	auctioneerClient cb.AuctioneerClient,
 	services *services_bbs.ServicesBBS,
-	logger lager.Logger,
 ) *LRPBBS {
 	return &LRPBBS{
 		store:            store,
@@ -34,7 +32,6 @@ func New(
 		cellClient:       cellClient,
 		auctioneerClient: auctioneerClient,
 		services:         services,
-		logger:           logger,
 	}
 }
 
@@ -86,7 +83,7 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 		bbs.processDesiredChange(models.DesiredLRPChange{
 			Before: &existingLRP,
 			After:  &lrp,
-		}, bbs.logger)
+		}, logger)
 
 		return nil
 
@@ -94,7 +91,7 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 		bbs.processDesiredChange(models.DesiredLRPChange{
 			Before: nil,
 			After:  &lrp,
-		}, bbs.logger)
+		}, logger)
 
 		return nil
 
@@ -119,7 +116,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGui
 	bbs.processDesiredChange(models.DesiredLRPChange{
 		Before: &lrp,
 		After:  nil,
-	}, bbs.logger)
+	}, logger)
 
 	return nil
 }
@@ -153,7 +150,7 @@ func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, upd
 		bbs.processDesiredChange(models.DesiredLRPChange{
 			Before: &existing,
 			After:  &updatedLRP,
-		}, bbs.logger)
+		}, logger)
 
 		return nil
 	})

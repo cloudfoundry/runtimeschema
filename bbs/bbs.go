@@ -191,7 +191,7 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services, logger.Session("lrp-bbs")),
+		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
 		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services),
 		DomainBBS:   domain_bbs.New(store, logger),

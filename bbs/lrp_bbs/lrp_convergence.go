@@ -19,7 +19,7 @@ const (
 )
 
 func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, pollingInterval time.Duration) {
-	logger = bbs.logger.Session("converge-lrps")
+	logger = logger.Session("converge-lrps")
 	logger.Info("starting-convergence")
 	defer logger.Info("finished-convergence")
 

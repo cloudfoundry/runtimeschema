@@ -152,7 +152,7 @@ func (bbs *LRPBBS) StartActualLRP(
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		newLRP := bbs.newRunningActualLRP(key, containerKey, netInfo)
-		return bbs.createRawActualLRP(&newLRP, bbs.logger)
+		return bbs.createRawActualLRP(&newLRP, logger)
 
 	} else if err != nil {
 		return err
