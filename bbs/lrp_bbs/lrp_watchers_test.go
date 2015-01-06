@@ -61,10 +61,7 @@ var _ = Describe("LrpWatchers", func() {
 			changedLRP := newLRP()
 			changedLRP.Instances++
 
-			err = bbs.ChangeDesiredLRP(models.DesiredLRPChange{
-				Before: &lrp,
-				After:  &changedLRP,
-			})
+			err = bbs.DesireLRP(logger, changedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{

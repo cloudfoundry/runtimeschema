@@ -124,52 +124,6 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(processGuid string) error {
 	return nil
 }
 
-func (bbs *LRPBBS) ChangeDesiredLRP(change models.DesiredLRPChange) error {
-	beforeValue, err := models.ToJSON(change.Before)
-	if err != nil {
-		return err
-	}
-	afterValue, err := models.ToJSON(change.After)
-	if err != nil {
-		return err
-	}
-
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		if change.Before != nil && change.After != nil {
-			return bbs.store.CompareAndSwap(
-				storeadapter.StoreNode{
-					Key:   shared.DesiredLRPSchemaPath(*change.Before),
-					Value: beforeValue,
-				},
-				storeadapter.StoreNode{
-					Key:   shared.DesiredLRPSchemaPath(*change.After),
-					Value: afterValue,
-				},
-			)
-		}
-
-		if change.Before != nil {
-			return bbs.store.CompareAndDelete(
-				storeadapter.StoreNode{
-					Key:   shared.DesiredLRPSchemaPath(*change.Before),
-					Value: beforeValue,
-				},
-			)
-		}
-
-		if change.After != nil {
-			return bbs.store.Create(
-				storeadapter.StoreNode{
-					Key:   shared.DesiredLRPSchemaPath(*change.After),
-					Value: afterValue,
-				},
-			)
-		}
-
-		return nil
-	})
-}
-
 func (bbs *LRPBBS) UpdateDesiredLRP(processGuid string, update models.DesiredLRPUpdate) error {
 	existing, index, err := bbs.desiredLRPByProcessGuidWithIndex(processGuid)
 	if err != nil {
