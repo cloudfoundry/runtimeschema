@@ -370,6 +370,9 @@ var _ = Describe("LrpConvergence", func() {
 
 						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})
@@ -424,6 +427,8 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})
@@ -486,6 +491,8 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-actual-instance-domain-not-fresh"))
 					})
 				})
 			})
@@ -554,6 +561,9 @@ var _ = Describe("LrpConvergence", func() {
 
 						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
 					})
 				})
 			})
@@ -616,6 +626,8 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
 					})
 				})
 			})
@@ -686,6 +698,8 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(pollingInterval)
 
 						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
+						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.not-stopping-undesired-indices-domain-not-fresh"))
 					})
 				})
 			})
