@@ -21,16 +21,19 @@ type FakeReceptorBBS struct {
 	desireTaskReturns struct {
 		result1 error
 	}
-	TasksStub        func() ([]models.Task, error)
+	TasksStub        func(logger lager.Logger) ([]models.Task, error)
 	tasksMutex       sync.RWMutex
-	tasksArgsForCall []struct{}
+	tasksArgsForCall []struct {
+		logger lager.Logger
+	}
 	tasksReturns struct {
 		result1 []models.Task
 		result2 error
 	}
-	TasksByDomainStub        func(domain string) ([]models.Task, error)
+	TasksByDomainStub        func(logger lager.Logger, domain string) ([]models.Task, error)
 	tasksByDomainMutex       sync.RWMutex
 	tasksByDomainArgsForCall []struct {
+		logger lager.Logger
 		domain string
 	}
 	tasksByDomainReturns struct {
@@ -234,12 +237,14 @@ func (fake *FakeReceptorBBS) DesireTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) Tasks() ([]models.Task, error) {
+func (fake *FakeReceptorBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 	fake.tasksMutex.Lock()
-	fake.tasksArgsForCall = append(fake.tasksArgsForCall, struct{}{})
+	fake.tasksArgsForCall = append(fake.tasksArgsForCall, struct {
+		logger lager.Logger
+	}{logger})
 	fake.tasksMutex.Unlock()
 	if fake.TasksStub != nil {
-		return fake.TasksStub()
+		return fake.TasksStub(logger)
 	} else {
 		return fake.tasksReturns.result1, fake.tasksReturns.result2
 	}
@@ -251,6 +256,12 @@ func (fake *FakeReceptorBBS) TasksCallCount() int {
 	return len(fake.tasksArgsForCall)
 }
 
+func (fake *FakeReceptorBBS) TasksArgsForCall(i int) lager.Logger {
+	fake.tasksMutex.RLock()
+	defer fake.tasksMutex.RUnlock()
+	return fake.tasksArgsForCall[i].logger
+}
+
 func (fake *FakeReceptorBBS) TasksReturns(result1 []models.Task, result2 error) {
 	fake.TasksStub = nil
 	fake.tasksReturns = struct {
@@ -259,14 +270,15 @@ func (fake *FakeReceptorBBS) TasksReturns(result1 []models.Task, result2 error) 
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) TasksByDomain(domain string) ([]models.Task, error) {
+func (fake *FakeReceptorBBS) TasksByDomain(logger lager.Logger, domain string) ([]models.Task, error) {
 	fake.tasksByDomainMutex.Lock()
 	fake.tasksByDomainArgsForCall = append(fake.tasksByDomainArgsForCall, struct {
+		logger lager.Logger
 		domain string
-	}{domain})
+	}{logger, domain})
 	fake.tasksByDomainMutex.Unlock()
 	if fake.TasksByDomainStub != nil {
-		return fake.TasksByDomainStub(domain)
+		return fake.TasksByDomainStub(logger, domain)
 	} else {
 		return fake.tasksByDomainReturns.result1, fake.tasksByDomainReturns.result2
 	}
@@ -278,10 +290,10 @@ func (fake *FakeReceptorBBS) TasksByDomainCallCount() int {
 	return len(fake.tasksByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) TasksByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) TasksByDomainArgsForCall(i int) (lager.Logger, string) {
 	fake.tasksByDomainMutex.RLock()
 	defer fake.tasksByDomainMutex.RUnlock()
-	return fake.tasksByDomainArgsForCall[i].domain
+	return fake.tasksByDomainArgsForCall[i].logger, fake.tasksByDomainArgsForCall[i].domain
 }
 
 func (fake *FakeReceptorBBS) TasksByDomainReturns(result1 []models.Task, result2 error) {

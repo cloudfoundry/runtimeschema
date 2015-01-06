@@ -7,13 +7,16 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
 type FakeMetricsBBS struct {
-	TasksStub        func() ([]models.Task, error)
+	TasksStub        func(logger lager.Logger) ([]models.Task, error)
 	tasksMutex       sync.RWMutex
-	tasksArgsForCall []struct{}
+	tasksArgsForCall []struct {
+		logger lager.Logger
+	}
 	tasksReturns struct {
 		result1 []models.Task
 		result2 error
@@ -57,12 +60,14 @@ type FakeMetricsBBS struct {
 	}
 }
 
-func (fake *FakeMetricsBBS) Tasks() ([]models.Task, error) {
+func (fake *FakeMetricsBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 	fake.tasksMutex.Lock()
-	fake.tasksArgsForCall = append(fake.tasksArgsForCall, struct{}{})
+	fake.tasksArgsForCall = append(fake.tasksArgsForCall, struct {
+		logger lager.Logger
+	}{logger})
 	fake.tasksMutex.Unlock()
 	if fake.TasksStub != nil {
-		return fake.TasksStub()
+		return fake.TasksStub(logger)
 	} else {
 		return fake.tasksReturns.result1, fake.tasksReturns.result2
 	}
@@ -72,6 +77,12 @@ func (fake *FakeMetricsBBS) TasksCallCount() int {
 	fake.tasksMutex.RLock()
 	defer fake.tasksMutex.RUnlock()
 	return len(fake.tasksArgsForCall)
+}
+
+func (fake *FakeMetricsBBS) TasksArgsForCall(i int) lager.Logger {
+	fake.tasksMutex.RLock()
+	defer fake.tasksMutex.RUnlock()
+	return fake.tasksArgsForCall[i].logger
 }
 
 func (fake *FakeMetricsBBS) TasksReturns(result1 []models.Task, result2 error) {

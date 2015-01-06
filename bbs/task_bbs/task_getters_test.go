@@ -46,7 +46,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("is consistent with collection getters", func() {
-				pendingTasks, err := bbs.PendingTasks()
+				pendingTasks, err := bbs.PendingTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(pendingTasks).Should(Equal([]models.Task{receivedTask}))
 			})
@@ -71,7 +71,7 @@ var _ = Describe("Task BBS", func() {
 		})
 		Context("when there are no tasks for the given cell ID", func() {
 			It("returns an empty list", func() {
-				tasks, err := bbs.TasksByCellID("cell-id")
+				tasks, err := bbs.TasksByCellID(logger, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
 			})
@@ -109,7 +109,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns only those tasks", func() {
-				tasks, err := bbs.TasksByCellID("cell-id")
+				tasks, err := bbs.TasksByCellID(logger, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(ConsistOf(task1, task2))
 			})
@@ -123,7 +123,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'pending' state", func() {
-			tasks, err := bbs.PendingTasks()
+			tasks, err := bbs.PendingTasks(logger)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -140,7 +140,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'running' state", func() {
-			tasks, err := bbs.RunningTasks()
+			tasks, err := bbs.RunningTasks(logger)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -160,7 +160,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
-			tasks, err := bbs.CompletedTasks()
+			tasks, err := bbs.CompletedTasks(logger)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -183,7 +183,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
-			tasks, err := bbs.ResolvingTasks()
+			tasks, err := bbs.ResolvingTasks(logger)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(tasks).Should(HaveLen(1))
 			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -208,7 +208,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		It("returns all Tasks in the given domain", func() {
-			tasks, err := bbs.TasksByDomain("tests")
+			tasks, err := bbs.TasksByDomain(logger, "tests")
 
 			guids := []string{}
 			for _, task := range tasks {

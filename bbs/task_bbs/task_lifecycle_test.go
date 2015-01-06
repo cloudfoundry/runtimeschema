@@ -11,7 +11,6 @@ import (
 	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
@@ -187,7 +186,10 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("does not persist another", func() {
-					Consistently(bbs.Tasks).Should(HaveLen(1))
+					Consistently(
+						func() ([]models.Task, error) {
+							return bbs.Tasks(logger)
+						}).Should(HaveLen(1))
 				})
 
 				It("does not request an auction", func() {
@@ -211,7 +213,9 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("does not persist a task", func() {
-				Consistently(bbs.Tasks).Should(BeEmpty())
+				Consistently(func() ([]models.Task, error) {
+					return bbs.Tasks(logger)
+				}).Should(BeEmpty())
 			})
 
 			It("does not request an auction", func() {
@@ -262,7 +266,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.RunningTasks()
+				tasks, err := bbs.RunningTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
@@ -275,7 +279,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.RunningTasks()
+				tasks, err := bbs.RunningTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
@@ -444,7 +448,7 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, lagertest.NewTestLogger("test"))
+					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
 				})
 
 				It("returns an error", func() {
@@ -487,7 +491,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.CompletedTasks()
+				tasks, err := bbs.CompletedTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].Failed).Should(BeTrue())
@@ -500,7 +504,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.CompletedTasks()
+				tasks, err := bbs.CompletedTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
@@ -512,7 +516,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "", true, "because i said so", "a result")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.CompletedTasks()
+				tasks, err := bbs.CompletedTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
@@ -622,7 +626,7 @@ var _ = Describe("Task BBS", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tasks, err := bbs.CompletedTasks()
+					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(tasks[0].Failed).Should(BeTrue())
@@ -635,7 +639,7 @@ var _ = Describe("Task BBS", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tasks, err := bbs.CompletedTasks()
+					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
@@ -647,7 +651,7 @@ var _ = Describe("Task BBS", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
 
-					tasks, err := bbs.CompletedTasks()
+					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
@@ -805,7 +809,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.ResolvingTasks()
+				tasks, err := bbs.ResolvingTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 				Ω(tasks[0].State).Should(Equal(models.TaskStateResolving))
@@ -817,7 +821,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.ResolvingTasks()
+				tasks, err := bbs.ResolvingTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
 			})
@@ -881,7 +885,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.ResolveTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				tasks, err := bbs.Tasks()
+				tasks, err := bbs.Tasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
 			})

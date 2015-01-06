@@ -56,7 +56,7 @@ var _ = BeforeEach(func() {
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
 	timeProvider = faketimeprovider.New(time.Unix(1238, 0))
 	servicesBBS = services_bbs.New(etcdClient, logger)
-	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS, logger)
+	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
 })
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {

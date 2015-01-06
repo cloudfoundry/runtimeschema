@@ -40,9 +40,10 @@ type FakeRepBBS struct {
 		result1 models.Task
 		result2 error
 	}
-	TasksByCellIDStub        func(cellID string) ([]models.Task, error)
+	TasksByCellIDStub        func(logger lager.Logger, cellID string) ([]models.Task, error)
 	tasksByCellIDMutex       sync.RWMutex
 	tasksByCellIDArgsForCall []struct {
+		logger lager.Logger
 		cellID string
 	}
 	tasksByCellIDReturns struct {
@@ -204,14 +205,15 @@ func (fake *FakeRepBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) TasksByCellID(cellID string) ([]models.Task, error) {
+func (fake *FakeRepBBS) TasksByCellID(logger lager.Logger, cellID string) ([]models.Task, error) {
 	fake.tasksByCellIDMutex.Lock()
 	fake.tasksByCellIDArgsForCall = append(fake.tasksByCellIDArgsForCall, struct {
+		logger lager.Logger
 		cellID string
-	}{cellID})
+	}{logger, cellID})
 	fake.tasksByCellIDMutex.Unlock()
 	if fake.TasksByCellIDStub != nil {
-		return fake.TasksByCellIDStub(cellID)
+		return fake.TasksByCellIDStub(logger, cellID)
 	} else {
 		return fake.tasksByCellIDReturns.result1, fake.tasksByCellIDReturns.result2
 	}
@@ -223,10 +225,10 @@ func (fake *FakeRepBBS) TasksByCellIDCallCount() int {
 	return len(fake.tasksByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) TasksByCellIDArgsForCall(i int) string {
+func (fake *FakeRepBBS) TasksByCellIDArgsForCall(i int) (lager.Logger, string) {
 	fake.tasksByCellIDMutex.RLock()
 	defer fake.tasksByCellIDMutex.RUnlock()
-	return fake.tasksByCellIDArgsForCall[i].cellID
+	return fake.tasksByCellIDArgsForCall[i].logger, fake.tasksByCellIDArgsForCall[i].cellID
 }
 
 func (fake *FakeRepBBS) TasksByCellIDReturns(result1 []models.Task, result2 error) {

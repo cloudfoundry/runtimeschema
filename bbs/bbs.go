@@ -22,8 +22,8 @@ import (
 type ReceptorBBS interface {
 	//task
 	DesireTask(lager.Logger, models.Task) error
-	Tasks() ([]models.Task, error)
-	TasksByDomain(domain string) ([]models.Task, error)
+	Tasks(logger lager.Logger) ([]models.Task, error)
+	TasksByDomain(logger lager.Logger, domain string) ([]models.Task, error)
 	TaskByGuid(taskGuid string) (models.Task, error)
 	ResolvingTask(logger lager.Logger, taskGuid string) error
 	ResolveTask(logger lager.Logger, taskGuid string) error
@@ -63,7 +63,7 @@ type RepBBS interface {
 	//task
 	StartTask(logger lager.Logger, taskGuid string, cellID string) error
 	TaskByGuid(taskGuid string) (models.Task, error)
-	TasksByCellID(cellID string) ([]models.Task, error)
+	TasksByCellID(logger lager.Logger, cellID string) ([]models.Task, error)
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
@@ -107,7 +107,7 @@ type AuctioneerBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS
 type MetricsBBS interface {
 	//task
-	Tasks() ([]models.Task, error)
+	Tasks(logger lager.Logger) ([]models.Task, error)
 
 	//services
 	ServiceRegistrations() (models.ServiceRegistrations, error)
@@ -137,7 +137,7 @@ type RouteEmitterBBS interface {
 
 type VeritasBBS interface {
 	//task
-	Tasks() ([]models.Task, error)
+	Tasks(logger lager.Logger) ([]models.Task, error)
 
 	//lrp
 	DesiredLRPs() ([]models.DesiredLRP, error)
@@ -193,7 +193,7 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 		LockBBS:     lock_bbs.New(store, logger.Session("lock-bbs")),
 		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services, logger.Session("lrp-bbs")),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services, logger.Session("task-bbs")),
+		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }

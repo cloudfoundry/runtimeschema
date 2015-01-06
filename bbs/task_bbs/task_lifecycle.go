@@ -41,7 +41,7 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 
 	err = bbs.requestTaskAuctions([]models.Task{task})
 	if err != nil {
-		bbs.logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
+		logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
 		// The creation succeeded, the auction request error can be dropped
 	}
 
@@ -154,13 +154,13 @@ func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID st
 
 		receptorPresence, err := bbs.services.Receptor()
 		if err != nil {
-			bbs.logger.Error("could-not-fetch-receptors", err)
+			logger.Error("could-not-fetch-receptors", err)
 			return nil
 		}
 
 		err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
 		if err != nil {
-			bbs.logger.Error("failed-to-complete-task", err)
+			logger.Error("failed-to-complete-task", err)
 			return nil
 		}
 

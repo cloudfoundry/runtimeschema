@@ -7,7 +7,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *TaskBBS) Tasks() ([]models.Task, error) {
+func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return []models.Task{}, nil
@@ -22,7 +22,7 @@ func (bbs *TaskBBS) Tasks() ([]models.Task, error) {
 		var task models.Task
 		err := models.FromJSON(node.Value, &task)
 		if err != nil {
-			bbs.logger.Error("failed-to-unmarshal-task", err, lager.Data{
+			logger.Error("failed-to-unmarshal-task", err, lager.Data{
 				"key":   node.Key,
 				"value": node.Value,
 			})
@@ -39,35 +39,35 @@ func (bbs *TaskBBS) TaskByGuid(guid string) (models.Task, error) {
 	return task, err
 }
 
-func (bbs *TaskBBS) PendingTasks() ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) PendingTasks(logger lager.Logger) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasksByState(all, models.TaskStatePending), err
 }
 
-func (bbs *TaskBBS) RunningTasks() ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) RunningTasks(logger lager.Logger) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasksByState(all, models.TaskStateRunning), err
 }
 
-func (bbs *TaskBBS) CompletedTasks() ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) CompletedTasks(logger lager.Logger) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
-func (bbs *TaskBBS) ResolvingTasks() ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) ResolvingTasks(logger lager.Logger) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasksByState(all, models.TaskStateResolving), err
 }
 
-func (bbs *TaskBBS) TasksByDomain(domain string) ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) TasksByDomain(logger lager.Logger, domain string) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasks(all, func(task models.Task) bool {
 		return task.Domain == domain
 	}), err
 }
 
-func (bbs *TaskBBS) TasksByCellID(cellId string) ([]models.Task, error) {
-	all, err := bbs.Tasks()
+func (bbs *TaskBBS) TasksByCellID(logger lager.Logger, cellId string) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
 	return filterTasks(all, func(task models.Task) bool {
 		return task.CellID == cellId
 	}), err

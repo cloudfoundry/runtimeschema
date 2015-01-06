@@ -45,7 +45,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 		convergeTaskDuration.Send(time.Since(convergeStart))
 	}()
 
-	taskLog := bbs.logger.Session("converge-tasks")
+	taskLog := logger.Session("converge-tasks")
 
 	taskState, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err != nil {
