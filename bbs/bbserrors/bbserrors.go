@@ -35,7 +35,7 @@ type TaskStateTransitionError struct {
 }
 
 func (e TaskStateTransitionError) Error() string {
-	return "Cannot transition from " + stateString(e.from) + " to " + stateString(e.to)
+	return fmt.Sprint("Cannot transition from ", e.from, " to ", e.to)
 }
 
 func NewTaskCannotBeResolvedError(from models.TaskState) taskCannotBeResolvedError {
@@ -47,22 +47,5 @@ type taskCannotBeResolvedError struct {
 }
 
 func (e taskCannotBeResolvedError) Error() string {
-	return "Cannot resolve task from " + stateString(e.from) + " state"
-}
-
-func stateString(state models.TaskState) string {
-	switch state {
-	case models.TaskStateCompleted:
-		return "COMPLETED"
-	case models.TaskStateInvalid:
-		return "INVALID"
-	case models.TaskStatePending:
-		return "PENDING"
-	case models.TaskStateRunning:
-		return "RUNNING"
-	case models.TaskStateResolving:
-		return "RESOLVING"
-	default:
-		panic(fmt.Sprintf("Unknown task state: %v", state))
-	}
+	return fmt.Sprint("Cannot resolve task from ", e.from, " state")
 }
