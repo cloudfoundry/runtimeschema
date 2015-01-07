@@ -26,7 +26,7 @@ const (
 )
 
 var circusTailorDefaults = map[string]string{
-	circusTailorAppDirFlag:                    "/app",
+	circusTailorAppDirFlag:                    "/tmp/app",
 	circusTailorOutputDropletFlag:             "/tmp/droplet",
 	circusTailorOutputMetadataFlag:            "/tmp/result.json",
 	circusTailorOutputBuildArtifactsCacheFlag: "/tmp/output-cache",

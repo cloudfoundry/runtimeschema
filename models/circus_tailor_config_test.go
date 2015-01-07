@@ -16,7 +16,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	Context("with defaults", func() {
 		It("generates a script for running its tailor", func() {
 			commandFlags := []string{
-				"-appDir=/app",
+				"-appDir=/tmp/app",
 				"-buildpackOrder=ocaml-buildpack,haskell-buildpack,bash-buildpack",
 				"-buildpacksDir=/tmp/buildpacks",
 				"-buildArtifactsCacheDir=/tmp/cache",
@@ -60,7 +60,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	})
 
 	It("returns the path to the app bits", func() {
-		Ω(tailorConfig.AppDir()).To(Equal("/app"))
+		Ω(tailorConfig.AppDir()).To(Equal("/tmp/app"))
 	})
 
 	It("returns the path to a given buildpack", func() {
