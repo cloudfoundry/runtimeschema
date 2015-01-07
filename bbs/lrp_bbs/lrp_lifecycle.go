@@ -100,20 +100,25 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	logger lager.Logger,
 ) error {
 	logger = logger.Session("claim-actual-lrp")
+	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
+		logger.Error("failed-actual-lrp-not-found", err)
 		return bbserrors.ErrActualLRPCannotBeClaimed
 	} else if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
 		return err
 	}
 
 	if lrp.ActualLRPKey == key &&
 		lrp.ActualLRPContainerKey == containerKey &&
 		lrp.State == models.ActualLRPStateClaimed {
+		logger.Info("succeeded")
 		return nil
 	}
 
 	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateClaimed) {
+		logger.Error("failed-to-transition-actual-lrp-to-claimed", nil)
 		return bbserrors.ErrActualLRPCannotBeClaimed
 	}
 
@@ -137,9 +142,11 @@ func (bbs *LRPBBS) ClaimActualLRP(
 
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
 	}
 
-	return err
+	logger.Info("succeeded")
+	return nil
 }
 
 func (bbs *LRPBBS) StartActualLRP(
@@ -149,12 +156,13 @@ func (bbs *LRPBBS) StartActualLRP(
 	logger lager.Logger,
 ) error {
 	logger = logger.Session("start-actual-lrp")
+	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		newLRP := bbs.newRunningActualLRP(key, containerKey, netInfo)
 		return bbs.createRawActualLRP(&newLRP, logger)
-
 	} else if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
 		return err
 	}
 
@@ -163,10 +171,12 @@ func (bbs *LRPBBS) StartActualLRP(
 		lrp.Address == netInfo.Address &&
 		reflect.DeepEqual(lrp.Ports, netInfo.Ports) &&
 		lrp.State == models.ActualLRPStateRunning {
+		logger.Info("succeeded")
 		return nil
 	}
 
 	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateRunning) {
+		logger.Error("failed-to-transition-actual-lrp-to-started", nil)
 		return bbserrors.ErrActualLRPCannotBeStarted
 	}
 
@@ -190,9 +200,11 @@ func (bbs *LRPBBS) StartActualLRP(
 
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
 	}
 
-	return err
+	logger.Info("succeeded")
+	return nil
 
 }
 
@@ -202,29 +214,32 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	logger lager.Logger,
 ) error {
 	logger = logger.Session("remove-actual-lrp")
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
-		if err != nil {
-			return err
-		}
+	logger.Info("starting")
+	lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
+	if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
+		return err
+	}
 
-		if lrp.ActualLRPKey == key &&
-			lrp.ActualLRPContainerKey == containerKey {
-			err = bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
-				Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-				Index: storeIndex,
-			})
+	if lrp.ActualLRPKey != key || lrp.ActualLRPContainerKey != containerKey {
+		logger.Error("failed-to-match-existing-actual-lrp", err, lager.Data{"existing-actual-lrp": lrp})
+		return bbserrors.ErrStoreComparisonFailed
+	}
 
-			if err != nil {
-				logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-			}
-
-			return err
-
-		} else {
-			return bbserrors.ErrStoreComparisonFailed
-		}
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Index: storeIndex,
+		})
 	})
+
+	if err != nil {
+		logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
+	}
+
+	logger.Info("succeeded")
+	return nil
 }
 
 func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) {
