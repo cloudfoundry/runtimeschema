@@ -96,9 +96,8 @@ func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 		return err
 	}
 
-	err = validateStateTransition(task.State, models.TaskStateCompleted)
-	if err != nil {
-		return err
+	if task.State == models.TaskStateCompleted || task.State == models.TaskStateResolving {
+		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
 	}
 
 	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
@@ -113,6 +112,48 @@ func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 			Key:   shared.TaskSchemaPath(taskGuid),
 			Value: value,
 		})
+	})
+}
+
+func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {
+	task, index, err := bbs.getTask(taskGuid)
+	if err != nil {
+		return err
+	}
+
+	task = bbs.markTaskCompleted(task, true, failureReason, "")
+
+	value, err := models.ToJSON(task)
+	if err != nil {
+		return err
+	}
+
+	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.TaskSchemaPath(taskGuid),
+			Value: value,
+		})
+		if err != nil {
+			return err
+		}
+
+		if task.CompletionCallbackURL == nil {
+			return nil
+		}
+
+		receptorPresence, err := bbs.services.Receptor()
+		if err != nil {
+			logger.Error("could-not-fetch-receptors", err)
+			return nil
+		}
+
+		err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
+		if err != nil {
+			logger.Error("failed-to-complete-task", err)
+			return nil
+		}
+
+		return nil
 	})
 }
 
@@ -222,7 +263,7 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 
 func validateStateTransition(from, to models.TaskState) error {
 	if (from != models.TaskStatePending && to == models.TaskStateRunning) ||
-		((from != models.TaskStatePending && from != models.TaskStateRunning) && to == models.TaskStateCompleted) ||
+		(from != models.TaskStateRunning && to == models.TaskStateCompleted) ||
 		(from != models.TaskStateCompleted && to == models.TaskStateResolving) {
 		return bbserrors.NewTaskStateTransitionError(from, to)
 	} else {

@@ -64,6 +64,7 @@ type RepBBS interface {
 	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
 	TaskByGuid(taskGuid string) (models.Task, error)
 	TasksByCellID(logger lager.Logger, cellID string) ([]models.Task, error)
+	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp

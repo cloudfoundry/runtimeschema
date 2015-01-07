@@ -51,6 +51,16 @@ type FakeRepBBS struct {
 		result1 []models.Task
 		result2 error
 	}
+	FailTaskStub        func(logger lager.Logger, taskGuid string, failureReason string) error
+	failTaskMutex       sync.RWMutex
+	failTaskArgsForCall []struct {
+		logger        lager.Logger
+		taskGuid      string
+		failureReason string
+	}
+	failTaskReturns struct {
+		result1 error
+	}
 	CompleteTaskStub        func(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 	completeTaskMutex       sync.RWMutex
 	completeTaskArgsForCall []struct {
@@ -239,6 +249,40 @@ func (fake *FakeRepBBS) TasksByCellIDReturns(result1 []models.Task, result2 erro
 		result1 []models.Task
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeRepBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {
+	fake.failTaskMutex.Lock()
+	fake.failTaskArgsForCall = append(fake.failTaskArgsForCall, struct {
+		logger        lager.Logger
+		taskGuid      string
+		failureReason string
+	}{logger, taskGuid, failureReason})
+	fake.failTaskMutex.Unlock()
+	if fake.FailTaskStub != nil {
+		return fake.FailTaskStub(logger, taskGuid, failureReason)
+	} else {
+		return fake.failTaskReturns.result1
+	}
+}
+
+func (fake *FakeRepBBS) FailTaskCallCount() int {
+	fake.failTaskMutex.RLock()
+	defer fake.failTaskMutex.RUnlock()
+	return len(fake.failTaskArgsForCall)
+}
+
+func (fake *FakeRepBBS) FailTaskArgsForCall(i int) (lager.Logger, string, string) {
+	fake.failTaskMutex.RLock()
+	defer fake.failTaskMutex.RUnlock()
+	return fake.failTaskArgsForCall[i].logger, fake.failTaskArgsForCall[i].taskGuid, fake.failTaskArgsForCall[i].failureReason
+}
+
+func (fake *FakeRepBBS) FailTaskReturns(result1 error) {
+	fake.FailTaskStub = nil
+	fake.failTaskReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeRepBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
