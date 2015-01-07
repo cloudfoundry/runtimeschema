@@ -15,7 +15,7 @@ type CircusTailorConfig struct {
 }
 
 const (
-	circusTailorAppDirFlag                    = "appDir"
+	circusTailorBuildDirFlag                  = "buildDir"
 	circusTailorOutputDropletFlag             = "outputDroplet"
 	circusTailorOutputMetadataFlag            = "outputMetadata"
 	circusTailorOutputBuildArtifactsCacheFlag = "outputBuildArtifactsCache"
@@ -26,7 +26,7 @@ const (
 )
 
 var circusTailorDefaults = map[string]string{
-	circusTailorAppDirFlag:                    "/tmp/app",
+	circusTailorBuildDirFlag:                  "/tmp/app",
 	circusTailorOutputDropletFlag:             "/tmp/droplet",
 	circusTailorOutputMetadataFlag:            "/tmp/result.json",
 	circusTailorOutputBuildArtifactsCacheFlag: "/tmp/output-cache",
@@ -38,8 +38,8 @@ func NewCircusTailorConfig(buildpacks []string, skipCertVerify bool) CircusTailo
 	flagSet := flag.NewFlagSet("tailor", flag.ExitOnError)
 
 	flagSet.String(
-		circusTailorAppDirFlag,
-		circusTailorDefaults[circusTailorAppDirFlag],
+		circusTailorBuildDirFlag,
+		circusTailorDefaults[circusTailorBuildDirFlag],
 		"directory containing raw app bits",
 	)
 
@@ -123,8 +123,8 @@ func (s CircusTailorConfig) Validate() error {
 	return nil
 }
 
-func (s CircusTailorConfig) AppDir() string {
-	return s.Lookup(circusTailorAppDirFlag).Value.String()
+func (s CircusTailorConfig) BuildDir() string {
+	return s.Lookup(circusTailorBuildDirFlag).Value.String()
 }
 
 func (s CircusTailorConfig) BuildpackPath(buildpackName string) string {

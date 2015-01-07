@@ -16,7 +16,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	Context("with defaults", func() {
 		It("generates a script for running its tailor", func() {
 			commandFlags := []string{
-				"-appDir=/tmp/app",
+				"-buildDir=/tmp/app",
 				"-buildpackOrder=ocaml-buildpack,haskell-buildpack,bash-buildpack",
 				"-buildpacksDir=/tmp/buildpacks",
 				"-buildArtifactsCacheDir=/tmp/cache",
@@ -33,7 +33,7 @@ var _ = Describe("CircusTailorConfig", func() {
 
 	Context("with overrides", func() {
 		BeforeEach(func() {
-			tailorConfig.Set("appDir", "/some/app/dir")
+			tailorConfig.Set("buildDir", "/some/build/dir")
 			tailorConfig.Set("outputDroplet", "/some/droplet")
 			tailorConfig.Set("outputMetadata", "/some/result/dir")
 			tailorConfig.Set("buildpacksDir", "/some/buildpacks/dir")
@@ -44,7 +44,7 @@ var _ = Describe("CircusTailorConfig", func() {
 
 		It("generates a script for running its tailor", func() {
 			commandFlags := []string{
-				"-appDir=/some/app/dir",
+				"-buildDir=/some/build/dir",
 				"-buildpackOrder=ocaml-buildpack,haskell-buildpack,bash-buildpack",
 				"-buildpacksDir=/some/buildpacks/dir",
 				"-buildArtifactsCacheDir=/some/cache/dir",
@@ -60,7 +60,7 @@ var _ = Describe("CircusTailorConfig", func() {
 	})
 
 	It("returns the path to the app bits", func() {
-		Ω(tailorConfig.AppDir()).To(Equal("/tmp/app"))
+		Ω(tailorConfig.BuildDir()).To(Equal("/tmp/app"))
 	})
 
 	It("returns the path to a given buildpack", func() {
