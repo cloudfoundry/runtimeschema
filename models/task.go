@@ -28,6 +28,7 @@ type Task struct {
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
 	Action               Action                `json:"-"`
 	MemoryMB             int                   `json:"memory_mb"`
+	Privileged           bool                  `json:"privileged"`
 	DiskMB               int                   `json:"disk_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
 	LogSource            string                `json:"log_source"`

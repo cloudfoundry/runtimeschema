@@ -31,6 +31,7 @@ var _ = Describe("LRPStartRequest", func() {
       "disk_mb": 512,
       "memory_mb": 1024,
       "cpu_weight": 42,
+			"privileged": false,
       "ports": [
         5678
       ],

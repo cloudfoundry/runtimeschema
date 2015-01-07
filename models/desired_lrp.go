@@ -20,6 +20,7 @@ type DesiredLRP struct {
 	DiskMB               int                   `json:"disk_mb"`
 	MemoryMB             int                   `json:"memory_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
+	Privileged           bool                  `json:"privileged"`
 	Ports                []uint32              `json:"ports"`
 	Routes               []string              `json:"routes"`
 	LogSource            string                `json:"log_source"`
