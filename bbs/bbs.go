@@ -99,7 +99,7 @@ type AuctioneerBBS interface {
 	Cells() ([]models.CellPresence, error)
 
 	// task
-	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
+	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)

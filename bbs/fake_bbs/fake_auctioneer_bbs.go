@@ -19,17 +19,14 @@ type FakeAuctioneerBBS struct {
 		result1 []models.CellPresence
 		result2 error
 	}
-	CompleteTaskStub        func(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
-	completeTaskMutex       sync.RWMutex
-	completeTaskArgsForCall []struct {
+	FailTaskStub        func(logger lager.Logger, taskGuid string, failureReason string) error
+	failTaskMutex       sync.RWMutex
+	failTaskArgsForCall []struct {
 		logger        lager.Logger
 		taskGuid      string
-		cellID        string
-		failed        bool
 		failureReason string
-		result        string
 	}
-	completeTaskReturns struct {
+	failTaskReturns struct {
 		result1 error
 	}
 	NewAuctioneerLockStub        func(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
@@ -69,39 +66,36 @@ func (fake *FakeAuctioneerBBS) CellsReturns(result1 []models.CellPresence, resul
 	}{result1, result2}
 }
 
-func (fake *FakeAuctioneerBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
-	fake.completeTaskMutex.Lock()
-	fake.completeTaskArgsForCall = append(fake.completeTaskArgsForCall, struct {
+func (fake *FakeAuctioneerBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {
+	fake.failTaskMutex.Lock()
+	fake.failTaskArgsForCall = append(fake.failTaskArgsForCall, struct {
 		logger        lager.Logger
 		taskGuid      string
-		cellID        string
-		failed        bool
 		failureReason string
-		result        string
-	}{logger, taskGuid, cellID, failed, failureReason, result})
-	fake.completeTaskMutex.Unlock()
-	if fake.CompleteTaskStub != nil {
-		return fake.CompleteTaskStub(logger, taskGuid, cellID, failed, failureReason, result)
+	}{logger, taskGuid, failureReason})
+	fake.failTaskMutex.Unlock()
+	if fake.FailTaskStub != nil {
+		return fake.FailTaskStub(logger, taskGuid, failureReason)
 	} else {
-		return fake.completeTaskReturns.result1
+		return fake.failTaskReturns.result1
 	}
 }
 
-func (fake *FakeAuctioneerBBS) CompleteTaskCallCount() int {
-	fake.completeTaskMutex.RLock()
-	defer fake.completeTaskMutex.RUnlock()
-	return len(fake.completeTaskArgsForCall)
+func (fake *FakeAuctioneerBBS) FailTaskCallCount() int {
+	fake.failTaskMutex.RLock()
+	defer fake.failTaskMutex.RUnlock()
+	return len(fake.failTaskArgsForCall)
 }
 
-func (fake *FakeAuctioneerBBS) CompleteTaskArgsForCall(i int) (lager.Logger, string, string, bool, string, string) {
-	fake.completeTaskMutex.RLock()
-	defer fake.completeTaskMutex.RUnlock()
-	return fake.completeTaskArgsForCall[i].logger, fake.completeTaskArgsForCall[i].taskGuid, fake.completeTaskArgsForCall[i].cellID, fake.completeTaskArgsForCall[i].failed, fake.completeTaskArgsForCall[i].failureReason, fake.completeTaskArgsForCall[i].result
+func (fake *FakeAuctioneerBBS) FailTaskArgsForCall(i int) (lager.Logger, string, string) {
+	fake.failTaskMutex.RLock()
+	defer fake.failTaskMutex.RUnlock()
+	return fake.failTaskArgsForCall[i].logger, fake.failTaskArgsForCall[i].taskGuid, fake.failTaskArgsForCall[i].failureReason
 }
 
-func (fake *FakeAuctioneerBBS) CompleteTaskReturns(result1 error) {
-	fake.CompleteTaskStub = nil
-	fake.completeTaskReturns = struct {
+func (fake *FakeAuctioneerBBS) FailTaskReturns(result1 error) {
+	fake.FailTaskStub = nil
+	fake.failTaskReturns = struct {
 		result1 error
 	}{result1}
 }
