@@ -135,7 +135,7 @@ var _ = Describe("Task BBS", func() {
 			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -152,7 +152,7 @@ var _ = Describe("Task BBS", func() {
 			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
@@ -172,7 +172,7 @@ var _ = Describe("Task BBS", func() {
 			err := bbs.DesireTask(logger, task)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")

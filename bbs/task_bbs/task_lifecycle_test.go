@@ -263,8 +263,9 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("sets the state to running", func() {
-				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				started, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
+				Ω(started).Should(BeTrue())
 
 				tasks, err := bbs.RunningTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -276,8 +277,9 @@ var _ = Describe("Task BBS", func() {
 			It("should bump UpdatedAt", func() {
 				timeProvider.IncrementBySeconds(1)
 
-				err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				started, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
+				Ω(started).Should(BeTrue())
 
 				tasks, err := bbs.RunningTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -287,17 +289,20 @@ var _ = Describe("Task BBS", func() {
 
 			Context("when the store is out of commission", func() {
 				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					_, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					return err
 				})
 			})
 		})
 
 		Context("When starting a Task that is already started", func() {
+			var changed bool
+
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -309,11 +314,15 @@ var _ = Describe("Task BBS", func() {
 					previousTime = timeProvider.Now().UnixNano()
 					timeProvider.IncrementBySeconds(1)
 
-					startErr = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					changed, startErr = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				})
 
 				It("does not return an error", func() {
 					Ω(startErr).ShouldNot(HaveOccurred())
+				})
+
+				It("returns false", func() {
+					Ω(changed).Should(BeFalse())
 				})
 
 				It("does not change the Task in the store", func() {
@@ -326,8 +335,9 @@ var _ = Describe("Task BBS", func() {
 
 			Context("on another cell", func() {
 				It("returns an error", func() {
-					err := bbs.StartTask(logger, task.TaskGuid, "another-cell-ID")
+					changed, err := bbs.StartTask(logger, task.TaskGuid, "another-cell-ID")
 					Ω(err).Should(HaveOccurred())
+					Ω(changed).Should(BeFalse())
 				})
 			})
 		})
@@ -388,7 +398,8 @@ var _ = Describe("Task BBS", func() {
 				BeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
-					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+
+					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -400,7 +411,7 @@ var _ = Describe("Task BBS", func() {
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
@@ -418,7 +429,7 @@ var _ = Describe("Task BBS", func() {
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
@@ -610,7 +621,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -747,7 +758,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "some failure reason", "")
@@ -765,7 +776,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "result")
@@ -798,7 +809,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
@@ -844,7 +855,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -871,7 +882,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
@@ -902,7 +913,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")

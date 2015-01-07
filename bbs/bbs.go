@@ -61,7 +61,7 @@ type RepBBS interface {
 	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
 
 	//task
-	StartTask(logger lager.Logger, taskGuid string, cellID string) error
+	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
 	TaskByGuid(taskGuid string) (models.Task, error)
 	TasksByCellID(logger lager.Logger, cellID string) ([]models.Task, error)
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error

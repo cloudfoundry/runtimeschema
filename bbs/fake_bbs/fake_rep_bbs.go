@@ -21,7 +21,7 @@ type FakeRepBBS struct {
 	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
 	}
-	StartTaskStub        func(logger lager.Logger, taskGuid string, cellID string) error
+	StartTaskStub        func(logger lager.Logger, taskGuid string, cellID string) (bool, error)
 	startTaskMutex       sync.RWMutex
 	startTaskArgsForCall []struct {
 		logger   lager.Logger
@@ -29,7 +29,8 @@ type FakeRepBBS struct {
 		cellID   string
 	}
 	startTaskReturns struct {
-		result1 error
+		result1 bool
+		result2 error
 	}
 	TaskByGuidStub        func(taskGuid string) (models.Task, error)
 	taskByGuidMutex       sync.RWMutex
@@ -138,7 +139,7 @@ func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) error {
+func (fake *FakeRepBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error) {
 	fake.startTaskMutex.Lock()
 	fake.startTaskArgsForCall = append(fake.startTaskArgsForCall, struct {
 		logger   lager.Logger
@@ -149,7 +150,7 @@ func (fake *FakeRepBBS) StartTask(logger lager.Logger, taskGuid string, cellID s
 	if fake.StartTaskStub != nil {
 		return fake.StartTaskStub(logger, taskGuid, cellID)
 	} else {
-		return fake.startTaskReturns.result1
+		return fake.startTaskReturns.result1, fake.startTaskReturns.result2
 	}
 }
 
@@ -165,11 +166,12 @@ func (fake *FakeRepBBS) StartTaskArgsForCall(i int) (lager.Logger, string, strin
 	return fake.startTaskArgsForCall[i].logger, fake.startTaskArgsForCall[i].taskGuid, fake.startTaskArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) StartTaskReturns(result1 error) {
+func (fake *FakeRepBBS) StartTaskReturns(result1 bool, result2 error) {
 	fake.StartTaskStub = nil
 	fake.startTaskReturns = struct {
-		result1 error
-	}{result1}
+		result1 bool
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) TaskByGuid(taskGuid string) (models.Task, error) {

@@ -49,20 +49,20 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 // The cell calls this when it is about to run the task in the allocated container
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the cell should assume that someone else will run it and should clean up and bail
-func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) error {
+func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error) {
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if task.State == models.TaskStateRunning && task.CellID == cellID {
-		return nil
+		return false, nil
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateRunning)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
@@ -71,15 +71,20 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 
 	value, err := models.ToJSON(task)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
 		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
 			Key:   shared.TaskSchemaPath(taskGuid),
 			Value: value,
 		})
 	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // The cell calls this when the user requested to cancel the task

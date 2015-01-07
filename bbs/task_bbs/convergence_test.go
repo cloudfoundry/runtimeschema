@@ -206,9 +206,8 @@ var _ = Describe("Convergence of Tasks", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
-
 			})
 
 			Context("when the associated cell is present", func() {
@@ -261,7 +260,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
+					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
@@ -278,7 +277,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err = bbs.DesireTask(logger, secondTask)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(logger, secondTask.TaskGuid, "cell-id")
+					_, err = bbs.StartTask(logger, secondTask.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, secondTask.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
@@ -373,7 +372,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
+					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
@@ -450,7 +449,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				err := bbs.DesireTask(logger, task)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
+				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a result")
