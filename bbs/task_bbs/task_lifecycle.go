@@ -121,6 +121,10 @@ func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason
 		return err
 	}
 
+	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
+		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
+	}
+
 	task = bbs.markTaskCompleted(task, true, failureReason, "")
 
 	value, err := models.ToJSON(task)
