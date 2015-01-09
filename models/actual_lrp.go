@@ -12,11 +12,6 @@ const (
 	ActualLRPStateRunning   ActualLRPState = "RUNNING"
 )
 
-type ActualLRPChange struct {
-	Before *ActualLRP
-	After  *ActualLRP
-}
-
 type ActualLRPKey struct {
 	ProcessGuid string `json:"process_guid"`
 	Index       int    `json:"index"`

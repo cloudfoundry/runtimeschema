@@ -37,11 +37,6 @@ type mDesiredLRP struct {
 	*InnerDesiredLRP
 }
 
-type DesiredLRPChange struct {
-	Before *DesiredLRP
-	After  *DesiredLRP
-}
-
 type DesiredLRPUpdate struct {
 	Instances  *int
 	Routes     []string

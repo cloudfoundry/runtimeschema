@@ -80,18 +80,12 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 			return err
 		}
 
-		bbs.processDesiredChange(models.DesiredLRPChange{
-			Before: &existingLRP,
-			After:  &lrp,
-		}, logger)
+		bbs.processDesiredCreateOrUpdate(lrp, logger)
 
 		return nil
 
 	case nil:
-		bbs.processDesiredChange(models.DesiredLRPChange{
-			Before: nil,
-			After:  &lrp,
-		}, logger)
+		bbs.processDesiredCreateOrUpdate(lrp, logger)
 
 		return nil
 
@@ -113,10 +107,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGui
 		return err
 	}
 
-	bbs.processDesiredChange(models.DesiredLRPChange{
-		Before: &lrp,
-		After:  nil,
-	}, logger)
+	bbs.processDesiredDelete(lrp, logger)
 
 	return nil
 }
@@ -147,10 +138,7 @@ func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, upd
 			return err
 		}
 
-		bbs.processDesiredChange(models.DesiredLRPChange{
-			Before: &existing,
-			After:  &updatedLRP,
-		}, logger)
+		bbs.processDesiredCreateOrUpdate(updatedLRP, logger)
 
 		return nil
 	})

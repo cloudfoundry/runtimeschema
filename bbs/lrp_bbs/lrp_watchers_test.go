@@ -11,10 +11,10 @@ import (
 var _ = Describe("LrpWatchers", func() {
 	Describe("WatchForDesiredLRPChanges", func() {
 		var (
-			events <-chan models.DesiredLRPChange
-			stop   chan<- bool
-			errors <-chan error
-			lrp    models.DesiredLRP
+			createsAndUpdates <-chan models.DesiredLRP
+			deletes           <-chan models.DesiredLRP
+			errors            <-chan error
+			lrp               models.DesiredLRP
 		)
 
 		newLRP := func() models.DesiredLRP {
@@ -35,28 +35,21 @@ var _ = Describe("LrpWatchers", func() {
 
 		BeforeEach(func() {
 			lrp = newLRP()
-			events, stop, errors = bbs.WatchForDesiredLRPChanges()
-		})
-
-		AfterEach(func() {
-			stop <- true
+			createsAndUpdates, deletes, errors = bbs.WatchForDesiredLRPChanges(logger)
 		})
 
 		It("sends an event down the pipe for creates", func() {
 			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
-				Before: nil,
-				After:  &lrp,
-			})))
+			Eventually(createsAndUpdates).Should(Receive(Equal(lrp)))
 		})
 
 		It("sends an event down the pipe for updates", func() {
 			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive())
+			Eventually(createsAndUpdates).Should(Receive())
 
 			changedLRP := newLRP()
 			changedLRP.Instances++
@@ -64,33 +57,27 @@ var _ = Describe("LrpWatchers", func() {
 			err = bbs.DesireLRP(logger, changedLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
-				Before: &lrp,
-				After:  &changedLRP,
-			})))
+			Eventually(createsAndUpdates).Should(Receive(Equal(changedLRP)))
 		})
 
 		It("sends an event down the pipe for deletes", func() {
 			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive())
+			Eventually(createsAndUpdates).Should(Receive())
 
 			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(lrp))
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive(Equal(models.DesiredLRPChange{
-				Before: &lrp,
-				After:  nil,
-			})))
+			Eventually(deletes).Should(Receive(Equal(lrp)))
 		})
 	})
 
 	Describe("WatchForActualLRPChanges", func() {
 		var (
-			events <-chan models.ActualLRPChange
-			stop   chan<- bool
-			errors <-chan error
+			createsAndUpdates <-chan models.ActualLRP
+			deletes           <-chan models.ActualLRP
+			errors            <-chan error
 
 			lrpProcessGuid string
 			desiredLRP     models.DesiredLRP
@@ -101,7 +88,7 @@ var _ = Describe("LrpWatchers", func() {
 		)
 
 		BeforeEach(func() {
-			events, stop, errors = bbs.WatchForActualLRPChanges()
+			createsAndUpdates, deletes, errors = bbs.WatchForActualLRPChanges(logger)
 
 			lrpProcessGuid = "some-process-guid"
 			desiredLRP = models.DesiredLRP{
@@ -115,25 +102,16 @@ var _ = Describe("LrpWatchers", func() {
 			lrpCellId = "cell-id"
 		})
 
-		AfterEach(func() {
-			stop <- true
-		})
-
 		It("sends an event down the pipe for creates", func() {
 			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			var change models.ActualLRPChange
-			Eventually(events).Should(Receive(&change))
+			var actualLRP models.ActualLRP
+			Eventually(createsAndUpdates).Should(Receive(&actualLRP))
 
-			before := change.Before
-			after := change.After
-
-			Ω(before).Should(BeNil())
-
-			Ω(after.ProcessGuid).Should(Equal(lrpProcessGuid))
-			Ω(after.Index).Should(Equal(lrpIndex))
-			Ω(after.State).Should(Equal(models.ActualLRPStateUnclaimed))
+			Ω(actualLRP.ProcessGuid).Should(Equal(lrpProcessGuid))
+			Ω(actualLRP.Index).Should(Equal(lrpIndex))
+			Ω(actualLRP.State).Should(Equal(models.ActualLRPStateUnclaimed))
 		})
 
 		It("sends an event down the pipe for updates", func() {
@@ -143,25 +121,19 @@ var _ = Describe("LrpWatchers", func() {
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive())
+			Eventually(createsAndUpdates).Should(Receive())
 
 			containerKey := models.NewActualLRPContainerKey("instance-guid", lrpCellId)
 			err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			var change models.ActualLRPChange
-			Eventually(events).Should(Receive(&change))
+			var actualLRP models.ActualLRP
+			Eventually(createsAndUpdates).Should(Receive(&actualLRP))
 
-			before := change.Before
-			after := change.After
-
-			Ω(before.ProcessGuid).Should(Equal(after.ProcessGuid))
-			Ω(before.Index).Should(Equal(after.Index))
-
-			Ω(before.State).Should(Equal(models.ActualLRPStateUnclaimed))
-			Ω(after.State).Should(Equal(models.ActualLRPStateClaimed))
-
-			Ω(after.ActualLRPContainerKey).Should(Equal(containerKey))
+			Ω(actualLRP.ProcessGuid).Should(Equal(lrpProcessGuid))
+			Ω(actualLRP.Index).Should(Equal(lrpIndex))
+			Ω(actualLRP.State).Should(Equal(models.ActualLRPStateClaimed))
+			Ω(actualLRP.ActualLRPContainerKey).Should(Equal(containerKey))
 		})
 
 		It("sends an event down the pipe for delete", func() {
@@ -171,22 +143,12 @@ var _ = Describe("LrpWatchers", func() {
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(events).Should(Receive())
+			Eventually(createsAndUpdates).Should(Receive())
 
 			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			var change models.ActualLRPChange
-			Eventually(events).Should(Receive(&change))
-
-			before := change.Before
-			after := change.After
-
-			Ω(after).Should(BeNil())
-
-			Ω(before.ProcessGuid).Should(Equal(lrpProcessGuid))
-			Ω(before.Index).Should(Equal(lrpIndex))
-			Ω(before.State).Should(Equal(models.ActualLRPStateUnclaimed))
+			Eventually(deletes).Should(Receive(Equal(lrp)))
 		})
 	})
 })

@@ -36,7 +36,7 @@ type ReceptorBBS interface {
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
-	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
+	WatchForDesiredLRPChanges(lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error)
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
@@ -44,7 +44,7 @@ type ReceptorBBS interface {
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RequestStopLRPInstance(models.ActualLRPKey, models.ActualLRPContainerKey) error
-	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
+	WatchForActualLRPChanges(lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error)
 
 	// cells
 	Cells() ([]models.CellPresence, error)
@@ -129,8 +129,8 @@ type MetricsBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 type RouteEmitterBBS interface {
 	// lrp
-	WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
-	WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
+	WatchForDesiredLRPChanges(lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error)
+	WatchForActualLRPChanges(lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error)
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	RunningActualLRPs() ([]models.ActualLRP, error)
 

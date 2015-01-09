@@ -129,12 +129,14 @@ type FakeReceptorBBS struct {
 		result1 models.DesiredLRP
 		result2 error
 	}
-	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
+	WatchForDesiredLRPChangesStub        func(lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
-	watchForDesiredLRPChangesArgsForCall []struct{}
+	watchForDesiredLRPChangesArgsForCall []struct {
+		arg1 lager.Logger
+	}
 	watchForDesiredLRPChangesReturns struct {
-		result1 <-chan models.DesiredLRPChange
-		result2 chan<- bool
+		result1 <-chan models.DesiredLRP
+		result2 <-chan models.DesiredLRP
 		result3 <-chan error
 	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
@@ -181,12 +183,14 @@ type FakeReceptorBBS struct {
 	requestStopLRPInstanceReturns struct {
 		result1 error
 	}
-	WatchForActualLRPChangesStub        func() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
+	WatchForActualLRPChangesStub        func(lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error)
 	watchForActualLRPChangesMutex       sync.RWMutex
-	watchForActualLRPChangesArgsForCall []struct{}
+	watchForActualLRPChangesArgsForCall []struct {
+		arg1 lager.Logger
+	}
 	watchForActualLRPChangesReturns struct {
-		result1 <-chan models.ActualLRPChange
-		result2 chan<- bool
+		result1 <-chan models.ActualLRP
+		result2 <-chan models.ActualLRP
 		result3 <-chan error
 	}
 	CellsStub        func() ([]models.CellPresence, error)
@@ -646,12 +650,14 @@ func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.Desir
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChanges(arg1 lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error) {
 	fake.watchForDesiredLRPChangesMutex.Lock()
-	fake.watchForDesiredLRPChangesArgsForCall = append(fake.watchForDesiredLRPChangesArgsForCall, struct{}{})
+	fake.watchForDesiredLRPChangesArgsForCall = append(fake.watchForDesiredLRPChangesArgsForCall, struct {
+		arg1 lager.Logger
+	}{arg1})
 	fake.watchForDesiredLRPChangesMutex.Unlock()
 	if fake.WatchForDesiredLRPChangesStub != nil {
-		return fake.WatchForDesiredLRPChangesStub()
+		return fake.WatchForDesiredLRPChangesStub(arg1)
 	} else {
 		return fake.watchForDesiredLRPChangesReturns.result1, fake.watchForDesiredLRPChangesReturns.result2, fake.watchForDesiredLRPChangesReturns.result3
 	}
@@ -663,11 +669,17 @@ func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesCallCount() int {
 	return len(fake.watchForDesiredLRPChangesArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 <-chan models.DesiredLRPChange, result2 chan<- bool, result3 <-chan error) {
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesArgsForCall(i int) lager.Logger {
+	fake.watchForDesiredLRPChangesMutex.RLock()
+	defer fake.watchForDesiredLRPChangesMutex.RUnlock()
+	return fake.watchForDesiredLRPChangesArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 <-chan models.DesiredLRP, result2 <-chan models.DesiredLRP, result3 <-chan error) {
 	fake.WatchForDesiredLRPChangesStub = nil
 	fake.watchForDesiredLRPChangesReturns = struct {
-		result1 <-chan models.DesiredLRPChange
-		result2 chan<- bool
+		result1 <-chan models.DesiredLRP
+		result2 <-chan models.DesiredLRP
 		result3 <-chan error
 	}{result1, result2, result3}
 }
@@ -830,12 +842,14 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstanceReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
+func (fake *FakeReceptorBBS) WatchForActualLRPChanges(arg1 lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error) {
 	fake.watchForActualLRPChangesMutex.Lock()
-	fake.watchForActualLRPChangesArgsForCall = append(fake.watchForActualLRPChangesArgsForCall, struct{}{})
+	fake.watchForActualLRPChangesArgsForCall = append(fake.watchForActualLRPChangesArgsForCall, struct {
+		arg1 lager.Logger
+	}{arg1})
 	fake.watchForActualLRPChangesMutex.Unlock()
 	if fake.WatchForActualLRPChangesStub != nil {
-		return fake.WatchForActualLRPChangesStub()
+		return fake.WatchForActualLRPChangesStub(arg1)
 	} else {
 		return fake.watchForActualLRPChangesReturns.result1, fake.watchForActualLRPChangesReturns.result2, fake.watchForActualLRPChangesReturns.result3
 	}
@@ -847,11 +861,17 @@ func (fake *FakeReceptorBBS) WatchForActualLRPChangesCallCount() int {
 	return len(fake.watchForActualLRPChangesArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) WatchForActualLRPChangesReturns(result1 <-chan models.ActualLRPChange, result2 chan<- bool, result3 <-chan error) {
+func (fake *FakeReceptorBBS) WatchForActualLRPChangesArgsForCall(i int) lager.Logger {
+	fake.watchForActualLRPChangesMutex.RLock()
+	defer fake.watchForActualLRPChangesMutex.RUnlock()
+	return fake.watchForActualLRPChangesArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) WatchForActualLRPChangesReturns(result1 <-chan models.ActualLRP, result2 <-chan models.ActualLRP, result3 <-chan error) {
 	fake.WatchForActualLRPChangesStub = nil
 	fake.watchForActualLRPChangesReturns = struct {
-		result1 <-chan models.ActualLRPChange
-		result2 chan<- bool
+		result1 <-chan models.ActualLRP
+		result2 <-chan models.ActualLRP
 		result3 <-chan error
 	}{result1, result2, result3}
 }
