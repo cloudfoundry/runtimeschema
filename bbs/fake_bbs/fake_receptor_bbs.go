@@ -129,6 +129,14 @@ type FakeReceptorBBS struct {
 		result1 models.DesiredLRP
 		result2 error
 	}
+	WatchForDesiredLRPChangesStub        func() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error)
+	watchForDesiredLRPChangesMutex       sync.RWMutex
+	watchForDesiredLRPChangesArgsForCall []struct{}
+	watchForDesiredLRPChangesReturns struct {
+		result1 <-chan models.DesiredLRPChange
+		result2 chan<- bool
+		result3 <-chan error
+	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
@@ -172,6 +180,14 @@ type FakeReceptorBBS struct {
 	}
 	requestStopLRPInstanceReturns struct {
 		result1 error
+	}
+	WatchForActualLRPChangesStub        func() (<-chan models.ActualLRPChange, chan<- bool, <-chan error)
+	watchForActualLRPChangesMutex       sync.RWMutex
+	watchForActualLRPChangesArgsForCall []struct{}
+	watchForActualLRPChangesReturns struct {
+		result1 <-chan models.ActualLRPChange
+		result2 chan<- bool
+		result3 <-chan error
 	}
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
@@ -630,6 +646,32 @@ func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.Desir
 	}{result1, result2}
 }
 
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChanges() (<-chan models.DesiredLRPChange, chan<- bool, <-chan error) {
+	fake.watchForDesiredLRPChangesMutex.Lock()
+	fake.watchForDesiredLRPChangesArgsForCall = append(fake.watchForDesiredLRPChangesArgsForCall, struct{}{})
+	fake.watchForDesiredLRPChangesMutex.Unlock()
+	if fake.WatchForDesiredLRPChangesStub != nil {
+		return fake.WatchForDesiredLRPChangesStub()
+	} else {
+		return fake.watchForDesiredLRPChangesReturns.result1, fake.watchForDesiredLRPChangesReturns.result2, fake.watchForDesiredLRPChangesReturns.result3
+	}
+}
+
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesCallCount() int {
+	fake.watchForDesiredLRPChangesMutex.RLock()
+	defer fake.watchForDesiredLRPChangesMutex.RUnlock()
+	return len(fake.watchForDesiredLRPChangesArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 <-chan models.DesiredLRPChange, result2 chan<- bool, result3 <-chan error) {
+	fake.WatchForDesiredLRPChangesStub = nil
+	fake.watchForDesiredLRPChangesReturns = struct {
+		result1 <-chan models.DesiredLRPChange
+		result2 chan<- bool
+		result3 <-chan error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeReceptorBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	fake.actualLRPsMutex.Lock()
 	fake.actualLRPsArgsForCall = append(fake.actualLRPsArgsForCall, struct{}{})
@@ -786,6 +828,32 @@ func (fake *FakeReceptorBBS) RequestStopLRPInstanceReturns(result1 error) {
 	fake.requestStopLRPInstanceReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeReceptorBBS) WatchForActualLRPChanges() (<-chan models.ActualLRPChange, chan<- bool, <-chan error) {
+	fake.watchForActualLRPChangesMutex.Lock()
+	fake.watchForActualLRPChangesArgsForCall = append(fake.watchForActualLRPChangesArgsForCall, struct{}{})
+	fake.watchForActualLRPChangesMutex.Unlock()
+	if fake.WatchForActualLRPChangesStub != nil {
+		return fake.WatchForActualLRPChangesStub()
+	} else {
+		return fake.watchForActualLRPChangesReturns.result1, fake.watchForActualLRPChangesReturns.result2, fake.watchForActualLRPChangesReturns.result3
+	}
+}
+
+func (fake *FakeReceptorBBS) WatchForActualLRPChangesCallCount() int {
+	fake.watchForActualLRPChangesMutex.RLock()
+	defer fake.watchForActualLRPChangesMutex.RUnlock()
+	return len(fake.watchForActualLRPChangesArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) WatchForActualLRPChangesReturns(result1 <-chan models.ActualLRPChange, result2 chan<- bool, result3 <-chan error) {
+	fake.WatchForActualLRPChangesStub = nil
+	fake.watchForActualLRPChangesReturns = struct {
+		result1 <-chan models.ActualLRPChange
+		result2 chan<- bool
+		result3 <-chan error
+	}{result1, result2, result3}
 }
 
 func (fake *FakeReceptorBBS) Cells() ([]models.CellPresence, error) {
