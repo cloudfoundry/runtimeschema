@@ -24,16 +24,22 @@ type DesireAppRequestFromCC struct {
 	LogGuid                     string          `json:"log_guid"`
 	HealthCheckType             HealthCheckType `json:"health_check_type"`
 	HealthCheckTimeoutInSeconds uint            `json:"health_check_timeout_in_seconds"`
-}
-
-func (d DesireAppRequestFromCC) ToJSON() []byte {
-	encoded, _ := json.Marshal(d)
-	return encoded
+	ETag                        string          `json:"etag"`
 }
 
 type CCDesiredStateServerResponse struct {
 	Apps        []DesireAppRequestFromCC `json:"apps"`
 	CCBulkToken *json.RawMessage         `json:"token"`
+}
+
+type CCDesiredAppFingerprint struct {
+	ProcessGuid string `json:"process_guid"`
+	ETag        string `json:"etag"`
+}
+
+type CCDesiredStateFingerprintResponse struct {
+	Fingerprints []CCDesiredAppFingerprint `json:"fingerprints"`
+	CCBulkToken  *json.RawMessage          `json:"token"`
 }
 
 type CCBulkToken struct {
