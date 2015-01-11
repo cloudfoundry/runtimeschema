@@ -138,8 +138,16 @@ func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
 		validationError = validationError.Append(ErrInvalidModification{"env"})
 	}
 
+	if !reflect.DeepEqual(desired.Setup, updatedModel.Setup) {
+		validationError = validationError.Append(ErrInvalidModification{"setup"})
+	}
+
 	if !reflect.DeepEqual(desired.Action, updatedModel.Action) {
 		validationError = validationError.Append(ErrInvalidModification{"action"})
+	}
+
+	if !reflect.DeepEqual(desired.Monitor, updatedModel.Monitor) {
+		validationError = validationError.Append(ErrInvalidModification{"monitor"})
 	}
 
 	if desired.DiskMB != updatedModel.DiskMB {
