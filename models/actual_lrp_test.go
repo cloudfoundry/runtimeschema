@@ -3,6 +3,7 @@ package models_test
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -10,7 +11,132 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func defaultCrashedActual(crashCount int, lastCrashed int64) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey:       models.NewActualLRPKey("p-guid", 0, "domain"),
+		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(crashCount, lastCrashed),
+		State:              models.ActualLRPStateCrashed,
+	}
+}
+
+type crashInfoTest interface {
+	Test()
+}
+
+type crashInfoTests []crashInfoTest
+
+func (tests crashInfoTests) Test() {
+	for _, test := range tests {
+		test.Test()
+	}
+}
+
+type crashInfoBackoffTest struct {
+	models.ActualLRP
+	WaitTime time.Duration
+}
+
+func newCrashInfoBackoffTest(crashCount int, lastCrashed int64, waitTime time.Duration) crashInfoTest {
+	return crashInfoBackoffTest{
+		ActualLRP: defaultCrashedActual(crashCount, lastCrashed),
+		WaitTime:  waitTime,
+	}
+}
+
+func (test crashInfoBackoffTest) Test() {
+	Context(fmt.Sprintf("when the crashCount is %d and the wait time is %s", test.CrashCount, test.WaitTime), func() {
+		It("should NOT restart before the expected wait time", func() {
+			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds() - time.Second.Nanoseconds()
+			Ω(test.ShouldRestartCrash(currentTimestamp)).Should(BeFalse())
+		})
+
+		It("should restart after the expected wait time", func() {
+			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds()
+			Ω(test.ShouldRestartCrash(currentTimestamp)).Should(BeTrue())
+		})
+	})
+}
+
+type crashInfoNeverStartTest struct {
+	models.ActualLRP
+}
+
+func newCrashInfoNeverStartTest(crashCount int, lastCrashed int64) crashInfoTest {
+	return crashInfoNeverStartTest{
+		ActualLRP: defaultCrashedActual(crashCount, lastCrashed),
+	}
+}
+
+func (test crashInfoNeverStartTest) Test() {
+	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
+		It("should never restart regardless of the wait time", func() {
+			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
+			Ω(test.ShouldRestartCrash(0)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(test.LastCrashedAt)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(theFuture)).Should(BeFalse())
+		})
+	})
+
+}
+
+type crashInfoAlwaysStartTest struct {
+	models.ActualLRP
+}
+
+func newCrashInfoAlwaysStartTest(crashCount int, lastCrashed int64) crashInfoTest {
+	return crashInfoAlwaysStartTest{
+		ActualLRP: defaultCrashedActual(crashCount, lastCrashed),
+	}
+}
+
+func (test crashInfoAlwaysStartTest) Test() {
+	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
+		It("should restart regardless of the wait time", func() {
+			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
+			Ω(test.ShouldRestartCrash(0)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(test.LastCrashedAt)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(theFuture)).Should(BeTrue())
+		})
+	})
+
+}
+
 var _ = Describe("ActualLRP", func() {
+	Describe("ShouldRestartCrash", func() {
+		Context("when the lpr is CRASHED", func() {
+			const maxWaitTime = 16 * time.Minute
+			var now = time.Now().UnixNano()
+			var crashTests = crashInfoTests{
+				newCrashInfoAlwaysStartTest(0, now),
+				newCrashInfoAlwaysStartTest(1, now),
+				newCrashInfoAlwaysStartTest(2, now),
+				newCrashInfoBackoffTest(3, now, 30*time.Second),
+				newCrashInfoBackoffTest(7, now, 8*time.Minute),
+				newCrashInfoBackoffTest(8, now, maxWaitTime),
+				newCrashInfoBackoffTest(199, now, maxWaitTime),
+				newCrashInfoNeverStartTest(200, now),
+				newCrashInfoNeverStartTest(201, now),
+			}
+
+			crashTests.Test()
+		})
+
+		Context("when the lrp is not CRASHED", func() {
+			It("returns false", func() {
+				now := time.Now().UnixNano()
+				actual := defaultCrashedActual(0, now)
+				for _, state := range models.ActualLRPStates {
+					actual.State = state
+					if state == models.ActualLRPStateCrashed {
+						Ω(actual.ShouldRestartCrash(now)).Should(BeTrue(), "should restart CRASHED lrp")
+					} else {
+						Ω(actual.ShouldRestartCrash(now)).Should(BeFalse(), fmt.Sprintf("should not restart %s lrp", state))
+					}
+				}
+			})
+		})
+	})
+
 	Describe("ActualLRPKey", func() {
 		Describe("Validate", func() {
 			var actualLRPKey models.ActualLRPKey
@@ -98,6 +224,7 @@ var _ = Describe("ActualLRP", func() {
 		var lrp models.ActualLRP
 		var lrpKey models.ActualLRPKey
 		var containerKey models.ActualLRPContainerKey
+		var crashInfo models.ActualLRPCrashInfo
 		var netInfo models.ActualLRPNetInfo
 
 		BeforeEach(func() {
@@ -114,12 +241,15 @@ var _ = Describe("ActualLRP", func() {
     "state": "RUNNING",
     "since": 1138,
     "cell_id":"some-cell-id",
-    "domain":"some-domain"
+    "domain":"some-domain",
+		"crash_count": 1,
+		"last_crashed_at": 999
   }`
 
 		BeforeEach(func() {
 			lrpKey = models.NewActualLRPKey("some-guid", 2, "some-domain")
 			containerKey = models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id")
+			crashInfo = models.NewActualLRPCrashInfo(1, 999)
 			netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{
 				{ContainerPort: 8080},
 				{ContainerPort: 8081, HostPort: 1234},
@@ -129,6 +259,7 @@ var _ = Describe("ActualLRP", func() {
 				ActualLRPKey:          lrpKey,
 				ActualLRPContainerKey: containerKey,
 				ActualLRPNetInfo:      netInfo,
+				ActualLRPCrashInfo:    crashInfo,
 				State:                 models.ActualLRPStateRunning,
 				Since:                 1138,
 			}
@@ -360,6 +491,20 @@ var _ = Describe("ActualLRP", func() {
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring("since"))
 				})
+			})
+
+			Context("when state is crashed", func() {
+				BeforeEach(func() {
+					lrp = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        models.ActualLRPStateCrashed,
+						Since:        1138,
+					}
+				})
+
+				itValidatesPresenceOfTheLRPKey(&lrp)
+				itValidatesAbsenceOfTheContainerKey(&lrp)
+				itValidatesAbsenceOfNetInfo(&lrp)
 			})
 		})
 	})

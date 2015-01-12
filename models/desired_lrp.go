@@ -5,6 +5,30 @@ import (
 	"regexp"
 )
 
+type DomainSet map[string]struct{}
+
+func (set DomainSet) Add(domain string) {
+	set[domain] = struct{}{}
+}
+
+func (set DomainSet) Each(predicate func(domain string)) {
+	for domain := range set {
+		predicate(domain)
+	}
+}
+
+type DesiredLRPsByProcessGuid map[string]DesiredLRP
+
+func (set DesiredLRPsByProcessGuid) Add(desired DesiredLRP) {
+	set[desired.ProcessGuid] = desired
+}
+
+func (set DesiredLRPsByProcessGuid) Each(predicate func(desired DesiredLRP)) {
+	for _, desired := range set {
+		predicate(desired)
+	}
+}
+
 type DesiredLRP struct {
 	ProcessGuid          string                `json:"process_guid"`
 	Domain               string                `json:"domain"`

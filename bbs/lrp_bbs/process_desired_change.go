@@ -41,6 +41,8 @@ func (bbs *LRPBBS) processDesiredDelete(desiredLRP models.DesiredLRP, logger lag
 	bbs.reconcile([]reconcileInfo{{desiredLRP, actuals, Reconcile(0, actuals)}}, logger)
 }
 
+// Handle batching unclaimed crashes
+// Malformed desired LRPs
 func (bbs *LRPBBS) reconcile(infos []reconcileInfo, logger lager.Logger) {
 	startAuctions := []models.LRPStartRequest{}
 	lrpsToRetire := []models.ActualLRP{}

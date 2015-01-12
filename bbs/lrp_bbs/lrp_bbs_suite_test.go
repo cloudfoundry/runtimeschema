@@ -94,14 +94,51 @@ func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLR
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawActualLRP(lrp models.ActualLRP) error {
+func createRawActualLRP(lrp models.ActualLRP) {
 	value, err := models.ToJSON(lrp)
-	if err != nil {
-		return err
-	}
+	Ω(err).ShouldNot(HaveOccurred())
 
-	return etcdClient.Create(storeadapter.StoreNode{
-		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-		Value: value,
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return etcdClient.Create(storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		})
 	})
+
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func createRawDesiredLRP(d models.DesiredLRP) {
+	value, err := models.ToJSON(d)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return etcdClient.Create(storeadapter.StoreNode{
+			Key:   shared.DesiredLRPSchemaPath(d),
+			Value: value,
+		})
+	})
+
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func createRawDomain(domain string) {
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return etcdClient.Create(storeadapter.StoreNode{
+			Key:   shared.DomainSchemaPath(domain),
+			Value: []byte(domain),
+		})
+	})
+
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func getActualLRP(lrpKey models.ActualLRPKey) models.ActualLRP {
+	actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpKey.ProcessGuid, lrpKey.Index)
+	Ω(err).ShouldNot(HaveOccurred())
+	return actualLRP
+}
+
+func defaultNetInfo() models.ActualLRPNetInfo {
+	return models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 }

@@ -114,6 +114,16 @@ type FakeRepBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
+	CrashActualLRPStub        func(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error
+	crashActualLRPMutex       sync.RWMutex
+	crashActualLRPArgsForCall []struct {
+		key          models.ActualLRPKey
+		containerKey models.ActualLRPContainerKey
+		logger       lager.Logger
+	}
+	crashActualLRPReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
@@ -454,6 +464,40 @@ func (fake *FakeRepBBS) RemoveActualLRPArgsForCall(i int) (models.ActualLRPKey, 
 func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	fake.RemoveActualLRPStub = nil
 	fake.removeActualLRPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeRepBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error {
+	fake.crashActualLRPMutex.Lock()
+	fake.crashActualLRPArgsForCall = append(fake.crashActualLRPArgsForCall, struct {
+		key          models.ActualLRPKey
+		containerKey models.ActualLRPContainerKey
+		logger       lager.Logger
+	}{key, containerKey, logger})
+	fake.crashActualLRPMutex.Unlock()
+	if fake.CrashActualLRPStub != nil {
+		return fake.CrashActualLRPStub(key, containerKey, logger)
+	} else {
+		return fake.crashActualLRPReturns.result1
+	}
+}
+
+func (fake *FakeRepBBS) CrashActualLRPCallCount() int {
+	fake.crashActualLRPMutex.RLock()
+	defer fake.crashActualLRPMutex.RUnlock()
+	return len(fake.crashActualLRPArgsForCall)
+}
+
+func (fake *FakeRepBBS) CrashActualLRPArgsForCall(i int) (models.ActualLRPKey, models.ActualLRPContainerKey, lager.Logger) {
+	fake.crashActualLRPMutex.RLock()
+	defer fake.crashActualLRPMutex.RUnlock()
+	return fake.crashActualLRPArgsForCall[i].key, fake.crashActualLRPArgsForCall[i].containerKey, fake.crashActualLRPArgsForCall[i].logger
+}
+
+func (fake *FakeRepBBS) CrashActualLRPReturns(result1 error) {
+	fake.CrashActualLRPStub = nil
+	fake.crashActualLRPReturns = struct {
 		result1 error
 	}{result1}
 }
