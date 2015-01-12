@@ -34,204 +34,165 @@ var _ = Describe("LrpConvergence", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 	})
 
+	Describe("convergence counters", func() {
+		It("bumps the convergence counter", func() {
+			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
+			bbs.ConvergeLRPs(logger, pollingInterval)
+			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
+			bbs.ConvergeLRPs(logger, pollingInterval)
+			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
+		})
+
+		It("reports the duration that it took to converge", func() {
+			timeProvider.IntervalToAdvance = 500 * time.Nanosecond
+			bbs.ConvergeLRPs(logger, pollingInterval)
+
+			reportedDuration := sender.GetValue("ConvergenceLRPDuration")
+			Ω(reportedDuration.Unit).Should(Equal("nanos"))
+			Ω(reportedDuration.Value).ShouldNot(BeZero())
+		})
+	})
+
 	Describe("converging missing actual LRPs", func() {
-		var processGuid string
+		const processGuid = "process-guid-for-missing"
+		const cellId = "cell-id"
 		var desiredLRP models.DesiredLRP
 
 		BeforeEach(func() {
-			processGuid = "process-guid-for-missing"
+			desiredLRP = models.DesiredLRP{
+				ProcessGuid: processGuid,
+				Instances:   2,
+				Domain:      freshDomain,
+				Stack:       "pancake",
+				Action:      dummyAction,
+			}
+
+			createRawDesiredLRP(desiredLRP)
+			registerCell(models.NewCellPresence(cellId, "the-stack", "example.com", "the-zone"))
+			registerAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
+		})
+
+		JustBeforeEach(func() {
+			bbs.ConvergeLRPs(logger, pollingInterval)
+		})
+
+		It("logs", func() {
+			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-start"))
+		})
+
+		It("logs the convergence", func() {
+			logMessages := logger.TestSink.LogMessages()
+			Ω(logMessages).Should(ContainElement("test.converge-lrps.starting-convergence"))
+			Ω(logMessages).Should(ContainElement("test.converge-lrps.finished-convergence"))
 		})
 
 		Context("when there are no actuals for desired LRP", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: processGuid,
-					Instances:   1,
-					Domain:      freshDomain,
-					Stack:       "pancake",
-					Action:      dummyAction,
-				}
+			It("emits a start auction request for the correct indices", func() {
+				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
 
-				err := bbs.DesireLRP(logger, desiredLRP)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				actuals, err := bbs.ActualLRPsByProcessGuid(desiredLRP.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				for _, actual := range actuals {
-					err := bbs.RemoveActualLRP(actual.ActualLRPKey, actual.ActualLRPContainerKey, logger)
-					Ω(err).ShouldNot(HaveOccurred())
-				}
+				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
+				Ω(startAuctions).Should(HaveLen(1))
+				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0), uint(1)))
 			})
 
-			Context("when an auctioneer is present", func() {
-				BeforeEach(func() {
-					auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-					registerAuctioneer(auctioneerPresence)
-				})
-
-				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
-
-					bbs.ConvergeLRPs(logger, pollingInterval)
-
-					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
-
-					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-					Ω(startAuctions).Should(HaveLen(1))
-					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0)))
-				})
-
-				It("bumps the compare-and-swapped LRPs convergence counter", func() {
-					requestsBefore := sender.GetCounter("LRPInstanceStartRequests")
-					bbs.ConvergeLRPs(logger, pollingInterval)
-					Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(requestsBefore + 1))
-				})
-			})
-
-			It("logs", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-start"))
-			})
-
-			It("logs the convergence", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				logMessages := logger.TestSink.LogMessages()
-				Ω(logMessages).Should(ContainElement(
-					"test.converge-lrps.starting-convergence",
-				))
-				Ω(logMessages).Should(ContainElement(
-					"test.converge-lrps.finished-convergence",
-				))
-			})
-
-			It("bumps the convergence counter", func() {
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
-			})
-
-			It("reports the duration that it took to converge", func() {
-				timeProvider.IntervalToAdvance = 500 * time.Nanosecond
-				bbs.ConvergeLRPs(logger, pollingInterval)
-
-				reportedDuration := sender.GetValue("ConvergenceLRPDuration")
-				Ω(reportedDuration.Unit).Should(Equal("nanos"))
-				Ω(reportedDuration.Value).ShouldNot(BeZero())
+			It("bumps the compare-and-swapped LRPs convergence counter", func() {
+				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(2)))
 			})
 		})
 
 		Context("when there are fewer actuals for desired LRP", func() {
 			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: processGuid,
-					Instances:   2,
-					Domain:      freshDomain,
-					Stack:       "pancake",
-					Action:      dummyAction,
+				actualLRP := models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", cellId),
+					ActualLRPNetInfo:      defaultNetInfo(),
+					State:                 models.ActualLRPStateRunning,
+					Since:                 timeProvider.Now().Add(-time.Minute).UnixNano(),
 				}
-
-				err := bbs.DesireLRP(logger, desiredLRP)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				actualLRPs, err := bbs.ActualLRPsByProcessGuid(processGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.RemoveActualLRP(actualLRPs[1].ActualLRPKey, actualLRPs[1].ActualLRPContainerKey, logger)
-				Ω(err).ShouldNot(HaveOccurred())
+				createRawActualLRP(actualLRP)
 			})
 
-			Context("when an auctioneer is present", func() {
-				BeforeEach(func() {
-					auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-					registerAuctioneer(auctioneerPresence)
-				})
+			It("emits a start auction request for the missing index", func() {
+				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
 
-				It("emits start auction requests", func() {
-					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
-
-					bbs.ConvergeLRPs(logger, pollingInterval)
-
-					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
-
-					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-					Ω(startAuctions).Should(HaveLen(1))
-					Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-					Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
-				})
+				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
+				Ω(startAuctions).Should(HaveLen(1))
+				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
 			})
 
 			It("bumps the LRP start request counter", func() {
-				requestsBefore := sender.GetCounter("LRPInstanceStartRequests")
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(requestsBefore + 1))
-			})
-
-			It("logs", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.request-start"))
-			})
-
-			It("logs the convergence", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				logMessages := logger.TestSink.LogMessages()
-				Ω(logMessages).Should(ContainElement(
-					"test.converge-lrps.starting-convergence",
-				))
-				Ω(logMessages).Should(ContainElement(
-					"test.converge-lrps.finished-convergence",
-				))
-			})
-
-			It("bumps the convergence counter", func() {
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
-			})
-
-			It("reports the duration that it took to converge", func() {
-				timeProvider.IntervalToAdvance = 500 * time.Nanosecond
-				bbs.ConvergeLRPs(logger, pollingInterval)
-
-				reportedDuration := sender.GetValue("ConvergenceLRPDuration")
-				Ω(reportedDuration.Unit).Should(Equal("nanos"))
-				Ω(reportedDuration.Value).ShouldNot(BeZero())
+				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(1)))
 			})
 		})
 
-		Context("when the desired LRP has malformed JSON", func() {
+		Context("when instances are crashing", func() {
+			const missingIndex = 0
+
 			BeforeEach(func() {
-				err := etcdClient.SetMulti([]storeadapter.StoreNode{
-					{
-						Key:   shared.DesiredLRPSchemaPathByProcessGuid("bogus-desired"),
-						Value: []byte("ß"),
-					},
-				})
+				now := timeProvider.Now().UnixNano()
+				twentyMinutesAgo := timeProvider.Now().Add(-20 * time.Minute).UnixNano()
 
-				Ω(err).ShouldNot(HaveOccurred())
+				crashedRecently := models.ActualLRP{
+					ActualLRPKey:       models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
+					ActualLRPCrashInfo: models.NewActualLRPCrashInfo(5, now),
+					State:              models.ActualLRPStateCrashed,
+					Since:              now,
+				}
+
+				crashedLongAgo := models.ActualLRP{
+					ActualLRPKey:       models.NewActualLRPKey(desiredLRP.ProcessGuid, 1, desiredLRP.Domain),
+					ActualLRPCrashInfo: models.NewActualLRPCrashInfo(5, twentyMinutesAgo),
+					State:              models.ActualLRPStateCrashed,
+					Since:              twentyMinutesAgo,
+				}
+
+				createRawActualLRP(crashedRecently)
+				createRawActualLRP(crashedLongAgo)
 			})
 
-			It("should delete the bogus entry", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid("bogus-desired"))
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+			It("emits a start auction request for the crashed index", func() {
+				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+
+				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
+				Ω(startAuctions).Should(HaveLen(1))
+				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
 			})
 
-			It("bumps the deleted LRPs convergence counter", func() {
-				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(0)))
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
+			It("bumps the LRP start request counter", func() {
+				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(1)))
+			})
+		})
+	})
+
+	Context("when the desired LRP has malformed JSON", func() {
+		const processGuid = "bogus-desired"
+		BeforeEach(func() {
+			err := etcdClient.SetMulti([]storeadapter.StoreNode{
+				{
+					Key:   shared.DesiredLRPSchemaPathByProcessGuid(processGuid),
+					Value: []byte("ß"),
+				},
 			})
 
-			It("logs", func() {
-				bbs.ConvergeLRPs(logger, pollingInterval)
-				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.pruning-invalid-desired-lrp-json"))
-			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			bbs.ConvergeLRPs(logger, pollingInterval)
+		})
+
+		It("should delete the bogus entry", func() {
+			_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
+			Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+		})
+
+		It("bumps the deleted LRPs convergence counter", func() {
+			Ω(sender.GetCounter("ConvergenceLRPsDeleted")).Should(Equal(uint64(1)))
+		})
+
+		It("logs", func() {
+			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.pruning-invalid-desired-lrp-json"))
 		})
 	})
 
@@ -732,7 +693,7 @@ var _ = Describe("LrpConvergence", func() {
 		It("logs", func() {
 			bbs.ConvergeLRPs(logger, pollingInterval)
 
-			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending-start-auction"))
+			Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-lrps.resending.adding-start-auction"))
 		})
 
 		It("re-emits start auction requests", func() {

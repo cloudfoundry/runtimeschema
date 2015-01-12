@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -73,6 +74,47 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
+func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.ActualLRPKey) (models.ActualLRP, error) {
+	logger = logger.Session("unlaim-crashed-actual-lrp")
+	logger.Info("starting")
+	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
+	if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
+		return models.ActualLRP{}, err
+	}
+
+	if lrp.State != models.ActualLRPStateCrashed {
+		logger.Error("failed-actual-lrp-state-is-not-crashed", nil, lager.Data{"actual-lrp": lrp})
+		return models.ActualLRP{}, bbserrors.ErrActualLRPCannotBeUnclaimed
+	}
+
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.State = models.ActualLRPStateUnclaimed
+	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return models.ActualLRP{}, err
+	}
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		})
+	})
+
+	if err != nil {
+		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return models.ActualLRP{}, err
+	}
+
+	logger.Info("succeeded")
+	return *lrp, nil
+}
+
 func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -125,7 +167,7 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	lrp.Since = bbs.timeProvider.Now().UnixNano()
 	lrp.State = models.ActualLRPStateClaimed
 	lrp.ActualLRPContainerKey = containerKey
-	lrp.ActualLRPNetInfo = models.NewActualLRPNetInfo("", nil)
+	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
 
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -206,6 +248,83 @@ func (bbs *LRPBBS) StartActualLRP(
 	logger.Info("succeeded")
 	return nil
 
+}
+
+func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error {
+	logger = logger.Session("crash-actual-lrp", lager.Data{"process-guid": key.ProcessGuid})
+	logger.Info("starting")
+
+	crashInfo, err := bbs.updateCrashState(key, containerKey, logger)
+	if err != nil {
+		logger.Error("failed-to-update-crash-state", err)
+		return err
+	}
+
+	if !crashInfo.Crashed() {
+		err := bbs.requestLRPAuctionForLRPKey(key)
+		if err != nil {
+			logger.Error("failed-to-request-auction", err)
+			return err
+		}
+	}
+
+	logger.Info("succeeded")
+	return nil
+}
+
+const CrashResetTimeout = 5 * time.Minute
+
+func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) (models.ActualLRPCrashInfo, error) {
+	lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
+	if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
+		return models.ActualLRPCrashInfo{}, err
+	}
+
+	latestChangeTime := time.Duration(bbs.timeProvider.Now().UnixNano() - lrp.Since)
+
+	var newCrashCount int
+	if latestChangeTime > CrashResetTimeout && lrp.State == models.ActualLRPStateRunning {
+		newCrashCount = 1
+	} else {
+		newCrashCount = lrp.ActualLRPCrashInfo.CrashCount + 1
+	}
+
+	crashInfo := models.NewActualLRPCrashInfo(newCrashCount, bbs.timeProvider.Now().UnixNano())
+
+	var state models.ActualLRPState
+	if crashInfo.Crashed() {
+		state = models.ActualLRPStateCrashed
+	} else {
+		state = models.ActualLRPStateUnclaimed
+	}
+
+	if !lrp.AllowsTransitionTo(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, state) {
+		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, state)
+		logger.Error("failed-to-transition-actual", err)
+		return crashInfo, err
+	}
+
+	lrp.State = state
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.ActualLRPCrashInfo = crashInfo
+	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return crashInfo, err
+	}
+
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(storeIndex, storeadapter.StoreNode{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		})
+	})
+
+	return crashInfo, err
 }
 
 func (bbs *LRPBBS) RemoveActualLRP(
@@ -326,4 +445,14 @@ func (bbs *LRPBBS) requestLRPAuctions(lrpStarts []models.LRPStartRequest) error 
 	}
 
 	return bbs.auctioneerClient.RequestLRPAuctions(auctioneerAddress, lrpStarts)
+}
+
+func (bbs *LRPBBS) requestLRPAuctionForLRPKey(key models.ActualLRPKey) error {
+	desiredLRP, err := bbs.DesiredLRPByProcessGuid(key.ProcessGuid)
+	if err != nil {
+		return err
+	}
+
+	lrpStart := models.NewLRPStartRequest(desiredLRP, []uint{uint(key.Index)})
+	return bbs.requestLRPAuctions([]models.LRPStartRequest{lrpStart})
 }

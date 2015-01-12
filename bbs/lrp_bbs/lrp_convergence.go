@@ -141,51 +141,85 @@ func (bbs *LRPBBS) instancesToStop(
 	return actualsToStop
 }
 
+type startRequests struct {
+	desiredMap map[string]models.DesiredLRP
+	startMap   map[string]models.LRPStartRequest
+}
+
+func newStartRequests(desiredMap map[string]models.DesiredLRP) *startRequests {
+	return &startRequests{
+		desiredMap: desiredMap,
+		startMap:   make(map[string]models.LRPStartRequest),
+	}
+}
+
+func (s startRequests) Add(logger lager.Logger, actual models.ActualLRP) {
+	desiredLRP, found := s.desiredMap[actual.ProcessGuid]
+	if !found {
+		logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})
+		return
+	}
+
+	start, found := s.startMap[desiredLRP.ProcessGuid]
+	if !found {
+		start = models.LRPStartRequest{
+			DesiredLRP: desiredLRP,
+			Indices:    []uint{uint(actual.Index)},
+		}
+	} else {
+		start.Indices = append(start.Indices, uint(actual.Index))
+	}
+
+	logger.Info("adding-start-auction", lager.Data{"process-guid": desiredLRP.ProcessGuid, "index": actual.Index})
+	s.startMap[desiredLRP.ProcessGuid] = start
+}
+
+func (s startRequests) Slice() []models.LRPStartRequest {
+	starts := make([]models.LRPStartRequest, 0, len(s.startMap))
+	for _, start := range s.startMap {
+		starts = append(starts, start)
+	}
+	return starts
+}
+
 func (bbs *LRPBBS) resendStartAuctions(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
 	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
 	resendStartAuctionTimeout time.Duration,
 	logger lager.Logger,
 ) {
-	startsByProcessGuid := make(map[string]models.LRPStartRequest)
+	logger = logger.Session("resending")
+	startsByProcessGuid := newStartRequests(desiredLRPsByProcessGuid)
 
-	for processGuid, actuals := range actualsByProcessGuid {
+	now := bbs.timeProvider.Now().UnixNano()
+	lastPoll := now - pollingInterval.Nanoseconds()
+	for _, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
-			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(resendStartAuctionTimeout)) {
-				desiredLRP, found := desiredLRPsByProcessGuid[processGuid]
-				if !found {
-					logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})
+			switch {
+			case actual.ShouldRestartCrash(now):
+				unclaimedActual, err := bbs.unclaimCrashedActualLRP(logger, actual.ActualLRPKey)
+				if err != nil {
+					logger.Info("failed-to-unclaim-crashed-actual-lrp", lager.Data{"actual-lrp": actual})
 					continue
 				}
+				startsByProcessGuid.Add(logger, unclaimedActual)
 
-				start, found := startsByProcessGuid[processGuid]
-				if !found {
-					start = models.LRPStartRequest{
-						DesiredLRP: desiredLRP,
-						Indices:    []uint{uint(actual.Index)},
-					}
-				} else {
-					start.Indices = append(start.Indices, uint(actual.Index))
-				}
-
-				startsByProcessGuid[processGuid] = start
-				logger.Info("resending-start-auction", lager.Data{"process-guid": processGuid, "index": actual.Index})
+			case actual.ShouldStartUnclaimed(lastPoll):
+				startsByProcessGuid.Add(logger, actual)
 			}
 		}
 	}
 
-	if len(startsByProcessGuid) > 0 {
-		starts := make([]models.LRPStartRequest, 0, len(startsByProcessGuid))
-		for _, v := range startsByProcessGuid {
-			starts = append(starts, v)
-		}
+	starts := startsByProcessGuid.Slice()
+	if len(starts) == 0 {
+		return
+	}
 
-		err := bbs.requestLRPAuctions(starts)
-		if err != nil {
-			logger.Error("failed-resending-start-auctions", err, lager.Data{
-				"lrp-start-auctions": starts,
-			})
-		}
+	err := bbs.requestLRPAuctions(starts)
+	if err != nil {
+		logger.Error("failed-resending-start-auctions", err, lager.Data{
+			"lrp-start-auctions": starts,
+		})
 	}
 }
 
@@ -201,13 +235,14 @@ func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string
 	}
 
 	err = prune.Prune(bbs.store, shared.ActualLRPSchemaRoot, func(node storeadapter.StoreNode) (shouldKeep bool) {
+
 		var actual models.ActualLRP
 		err := models.FromJSON(node.Value, &actual)
 		if err != nil {
 			return false
 		}
 
-		if actual.State != models.ActualLRPStateUnclaimed {
+		if !(actual.State == models.ActualLRPStateUnclaimed || actual.State == models.ActualLRPStateCrashed) {
 			if _, ok := cellRoot.Lookup(actual.CellID); !ok {
 				logger.Info("detected-actual-with-missing-cell", lager.Data{
 					"actual":  actual,

@@ -5,6 +5,13 @@ type LRPStartRequest struct {
 	Indices    []uint     `json:"indices"`
 }
 
+func NewLRPStartRequest(d DesiredLRP, indices []uint) LRPStartRequest {
+	return LRPStartRequest{
+		DesiredLRP: d,
+		Indices:    indices,
+	}
+}
+
 func (lrpstart LRPStartRequest) Validate() error {
 	var validationError ValidationError
 
