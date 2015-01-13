@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
@@ -33,6 +34,13 @@ type FakeConvergerBBS struct {
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
+	}
+	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
+	waitForCellEventMutex       sync.RWMutex
+	waitForCellEventArgsForCall []struct{}
+	waitForCellEventReturns struct {
+		result1 services_bbs.CellEvent
+		result2 error
 	}
 }
 
@@ -117,6 +125,31 @@ func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, tim
 	fake.convergeTasksMutex.RLock()
 	defer fake.convergeTasksMutex.RUnlock()
 	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
+}
+
+func (fake *FakeConvergerBBS) WaitForCellEvent() (services_bbs.CellEvent, error) {
+	fake.waitForCellEventMutex.Lock()
+	fake.waitForCellEventArgsForCall = append(fake.waitForCellEventArgsForCall, struct{}{})
+	fake.waitForCellEventMutex.Unlock()
+	if fake.WaitForCellEventStub != nil {
+		return fake.WaitForCellEventStub()
+	} else {
+		return fake.waitForCellEventReturns.result1, fake.waitForCellEventReturns.result2
+	}
+}
+
+func (fake *FakeConvergerBBS) WaitForCellEventCallCount() int {
+	fake.waitForCellEventMutex.RLock()
+	defer fake.waitForCellEventMutex.RUnlock()
+	return len(fake.waitForCellEventArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) WaitForCellEventReturns(result1 services_bbs.CellEvent, result2 error) {
+	fake.WaitForCellEventStub = nil
+	fake.waitForCellEventReturns = struct {
+		result1 services_bbs.CellEvent
+		result2 error
+	}{result1, result2}
 }
 
 var _ bbs.ConvergerBBS = new(FakeConvergerBBS)

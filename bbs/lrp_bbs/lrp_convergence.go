@@ -18,7 +18,7 @@ const (
 	lrpsDeletedCounter = metric.Counter("ConvergenceLRPsDeleted")
 )
 
-func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, pollingInterval time.Duration) {
+func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, resendStartAuctionTimeout time.Duration) {
 	logger = logger.Session("converge-lrps")
 	logger.Info("starting-convergence")
 	defer logger.Info("finished-convergence")
@@ -110,7 +110,7 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, pollingInterval time.Durati
 	lrpStopInstanceCounter.Add(uint64(len(actualLRPsToStop)))
 	bbs.RetireActualLRPs(actualLRPsToStop, logger)
 
-	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, pollingInterval, logger)
+	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, resendStartAuctionTimeout, logger)
 }
 
 func (bbs *LRPBBS) instancesToStop(
@@ -144,14 +144,14 @@ func (bbs *LRPBBS) instancesToStop(
 func (bbs *LRPBBS) resendStartAuctions(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
 	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
-	pollingInterval time.Duration,
+	resendStartAuctionTimeout time.Duration,
 	logger lager.Logger,
 ) {
 	startsByProcessGuid := make(map[string]models.LRPStartRequest)
 
 	for processGuid, actuals := range actualsByProcessGuid {
 		for _, actual := range actuals {
-			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(pollingInterval)) {
+			if actual.State == models.ActualLRPStateUnclaimed && bbs.timeProvider.Now().After(time.Unix(0, actual.Since).Add(resendStartAuctionTimeout)) {
 				desiredLRP, found := desiredLRPsByProcessGuid[processGuid]
 				if !found {
 					logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})

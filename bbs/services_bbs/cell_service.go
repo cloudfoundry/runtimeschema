@@ -10,6 +10,8 @@ import (
 	"github.com/tedsuo/ifrit"
 )
 
+const CELL_HEARTBEAT_INTERVAL = 5 * time.Second
+
 func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
 	payload, err := models.ToJSON(cellPresence)
 	if err != nil {
@@ -58,4 +60,69 @@ func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 	}
 
 	return cellPresences, nil
+}
+
+func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
+	events, stop, errChan := bbs.store.Watch(shared.CellSchemaRoot)
+	defer close(stop)
+
+	for {
+		select {
+		case err := <-errChan:
+			return nil, err
+
+		case event := <-events:
+			switch {
+			case event.Node != nil && event.PrevNode == nil:
+				e := CellAppearedEvent{}
+
+				err := models.FromJSON(event.Node.Value, &e.Presence)
+				if err != nil {
+					return nil, err
+				}
+
+				return e, nil
+
+			case event.Node == nil && event.PrevNode != nil:
+				e := CellDisappearedEvent{}
+
+				err := models.FromJSON(event.PrevNode.Value, &e.Presence)
+				if err != nil {
+					return nil, err
+				}
+
+				return e, nil
+			}
+		}
+	}
+
+	panic("unreachable")
+}
+
+type CellEvent interface {
+	EventType() CellEventType
+}
+
+type CellEventType int
+
+const (
+	CellEventTypeInvalid CellEventType = iota
+	CellAppeared
+	CellDisappeared
+)
+
+type CellAppearedEvent struct {
+	Presence models.CellPresence
+}
+
+func (CellAppearedEvent) EventType() CellEventType {
+	return CellAppeared
+}
+
+type CellDisappearedEvent struct {
+	Presence models.CellPresence
+}
+
+func (CellDisappearedEvent) EventType() CellEventType {
+	return CellDisappeared
 }

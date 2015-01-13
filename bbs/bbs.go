@@ -86,6 +86,9 @@ type ConvergerBBS interface {
 
 	//task
 	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
+
+	//cells
+	WaitForCellEvent() (services_bbs.CellEvent, error)
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS

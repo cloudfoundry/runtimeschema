@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -107,6 +108,98 @@ var _ = Describe("Cell Service Registry", func() {
 				reps, err := bbs.Cells()
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(reps).Should(BeEmpty())
+			})
+		})
+	})
+
+	Describe("WaitForCellEvent", func() {
+		Context("when the store is around", func() {
+			var receivedEvents <-chan CellEvent
+
+			BeforeEach(func() {
+				eventChan := make(chan CellEvent, 1)
+				receivedEvents = eventChan
+
+				go func() {
+					defer GinkgoRecover()
+
+					event, err := bbs.WaitForCellEvent()
+					Ω(err).ShouldNot(HaveOccurred())
+
+					eventChan <- event
+				}()
+
+				time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
+			})
+
+			Context("when a cell presence appears", func() {
+				cellPresence := models.CellPresence{
+					CellID:     "some-cell",
+					Stack:      "some-stack",
+					RepAddress: "some-rep-address",
+					Zone:       "some-zone",
+				}
+
+				var (
+					process ifrit.Process
+				)
+
+				BeforeEach(func() {
+					process = ifrit.Invoke(bbs.NewCellHeartbeat(cellPresence, time.Second))
+				})
+
+				AfterEach(func() {
+					ginkgomon.Interrupt(process)
+				})
+
+				It("receives a CellAppeared event", func() {
+					Eventually(receivedEvents).Should(Receive(Equal(CellAppearedEvent{
+						Presence: cellPresence,
+					})))
+				})
+
+				Describe("watching again", func() {
+					var receivedEvents <-chan CellEvent
+
+					BeforeEach(func() {
+						eventChan := make(chan CellEvent, 1)
+						receivedEvents = eventChan
+
+						go func() {
+							defer GinkgoRecover()
+
+							event, err := bbs.WaitForCellEvent()
+							Ω(err).ShouldNot(HaveOccurred())
+
+							eventChan <- event
+						}()
+
+						time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
+					})
+
+					Context("when the cell then disappears", func() {
+						BeforeEach(func() {
+							ginkgomon.Interrupt(process)
+						})
+
+						It("receives a CellDisappeared event", func() {
+							Eventually(receivedEvents).Should(Receive(Equal(CellDisappearedEvent{
+								Presence: cellPresence,
+							})))
+						})
+					})
+				})
+			})
+		})
+
+		Context("when the store is down", func() {
+			BeforeEach(func() {
+				etcdRunner.Stop()
+			})
+
+			It("returns an error", func() {
+				_, err := bbs.WaitForCellEvent()
+				Ω(err).Should(HaveOccurred())
 			})
 		})
 	})
