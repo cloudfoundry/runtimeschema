@@ -49,6 +49,8 @@ type Task struct {
 
 	CompletionCallbackURL *url.URL `json:"completion_callback_url,omitempty"`
 	Annotation            string   `json:"annotation,omitempty"`
+
+	SecurityGroupRules []SecurityGroupRule `json:"security_group_rules,omitempty"`
 }
 
 type InnerTask Task
@@ -126,6 +128,15 @@ func (task Task) Validate() error {
 
 	if len(task.Annotation) > maximumAnnotationLength {
 		validationError = validationError.Append(ErrInvalidField{"annotation"})
+	}
+
+	if len(task.SecurityGroupRules) > 0 {
+		for _, rule := range task.SecurityGroupRules {
+			err := rule.Validate()
+			if err != nil {
+				validationError = validationError.Append(ErrInvalidField{"security_group_rules"})
+			}
+		}
 	}
 
 	if !validationError.Empty() {

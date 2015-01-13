@@ -49,7 +49,31 @@ var _ = Describe("Task", func() {
 		"updated_at": 1393371971000000010,
 		"first_completed_at": 1393371971000000030,
 		"state": 1,
-		"annotation": "[{\"anything\": \"you want!\"}]... dude"
+		"annotation": "[{\"anything\": \"you want!\"}]... dude",
+		"security_group_rules": [
+		  {
+				"protocol": "tcp",
+				"port_range": {
+					"start": 1,
+					"end": 1024
+				},
+				"destination": {
+					"network_address": "0.0.0.0",
+					"prefix_length": 0
+				}
+			},
+		  {
+				"protocol": "udp",
+				"port_range": {
+					"start": 53,
+					"end": 53
+				},
+				"destination": {
+					"network_address": "8.8.0.0",
+					"prefix_length": 16
+				}
+			}
+		]
 	}`
 
 		task = Task{
@@ -84,6 +108,31 @@ var _ = Describe("Task", func() {
 			Result:        "turboencabulated",
 			Failed:        true,
 			FailureReason: "because i said so",
+
+			SecurityGroupRules: []SecurityGroupRule{
+				{
+					Protocol: "tcp",
+					PortRange: PortRange{
+						Start: 1,
+						End:   1024,
+					},
+					Destination: CIDR{
+						NetworkAddress: "0.0.0.0",
+						PrefixLength:   0,
+					},
+				},
+				{
+					Protocol: "udp",
+					PortRange: PortRange{
+						Start: 53,
+						End:   53,
+					},
+					Destination: CIDR{
+						NetworkAddress: "8.8.0.0",
+						PrefixLength:   16,
+					},
+				},
+			},
 
 			Annotation: `[{"anything": "you want!"}]... dude`,
 		}
@@ -124,7 +173,8 @@ var _ = Describe("Task", func() {
 		})
 
 		for _, testCase := range []ValidatorErrorCase{
-			{"task_guid",
+			{
+				"task_guid",
 				Task{
 					Domain: "some-domain",
 					Stack:  "some-stack",
@@ -191,6 +241,20 @@ var _ = Describe("Task", func() {
 						Path: "ls",
 					},
 					CPUWeight: 101,
+				},
+			},
+			{
+				"security_group_rules",
+				Task{
+					Domain:   "some-domain",
+					TaskGuid: "task-guid",
+					Stack:    "some-stack",
+					Action: &RunAction{
+						Path: "ls",
+					},
+					SecurityGroupRules: []SecurityGroupRule{
+						{Protocol: "invalid"},
+					},
 				},
 			},
 		} {
