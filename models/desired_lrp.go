@@ -26,6 +26,7 @@ type DesiredLRP struct {
 	LogSource            string                `json:"log_source"`
 	LogGuid              string                `json:"log_guid"`
 	Annotation           string                `json:"annotation,omitempty"`
+	SecurityGroupRules   []SecurityGroupRule   `json:"security_group_rules,omitempty"`
 }
 
 type InnerDesiredLRP DesiredLRP
@@ -106,6 +107,16 @@ func (desired DesiredLRP) Validate() error {
 
 	if len(desired.Annotation) > maximumAnnotationLength {
 		validationError = validationError.Append(ErrInvalidField{"annotation"})
+	}
+
+	if len(desired.SecurityGroupRules) > 0 {
+		for _, rule := range desired.SecurityGroupRules {
+			err := rule.Validate()
+			if err != nil {
+				validationError = validationError.Append(ErrInvalidField{"security_group_rules"})
+				validationError = validationError.Append(err)
+			}
+		}
 	}
 
 	if !validationError.Empty() {

@@ -63,7 +63,32 @@ var _ = Describe("DesiredLRP", func() {
 	    "route-2"
 	  ],
 	  "log_guid": "log-guid",
-	  "log_source": "the cloud"
+	  "log_source": "the cloud",
+	  "security_group_rules": [
+		  {
+				"protocol": "tcp",
+				"port_range": {
+					"start": 1,
+					"end": 1024
+				},
+				"destination": {
+					"network_address": "0.0.0.0",
+					"prefix_length": 0
+				}
+			},
+		  {
+				"protocol": "udp",
+				"port_range": {
+					"start": 53,
+					"end": 53
+				},
+				"destination": {
+					"network_address": "8.8.0.0",
+					"prefix_length": 16
+				}
+			}
+		]
+	
 	}`
 
 	BeforeEach(func() {
@@ -100,6 +125,30 @@ var _ = Describe("DesiredLRP", func() {
 			},
 			Monitor: &RunAction{
 				Path: "reboot",
+			},
+			SecurityGroupRules: []SecurityGroupRule{
+				{
+					Protocol: "tcp",
+					PortRange: PortRange{
+						Start: 1,
+						End:   1024,
+					},
+					Destination: CIDR{
+						NetworkAddress: "0.0.0.0",
+						PrefixLength:   0,
+					},
+				},
+				{
+					Protocol: "udp",
+					PortRange: PortRange{
+						Start: 53,
+						End:   53,
+					},
+					Destination: CIDR{
+						NetworkAddress: "8.8.0.0",
+						PrefixLength:   16,
+					},
+				},
 			},
 		}
 	})
@@ -257,6 +306,24 @@ var _ = Describe("DesiredLRP", func() {
 		It("requires a valid CPU weight", func() {
 			lrp.CPUWeight = 101
 			assertDesiredLRPValidationFailsWithMessage(lrp, "cpu_weight")
+		})
+
+		Context("when security group is present", func() {
+			It("must be valid", func() {
+				lrp.SecurityGroupRules = []SecurityGroupRule{{
+					Protocol: "foo",
+				}}
+				assertDesiredLRPValidationFailsWithMessage(lrp, "security_group_rules")
+			})
+		})
+
+		Context("when security group is not present", func() {
+			It("does not error", func() {
+				lrp.SecurityGroupRules = []SecurityGroupRule{}
+
+				validationErr := lrp.Validate()
+				Ω(validationErr).ShouldNot(HaveOccurred())
+			})
 		})
 	})
 
