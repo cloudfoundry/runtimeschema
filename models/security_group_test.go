@@ -11,26 +11,20 @@ var _ = Describe("SecurityGroupRule", func() {
 
 	rulePayload := `{
 		"protocol": "tcp",
+		"destination": "1.2.3.4/16",
 		"port_range": {
 			"start": 1,
 			"end": 1024
-		},
-		"destination": {
-			"network_address": "1.2.3.4",
-			"prefix_length": 16
 		}
 	}`
 
 	BeforeEach(func() {
 		rule = models.SecurityGroupRule{
-			Protocol: models.TCPProtocol,
+			Protocol:    models.TCPProtocol,
+			Destination: "1.2.3.4/16",
 			PortRange: models.PortRange{
 				Start: 1,
 				End:   1024,
-			},
-			Destination: models.CIDR{
-				NetworkAddress: "1.2.3.4",
-				PrefixLength:   16,
 			},
 		}
 	})
@@ -46,35 +40,28 @@ var _ = Describe("SecurityGroupRule", func() {
 	Describe("Validation", func() {
 		var (
 			validationErr error
-			protocol      string
 
-			startPort uint
-			endPort   uint
-
-			networkAddress string
-			prefixLength   uint8
+			protocol    string
+			destination string
+			startPort   uint
+			endPort     uint
 		)
 
 		BeforeEach(func() {
 			protocol = "tcp"
+			destination = "8.8.8.8/16"
 
 			startPort = 1
 			endPort = 65535
-
-			networkAddress = "8.8.8.8"
-			prefixLength = 16
 		})
 
 		JustBeforeEach(func() {
 			rule = models.SecurityGroupRule{
-				Protocol: models.ProtocolName(protocol),
+				Protocol:    models.ProtocolName(protocol),
+				Destination: destination,
 				PortRange: models.PortRange{
 					Start: startPort,
 					End:   endPort,
-				},
-				Destination: models.CIDR{
-					NetworkAddress: networkAddress,
-					PrefixLength:   prefixLength,
 				},
 			}
 
@@ -171,8 +158,7 @@ var _ = Describe("SecurityGroupRule", func() {
 		Describe("destination", func() {
 			Context("when the destination is valid", func() {
 				BeforeEach(func() {
-					networkAddress = "1.2.3.4"
-					prefixLength = 32
+					destination = "1.2.3.4/32"
 				})
 
 				It("passes validation and does not return an error", func() {
@@ -180,21 +166,9 @@ var _ = Describe("SecurityGroupRule", func() {
 				})
 			})
 
-			Context("when the destination is missing", func() {
+			Context("when the destination is invalid", func() {
 				BeforeEach(func() {
-					networkAddress = ""
-					prefixLength = 0
-				})
-
-				It("returns an error", func() {
-					Ω(validationErr).Should(MatchError(ContainSubstring("destination")))
-				})
-			})
-
-			Context("when the subnet prefix length exceeds 32", func() {
-				BeforeEach(func() {
-					networkAddress = "1.2.3.4"
-					prefixLength = 33
+					destination = "garbage/32"
 				})
 
 				It("returns an error", func() {
@@ -206,9 +180,9 @@ var _ = Describe("SecurityGroupRule", func() {
 		Context("when thre are multiple field validations", func() {
 			BeforeEach(func() {
 				protocol = "foo"
+				destination = "garbage"
 				startPort = 443
 				endPort = 80
-				networkAddress = ""
 			})
 
 			It("aggregates validation errors", func() {

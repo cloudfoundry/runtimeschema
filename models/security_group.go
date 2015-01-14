@@ -1,6 +1,6 @@
 package models
 
-import "regexp"
+import "net"
 
 type ProtocolName string
 
@@ -18,18 +18,11 @@ type PortRange struct {
 	End   uint `json:"end"`
 }
 
-type CIDR struct {
-	NetworkAddress string `json:"network_address"`
-	PrefixLength   uint8  `json:"prefix_length"`
-}
-
 type SecurityGroupRule struct {
 	Protocol    ProtocolName `json:"protocol"`
+	Destination string       `json:"destination"`
 	PortRange   PortRange    `json:"port_range"`
-	Destination CIDR         `json:"destination"`
 }
-
-var destinationRegex = regexp.MustCompile(`^(([0-9][1-9]{0,2})\.){3}([0-9][1-9]{0,2})`)
 
 func (rule SecurityGroupRule) Validate() error {
 	var validationError ValidationError
@@ -43,6 +36,11 @@ func (rule SecurityGroupRule) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"protocol"})
 	}
 
+	_, _, err := net.ParseCIDR(rule.Destination)
+	if err != nil {
+		validationError = validationError.Append(ErrInvalidField{"destination"})
+	}
+
 	if rule.PortRange.Start < 1 || rule.PortRange.Start > 65535 {
 		validationError = validationError.Append(ErrInvalidField{"port_range"})
 	}
@@ -51,14 +49,6 @@ func (rule SecurityGroupRule) Validate() error {
 	}
 	if rule.PortRange.Start > rule.PortRange.End {
 		validationError = validationError.Append(ErrInvalidField{"port_range"})
-	}
-
-	if rule.Destination.NetworkAddress == "" {
-		validationError = validationError.Append(ErrInvalidField{"destination"})
-	}
-
-	if rule.Destination.PrefixLength > 32 {
-		validationError = validationError.Append(ErrInvalidField{"destination"})
 	}
 
 	if !validationError.Empty() {
