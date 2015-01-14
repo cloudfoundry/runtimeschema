@@ -53,24 +53,18 @@ var _ = Describe("Task", func() {
 		"security_group_rules": [
 		  {
 				"protocol": "tcp",
+				"destination": "0.0.0.0/0",
 				"port_range": {
 					"start": 1,
 					"end": 1024
-				},
-				"destination": {
-					"network_address": "0.0.0.0",
-					"prefix_length": 0
 				}
 			},
 		  {
 				"protocol": "udp",
+				"destination": "8.8.0.0/16",
 				"port_range": {
 					"start": 53,
 					"end": 53
-				},
-				"destination": {
-					"network_address": "8.8.0.0",
-					"prefix_length": 16
 				}
 			}
 		]
@@ -111,25 +105,19 @@ var _ = Describe("Task", func() {
 
 			SecurityGroupRules: []SecurityGroupRule{
 				{
-					Protocol: "tcp",
+					Protocol:    "tcp",
+					Destination: "0.0.0.0/0",
 					PortRange: PortRange{
 						Start: 1,
 						End:   1024,
 					},
-					Destination: CIDR{
-						NetworkAddress: "0.0.0.0",
-						PrefixLength:   0,
-					},
 				},
 				{
-					Protocol: "udp",
+					Protocol:    "udp",
+					Destination: "8.8.0.0/16",
 					PortRange: PortRange{
 						Start: 53,
 						End:   53,
-					},
-					Destination: CIDR{
-						NetworkAddress: "8.8.0.0",
-						PrefixLength:   16,
 					},
 				},
 			},
