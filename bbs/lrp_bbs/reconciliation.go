@@ -11,6 +11,8 @@ func (r Result) Empty() bool {
 	return len(r.IndicesToStart) == 0 && len(r.IndicesToStop) == 0
 }
 
+// Should pick up most of the logic from LRPBBS resetnStartAuctions
+//  (but not act on the data that's gathered... that's for another stage)
 func Reconcile(numDesired int, actuals models.ActualLRPsByIndex) Result {
 	result := Result{}
 

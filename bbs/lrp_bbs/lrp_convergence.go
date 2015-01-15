@@ -53,12 +53,20 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, resendStartAuctionTimeout t
 		return
 	}
 
+	// --> get actuals by process guid
+	// --> get all desired LRPs (map key=process guid)
+	//     get malformed desired LRPs (for later purge)
+	// --> for each desired LRP that exists, reconcile
+	//     against actutal LRPs for desired
 	var malformedDesiredLRPs []string
 	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
 
 	infos := []reconcileInfo{}
 	for _, node := range desiredLRPRoot.ChildNodes {
 		var desiredLRP models.DesiredLRP
+
+		// Possibly make pruning a 'Pruner' to get rid of the malformed
+		// desired LRPs
 		err := models.FromJSON(node.Value, &desiredLRP)
 
 		if err != nil {
@@ -182,6 +190,10 @@ func (s startRequests) Slice() []models.LRPStartRequest {
 	return starts
 }
 
+// Should (eventually) build list of:
+//   starts             [for eventual requestLRPAuctions]
+//   stops              [whatever stopping is]
+//   unclaimed crashes  [bulk unclaim crashed actual]
 func (bbs *LRPBBS) resendStartAuctions(
 	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
 	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
