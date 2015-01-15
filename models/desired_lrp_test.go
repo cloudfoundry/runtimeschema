@@ -392,17 +392,7 @@ var _ = Describe("DesiredLRP", func() {
 			Ω(err.Error()).Should(ContainSubstring("env"))
 		})
 
-		It("does not allow the setup action to change", func() {
-			newLrp.Setup = &RunAction{
-				Path: "/bin/true",
-			}
-
-			err := lrp.ValidateModifications(newLrp)
-			Ω(err).Should(HaveOccurred())
-			Ω(err.Error()).Should(ContainSubstring("setup"))
-		})
-
-		It("does not allow the action to change", func() {
+		It("does not allow the actions to change", func() {
 			newLrp.Action = &UploadAction{
 				To:   "new-destination",
 				From: "new-source",
@@ -411,16 +401,6 @@ var _ = Describe("DesiredLRP", func() {
 			err := lrp.ValidateModifications(newLrp)
 			Ω(err).Should(HaveOccurred())
 			Ω(err.Error()).Should(ContainSubstring("action"))
-		})
-
-		It("does not allow the monitor action to change", func() {
-			newLrp.Monitor = &RunAction{
-				Path: "/bin/true",
-			}
-
-			err := lrp.ValidateModifications(newLrp)
-			Ω(err).Should(HaveOccurred())
-			Ω(err.Error()).Should(ContainSubstring("monitor"))
 		})
 
 		It("does not allow the disk size to change", func() {
