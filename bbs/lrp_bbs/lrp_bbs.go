@@ -1,7 +1,6 @@
 package lrp_bbs
 
 import (
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
@@ -52,46 +51,12 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 			Value: value,
 		})
 	})
-
-	switch err {
-	case bbserrors.ErrStoreResourceExists:
-		existingLRP, index, err := bbs.desiredLRPByProcessGuidWithIndex(lrp.ProcessGuid)
-		if err != nil {
-			return err
-		}
-
-		err = existingLRP.ValidateModifications(lrp)
-		if err != nil {
-			return err
-		}
-
-		value, err := models.ToJSON(lrp)
-		if err != nil {
-			return err
-		}
-
-		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-				Key:   shared.DesiredLRPSchemaPath(lrp),
-				Value: value,
-			})
-		})
-		if err != nil {
-			return err
-		}
-
-		bbs.processDesiredCreateOrUpdate(lrp, logger)
-
-		return nil
-
-	case nil:
-		bbs.processDesiredCreateOrUpdate(lrp, logger)
-
-		return nil
-
-	default:
+	if err != nil {
 		return err
 	}
+
+	bbs.processDesiredCreateOrUpdate(lrp, logger)
+	return nil
 }
 
 func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error {
