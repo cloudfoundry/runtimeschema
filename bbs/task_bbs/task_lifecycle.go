@@ -91,28 +91,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // Will fail if the task has already been cancelled or completed normally
 func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
-	task, index, err := bbs.getTask(taskGuid)
-	if err != nil {
-		return err
-	}
-
-	if task.State == models.TaskStateCompleted || task.State == models.TaskStateResolving {
-		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
-	}
-
-	task = bbs.markTaskCompleted(task, true, "task was cancelled", "")
-
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: value,
-		})
-	})
+	return bbs.FailTask(logger, taskGuid, "task was cancelled")
 }
 
 func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {
@@ -124,41 +103,7 @@ func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason
 	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
 		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
 	}
-
-	task = bbs.markTaskCompleted(task, true, failureReason, "")
-
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: value,
-		})
-		if err != nil {
-			return err
-		}
-
-		if task.CompletionCallbackURL == nil {
-			return nil
-		}
-
-		receptorPresence, err := bbs.services.Receptor()
-		if err != nil {
-			logger.Error("could-not-fetch-receptors", err)
-			return nil
-		}
-
-		err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
-		if err != nil {
-			logger.Error("failed-to-complete-task", err)
-			return nil
-		}
-
-		return nil
-	})
+	return bbs.completeTask(logger, task, index, true, failureReason, "")
 }
 
 // The cell calls this when it has finished running the task (be it success or failure)
@@ -180,6 +125,10 @@ func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID st
 		return err
 	}
 
+	return bbs.completeTask(logger, task, index, failed, failureReason, result)
+}
+
+func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index uint64, failed bool, failureReason string, result string) error {
 	task = bbs.markTaskCompleted(task, failed, failureReason, result)
 
 	value, err := models.ToJSON(task)
@@ -187,33 +136,31 @@ func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID st
 		return err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
+	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.TaskSchemaPath(task.TaskGuid),
 			Value: value,
 		})
-		if err != nil {
-			return err
-		}
-
-		if task.CompletionCallbackURL == nil {
-			return nil
-		}
-
-		receptorPresence, err := bbs.services.Receptor()
-		if err != nil {
-			logger.Error("could-not-fetch-receptors", err)
-			return nil
-		}
-
-		err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
-		if err != nil {
-			logger.Error("failed-to-complete-task", err)
-			return nil
-		}
-
-		return nil
 	})
+
+	if task.CompletionCallbackURL == nil {
+		return nil
+	}
+
+	receptorPresence, err := bbs.services.Receptor()
+	if err != nil {
+		logger.Error("could-not-fetch-receptors", err)
+		return nil
+	}
+
+	err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
+	if err != nil {
+		logger.Error("failed-to-complete-task", err)
+		return nil
+	}
+
+	return nil
+
 }
 
 // The stager calls this when it wants to claim a completed task.  This ensures that only one
@@ -266,12 +213,12 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 }
 
 func validateStateTransition(from, to models.TaskState) error {
-	if (from != models.TaskStatePending && to == models.TaskStateRunning) ||
-		(from != models.TaskStateRunning && to == models.TaskStateCompleted) ||
-		(from != models.TaskStateCompleted && to == models.TaskStateResolving) {
-		return bbserrors.NewTaskStateTransitionError(from, to)
-	} else {
+	if (from == models.TaskStatePending && to == models.TaskStateRunning) ||
+		(from == models.TaskStateRunning && to == models.TaskStateCompleted) ||
+		(from == models.TaskStateCompleted && to == models.TaskStateResolving) {
 		return nil
+	} else {
+		return bbserrors.NewTaskStateTransitionError(from, to)
 	}
 }
 
