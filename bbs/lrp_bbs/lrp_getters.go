@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -18,10 +17,8 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, node := range node.ChildNodes {
@@ -47,10 +44,8 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, node := range node.ChildNodes {
@@ -77,10 +72,8 @@ func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, processNode := range node.ChildNodes {
@@ -106,10 +99,8 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, node := range node.ChildNodes {
@@ -144,10 +135,8 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, indexNode := range node.ChildNodes {
@@ -167,11 +156,8 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 
 func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
 	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
-
-	if err == storeadapter.ErrorKeyNotFound {
-		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
-	} else if err != nil {
-		return models.ActualLRP{}, err
+	if err != nil {
+		return models.ActualLRP{}, shared.ConvertStoreError(err)
 	}
 
 	var lrp models.ActualLRP
@@ -189,10 +175,8 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
-	}
-
-	if err != nil {
-		return lrps, err
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
 	}
 
 	for _, node := range node.ChildNodes {
@@ -213,15 +197,9 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 }
 
 func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
-		return err
-	})
-
+	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
 	if err != nil {
-		return models.DesiredLRP{}, 0, err
+		return models.DesiredLRP{}, 0, shared.ConvertStoreError(err)
 	}
 
 	var lrp models.DesiredLRP

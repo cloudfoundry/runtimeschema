@@ -18,23 +18,23 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 	}
 	task.State = models.TaskStatePending
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		if task.CreatedAt == 0 {
-			task.CreatedAt = bbs.timeProvider.Now().UnixNano()
-		}
-		task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
-		value, err := models.ToJSON(task)
-		if err != nil {
-			return err
-		}
-		return bbs.store.Create(storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(task.TaskGuid),
-			Value: value,
-		})
-	})
+	if task.CreatedAt == 0 {
+		task.CreatedAt = bbs.timeProvider.Now().UnixNano()
+	}
 
+	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
+
+	value, err := models.ToJSON(task)
 	if err != nil {
 		return err
+	}
+
+	err = bbs.store.Create(storeadapter.StoreNode{
+		Key:   shared.TaskSchemaPath(task.TaskGuid),
+		Value: value,
+	})
+	if err != nil {
+		return shared.ConvertStoreError(err)
 	}
 
 	err = bbs.requestTaskAuctions([]models.Task{task})
@@ -74,14 +74,12 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 		return false, err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.TaskSchemaPath(taskGuid),
+		Value: value,
 	})
 	if err != nil {
-		return false, err
+		return false, shared.ConvertStoreError(err)
 	}
 
 	return true, nil
@@ -103,6 +101,7 @@ func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason
 	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
 		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
 	}
+
 	return bbs.completeTask(logger, task, index, true, failureReason, "")
 }
 
@@ -136,12 +135,13 @@ func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index ui
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(task.TaskGuid),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.TaskSchemaPath(task.TaskGuid),
+		Value: value,
 	})
+	if err != nil {
+		return shared.ConvertStoreError(err)
+	}
 
 	if task.CompletionCallbackURL == nil {
 		return nil
@@ -160,7 +160,6 @@ func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index ui
 	}
 
 	return nil
-
 }
 
 // The stager calls this when it wants to claim a completed task.  This ensures that only one
@@ -184,12 +183,10 @@ func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 		return err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(taskGuid),
-			Value: value,
-		})
-	})
+	return shared.ConvertStoreError(bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.TaskSchemaPath(taskGuid),
+		Value: value,
+	}))
 }
 
 // The stager calls this when it wants to signal that it has received a completion and is handling it
@@ -207,9 +204,7 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 		return err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Delete(shared.TaskSchemaPath(taskGuid))
-	})
+	return shared.ConvertStoreError(bbs.store.Delete(shared.TaskSchemaPath(taskGuid)))
 }
 
 func validateStateTransition(from, to models.TaskState) error {

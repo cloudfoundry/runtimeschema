@@ -46,54 +46,6 @@ func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
-func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
-	logger = logger.Session("create-actual-lrp")
-	var err error
-	if index >= desiredLRP.Instances {
-		err = NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)
-		logger.Error("actual-lrp-index-too-large", err, lager.Data{"actual-index": index, "desired-instances": desiredLRP.Instances})
-		return err
-	}
-
-	actualLRP := models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(
-			desiredLRP.ProcessGuid,
-			index,
-			desiredLRP.Domain,
-		),
-		State: models.ActualLRPStateUnclaimed,
-		Since: bbs.timeProvider.Now().UnixNano(),
-	}
-
-	err = bbs.createRawActualLRP(&actualLRP, logger)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {
-	value, err := models.ToJSON(lrp)
-	if err != nil {
-		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return err
-	}
-
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Create(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
-	})
-
-	if err != nil {
-		logger.Error("failed-to-create-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-	}
-
-	return err
-}
-
 func (bbs *LRPBBS) ClaimActualLRP(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
@@ -133,16 +85,13 @@ func (bbs *LRPBBS) ClaimActualLRP(
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
-
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return err
+		return shared.ConvertStoreError(err)
 	}
 
 	logger.Info("succeeded")
@@ -191,16 +140,13 @@ func (bbs *LRPBBS) StartActualLRP(
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
-
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return err
+		return shared.ConvertStoreError(err)
 	}
 
 	logger.Info("succeeded")
@@ -226,16 +172,13 @@ func (bbs *LRPBBS) RemoveActualLRP(
 		return bbserrors.ErrStoreComparisonFailed
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Index: storeIndex,
-		})
+	err = bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Index: storeIndex,
 	})
-
 	if err != nil {
 		logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return err
+		return shared.ConvertStoreError(err)
 	}
 
 	logger.Info("succeeded")
@@ -269,6 +212,51 @@ func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger
 	pool.Stop()
 }
 
+func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
+	logger = logger.Session("create-actual-lrp")
+	var err error
+	if index >= desiredLRP.Instances {
+		err = NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)
+		logger.Error("actual-lrp-index-too-large", err, lager.Data{"actual-index": index, "desired-instances": desiredLRP.Instances})
+		return err
+	}
+
+	actualLRP := models.ActualLRP{
+		ActualLRPKey: models.NewActualLRPKey(
+			desiredLRP.ProcessGuid,
+			index,
+			desiredLRP.Domain,
+		),
+		State: models.ActualLRPStateUnclaimed,
+		Since: bbs.timeProvider.Now().UnixNano(),
+	}
+
+	err = bbs.createRawActualLRP(&actualLRP, logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
+	}
+
+	err = bbs.store.Create(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
+	})
+	if err != nil {
+		logger.Error("failed-to-create-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+	}
+
+	return shared.ConvertStoreError(err)
+}
+
 func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {
 	var err error
 
@@ -288,15 +276,9 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 }
 
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
-		return err
-	})
-
+	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, shared.ConvertStoreError(err)
 	}
 
 	var lrp models.ActualLRP

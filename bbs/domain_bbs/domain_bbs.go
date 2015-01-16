@@ -39,18 +39,18 @@ func (bbs *DomainBBS) UpsertDomain(domain string, ttlInSeconds int) error {
 		return validationError
 	}
 
-	return bbs.store.SetMulti([]storeadapter.StoreNode{
+	return shared.ConvertStoreError(bbs.store.SetMulti([]storeadapter.StoreNode{
 		{
 			Key: shared.DomainSchemaPath(domain),
 			TTL: uint64(ttlInSeconds),
 		},
-	})
+	}))
 }
 
 func (bbs *DomainBBS) Domains() ([]string, error) {
 	node, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		return nil, err
+		return nil, shared.ConvertStoreError(err)
 	}
 
 	domains := make([]string, 0, len(node.ChildNodes))

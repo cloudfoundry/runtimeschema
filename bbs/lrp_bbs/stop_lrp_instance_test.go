@@ -65,11 +65,5 @@ var _ = Describe("StopLRPInstance", func() {
 				Ω(err).Should(Equal(expectedError))
 			})
 		})
-
-		Context("when the store is out of commission", func() {
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.RequestStopLRPInstance(actualLRP.ActualLRPKey, actualLRP.ActualLRPContainerKey)
-			})
-		})
 	})
 })

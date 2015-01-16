@@ -11,10 +11,8 @@ func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return []models.Task{}, nil
-	}
-
-	if err != nil {
-		return []models.Task{}, err
+	} else if err != nil {
+		return []models.Task{}, shared.ConvertStoreError(err)
 	}
 
 	tasks := []models.Task{}
@@ -90,15 +88,9 @@ func filterTasksByState(tasks []models.Task, state models.TaskState) []models.Ta
 }
 
 func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.TaskSchemaPath(taskGuid))
-		return err
-	})
-
+	node, err := bbs.store.Get(shared.TaskSchemaPath(taskGuid))
 	if err != nil {
-		return models.Task{}, 0, err
+		return models.Task{}, 0, shared.ConvertStoreError(err)
 	}
 
 	var task models.Task

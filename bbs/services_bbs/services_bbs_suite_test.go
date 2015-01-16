@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"testing"
-	"time"
 )
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
@@ -32,23 +31,3 @@ var _ = BeforeEach(func() {
 	etcdRunner.Stop()
 	etcdRunner.Start()
 })
-
-func itRetriesUntilStoreComesBack(action func() error) {
-	It("should keep trying until the store comes back", func(done Done) {
-		etcdRunner.GoAway()
-
-		runResult := make(chan error)
-		go func() {
-			err := action()
-			runResult <- err
-		}()
-
-		time.Sleep(200 * time.Millisecond)
-
-		etcdRunner.ComeBack()
-
-		Ω(<-runResult).ShouldNot(HaveOccurred())
-
-		close(done)
-	}, 5)
-}

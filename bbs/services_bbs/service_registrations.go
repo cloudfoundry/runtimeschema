@@ -33,7 +33,7 @@ func (bbs *ServicesBBS) registrationsForServiceName(name string) (models.Service
 	if err == storeadapter.ErrorKeyNotFound {
 		return registrations, nil
 	} else if err != nil {
-		return registrations, err
+		return registrations, shared.ConvertStoreError(err)
 	}
 
 	for _, node := range rootNode.ChildNodes {

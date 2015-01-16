@@ -226,23 +226,6 @@ var _ = Describe("Task BBS", func() {
 				Ω(errDesire).Should(ContainElement(models.ErrInvalidField{"domain"}))
 			})
 		})
-
-		Context("when the store is out of commission", func() {
-			var anotherTask models.Task
-
-			BeforeEach(func() {
-				anotherTask = models.Task{
-					Domain:   "tests",
-					TaskGuid: "another-guid",
-					Stack:    "pancakes",
-					Action:   dummyAction,
-				}
-			})
-
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireTask(logger, anotherTask)
-			})
-		})
 	})
 
 	Describe("StartTask", func() {
@@ -285,13 +268,6 @@ var _ = Describe("Task BBS", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					_, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-					return err
-				})
 			})
 		})
 
@@ -468,17 +444,6 @@ var _ = Describe("Task BBS", func() {
 				})
 			})
 		})
-
-		Context("when the store is out of commission", func() {
-			BeforeEach(func() {
-				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.CancelTask(logger, task.TaskGuid)
-			})
-		})
 	})
 
 	Describe("CompleteTask", func() {
@@ -631,12 +596,6 @@ var _ = Describe("Task BBS", func() {
 				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
-				})
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "a result")
 				})
 			})
 		})
@@ -827,12 +786,6 @@ var _ = Describe("Task BBS", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 					})
 				})
-
-				Context("when the store is out of commission", func() {
-					itRetriesUntilStoreComesBack(func() error {
-						return bbs.FailTask(logger, task.TaskGuid, "")
-					})
-				})
 			})
 
 			Context("when the task is completed", func() {
@@ -982,12 +935,6 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.Tasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(tasks).Should(BeEmpty())
-			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.ResolveTask(logger, task.TaskGuid)
-				})
 			})
 		})
 

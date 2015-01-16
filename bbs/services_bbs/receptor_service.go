@@ -25,7 +25,7 @@ func (bbs *ServicesBBS) Receptor() (models.ReceptorPresence, error) {
 
 	node, err := bbs.store.ListRecursively(shared.ReceptorSchemaRoot)
 	if err != nil {
-		return receptorPresence, err
+		return receptorPresence, shared.ConvertStoreError(err)
 	}
 
 	receptors := node.ChildNodes

@@ -26,7 +26,7 @@ func (bbs *ServicesBBS) CellById(cellId string) (models.CellPresence, error) {
 
 	node, err := bbs.store.Get(shared.CellSchemaPath(cellId))
 	if err != nil {
-		return cellPresence, err
+		return cellPresence, shared.ConvertStoreError(err)
 	}
 
 	err = models.FromJSON(node.Value, &cellPresence)
@@ -41,10 +41,8 @@ func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 	node, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return []models.CellPresence{}, nil
-	}
-
-	if err != nil {
-		return nil, err
+	} else if err != nil {
+		return nil, shared.ConvertStoreError(err)
 	}
 
 	cellPresences := []models.CellPresence{}
@@ -69,7 +67,7 @@ func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
 	for {
 		select {
 		case err := <-errChan:
-			return nil, err
+			return nil, shared.ConvertStoreError(err)
 
 		case event := <-events:
 			switch {

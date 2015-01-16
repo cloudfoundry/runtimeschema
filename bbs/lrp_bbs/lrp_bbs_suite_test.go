@@ -83,24 +83,6 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 	})
 }
 
-func itRetriesUntilStoreComesBack(action func() error) {
-	It("should keep trying until the store comes back", func() {
-		etcdRunner.GoAway()
-
-		runResult := make(chan error)
-		go func() {
-			err := action()
-			runResult <- err
-		}()
-
-		time.Sleep(200 * time.Millisecond)
-
-		etcdRunner.ComeBack()
-
-		Eventually(runResult).Should(Receive(BeNil()))
-	})
-}
-
 func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLRPContainerKey, logger lager.Logger) {
 	err := bbs.CreateActualLRP(d, index, logger)
 	Ω(err).ShouldNot(HaveOccurred())
@@ -118,10 +100,8 @@ func createRawActualLRP(lrp models.ActualLRP) error {
 		return err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	return etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
 }
