@@ -8,29 +8,41 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *LRPBBS) GatherAndPruneForLRPConvergence(logger lager.Logger) (
-	map[string]models.DesiredLRP,
-	map[string]models.ActualLRPsByIndex,
-	map[string]struct{},
-	error,
-) {
+type ConvergenceInput struct {
+	DesiredLRPs models.DesiredLRPsByProcessGuid
+	ActualLRPs  models.ActualLRPsByProcessGuidAndIndex
+	Domains     models.DomainSet
+}
 
+func NewConvergenceInput(
+	desireds models.DesiredLRPsByProcessGuid,
+	actuals models.ActualLRPsByProcessGuidAndIndex,
+	domains models.DomainSet,
+) *ConvergenceInput {
+	return &ConvergenceInput{
+		DesiredLRPs: desireds,
+		ActualLRPs:  actuals,
+		Domains:     domains,
+	}
+}
+
+func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger) (*ConvergenceInput, error) {
 	actuals, err := bbs.gatherAndPruneActualLRPs(logger)
 	if err != nil {
-		return nil, nil, nil, err
+		return &ConvergenceInput{}, err
 	}
 
 	domains, err := bbs.domains(logger)
 	if err != nil {
-		return nil, nil, nil, err
+		return &ConvergenceInput{}, err
 	}
 
 	desireds, err := bbs.gatherAndPruneDesiredLRPs(logger, domains)
 	if err != nil {
-		return nil, nil, nil, err
+		return &ConvergenceInput{}, err
 	}
 
-	return desireds, actuals, domains, nil
+	return NewConvergenceInput(desireds, actuals, domains), nil
 }
 
 func (bbs *LRPBBS) domains(logger lager.Logger) (map[string]struct{}, error) {
@@ -65,15 +77,15 @@ func (bbs *LRPBBS) gatherAndPruneActualLRPs(logger lager.Logger) (map[string]mod
 		return nil, err
 	}
 
-	return pruner.ActualsByProcessGuid, nil
+	return pruner.Actuals, nil
 }
 
 type actualPruner struct {
 	logger lager.Logger
 	bbs    *LRPBBS
 
-	cellRoot             storeadapter.StoreNode
-	ActualsByProcessGuid map[string]models.ActualLRPsByIndex
+	cellRoot storeadapter.StoreNode
+	Actuals  models.ActualLRPsByProcessGuidAndIndex
 }
 
 func newActualPruner(logger lager.Logger, cellRoot storeadapter.StoreNode) *actualPruner {
@@ -81,7 +93,7 @@ func newActualPruner(logger lager.Logger, cellRoot storeadapter.StoreNode) *actu
 		logger:   logger,
 		cellRoot: cellRoot,
 
-		ActualsByProcessGuid: map[string]models.ActualLRPsByIndex{},
+		Actuals: models.ActualLRPsByProcessGuidAndIndex{},
 	}
 }
 
@@ -92,10 +104,7 @@ func (p *actualPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 		return false
 	}
 
-	switch actual.State {
-	case models.ActualLRPStateUnclaimed:
-	case models.ActualLRPStateCrashed:
-	default:
+	if actual.CellID != "" {
 		if _, ok := p.cellRoot.Lookup(actual.CellID); !ok {
 			p.logger.Info("detected-actual-with-missing-cell", lager.Data{
 				"actual":  actual,
@@ -105,14 +114,7 @@ func (p *actualPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 		}
 	}
 
-	actuals, found := p.ActualsByProcessGuid[actual.ProcessGuid]
-	if !found {
-		actuals = models.ActualLRPsByIndex{}
-		p.ActualsByProcessGuid[actual.ProcessGuid] = actuals
-	}
-
-	actuals[actual.Index] = actual
-
+	p.Actuals.Add(actual)
 	return true
 }
 
@@ -124,14 +126,14 @@ func (bbs *LRPBBS) gatherAndPruneDesiredLRPs(logger lager.Logger, domains map[st
 		return nil, err
 	}
 
-	return pruner.DesiredLRPsByProcessGuid, nil
+	return pruner.DesiredLRPs, nil
 }
 
 type desiredPruner struct {
 	logger  lager.Logger
 	domains map[string]struct{}
 
-	DesiredLRPsByProcessGuid map[string]models.DesiredLRP
+	DesiredLRPs models.DesiredLRPsByProcessGuid
 }
 
 func newDesiredPruner(logger lager.Logger, domains map[string]struct{}) *desiredPruner {
@@ -139,7 +141,7 @@ func newDesiredPruner(logger lager.Logger, domains map[string]struct{}) *desired
 		logger:  logger,
 		domains: domains,
 
-		DesiredLRPsByProcessGuid: map[string]models.DesiredLRP{},
+		DesiredLRPs: models.DesiredLRPsByProcessGuid{},
 	}
 }
 
@@ -155,7 +157,7 @@ func (p *desiredPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 		return false
 	}
 
-	p.DesiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
+	p.DesiredLRPs.Add(desiredLRP)
 
 	return true
 }

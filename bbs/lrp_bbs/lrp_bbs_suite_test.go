@@ -112,17 +112,6 @@ func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLR
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawDomain(domain string) {
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.DomainSchemaPath(domain),
-			Value: []byte(domain),
-		})
-	})
-
-	Ω(err).ShouldNot(HaveOccurred())
-}
-
 func createRawActualLRP(lrp models.ActualLRP) {
 	value, err := models.ToJSON(lrp)
 	Ω(err).ShouldNot(HaveOccurred())
@@ -145,6 +134,17 @@ func createRawDesiredLRP(d models.DesiredLRP) {
 		return etcdClient.Create(storeadapter.StoreNode{
 			Key:   shared.DesiredLRPSchemaPath(d),
 			Value: value,
+		})
+	})
+
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func createRawDomain(domain string) {
+	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
+		return etcdClient.Create(storeadapter.StoreNode{
+			Key:   shared.DomainSchemaPath(domain),
+			Value: []byte(domain),
 		})
 	})
 

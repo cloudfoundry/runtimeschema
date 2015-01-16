@@ -1,5 +1,17 @@
 package models
 
+type CellSet map[CellPresence]struct{}
+
+func (set CellSet) Add(cell CellPresence) {
+	set[cell] = struct{}{}
+}
+
+func (set CellSet) Each(predicate func(cell CellPresence)) {
+	for cell := range set {
+		predicate(cell)
+	}
+}
+
 type CellPresence struct {
 	CellID     string `json:"cell_id"`
 	Stack      string `json:"stack"`

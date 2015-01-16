@@ -7,6 +7,26 @@ import (
 
 type ActualLRPsByIndex map[int]ActualLRP
 
+type ActualLRPsByProcessGuidAndIndex map[string]ActualLRPsByIndex
+
+func (set ActualLRPsByProcessGuidAndIndex) Add(actual ActualLRP) {
+	actuals, found := set[actual.ProcessGuid]
+	if !found {
+		actuals = ActualLRPsByIndex{}
+		set[actual.ProcessGuid] = actuals
+	}
+
+	actuals[actual.Index] = actual
+}
+
+func (set ActualLRPsByProcessGuidAndIndex) Each(predicate func(actual ActualLRP)) {
+	for _, indexSet := range set {
+		for _, actual := range indexSet {
+			predicate(actual)
+		}
+	}
+}
+
 type ActualLRPState string
 
 const (
