@@ -1,6 +1,7 @@
 package lrp_bbs_test
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -103,6 +104,13 @@ var _ = Describe("LrpGetters", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(desiredLrp).Should(Equal(desiredLrp1))
+			})
+
+			Context("when the Desired LRP does not exist", func() {
+				It("returns ErrStoreResourceNotFound", func() {
+					_, err := bbs.DesiredLRPByProcessGuid("non-existent")
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
 			})
 		})
 	})
