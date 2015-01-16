@@ -45,7 +45,7 @@ var _ = Describe("SecurityGroupRule", func() {
 
 			json, err := models.ToJSON(&icmpRule)
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(string(json)).Should(MatchJSON(`{"protocol": "icmp", "destination": "1.2.3.4/16", "icmp_info": {"icmp_type":0,"icmp_code":0} }`))
+			Ω(string(json)).Should(MatchJSON(`{"protocol": "icmp", "destination": "1.2.3.4/16", "icmp_info": {"type":0,"code":0} }`))
 		})
 	})
 

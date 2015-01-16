@@ -64,7 +64,7 @@ var _ = Describe("DesiredLRP", func() {
 	  ],
 	  "log_guid": "log-guid",
 	  "log_source": "the cloud",
-	  "security_group_rules": [
+	  "egress_rules": [
 		  {
 				"protocol": "tcp",
 				"destination": "0.0.0.0/0",
@@ -119,7 +119,7 @@ var _ = Describe("DesiredLRP", func() {
 			Monitor: &RunAction{
 				Path: "reboot",
 			},
-			SecurityGroupRules: []SecurityGroupRule{
+			EgressRules: []SecurityGroupRule{
 				{
 					Protocol:    "tcp",
 					Destination: "0.0.0.0/0",
@@ -297,16 +297,16 @@ var _ = Describe("DesiredLRP", func() {
 
 		Context("when security group is present", func() {
 			It("must be valid", func() {
-				lrp.SecurityGroupRules = []SecurityGroupRule{{
+				lrp.EgressRules = []SecurityGroupRule{{
 					Protocol: "foo",
 				}}
-				assertDesiredLRPValidationFailsWithMessage(lrp, "security_group_rules")
+				assertDesiredLRPValidationFailsWithMessage(lrp, "egress_rules")
 			})
 		})
 
 		Context("when security group is not present", func() {
 			It("does not error", func() {
-				lrp.SecurityGroupRules = []SecurityGroupRule{}
+				lrp.EgressRules = []SecurityGroupRule{}
 
 				validationErr := lrp.Validate()
 				Ω(validationErr).ShouldNot(HaveOccurred())

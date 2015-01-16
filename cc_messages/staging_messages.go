@@ -1,15 +1,18 @@
 package cc_messages
 
+import "github.com/cloudfoundry-incubator/runtime-schema/models"
+
 type DockerStagingRequestFromCC struct {
-	AppId           string      `json:"app_id"`
-	TaskId          string      `json:"task_id"`
-	Stack           string      `json:"stack"`
-	DockerImageUrl  string      `json:"docker_image"`
-	FileDescriptors int         `json:"file_descriptors"`
-	MemoryMB        int         `json:"memory_mb"`
-	DiskMB          int         `json:"disk_mb"`
-	Environment     Environment `json:"environment"`
-	Timeout         int         `json:"timeout"`
+	AppId           string                     `json:"app_id"`
+	TaskId          string                     `json:"task_id"`
+	Stack           string                     `json:"stack"`
+	DockerImageUrl  string                     `json:"docker_image"`
+	FileDescriptors int                        `json:"file_descriptors"`
+	MemoryMB        int                        `json:"memory_mb"`
+	DiskMB          int                        `json:"disk_mb"`
+	Environment     Environment                `json:"environment"`
+	EgressRules     []models.SecurityGroupRule `json:"egress_rules,omitempty"`
+	Timeout         int                        `json:"timeout"`
 }
 
 type DockerStagingResponseForCC struct {
@@ -21,19 +24,20 @@ type DockerStagingResponseForCC struct {
 }
 
 type StagingRequestFromCC struct {
-	AppId                          string      `json:"app_id"`
-	TaskId                         string      `json:"task_id"`
-	Stack                          string      `json:"stack"`
-	AppBitsDownloadUri             string      `json:"app_bits_download_uri"`
-	BuildArtifactsCacheDownloadUri string      `json:"build_artifacts_cache_download_uri,omitempty"`
-	BuildArtifactsCacheUploadUri   string      `json:"build_artifacts_cache_upload_uri"`
-	FileDescriptors                int         `json:"file_descriptors"`
-	MemoryMB                       int         `json:"memory_mb"`
-	DiskMB                         int         `json:"disk_mb"`
-	Buildpacks                     []Buildpack `json:"buildpacks"`
-	Environment                    Environment `json:"environment"`
-	DropletUploadUri               string      `json:"droplet_upload_uri"`
-	Timeout                        int         `json:"timeout"`
+	AppId                          string                     `json:"app_id"`
+	TaskId                         string                     `json:"task_id"`
+	Stack                          string                     `json:"stack"`
+	AppBitsDownloadUri             string                     `json:"app_bits_download_uri"`
+	BuildArtifactsCacheDownloadUri string                     `json:"build_artifacts_cache_download_uri,omitempty"`
+	BuildArtifactsCacheUploadUri   string                     `json:"build_artifacts_cache_upload_uri"`
+	FileDescriptors                int                        `json:"file_descriptors"`
+	MemoryMB                       int                        `json:"memory_mb"`
+	DiskMB                         int                        `json:"disk_mb"`
+	Buildpacks                     []Buildpack                `json:"buildpacks"`
+	Environment                    Environment                `json:"environment"`
+	DropletUploadUri               string                     `json:"droplet_upload_uri"`
+	EgressRules                    []models.SecurityGroupRule `json:"egress_rules,omitempty"`
+	Timeout                        int                        `json:"timeout"`
 }
 
 const CUSTOM_BUILDPACK = "custom"

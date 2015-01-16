@@ -50,7 +50,7 @@ var _ = Describe("Task", func() {
 		"first_completed_at": 1393371971000000030,
 		"state": 1,
 		"annotation": "[{\"anything\": \"you want!\"}]... dude",
-		"security_group_rules": [
+		"egress_rules": [
 		  {
 				"protocol": "tcp",
 				"destination": "0.0.0.0/0",
@@ -103,7 +103,7 @@ var _ = Describe("Task", func() {
 			Failed:        true,
 			FailureReason: "because i said so",
 
-			SecurityGroupRules: []SecurityGroupRule{
+			EgressRules: []SecurityGroupRule{
 				{
 					Protocol:    "tcp",
 					Destination: "0.0.0.0/0",
@@ -232,7 +232,7 @@ var _ = Describe("Task", func() {
 				},
 			},
 			{
-				"security_group_rules",
+				"egress_rules",
 				Task{
 					Domain:   "some-domain",
 					TaskGuid: "task-guid",
@@ -240,7 +240,7 @@ var _ = Describe("Task", func() {
 					Action: &RunAction{
 						Path: "ls",
 					},
-					SecurityGroupRules: []SecurityGroupRule{
+					EgressRules: []SecurityGroupRule{
 						{Protocol: "invalid"},
 					},
 				},

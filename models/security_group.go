@@ -26,8 +26,8 @@ type SecurityGroupRule struct {
 }
 
 type ICMPInfo struct {
-	IcmpType int32 `json:"icmp_type"`
-	IcmpCode int32 `json:"icmp_code"`
+	Type int32 `json:"type"`
+	Code int32 `json:"code"`
 }
 
 func (rule SecurityGroupRule) Validate() error {
