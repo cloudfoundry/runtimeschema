@@ -77,112 +77,12 @@ var _ = Describe("LRP", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				newLRP = lrp
+				newLRP.Instances = 3
 			})
 
-			Context("when the modifications are valid", func() {
-				BeforeEach(func() {
-					newLRP.Instances = 6
-					newLRP.Routes = []string{"example.com", "foobar"}
-				})
-
-				It("updates the desired lrp", func() {
-					err := bbs.DesireLRP(logger, newLRP)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(current).Should(Equal(newLRP))
-				})
-
-				Context("when scaling up", func() {
-					BeforeEach(func() {
-						newLRP.Instances = 6
-					})
-
-					Context("when an auctioneer is present", func() {
-						BeforeEach(func() {
-							auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-							registerAuctioneer(auctioneerPresence)
-						})
-
-						It("emits start auction requests", func() {
-							originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
-
-							err := bbs.DesireLRP(logger, newLRP)
-							Ω(err).ShouldNot(HaveOccurred())
-
-							Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
-
-							_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-							Ω(startAuctions).Should(HaveLen(1))
-							Ω(startAuctions[0].DesiredLRP).Should(Equal(newLRP))
-							Ω(startAuctions[0].Indices).Should(ConsistOf(uint(5)))
-						})
-					})
-				})
-
-				Context("when scaling down", func() {
-					BeforeEach(func() {
-						newLRP.Instances = 2
-					})
-
-					Context("when there are running instances on a present cell", func() {
-						cellPresence := models.CellPresence{
-							CellID:     "the-cell-id",
-							Stack:      "the-stack",
-							RepAddress: "cell.example.com",
-						}
-
-						BeforeEach(func() {
-							registerCell(cellPresence)
-
-							for i := 0; i < lrp.Instances; i++ {
-								err := bbs.ClaimActualLRP(
-									models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
-									models.NewActualLRPContainerKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
-									logger,
-								)
-								Ω(err).ShouldNot(HaveOccurred())
-							}
-						})
-
-						It("stops the instances at the removed indices", func() {
-							originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
-
-							err := bbs.DesireLRP(logger, newLRP)
-							Ω(err).ShouldNot(HaveOccurred())
-
-							Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances - newLRP.Instances)))
-
-							stoppedActuals := make([]int, lrp.Instances-newLRP.Instances)
-							for i := 0; i < (lrp.Instances - newLRP.Instances); i++ {
-								addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
-								Ω(addr).Should(Equal(cellPresence.RepAddress))
-
-								stoppedActuals[i] = key.Index
-							}
-
-							Ω(stoppedActuals).Should(ConsistOf([]int{2, 3, 4}))
-						})
-					})
-				})
-			})
-
-			Context("when the modifications are invalid", func() {
-				BeforeEach(func() {
-					newLRP.Stack = "foo"
-				})
-
-				It("fails to update the desired lrp", func() {
-					err := bbs.DesireLRP(logger, newLRP)
-					Ω(err).Should(HaveOccurred())
-
-					current, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(current).Should(Equal(lrp))
-				})
+			It("rejects the request with ErrStoreResourceExists", func() {
+				err := bbs.DesireLRP(logger, newLRP)
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceExists))
 			})
 		})
 
