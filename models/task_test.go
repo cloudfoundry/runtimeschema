@@ -107,7 +107,7 @@ var _ = Describe("Task", func() {
 				{
 					Protocol:    "tcp",
 					Destination: "0.0.0.0/0",
-					PortRange: PortRange{
+					PortRange: &PortRange{
 						Start: 1,
 						End:   1024,
 					},
@@ -115,7 +115,7 @@ var _ = Describe("Task", func() {
 				{
 					Protocol:    "udp",
 					Destination: "8.8.0.0/16",
-					PortRange: PortRange{
+					PortRange: &PortRange{
 						Start: 53,
 						End:   53,
 					},
