@@ -213,13 +213,7 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 }
 
 func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
-		return err
-	})
-
+	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
 	if err != nil {
 		return models.DesiredLRP{}, 0, err
 	}

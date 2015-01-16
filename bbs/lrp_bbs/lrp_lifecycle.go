@@ -80,11 +80,9 @@ func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Create(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = bbs.store.Create(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
 
 	if err != nil {
@@ -133,11 +131,9 @@ func (bbs *LRPBBS) ClaimActualLRP(
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
 
 	if err != nil {
@@ -191,11 +187,9 @@ func (bbs *LRPBBS) StartActualLRP(
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
 
 	if err != nil {
@@ -226,11 +220,9 @@ func (bbs *LRPBBS) RemoveActualLRP(
 		return bbserrors.ErrStoreComparisonFailed
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Index: storeIndex,
-		})
+	err = bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Index: storeIndex,
 	})
 
 	if err != nil {
@@ -288,13 +280,7 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 }
 
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {
-	var node storeadapter.StoreNode
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		var err error
-		node, err = bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
-		return err
-	})
-
+	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 	if err != nil {
 		return nil, 0, err
 	}

@@ -195,11 +195,13 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 	services := services_bbs.New(store, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 
+	retryPolicy := storeadapter.ExponentialRetryPolicy{}
+
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(store, timeProvider, cb.NewCellClient(), auctioneerClient, services),
+		LRPBBS:      lrp_bbs.New(storeadapter.NewRetryable(store, timeProvider, retryPolicy), timeProvider, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, timeProvider, cb.NewTaskClient(), auctioneerClient, services),
+		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, timeProvider, retryPolicy), timeProvider, cb.NewTaskClient(), auctioneerClient, services),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }

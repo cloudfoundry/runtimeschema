@@ -199,12 +199,6 @@ var _ = Describe("LRP", func() {
 				Ω(desireError).Should(BeAssignableToTypeOf(*new(models.ValidationError)))
 			})
 		})
-
-		Context("when the store is out of commission", func() {
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.DesireLRP(logger, lrp)
-			})
-		})
 	})
 
 	Describe("RemoveDesiredLRPByProcessGuid", func() {

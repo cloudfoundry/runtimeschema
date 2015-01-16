@@ -46,11 +46,9 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Create(storeadapter.StoreNode{
-			Key:   shared.DesiredLRPSchemaPath(lrp),
-			Value: value,
-		})
+	err = bbs.store.Create(storeadapter.StoreNode{
+		Key:   shared.DesiredLRPSchemaPath(lrp),
+		Value: value,
 	})
 
 	switch err {
@@ -70,11 +68,9 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 			return err
 		}
 
-		err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-			return bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-				Key:   shared.DesiredLRPSchemaPath(lrp),
-				Value: value,
-			})
+		err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+			Key:   shared.DesiredLRPSchemaPath(lrp),
+			Value: value,
 		})
 		if err != nil {
 			return err
@@ -100,9 +96,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGui
 		return err
 	}
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return bbs.store.Delete(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
-	})
+	err = bbs.store.Delete(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
 	if err != nil {
 		return err
 	}
@@ -129,17 +123,15 @@ func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, upd
 		return err
 	}
 
-	return shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		err := bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-			Key:   shared.DesiredLRPSchemaPath(updatedLRP),
-			Value: value,
-		})
-		if err != nil {
-			return err
-		}
-
-		bbs.processDesiredCreateOrUpdate(updatedLRP, logger)
-
-		return nil
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.DesiredLRPSchemaPath(updatedLRP),
+		Value: value,
 	})
+	if err != nil {
+		return err
+	}
+
+	bbs.processDesiredCreateOrUpdate(updatedLRP, logger)
+
+	return nil
 }

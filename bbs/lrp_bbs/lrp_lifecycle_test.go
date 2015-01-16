@@ -808,12 +808,6 @@ var _ = Describe("LrpLifecycle", func() {
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
 				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
 			})
-
-			Context("when the store is out of commission", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
-				})
-			})
 		})
 
 		Context("when the LRP differs from the one in the store", func() {
@@ -955,68 +949,6 @@ var _ = Describe("LrpLifecycle", func() {
 				It("logs the error", func() {
 					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire-actual-lrp"))
 				})
-			})
-		})
-	})
-
-	Describe("Retry on timeout", func() {
-		var desiredLRP models.DesiredLRP
-
-		BeforeEach(func() {
-			desiredLRP = models.DesiredLRP{
-				ProcessGuid: actualLRPKey.ProcessGuid,
-				Domain:      actualLRPKey.Domain,
-				Instances:   3,
-			}
-		})
-
-		Context("CreateActualLRP", func() {
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.CreateActualLRP(desiredLRP, index, logger)
-			})
-		})
-
-		Context("ClaimActualLRP", func() {
-			BeforeEach(func() {
-				err := bbs.CreateActualLRP(desiredLRP, index, logger)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.ClaimActualLRP(actualLRPKey, containerKey, logger)
-			})
-		})
-
-		Context("StartActualLRP", func() {
-			Context("when an actual lrp exists at the key", func() {
-				BeforeEach(func() {
-					err := bbs.CreateActualLRP(desiredLRP, index, logger)
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartActualLRP(actualLRPKey, containerKey, netInfo, logger)
-				})
-			})
-
-			Context("when no actual lrp exists at the key", func() {
-				itRetriesUntilStoreComesBack(func() error {
-					return bbs.StartActualLRP(actualLRPKey, containerKey, netInfo, logger)
-				})
-			})
-		})
-
-		Context("RemoveActualLRP", func() {
-			BeforeEach(func() {
-				err := bbs.CreateActualLRP(desiredLRP, index, logger)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				err = bbs.ClaimActualLRP(actualLRPKey, containerKey, logger)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			itRetriesUntilStoreComesBack(func() error {
-				return bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
 			})
 		})
 	})
