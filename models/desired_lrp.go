@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"reflect"
 	"regexp"
 )
 
@@ -117,72 +116,6 @@ func (desired DesiredLRP) Validate() error {
 				validationError = validationError.Append(err)
 			}
 		}
-	}
-
-	if !validationError.Empty() {
-		return validationError
-	}
-
-	return nil
-}
-
-func (desired DesiredLRP) ValidateModifications(updatedModel DesiredLRP) error {
-	var validationError ValidationError
-
-	if desired.ProcessGuid != updatedModel.ProcessGuid {
-		validationError = validationError.Append(ErrInvalidModification{"process_guid"})
-	}
-
-	if desired.Domain != updatedModel.Domain {
-		validationError = validationError.Append(ErrInvalidModification{"domain"})
-	}
-
-	if desired.RootFSPath != updatedModel.RootFSPath {
-		validationError = validationError.Append(ErrInvalidModification{"root_fs"})
-	}
-
-	if desired.Stack != updatedModel.Stack {
-		validationError = validationError.Append(ErrInvalidModification{"stack"})
-	}
-
-	if !reflect.DeepEqual(desired.EnvironmentVariables, updatedModel.EnvironmentVariables) {
-		validationError = validationError.Append(ErrInvalidModification{"env"})
-	}
-
-	if !reflect.DeepEqual(desired.Setup, updatedModel.Setup) {
-		validationError = validationError.Append(ErrInvalidModification{"setup"})
-	}
-
-	if !reflect.DeepEqual(desired.Action, updatedModel.Action) {
-		validationError = validationError.Append(ErrInvalidModification{"action"})
-	}
-
-	if !reflect.DeepEqual(desired.Monitor, updatedModel.Monitor) {
-		validationError = validationError.Append(ErrInvalidModification{"monitor"})
-	}
-
-	if desired.DiskMB != updatedModel.DiskMB {
-		validationError = validationError.Append(ErrInvalidModification{"disk_mb"})
-	}
-
-	if desired.MemoryMB != updatedModel.MemoryMB {
-		validationError = validationError.Append(ErrInvalidModification{"memory_mb"})
-	}
-
-	if desired.CPUWeight != updatedModel.CPUWeight {
-		validationError = validationError.Append(ErrInvalidModification{"cpu_weight"})
-	}
-
-	if !reflect.DeepEqual(desired.Ports, updatedModel.Ports) {
-		validationError = validationError.Append(ErrInvalidModification{"ports"})
-	}
-
-	if desired.LogSource != updatedModel.LogSource {
-		validationError = validationError.Append(ErrInvalidModification{"log_source"})
-	}
-
-	if desired.LogGuid != updatedModel.LogGuid {
-		validationError = validationError.Append(ErrInvalidModification{"log_guid"})
 	}
 
 	if !validationError.Empty() {
