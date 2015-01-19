@@ -1,7 +1,10 @@
 package services_bbs_test
 
 import (
+	"time"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,10 +14,14 @@ import (
 )
 
 var _ = Context("Getting Generic Services", func() {
-	var bbs *ServicesBBS
+	var (
+		timeProvider *faketimeprovider.FakeTimeProvider
+		bbs          *ServicesBBS
+	)
 
 	BeforeEach(func() {
-		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
+		timeProvider = faketimeprovider.New(time.Now())
+		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 	})
 
 	Describe("ServiceRegistrations", func() {

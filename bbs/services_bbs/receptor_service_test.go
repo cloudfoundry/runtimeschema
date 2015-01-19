@@ -13,10 +13,13 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 )
 
 var _ = Describe("Receptor Service Registry", func() {
 	var (
+		timeProvider *faketimeprovider.FakeTimeProvider
+
 		bbs                    *ServicesBBS
 		interval               = time.Second
 		heartbeat1             ifrit.Process
@@ -26,7 +29,8 @@ var _ = Describe("Receptor Service Registry", func() {
 	)
 
 	BeforeEach(func() {
-		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
+		timeProvider = faketimeprovider.New(time.Now())
+		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 
 		firstReceptorPresence = models.NewReceptorPresence("first-receptor", "first-receptor-url")
 		secondReceptorPresence = models.NewReceptorPresence("second-receptor", "second-receptor-url")

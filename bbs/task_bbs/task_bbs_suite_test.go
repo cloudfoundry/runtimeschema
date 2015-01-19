@@ -55,7 +55,7 @@ var _ = BeforeEach(func() {
 	fakeTaskClient = new(cbfakes.FakeTaskClient)
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
 	timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-	servicesBBS = services_bbs.New(etcdClient, logger)
+	servicesBBS = services_bbs.New(etcdClient, timeProvider, logger)
 	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
 })
 

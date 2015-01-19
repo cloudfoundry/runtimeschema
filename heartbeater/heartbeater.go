@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
@@ -21,15 +22,25 @@ type Heartbeater struct {
 	Value    string
 	Interval time.Duration
 	Logger   lager.Logger
+
+	timeProvider timeprovider.TimeProvider
 }
 
-func New(etcdClient storeadapter.StoreAdapter, heartbeatKey string, heartbeatValue string, heartbeatInterval time.Duration, logger lager.Logger) Heartbeater {
+func New(
+	etcdClient storeadapter.StoreAdapter,
+	timeProvider timeprovider.TimeProvider,
+	heartbeatKey string,
+	heartbeatValue string,
+	heartbeatInterval time.Duration,
+	logger lager.Logger,
+) Heartbeater {
 	return Heartbeater{
-		Client:   etcdClient,
-		Key:      heartbeatKey,
-		Value:    heartbeatValue,
-		Interval: heartbeatInterval,
-		Logger:   logger,
+		Client:       etcdClient,
+		timeProvider: timeProvider,
+		Key:          heartbeatKey,
+		Value:        heartbeatValue,
+		Interval:     heartbeatInterval,
+		Logger:       logger,
 	}
 }
 
@@ -44,29 +55,65 @@ func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 		TTL:   ttl,
 	}
 
+	if h.acquireHeartbeat(logger, node, ttl, signals) {
+		close(ready)
+
+		return h.maintainHeartbeat(logger, node, ttl, signals)
+	}
+
+	return nil
+}
+
+func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) bool {
 	logger.Info("starting")
 
 	err := h.Client.CompareAndSwap(node, node)
 	if err != nil {
-		logger.Info("initial-compare-and-swap-failed", lager.Data{"error": err.Error()})
+		var stopWatch chan<- bool
+		var watchEvents <-chan storeadapter.WatchEvent
+		var watchErrors <-chan error
+
+		watchEvents, stopWatch, watchErrors = h.Client.Watch(h.Key)
+		defer close(stopWatch)
+
+		intervalTimer := h.timeProvider.NewTimer(0)
+		defer intervalTimer.Stop()
+
+	WATCH:
 		for {
+			select {
+			case event := <-watchEvents:
+				if !(event.Type == storeadapter.DeleteEvent || event.Type == storeadapter.ExpireEvent) {
+					continue WATCH
+				}
+			case <-intervalTimer.C():
+			case <-watchErrors:
+				watchEvents, stopWatch, watchErrors = h.Client.Watch(h.Key)
+				continue WATCH
+			case <-signals:
+				return false
+			}
+
 			err := h.Client.Create(node)
 			if err == nil {
+				logger.Info("created-node")
 				break
 			}
-			logger.Info("create-failed", lager.Data{"error": err.Error()})
-			select {
-			case <-signals:
-				return nil
-			case <-time.After(h.Interval):
-			}
+
+			intervalTimer.Reset(h.Interval)
 		}
 	}
 
 	logger.Info("started")
-	close(ready)
+	return true
+}
 
+func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) error {
+	var connectionTimer timeprovider.Timer
 	var connectionTimeout <-chan time.Time
+
+	intervalTimer := h.timeProvider.NewTimer(h.Interval)
+	defer intervalTimer.Stop()
 
 	for {
 		select {
@@ -83,26 +130,31 @@ func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 			logger.Info("connection-timed-out")
 			return ErrStoreUnavailable
 
-		case <-time.After(h.Interval):
+		case <-intervalTimer.C():
 			err := h.Client.CompareAndSwap(node, node)
-			logger.Info("compare-and-swap")
 			switch err {
 			case storeadapter.ErrorTimeout:
 				logger.Error("store-timeout", err)
 				if connectionTimeout == nil {
-					connectionTimeout = time.After(time.Duration(ttl * uint64(time.Second)))
+					connectionTimer = h.timeProvider.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimeout = connectionTimer.C()
 				}
 			case storeadapter.ErrorKeyNotFound:
-				err := h.Client.Create(node)
+				err = h.Client.Create(node)
 				if err != nil && connectionTimeout == nil {
-					connectionTimeout = time.After(time.Duration(ttl * uint64(time.Second)))
+					connectionTimer = h.timeProvider.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimeout = connectionTimer.C()
 				}
 			case nil:
-				connectionTimeout = nil
+				if connectionTimeout != nil {
+					connectionTimer.Stop()
+					connectionTimeout = nil
+				}
 			default:
 				logger.Error("compare-and-swap-failed", err)
 				return ErrLockFailed
 			}
+			intervalTimer.Reset(h.Interval)
 		}
 	}
 }

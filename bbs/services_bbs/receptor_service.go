@@ -17,7 +17,7 @@ func (bbs *ServicesBBS) NewReceptorHeartbeat(receptorPresence models.ReceptorPre
 		panic(err)
 	}
 
-	return heartbeater.New(bbs.store, shared.ReceptorSchemaPath(receptorPresence.ReceptorID), string(payload), interval, bbs.logger)
+	return heartbeater.New(bbs.store, bbs.timeProvider, shared.ReceptorSchemaPath(receptorPresence.ReceptorID), string(payload), interval, bbs.logger)
 }
 
 func (bbs *ServicesBBS) Receptor() (models.ReceptorPresence, error) {

@@ -13,12 +13,15 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 )
 
 var _ = Describe("Cell Service Registry", func() {
 	const interval = time.Second
 	var (
+		timeProvider *faketimeprovider.FakeTimeProvider
+
 		bbs                *ServicesBBS
 		heartbeat1         ifrit.Process
 		heartbeat2         ifrit.Process
@@ -27,7 +30,8 @@ var _ = Describe("Cell Service Registry", func() {
 	)
 
 	BeforeEach(func() {
-		bbs = New(etcdClient, lagertest.NewTestLogger("test"))
+		timeProvider = faketimeprovider.New(time.Now())
+		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 
 		firstCellPresence = models.NewCellPresence("first-rep", "lucid64", "1.2.3.4", "the-zone")
 		secondCellPresence = models.NewCellPresence("second-rep", ".Net", "4.5.6.7", "the-zone")

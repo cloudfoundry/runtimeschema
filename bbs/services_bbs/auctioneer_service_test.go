@@ -13,15 +13,18 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 )
 
 var _ = Describe("Receptor Service Registry", func() {
+	var timeProvider *faketimeprovider.FakeTimeProvider
 	var bbs *services_bbs.ServicesBBS
 	var logger *lagertest.TestLogger
 
 	BeforeEach(func() {
+		timeProvider = faketimeprovider.New(time.Now())
 		logger = lagertest.NewTestLogger("test")
-		bbs = services_bbs.New(etcdClient, logger)
+		bbs = services_bbs.New(etcdClient, timeProvider, logger)
 	})
 
 	Describe("AuctioneerAddress", func() {
@@ -30,7 +33,7 @@ var _ = Describe("Receptor Service Registry", func() {
 			var auctioneerPresence models.AuctioneerPresence
 
 			JustBeforeEach(func() {
-				lockBbs := lock_bbs.New(etcdClient, logger)
+				lockBbs := lock_bbs.New(etcdClient, timeProvider, logger)
 				auctioneerLock, err := lockBbs.NewAuctioneerLock(auctioneerPresence, time.Second)
 				Ω(err).ShouldNot(HaveOccurred())
 				heartbeater = ifrit.Invoke(auctioneerLock)
