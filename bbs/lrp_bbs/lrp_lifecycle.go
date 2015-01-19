@@ -251,7 +251,7 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 		return err
 	}
 
-	if !crashInfo.Crashed() {
+	if crashInfo.ShouldRestartImmediately() {
 		err := bbs.requestLRPAuctionForLRPKey(key)
 		if err != nil {
 			logger.Error("failed-to-request-auction", err)
@@ -284,10 +284,10 @@ func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models
 	crashInfo := models.NewActualLRPCrashInfo(newCrashCount, bbs.timeProvider.Now().UnixNano())
 
 	var state models.ActualLRPState
-	if crashInfo.Crashed() {
-		state = models.ActualLRPStateCrashed
-	} else {
+	if crashInfo.ShouldRestartImmediately() {
 		state = models.ActualLRPStateUnclaimed
+	} else {
+		state = models.ActualLRPStateCrashed
 	}
 
 	if !lrp.AllowsTransitionTo(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, state) {
@@ -383,8 +383,10 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 	var err error
 
 	if lrp.State == models.ActualLRPStateUnclaimed {
+		logger.Info("removing-unclaimed-actual")
 		err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
 	} else {
+		logger.Info("stopping-actual")
 		err = bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 	}
 

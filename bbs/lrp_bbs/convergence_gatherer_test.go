@@ -33,45 +33,48 @@ func newGatherTestData() *gatherTestData {
 	}
 }
 
-var _ = FDescribe("Convergence", func() {
-
+var _ = Describe("Convergence", func() {
 	Describe("Gathering", func() {
 		var gatherTest *gatherTestData
+		cellID := "some-cell-id"
+		domain := "test-domain"
+		processGuid := "process-guid"
 
 		BeforeEach(func() {
-			cellID := "some-cell-id"
-			missingCellID := "missing-cell-id"
-			domain := "test-domain"
-			processGuid := "process-guid"
 
 			gatherTest = newGatherTestData()
 
 			// DesiredLRPs
 			// keep valid desiredLRP
-			gatherTest.desiredsToKeep.Add(newDesiredLRP(processGuid, domain, 4))
+			lrp := newDesiredLRP(processGuid, domain, 4)
+			gatherTest.desiredsToKeep.Add(lrp)
 			// prune invalid desiredLRP
 			gatherTest.desiredsToPrune.Add(models.DesiredLRP{ProcessGuid: "invalid-desired-1"})
 			gatherTest.desiredsToPrune.Add(models.DesiredLRP{ProcessGuid: "invalid-desired-2"})
 
+			invalidLRP := newClaimedActualLRP(lrp, cellID, 10)
+			invalidLRP.Since = 0 // not valid
+
 			// ActualLRPs
 			// keep valid unclaimed for valid desiredlrp
-			gatherTest.actualsToKeep.Add(newUnclaimedActualLRP(processGuid, domain, 0))
+			gatherTest.actualsToKeep.Add(newUnclaimedActualLRP(lrp, 0))
 			// keep valid claimed on present cell for valid desiredlrp
-			gatherTest.actualsToKeep.Add(newClaimedActualLRP(processGuid, cellID, domain, 1))
+			gatherTest.actualsToKeep.Add(newClaimedActualLRP(lrp, cellID, 1))
 			// keep valid running on present cell for valid desiredlrp
-			gatherTest.actualsToKeep.Add(newRunningActualLRP(processGuid, cellID, domain, 2))
-			// prune valid claimed on missing cell for valid desiredlrp
-			gatherTest.actualsToPrune.Add(newClaimedActualLRP(processGuid, missingCellID, domain, 4))
-			// prune valid running on missing cell for valid desiredlrp
-			gatherTest.actualsToPrune.Add(newRunningActualLRP(processGuid, missingCellID, domain, 5))
+			gatherTest.actualsToKeep.Add(newRunningActualLRP(lrp, cellID, 2))
+			// keep valid running on present cell for missing desiredlrp
+			gatherTest.actualsToKeep.Add(newRunningActualLRP(newDesiredLRP("missing-process", domain, 1), cellID, 0))
+			// prune invalid lrp
+			gatherTest.actualsToPrune.Add(invalidLRP)
 			// keep valid crashed for valid desiredlrp
-			gatherTest.actualsToKeep.Add(newCrashedActualLRP(processGuid, domain, 6))
+			gatherTest.actualsToKeep.Add(newStartableCrashedActualLRP(lrp, 6))
 
 			// Domains
 			gatherTest.domains.Add(domain)
 
 			// Cells
 			gatherTest.cells.Add(newCellPresence(cellID))
+			gatherTest.cells.Add(newCellPresence("other-cell"))
 
 			createGatherTestData(gatherTest)
 		})
@@ -81,6 +84,14 @@ var _ = FDescribe("Convergence", func() {
 
 		JustBeforeEach(func() {
 			input, gatherError = bbs.GatherAndPruneLRPConvergenceInput(logger)
+		})
+
+		It("gets all processGuids in the system", func() {
+			expectedGuids := map[string]struct{}{
+				processGuid:       struct{}{},
+				"missing-process": struct{}{},
+			}
+			Ω(input.AllProcessGuids).Should(Equal(expectedGuids))
 		})
 
 		It("gets all valid desired LRPs", func() {
@@ -125,6 +136,13 @@ var _ = FDescribe("Convergence", func() {
 				Ω(input.Domains).Should(HaveKey(domain))
 			})
 		})
+
+		It("gets all the cells", func() {
+			Ω(input.Cells).Should(HaveLen(len(gatherTest.cells)))
+			gatherTest.cells.Each(func(cell models.CellPresence) {
+				Ω(input.Cells).Should(ContainElement(cell))
+			})
+		})
 	})
 })
 
@@ -162,11 +180,9 @@ func createMalformedActualLRP(guid string, index int) {
 }
 
 func createMalformedValueForKey(key string) {
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   key,
-			Value: []byte("ßßßßßß"),
-		})
+	err := etcdClient.Create(storeadapter.StoreNode{
+		Key:   key,
+		Value: []byte("ßßßßßß"),
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
@@ -189,26 +205,26 @@ func newDesiredLRP(guid, domain string, instances int) models.DesiredLRP {
 	}
 }
 
-func newUnclaimedActualLRP(processGuid, domain string, index int) models.ActualLRP {
+func newUnclaimedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(processGuid, index, domain),
+		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
 		State:        models.ActualLRPStateUnclaimed,
 		Since:        1138,
 	}
 }
 
-func newClaimedActualLRP(processGuid, cellID, domain string, index int) models.ActualLRP {
+func newClaimedActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:          models.NewActualLRPKey(processGuid, index, domain),
+		ActualLRPKey:          models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
 		ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", cellID),
 		State: models.ActualLRPStateClaimed,
 		Since: 1138,
 	}
 }
 
-func newRunningActualLRP(processGuid, cellID, domain string, index int) models.ActualLRP {
+func newRunningActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:          models.NewActualLRPKey(processGuid, index, domain),
+		ActualLRPKey:          models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
 		ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", cellID),
 		ActualLRPNetInfo:      models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
 		State:                 models.ActualLRPStateRunning,
@@ -216,10 +232,20 @@ func newRunningActualLRP(processGuid, cellID, domain string, index int) models.A
 	}
 }
 
-func newCrashedActualLRP(processGuid, domain string, index int) models.ActualLRP {
+func newStartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(processGuid, index, domain),
-		State:        models.ActualLRPStateCrashed,
-		Since:        1138,
+		ActualLRPKey:       models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(1, 1234),
+		State:              models.ActualLRPStateCrashed,
+		Since:              1138,
+	}
+}
+
+func newUnstartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey:       models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(201, 1234),
+		State:              models.ActualLRPStateCrashed,
+		Since:              1138,
 	}
 }

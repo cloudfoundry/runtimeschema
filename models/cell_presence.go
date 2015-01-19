@@ -1,15 +1,20 @@
 package models
 
-type CellSet map[CellPresence]struct{}
+type CellSet map[string]CellPresence
 
 func (set CellSet) Add(cell CellPresence) {
-	set[cell] = struct{}{}
+	set[cell.CellID] = cell
 }
 
 func (set CellSet) Each(predicate func(cell CellPresence)) {
-	for cell := range set {
+	for _, cell := range set {
 		predicate(cell)
 	}
+}
+
+func (set CellSet) HasCellID(cellID string) bool {
+	_, ok := set[cellID]
+	return ok
 }
 
 type CellPresence struct {

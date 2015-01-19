@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"encoding/json"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -95,41 +97,31 @@ func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLR
 }
 
 func createRawActualLRP(lrp models.ActualLRP) {
-	value, err := models.ToJSON(lrp)
+	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-			Value: value,
-		})
+	err = etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
 func createRawDesiredLRP(d models.DesiredLRP) {
-	value, err := models.ToJSON(d)
+	value, err := json.Marshal(d) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.DesiredLRPSchemaPath(d),
-			Value: value,
-		})
+	err = etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.DesiredLRPSchemaPath(d),
+		Value: value,
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
 func createRawDomain(domain string) {
-	err := shared.RetryIndefinitelyOnStoreTimeout(func() error {
-		return etcdClient.Create(storeadapter.StoreNode{
-			Key:   shared.DomainSchemaPath(domain),
-			Value: []byte(domain),
-		})
-	})
-
+	err := domainBBS.UpsertDomain(domain, 0)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
