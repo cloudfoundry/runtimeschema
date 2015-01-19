@@ -17,11 +17,11 @@ var (
 )
 
 type Heartbeater struct {
-	Client   storeadapter.StoreAdapter
-	Key      string
-	Value    string
-	Interval time.Duration
-	Logger   lager.Logger
+	client   storeadapter.StoreAdapter
+	key      string
+	value    string
+	interval time.Duration
+	logger   lager.Logger
 
 	timeProvider timeprovider.TimeProvider
 }
@@ -35,23 +35,23 @@ func New(
 	logger lager.Logger,
 ) Heartbeater {
 	return Heartbeater{
-		Client:       etcdClient,
+		client:       etcdClient,
 		timeProvider: timeProvider,
-		Key:          heartbeatKey,
-		Value:        heartbeatValue,
-		Interval:     heartbeatInterval,
-		Logger:       logger,
+		key:          heartbeatKey,
+		value:        heartbeatValue,
+		interval:     heartbeatInterval,
+		logger:       logger,
 	}
 }
 
 func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
-	logger := h.Logger.Session("heartbeat", lager.Data{"key": h.Key, "value": h.Value})
+	logger := h.logger.Session("heartbeat", lager.Data{"key": h.key, "value": h.value})
 
-	ttl := uint64(math.Ceil((h.Interval * 2).Seconds()))
+	ttl := uint64(math.Ceil((h.interval * 2).Seconds()))
 
 	node := storeadapter.StoreNode{
-		Key:   h.Key,
-		Value: []byte(h.Value),
+		Key:   h.key,
+		Value: []byte(h.value),
 		TTL:   ttl,
 	}
 
@@ -67,13 +67,13 @@ func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) bool {
 	logger.Info("starting")
 
-	err := h.Client.CompareAndSwap(node, node)
+	err := h.client.CompareAndSwap(node, node)
 	if err != nil {
 		var stopWatch chan<- bool
 		var watchEvents <-chan storeadapter.WatchEvent
 		var watchErrors <-chan error
 
-		watchEvents, stopWatch, watchErrors = h.Client.Watch(h.Key)
+		watchEvents, stopWatch, watchErrors = h.client.Watch(h.key)
 		defer close(stopWatch)
 
 		intervalTimer := h.timeProvider.NewTimer(0)
@@ -88,19 +88,19 @@ func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.Sto
 				}
 			case <-intervalTimer.C():
 			case <-watchErrors:
-				watchEvents, stopWatch, watchErrors = h.Client.Watch(h.Key)
+				watchEvents, stopWatch, watchErrors = h.client.Watch(h.key)
 				continue WATCH
 			case <-signals:
 				return false
 			}
 
-			err := h.Client.Create(node)
+			err := h.client.Create(node)
 			if err == nil {
 				logger.Info("created-node")
 				break
 			}
 
-			intervalTimer.Reset(h.Interval)
+			intervalTimer.Reset(h.interval)
 		}
 	}
 
@@ -112,7 +112,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 	var connectionTimer timeprovider.Timer
 	var connectionTimeout <-chan time.Time
 
-	intervalTimer := h.timeProvider.NewTimer(h.Interval)
+	intervalTimer := h.timeProvider.NewTimer(h.interval)
 	defer intervalTimer.Stop()
 
 	for {
@@ -122,7 +122,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 			case os.Kill:
 				return nil
 			default:
-				h.Client.CompareAndDelete(node)
+				h.client.CompareAndDelete(node)
 				return nil
 			}
 
@@ -131,7 +131,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 			return ErrStoreUnavailable
 
 		case <-intervalTimer.C():
-			err := h.Client.CompareAndSwap(node, node)
+			err := h.client.CompareAndSwap(node, node)
 			switch err {
 			case storeadapter.ErrorTimeout:
 				logger.Error("store-timeout", err)
@@ -140,7 +140,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 					connectionTimeout = connectionTimer.C()
 				}
 			case storeadapter.ErrorKeyNotFound:
-				err = h.Client.Create(node)
+				err = h.client.Create(node)
 				if err != nil && connectionTimeout == nil {
 					connectionTimer = h.timeProvider.NewTimer(time.Duration(ttl) * time.Second)
 					connectionTimeout = connectionTimer.C()
@@ -154,7 +154,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 				logger.Error("compare-and-swap-failed", err)
 				return ErrLockFailed
 			}
-			intervalTimer.Reset(h.Interval)
+			intervalTimer.Reset(h.interval)
 		}
 	}
 }
