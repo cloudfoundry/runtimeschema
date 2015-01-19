@@ -57,15 +57,14 @@ var _ = Describe("Task", func() {
 				"port_range": {
 					"start": 1,
 					"end": 1024
-				}
+				},
+				"log": true
 			},
 		  {
 				"protocol": "udp",
 				"destination": "8.8.0.0/16",
-				"port_range": {
-					"start": 53,
-					"end": 53
-				}
+				"ports": [53],
+				"log": false
 			}
 		]
 	}`
@@ -111,14 +110,12 @@ var _ = Describe("Task", func() {
 						Start: 1,
 						End:   1024,
 					},
+					Log: true,
 				},
 				{
 					Protocol:    "udp",
 					Destination: "8.8.0.0/16",
-					PortRange: &PortRange{
-						Start: 53,
-						End:   53,
-					},
+					Ports:       []uint16{53},
 				},
 			},
 
