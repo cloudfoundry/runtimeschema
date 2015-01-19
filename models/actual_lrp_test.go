@@ -47,12 +47,12 @@ func (test crashInfoBackoffTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d and the wait time is %s", test.CrashCount, test.WaitTime), func() {
 		It("should NOT restart before the expected wait time", func() {
 			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds() - time.Second.Nanoseconds()
-			Ω(test.ShouldRestartCrash(currentTimestamp)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeFalse())
 		})
 
 		It("should restart after the expected wait time", func() {
 			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds()
-			Ω(test.ShouldRestartCrash(currentTimestamp)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeTrue())
 		})
 	})
 }
@@ -71,12 +71,11 @@ func (test crashInfoNeverStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should never restart regardless of the wait time", func() {
 			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
-			Ω(test.ShouldRestartCrash(0)).Should(BeFalse())
-			Ω(test.ShouldRestartCrash(test.LastCrashedAt)).Should(BeFalse())
-			Ω(test.ShouldRestartCrash(theFuture)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.LastCrashedAt))).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeFalse())
 		})
 	})
-
 }
 
 type crashInfoAlwaysStartTest struct {
@@ -93,12 +92,11 @@ func (test crashInfoAlwaysStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should restart regardless of the wait time", func() {
 			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
-			Ω(test.ShouldRestartCrash(0)).Should(BeTrue())
-			Ω(test.ShouldRestartCrash(test.LastCrashedAt)).Should(BeTrue())
-			Ω(test.ShouldRestartCrash(theFuture)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.LastCrashedAt))).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeTrue())
 		})
 	})
-
 }
 
 var _ = Describe("ActualLRP", func() {
@@ -123,8 +121,8 @@ var _ = Describe("ActualLRP", func() {
 
 		Context("when the lrp is not CRASHED", func() {
 			It("returns false", func() {
-				now := time.Now().UnixNano()
-				actual := defaultCrashedActual(0, now)
+				now := time.Now()
+				actual := defaultCrashedActual(0, now.UnixNano())
 				for _, state := range models.ActualLRPStates {
 					actual.State = state
 					if state == models.ActualLRPStateCrashed {

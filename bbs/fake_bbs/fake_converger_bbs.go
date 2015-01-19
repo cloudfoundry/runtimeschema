@@ -21,11 +21,10 @@ type FakeConvergerBBS struct {
 	newConvergeLockReturns struct {
 		result1 ifrit.Runner
 	}
-	ConvergeLRPsStub        func(lager.Logger, time.Duration)
+	ConvergeLRPsStub        func(lager.Logger)
 	convergeLRPsMutex       sync.RWMutex
 	convergeLRPsArgsForCall []struct {
 		arg1 lager.Logger
-		arg2 time.Duration
 	}
 	ConvergeTasksStub        func(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
 	convergeTasksMutex       sync.RWMutex
@@ -77,15 +76,14 @@ func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
 	}{result1}
 }
 
-func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 lager.Logger, arg2 time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 lager.Logger) {
 	fake.convergeLRPsMutex.Lock()
 	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
 		arg1 lager.Logger
-		arg2 time.Duration
-	}{arg1, arg2})
+	}{arg1})
 	fake.convergeLRPsMutex.Unlock()
 	if fake.ConvergeLRPsStub != nil {
-		fake.ConvergeLRPsStub(arg1, arg2)
+		fake.ConvergeLRPsStub(arg1)
 	}
 }
 
@@ -95,10 +93,10 @@ func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
 	return len(fake.convergeLRPsArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) (lager.Logger, time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) lager.Logger {
 	fake.convergeLRPsMutex.RLock()
 	defer fake.convergeLRPsMutex.RUnlock()
-	return fake.convergeLRPsArgsForCall[i].arg1, fake.convergeLRPsArgsForCall[i].arg2
+	return fake.convergeLRPsArgsForCall[i].arg1
 }
 
 func (fake *FakeConvergerBBS) ConvergeTasks(logger lager.Logger, timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {

@@ -1,6 +1,8 @@
 package lrp_bbs
 
 import (
+	"path"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -9,24 +11,40 @@ import (
 )
 
 type ConvergenceInput struct {
-	DesiredLRPs models.DesiredLRPsByProcessGuid
-	ActualLRPs  models.ActualLRPsByProcessGuidAndIndex
-	Domains     models.DomainSet
+	AllProcessGuids map[string]struct{}
+	DesiredLRPs     models.DesiredLRPsByProcessGuid
+	ActualLRPs      models.ActualLRPsByProcessGuidAndIndex
+	Domains         models.DomainSet
+	Cells           models.CellSet
 }
 
 func NewConvergenceInput(
 	desireds models.DesiredLRPsByProcessGuid,
 	actuals models.ActualLRPsByProcessGuidAndIndex,
 	domains models.DomainSet,
+	cells models.CellSet,
 ) *ConvergenceInput {
+
+	guids := map[string]struct{}{}
+	token := struct{}{}
+	for guid, _ := range desireds {
+		guids[guid] = token
+	}
+	for guid, _ := range actuals {
+		guids[guid] = token
+	}
+
 	return &ConvergenceInput{
-		DesiredLRPs: desireds,
-		ActualLRPs:  actuals,
-		Domains:     domains,
+		AllProcessGuids: guids,
+		DesiredLRPs:     desireds,
+		ActualLRPs:      actuals,
+		Domains:         domains,
+		Cells:           cells,
 	}
 }
 
 func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger) (*ConvergenceInput, error) {
+	// always fetch actualLRPs before desiredLRPs to ensure correctness
 	actuals, err := bbs.gatherAndPruneActualLRPs(logger)
 	if err != nil {
 		return &ConvergenceInput{}, err
@@ -37,12 +55,23 @@ func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger) (*Conv
 		return &ConvergenceInput{}, err
 	}
 
+	// always fetch desiredLRPs after actualLRPs to ensure correctness
 	desireds, err := bbs.gatherAndPruneDesiredLRPs(logger, domains)
 	if err != nil {
 		return &ConvergenceInput{}, err
 	}
 
-	return NewConvergenceInput(desireds, actuals, domains), nil
+	cells, err := bbs.services.Cells()
+	if err != nil {
+		return &ConvergenceInput{}, err
+	}
+
+	cellSet := models.CellSet{}
+	for _, cell := range cells {
+		cellSet.Add(cell)
+	}
+
+	return NewConvergenceInput(desireds, actuals, domains, cellSet), nil
 }
 
 func (bbs *LRPBBS) domains(logger lager.Logger) (map[string]struct{}, error) {
@@ -55,7 +84,7 @@ func (bbs *LRPBBS) domains(logger lager.Logger) (map[string]struct{}, error) {
 	}
 
 	for _, node := range domainRoot.ChildNodes {
-		domains[string(node.Value)] = struct{}{}
+		domains[path.Base(node.Key)] = struct{}{}
 	}
 
 	return domains, nil
@@ -101,25 +130,21 @@ func (p *actualPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 	var actual models.ActualLRP
 	err := models.FromJSON(node.Value, &actual)
 	if err != nil {
+		p.logger.Error("pruning-invalid-actual-lrp", err, lager.Data{
+			"payload": node.Value,
+		})
+
 		return false
 	}
 
-	if actual.CellID != "" {
-		if _, ok := p.cellRoot.Lookup(actual.CellID); !ok {
-			p.logger.Info("detected-actual-with-missing-cell", lager.Data{
-				"actual":  actual,
-				"cell-id": actual.CellID,
-			})
-			return false
-		}
-	}
-
 	p.Actuals.Add(actual)
+
 	return true
 }
 
 func (bbs *LRPBBS) gatherAndPruneDesiredLRPs(logger lager.Logger, domains map[string]struct{}) (map[string]models.DesiredLRP, error) {
 	pruner := newDesiredPruner(logger, domains)
+
 	err := prune.Prune(bbs.store, shared.DesiredLRPSchemaRoot, pruner.gatherAndPrune)
 	if err != nil {
 		logger.Error("failed-to-prune-desired-lrps", err)
@@ -150,8 +175,7 @@ func (p *desiredPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 
 	err := models.FromJSON(node.Value, &desiredLRP)
 	if err != nil {
-		p.logger.Info("pruning-invalid-desired-lrp-json", lager.Data{
-			"error":   err.Error(),
+		p.logger.Error("pruning-invalid-desired-lrp-json", err, lager.Data{
 			"payload": node.Value,
 		})
 		return false

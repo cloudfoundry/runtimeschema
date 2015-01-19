@@ -1,13 +1,8 @@
 package lrp_bbs
 
 import (
-	"time"
-
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -18,135 +13,89 @@ const (
 	lrpsDeletedCounter = metric.Counter("ConvergenceLRPsDeleted")
 )
 
-func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, resendStartAuctionTimeout time.Duration) {
+func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 	logger = logger.Session("converge-lrps")
 	logger.Info("starting-convergence")
 	defer logger.Info("finished-convergence")
 
 	convergeLRPRunsCounter.Increment()
 
-	convergeStart := bbs.timeProvider.Now()
-
 	// make sure to get funcy here otherwise the time will be precomputed
+	convergeStart := bbs.timeProvider.Now()
 	defer func() {
 		convergeLRPDuration.Send(bbs.timeProvider.Now().Sub(convergeStart))
 	}()
 
-	domainRoot, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
-	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		logger.Error("failed-to-fetch-domains", err)
-		return
-	}
-
-	// Obtain Actuals before Desired to guarantee the most current state of
-	// Desired when performing convergence -- minimize any extraneous stops
-
-	actualsByProcessGuid, err := bbs.pruneActualsWithMissingCells(logger)
+	convergenceInput, err := bbs.GatherAndPruneLRPConvergenceInput(logger)
 	if err != nil {
-		logger.Error("failed-to-fetch-and-prune-actual-lrps", err)
+		logger.Error("failed-to-gather-convergence-input", err)
 		return
 	}
 
-	desiredLRPRoot, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
-	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		logger.Error("failed-to-fetch-desired-lrps", err)
-		return
+	changes := CalculateConvergence(logger, bbs.timeProvider, convergenceInput)
+
+	bbs.RetireActualLRPs(changes.ActualLRPsForExtraIndices, logger)
+	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
+
+	actualsToStart := []models.ActualLRPKey{}
+
+	for _, actual := range changes.StaleUnclaimedActualLRPs {
+		actualsToStart = append(actualsToStart, actual.ActualLRPKey)
 	}
 
-	// --> get actuals by process guid
-	// --> get all desired LRPs (map key=process guid)
-	//     get malformed desired LRPs (for later purge)
-	// --> for each desired LRP that exists, reconcile
-	//     against actutal LRPs for desired
-	var malformedDesiredLRPs []string
-	desiredLRPsByProcessGuid := map[string]models.DesiredLRP{}
+	for _, actual := range changes.ActualLRPsWithMissingCells {
+		l := logger.Session("start-missing-actual", lager.Data{
+			"process-guid": actual.ProcessGuid,
+			"index":        actual.Index,
+		})
 
-	infos := []reconcileInfo{}
-	for _, node := range desiredLRPRoot.ChildNodes {
-		var desiredLRP models.DesiredLRP
-
-		// Possibly make pruning a 'Pruner' to get rid of the malformed
-		// desired LRPs
-		err := models.FromJSON(node.Value, &desiredLRP)
-
+		err = bbs.RemoveActualLRP(actual.ActualLRPKey, actual.ActualLRPContainerKey, logger)
 		if err != nil {
-			logger.Info("pruning-invalid-desired-lrp-json", lager.Data{
-				"error":   err.Error(),
-				"payload": node.Value,
-			})
-			malformedDesiredLRPs = append(malformedDesiredLRPs, node.Key)
+			l.Error("failed-to-remove-actual-lrp", err)
 			continue
 		}
 
-		desiredLRPsByProcessGuid[desiredLRP.ProcessGuid] = desiredLRP
-		actualLRPsForDesired := actualsByProcessGuid[desiredLRP.ProcessGuid]
+		err := bbs.createActualLRP(convergenceInput.DesiredLRPs[actual.ProcessGuid], actual.Index, l)
+		if err != nil {
+			l.Error("failed-to-create-actual-lrp", err)
+			continue
+		}
 
-		delta := Reconcile(desiredLRP.Instances, actualLRPsForDesired)
-		if len(delta.IndicesToStop) > 0 {
-			if _, found := domainRoot.Lookup(desiredLRP.Domain); !found {
-				for _, index := range delta.IndicesToStop {
-					actual := actualLRPsForDesired[index]
-					logger.Info("not-stopping-actual-instance-domain-not-fresh", lager.Data{
-						"process-guid":  actual.ProcessGuid,
-						"instance-guid": actual.InstanceGuid,
-						"index":         actual.Index,
-					})
-				}
-				delta.IndicesToStop = []int{}
-			}
-		}
-		if !delta.Empty() {
-			infos = append(infos, reconcileInfo{desiredLRP, actualLRPsForDesired, delta})
-		}
+		actualsToStart = append(actualsToStart, actual.ActualLRPKey)
 	}
 
-	bbs.reconcile(infos, logger)
-
-	actualLRPsToStop := bbs.instancesToStop(desiredLRPsByProcessGuid, actualsByProcessGuid, domainRoot, logger)
-
-	for _, actual := range actualLRPsToStop {
-		logger.Info("detected-undesired-instance", lager.Data{
-			"process-guid":  actual.ProcessGuid,
-			"instance-guid": actual.InstanceGuid,
-			"index":         actual.Index,
+	for _, actualKey := range changes.ActualLRPKeysForMissingIndices {
+		l := logger.Session("start-missing-actual", lager.Data{
+			"process-guid": actualKey.ProcessGuid,
+			"index":        actualKey.Index,
 		})
-	}
 
-	lrpsDeletedCounter.Add(uint64(len(malformedDesiredLRPs)))
-	bbs.store.Delete(malformedDesiredLRPs...)
-
-	lrpStopInstanceCounter.Add(uint64(len(actualLRPsToStop)))
-	bbs.RetireActualLRPs(actualLRPsToStop, logger)
-
-	bbs.resendStartAuctions(desiredLRPsByProcessGuid, actualsByProcessGuid, resendStartAuctionTimeout, logger)
-}
-
-func (bbs *LRPBBS) instancesToStop(
-	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
-	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
-	domainRoot storeadapter.StoreNode,
-	logger lager.Logger,
-) []models.ActualLRP {
-	var actualsToStop []models.ActualLRP
-
-	for processGuid, actuals := range actualsByProcessGuid {
-		if _, found := desiredLRPsByProcessGuid[processGuid]; !found {
-			_, domainFound := domainRoot.Lookup(actuals[0].Domain)
-			for _, actual := range actuals {
-				if domainFound {
-					actualsToStop = append(actualsToStop, actual)
-				} else {
-					logger.Info("not-stopping-actual-instance-domain-not-fresh", lager.Data{
-						"process-guid":  actual.ProcessGuid,
-						"instance-guid": actual.InstanceGuid,
-						"index":         actual.Index,
-					})
-				}
-			}
+		err := bbs.createActualLRP(convergenceInput.DesiredLRPs[actualKey.ProcessGuid], actualKey.Index, l)
+		if err != nil {
+			l.Error("failed-to-create-actual-lrp", err)
+			continue
 		}
+
+		actualsToStart = append(actualsToStart, actualKey)
 	}
 
-	return actualsToStop
+	for _, actual := range changes.RestartableCrashedActualLRPs {
+		l := logger.Session("restart-crash", lager.Data{
+			"process-guid": actual.ProcessGuid,
+			"index":        actual.Index,
+		})
+
+		unclaimedActualLRP, err := bbs.unclaimCrashedActualLRP(l, actual.ActualLRPKey)
+		if err != nil {
+			l.Error("failed-to-unclaim-crash", err)
+			continue
+		}
+
+		actualsToStart = append(actualsToStart, unclaimedActualLRP.ActualLRPKey)
+	}
+
+	bbs.startActualLRPs(convergenceInput.DesiredLRPs, actualsToStart, logger)
+	lrpStartInstanceCounter.Add(uint64(len(actualsToStart)))
 }
 
 type startRequests struct {
@@ -161,7 +110,7 @@ func newStartRequests(desiredMap map[string]models.DesiredLRP) *startRequests {
 	}
 }
 
-func (s startRequests) Add(logger lager.Logger, actual models.ActualLRP) {
+func (s startRequests) Add(logger lager.Logger, actual models.ActualLRPKey) {
 	desiredLRP, found := s.desiredMap[actual.ProcessGuid]
 	if !found {
 		logger.Info("failed-to-find-desired-lrp-for-stale-unclaimed-actual-lrp", lager.Data{"actual-lrp": actual})
@@ -194,32 +143,15 @@ func (s startRequests) Slice() []models.LRPStartRequest {
 //   starts             [for eventual requestLRPAuctions]
 //   stops              [whatever stopping is]
 //   unclaimed crashes  [bulk unclaim crashed actual]
-func (bbs *LRPBBS) resendStartAuctions(
-	desiredLRPsByProcessGuid map[string]models.DesiredLRP,
-	actualsByProcessGuid map[string]models.ActualLRPsByIndex,
-	resendStartAuctionTimeout time.Duration,
+func (bbs *LRPBBS) startActualLRPs(
+	desiredLRPsByProcessGuid models.DesiredLRPsByProcessGuid,
+	actuals []models.ActualLRPKey,
 	logger lager.Logger,
 ) {
-	logger = logger.Session("resending")
 	startsByProcessGuid := newStartRequests(desiredLRPsByProcessGuid)
 
-	now := bbs.timeProvider.Now().UnixNano()
-	lastPoll := now - pollingInterval.Nanoseconds()
-	for _, actuals := range actualsByProcessGuid {
-		for _, actual := range actuals {
-			switch {
-			case actual.ShouldRestartCrash(now):
-				unclaimedActual, err := bbs.unclaimCrashedActualLRP(logger, actual.ActualLRPKey)
-				if err != nil {
-					logger.Info("failed-to-unclaim-crashed-actual-lrp", lager.Data{"actual-lrp": actual})
-					continue
-				}
-				startsByProcessGuid.Add(logger, unclaimedActual)
-
-			case actual.ShouldStartUnclaimed(lastPoll):
-				startsByProcessGuid.Add(logger, actual)
-			}
-		}
+	for _, actual := range actuals {
+		startsByProcessGuid.Add(logger, actual)
 	}
 
 	starts := startsByProcessGuid.Slice()
@@ -229,56 +161,8 @@ func (bbs *LRPBBS) resendStartAuctions(
 
 	err := bbs.requestLRPAuctions(starts)
 	if err != nil {
-		logger.Error("failed-resending-start-auctions", err, lager.Data{
+		logger.Error("failed-to-request-starts", err, lager.Data{
 			"lrp-start-auctions": starts,
 		})
 	}
-}
-
-func (bbs *LRPBBS) pruneActualsWithMissingCells(logger lager.Logger) (map[string]models.ActualLRPsByIndex, error) {
-	actualsByProcessGuid := map[string]models.ActualLRPsByIndex{}
-
-	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		cellRoot = storeadapter.StoreNode{}
-	} else if err != nil {
-		logger.Error("failed-to-get-cells", err)
-		return nil, err
-	}
-
-	err = prune.Prune(bbs.store, shared.ActualLRPSchemaRoot, func(node storeadapter.StoreNode) (shouldKeep bool) {
-
-		var actual models.ActualLRP
-		err := models.FromJSON(node.Value, &actual)
-		if err != nil {
-			return false
-		}
-
-		if !(actual.State == models.ActualLRPStateUnclaimed || actual.State == models.ActualLRPStateCrashed) {
-			if _, ok := cellRoot.Lookup(actual.CellID); !ok {
-				logger.Info("detected-actual-with-missing-cell", lager.Data{
-					"actual":  actual,
-					"cell-id": actual.CellID,
-				})
-				return false
-			}
-		}
-
-		actuals, found := actualsByProcessGuid[actual.ProcessGuid]
-		if !found {
-			actuals = models.ActualLRPsByIndex{}
-			actualsByProcessGuid[actual.ProcessGuid] = actuals
-		}
-
-		actuals[actual.Index] = actual
-
-		return true
-	})
-
-	if err != nil {
-		logger.Error("failed-to-prune-actual-lrps", err)
-		return nil, err
-	}
-
-	return actualsByProcessGuid, nil
 }

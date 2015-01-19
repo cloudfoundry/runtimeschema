@@ -83,7 +83,7 @@ type ConvergerBBS interface {
 	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
 
 	//lrp
-	ConvergeLRPs(lager.Logger, time.Duration)
+	ConvergeLRPs(lager.Logger)
 
 	//task
 	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)

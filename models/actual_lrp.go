@@ -155,8 +155,8 @@ func NewActualLRPCrashInfo(crashCount int, lastCrashedAt int64) ActualLRPCrashIn
 	}
 }
 
-func (crashInfo ActualLRPCrashInfo) Crashed() bool {
-	return crashInfo.CrashCount > 3
+func (crashInfo ActualLRPCrashInfo) ShouldRestartImmediately() bool {
+	return crashInfo.CrashCount <= 3
 }
 
 func powerOfTwo(pow int) int64 {
@@ -175,18 +175,30 @@ type ActualLRP struct {
 	Since int64          `json:"since"`
 }
 
-func (actual ActualLRP) ShouldStartUnclaimed(timestamp int64) bool {
+const StaleUnclaimedActualLRPDuration = 30 * time.Second
+
+func (actual ActualLRP) ShouldStartUnclaimed(now time.Time) bool {
 	if actual.State != ActualLRPStateUnclaimed {
 		return false
 	}
 
-	if actual.Since < timestamp {
+	if now.Sub(time.Unix(0, actual.Since)) > StaleUnclaimedActualLRPDuration {
 		return true
 	}
+
 	return false
 }
 
-func (actual ActualLRP) ShouldRestartCrash(timestamp int64) bool {
+func (actual ActualLRP) CellIsMissing(cellSet CellSet) bool {
+	if actual.State == ActualLRPStateUnclaimed ||
+		actual.State == ActualLRPStateCrashed {
+		return false
+	}
+
+	return !cellSet.HasCellID(actual.CellID)
+}
+
+func (actual ActualLRP) ShouldRestartCrash(now time.Time) bool {
 	if actual.State != ActualLRPStateCrashed {
 		return false
 	}
@@ -199,13 +211,13 @@ func (actual ActualLRP) ShouldRestartCrash(timestamp int64) bool {
 
 	case count < 8:
 		threshhold := lastCrashedAt + (30*time.Second.Nanoseconds())*powerOfTwo(count-3)
-		if threshhold <= timestamp {
+		if threshhold <= now.UnixNano() {
 			return true
 		}
 
 	case count < 200:
 		threshhold := lastCrashedAt + MaxCrashBackoff.Nanoseconds()
-		if threshhold <= timestamp {
+		if threshhold <= now.UnixNano() {
 			return true
 		}
 	}

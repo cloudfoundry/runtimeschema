@@ -17,6 +17,11 @@ func (set DomainSet) Each(predicate func(domain string)) {
 	}
 }
 
+func (set DomainSet) Contains(domain string) bool {
+	_, found := set[domain]
+	return found
+}
+
 type DesiredLRPsByProcessGuid map[string]DesiredLRP
 
 func (set DesiredLRPsByProcessGuid) Add(desired DesiredLRP) {
