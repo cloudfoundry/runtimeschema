@@ -6,25 +6,10 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/tedsuo/ifrit"
 )
 
 type FakeRouteEmitterBBS struct {
-	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
-	desiredLRPsMutex       sync.RWMutex
-	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns struct {
-		result1 []models.DesiredLRP
-		result2 error
-	}
-	RunningActualLRPsStub        func() ([]models.ActualLRP, error)
-	runningActualLRPsMutex       sync.RWMutex
-	runningActualLRPsArgsForCall []struct{}
-	runningActualLRPsReturns struct {
-		result1 []models.ActualLRP
-		result2 error
-	}
 	NewRouteEmitterLockStub        func(emitterID string, interval time.Duration) ifrit.Runner
 	newRouteEmitterLockMutex       sync.RWMutex
 	newRouteEmitterLockArgsForCall []struct {
@@ -34,56 +19,6 @@ type FakeRouteEmitterBBS struct {
 	newRouteEmitterLockReturns struct {
 		result1 ifrit.Runner
 	}
-}
-
-func (fake *FakeRouteEmitterBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
-	fake.desiredLRPsMutex.Lock()
-	fake.desiredLRPsArgsForCall = append(fake.desiredLRPsArgsForCall, struct{}{})
-	fake.desiredLRPsMutex.Unlock()
-	if fake.DesiredLRPsStub != nil {
-		return fake.DesiredLRPsStub()
-	} else {
-		return fake.desiredLRPsReturns.result1, fake.desiredLRPsReturns.result2
-	}
-}
-
-func (fake *FakeRouteEmitterBBS) DesiredLRPsCallCount() int {
-	fake.desiredLRPsMutex.RLock()
-	defer fake.desiredLRPsMutex.RUnlock()
-	return len(fake.desiredLRPsArgsForCall)
-}
-
-func (fake *FakeRouteEmitterBBS) DesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
-	fake.DesiredLRPsStub = nil
-	fake.desiredLRPsReturns = struct {
-		result1 []models.DesiredLRP
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeRouteEmitterBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
-	fake.runningActualLRPsMutex.Lock()
-	fake.runningActualLRPsArgsForCall = append(fake.runningActualLRPsArgsForCall, struct{}{})
-	fake.runningActualLRPsMutex.Unlock()
-	if fake.RunningActualLRPsStub != nil {
-		return fake.RunningActualLRPsStub()
-	} else {
-		return fake.runningActualLRPsReturns.result1, fake.runningActualLRPsReturns.result2
-	}
-}
-
-func (fake *FakeRouteEmitterBBS) RunningActualLRPsCallCount() int {
-	fake.runningActualLRPsMutex.RLock()
-	defer fake.runningActualLRPsMutex.RUnlock()
-	return len(fake.runningActualLRPsArgsForCall)
-}
-
-func (fake *FakeRouteEmitterBBS) RunningActualLRPsReturns(result1 []models.ActualLRP, result2 error) {
-	fake.RunningActualLRPsStub = nil
-	fake.runningActualLRPsReturns = struct {
-		result1 []models.ActualLRP
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeRouteEmitterBBS) NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner {

@@ -131,10 +131,6 @@ type MetricsBBS interface {
 
 //go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 type RouteEmitterBBS interface {
-	// lrp
-	DesiredLRPs() ([]models.DesiredLRP, error)
-	RunningActualLRPs() ([]models.ActualLRP, error)
-
 	//lock
 	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner
 }
