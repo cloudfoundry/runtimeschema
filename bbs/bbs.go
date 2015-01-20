@@ -147,6 +147,7 @@ type VeritasBBS interface {
 
 	// domains
 	Domains() ([]string, error)
+	UpsertDomain(domain string, ttlInSeconds int) error
 
 	//services
 	Cells() ([]models.CellPresence, error)
