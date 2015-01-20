@@ -43,6 +43,11 @@ type DesiredLRPUpdate struct {
 	Annotation *string
 }
 
+type DesiredLRPChange struct {
+	Before DesiredLRP
+	After  DesiredLRP
+}
+
 func (desired DesiredLRP) ApplyUpdate(update DesiredLRPUpdate) DesiredLRP {
 	if update.Instances != nil {
 		desired.Instances = *update.Instances

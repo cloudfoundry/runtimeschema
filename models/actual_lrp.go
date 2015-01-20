@@ -118,6 +118,11 @@ type ActualLRP struct {
 	Since int64          `json:"since"`
 }
 
+type ActualLRPChange struct {
+	Before ActualLRP
+	After  ActualLRP
+}
+
 func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey ActualLRPContainerKey, newState ActualLRPState) bool {
 	if before.ActualLRPKey != lrpKey {
 		return false

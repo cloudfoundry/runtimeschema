@@ -7,31 +7,10 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
 type FakeRouteEmitterBBS struct {
-	WatchForDesiredLRPChangesStub        func(lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error)
-	watchForDesiredLRPChangesMutex       sync.RWMutex
-	watchForDesiredLRPChangesArgsForCall []struct {
-		arg1 lager.Logger
-	}
-	watchForDesiredLRPChangesReturns struct {
-		result1 <-chan models.DesiredLRP
-		result2 <-chan models.DesiredLRP
-		result3 <-chan error
-	}
-	WatchForActualLRPChangesStub        func(lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error)
-	watchForActualLRPChangesMutex       sync.RWMutex
-	watchForActualLRPChangesArgsForCall []struct {
-		arg1 lager.Logger
-	}
-	watchForActualLRPChangesReturns struct {
-		result1 <-chan models.ActualLRP
-		result2 <-chan models.ActualLRP
-		result3 <-chan error
-	}
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
@@ -55,74 +34,6 @@ type FakeRouteEmitterBBS struct {
 	newRouteEmitterLockReturns struct {
 		result1 ifrit.Runner
 	}
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForDesiredLRPChanges(arg1 lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRP, <-chan error) {
-	fake.watchForDesiredLRPChangesMutex.Lock()
-	fake.watchForDesiredLRPChangesArgsForCall = append(fake.watchForDesiredLRPChangesArgsForCall, struct {
-		arg1 lager.Logger
-	}{arg1})
-	fake.watchForDesiredLRPChangesMutex.Unlock()
-	if fake.WatchForDesiredLRPChangesStub != nil {
-		return fake.WatchForDesiredLRPChangesStub(arg1)
-	} else {
-		return fake.watchForDesiredLRPChangesReturns.result1, fake.watchForDesiredLRPChangesReturns.result2, fake.watchForDesiredLRPChangesReturns.result3
-	}
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForDesiredLRPChangesCallCount() int {
-	fake.watchForDesiredLRPChangesMutex.RLock()
-	defer fake.watchForDesiredLRPChangesMutex.RUnlock()
-	return len(fake.watchForDesiredLRPChangesArgsForCall)
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForDesiredLRPChangesArgsForCall(i int) lager.Logger {
-	fake.watchForDesiredLRPChangesMutex.RLock()
-	defer fake.watchForDesiredLRPChangesMutex.RUnlock()
-	return fake.watchForDesiredLRPChangesArgsForCall[i].arg1
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForDesiredLRPChangesReturns(result1 <-chan models.DesiredLRP, result2 <-chan models.DesiredLRP, result3 <-chan error) {
-	fake.WatchForDesiredLRPChangesStub = nil
-	fake.watchForDesiredLRPChangesReturns = struct {
-		result1 <-chan models.DesiredLRP
-		result2 <-chan models.DesiredLRP
-		result3 <-chan error
-	}{result1, result2, result3}
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForActualLRPChanges(arg1 lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRP, <-chan error) {
-	fake.watchForActualLRPChangesMutex.Lock()
-	fake.watchForActualLRPChangesArgsForCall = append(fake.watchForActualLRPChangesArgsForCall, struct {
-		arg1 lager.Logger
-	}{arg1})
-	fake.watchForActualLRPChangesMutex.Unlock()
-	if fake.WatchForActualLRPChangesStub != nil {
-		return fake.WatchForActualLRPChangesStub(arg1)
-	} else {
-		return fake.watchForActualLRPChangesReturns.result1, fake.watchForActualLRPChangesReturns.result2, fake.watchForActualLRPChangesReturns.result3
-	}
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForActualLRPChangesCallCount() int {
-	fake.watchForActualLRPChangesMutex.RLock()
-	defer fake.watchForActualLRPChangesMutex.RUnlock()
-	return len(fake.watchForActualLRPChangesArgsForCall)
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForActualLRPChangesArgsForCall(i int) lager.Logger {
-	fake.watchForActualLRPChangesMutex.RLock()
-	defer fake.watchForActualLRPChangesMutex.RUnlock()
-	return fake.watchForActualLRPChangesArgsForCall[i].arg1
-}
-
-func (fake *FakeRouteEmitterBBS) WatchForActualLRPChangesReturns(result1 <-chan models.ActualLRP, result2 <-chan models.ActualLRP, result3 <-chan error) {
-	fake.WatchForActualLRPChangesStub = nil
-	fake.watchForActualLRPChangesReturns = struct {
-		result1 <-chan models.ActualLRP
-		result2 <-chan models.ActualLRP
-		result3 <-chan error
-	}{result1, result2, result3}
 }
 
 func (fake *FakeRouteEmitterBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
