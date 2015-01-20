@@ -67,7 +67,7 @@ var _ = Describe("DesiredLRP", func() {
 	  "egress_rules": [
 		  {
 				"protocol": "tcp",
-				"destination": "0.0.0.0/0",
+				"destinations": ["0.0.0.0/0"],
 				"port_range": {
 					"start": 1,
 					"end": 1024
@@ -76,7 +76,7 @@ var _ = Describe("DesiredLRP", func() {
 			},
 		  {
 				"protocol": "udp",
-				"destination": "8.8.0.0/16",
+				"destinations": ["8.8.0.0/16"],
 				"ports": [53],
 				"log": false
 			}
@@ -120,8 +120,8 @@ var _ = Describe("DesiredLRP", func() {
 			},
 			EgressRules: []SecurityGroupRule{
 				{
-					Protocol:    "tcp",
-					Destination: "0.0.0.0/0",
+					Protocol:     "tcp",
+					Destinations: []string{"0.0.0.0/0"},
 					PortRange: &PortRange{
 						Start: 1,
 						End:   1024,
@@ -129,9 +129,9 @@ var _ = Describe("DesiredLRP", func() {
 					Log: true,
 				},
 				{
-					Protocol:    "udp",
-					Destination: "8.8.0.0/16",
-					Ports:       []uint16{53},
+					Protocol:     "udp",
+					Destinations: []string{"8.8.0.0/16"},
+					Ports:        []uint16{53},
 				},
 			},
 		}

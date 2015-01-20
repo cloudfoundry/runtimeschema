@@ -25,12 +25,12 @@ type PortRange struct {
 }
 
 type SecurityGroupRule struct {
-	Protocol    ProtocolName `json:"protocol"`
-	Destination string       `json:"destination"`
-	Ports       []uint16     `json:"ports,omitempty"`
-	PortRange   *PortRange   `json:"port_range,omitempty"`
-	IcmpInfo    *ICMPInfo    `json:"icmp_info,omitempty"`
-	Log         bool         `json:"log"`
+	Protocol     ProtocolName `json:"protocol"`
+	Destinations []string     `json:"destinations"`
+	Ports        []uint16     `json:"ports,omitempty"`
+	PortRange    *PortRange   `json:"port_range,omitempty"`
+	IcmpInfo     *ICMPInfo    `json:"icmp_info,omitempty"`
+	Log          bool         `json:"log"`
 }
 
 type ICMPInfo struct {
@@ -82,8 +82,8 @@ func (rule SecurityGroupRule) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"protocol"})
 	}
 
-	if rule.validateDestination() != nil {
-		validationError = validationError.Append(ErrInvalidField{"destination"})
+	if err := rule.validateDestinations(); err != nil {
+		validationError = validationError.Append(ErrInvalidField{"destinations [ " + err.Error() + " ]"})
 	}
 
 	if !validationError.Empty() {
@@ -124,7 +124,6 @@ func (rule SecurityGroupRule) validatePorts() ValidationError {
 		for _, p := range rule.Ports {
 			if p < 1 {
 				validationError = validationError.Append(ErrInvalidField{"ports"})
-				break
 			}
 		}
 	}
@@ -132,34 +131,50 @@ func (rule SecurityGroupRule) validatePorts() ValidationError {
 	return validationError
 }
 
-func (rule SecurityGroupRule) validateDestination() error {
-	n := strings.IndexAny(rule.Destination, "-/")
-	if n == -1 {
-		if net.ParseIP(rule.Destination) == nil {
-			return errInvalidIP
-		}
-	} else if rule.Destination[n] == '/' {
-		_, _, err := net.ParseCIDR(rule.Destination)
-		if err != nil {
-			return err
-		}
-	} else {
-		firstIP := net.ParseIP(rule.Destination[:n])
-		secondIP := net.ParseIP(rule.Destination[n+1:])
-		if firstIP == nil || secondIP == nil {
-			return errInvalidIP
-		}
-		for i, b := range firstIP {
-			if b < secondIP[i] {
-				return nil
-			}
+func (rule SecurityGroupRule) validateDestinations() error {
+	if len(rule.Destinations) == 0 {
+		return errors.New("Must have at least 1 destination")
+	}
 
-			if b == secondIP[i] {
+	var validationError ValidationError
+
+	for _, d := range rule.Destinations {
+		n := strings.IndexAny(d, "-/")
+		if n == -1 {
+			if net.ParseIP(d) == nil {
+				validationError = validationError.Append(errInvalidIP)
 				continue
 			}
+		} else if d[n] == '/' {
+			_, _, err := net.ParseCIDR(d)
+			if err != nil {
+				validationError = validationError.Append(err)
+				continue
+			}
+		} else {
+			firstIP := net.ParseIP(d[:n])
+			secondIP := net.ParseIP(d[n+1:])
+			if firstIP == nil || secondIP == nil {
+				validationError = validationError.Append(errInvalidIP)
+				continue
+			}
+			for i, b := range firstIP {
+				if b < secondIP[i] {
+					break
+				}
 
-			return errInvalidIP
+				if b == secondIP[i] {
+					continue
+				}
+
+				validationError = validationError.Append(errInvalidIP)
+				continue
+			}
 		}
+	}
+
+	if !validationError.Empty() {
+		return validationError
 	}
 
 	return nil
