@@ -36,7 +36,7 @@ type ReceptorBBS interface {
 	DesiredLRPs() ([]models.DesiredLRP, error)
 	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
 	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
-	WatchForDesiredLRPChanges(lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRPChange, <-chan models.DesiredLRP, <-chan error)
+	WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error)
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
@@ -44,7 +44,7 @@ type ReceptorBBS interface {
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RequestStopLRPInstance(models.ActualLRPKey, models.ActualLRPContainerKey) error
-	WatchForActualLRPChanges(lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRPChange, <-chan models.ActualLRP, <-chan error)
+	WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (stop chan<- bool, errs <-chan error)
 
 	// cells
 	Cells() ([]models.CellPresence, error)

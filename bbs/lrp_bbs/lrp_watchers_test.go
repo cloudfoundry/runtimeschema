@@ -11,9 +11,10 @@ import (
 var _ = Describe("LrpWatchers", func() {
 	Describe("WatchForDesiredLRPChanges", func() {
 		var (
-			creates <-chan models.DesiredLRP
-			updates <-chan models.DesiredLRPChange
-			deletes <-chan models.DesiredLRP
+			creates chan models.DesiredLRP
+			changes chan models.DesiredLRPChange
+			deletes chan models.DesiredLRP
+			stop    chan<- bool
 			errors  <-chan error
 			lrp     models.DesiredLRP
 		)
@@ -36,7 +37,16 @@ var _ = Describe("LrpWatchers", func() {
 
 		BeforeEach(func() {
 			lrp = newLRP()
-			creates, updates, deletes, errors = bbs.WatchForDesiredLRPChanges(logger)
+
+			creates = make(chan models.DesiredLRP)
+			changes = make(chan models.DesiredLRPChange)
+			deletes = make(chan models.DesiredLRP)
+
+			stop, errors = bbs.WatchForDesiredLRPChanges(logger,
+				func(created models.DesiredLRP) { creates <- created },
+				func(changed models.DesiredLRPChange) { changes <- changed },
+				func(deleted models.DesiredLRP) { deletes <- deleted },
+			)
 		})
 
 		It("sends an event down the pipe for creates", func() {
@@ -60,7 +70,7 @@ var _ = Describe("LrpWatchers", func() {
 			})
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(updates).Should(Receive(Equal(models.DesiredLRPChange{
+			Eventually(changes).Should(Receive(Equal(models.DesiredLRPChange{
 				Before: lrp,
 				After:  changedLRP,
 			})))
@@ -77,13 +87,22 @@ var _ = Describe("LrpWatchers", func() {
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
 		})
+
+		Context("when the caller closes the stop channel", func() {
+			It("closes the error channel without error", func() {
+				close(stop)
+				Consistently(errors).ShouldNot(Receive())
+				Eventually(errors).Should(BeClosed())
+			})
+		})
 	})
 
 	Describe("WatchForActualLRPChanges", func() {
 		var (
-			creates <-chan models.ActualLRP
-			updates <-chan models.ActualLRPChange
-			deletes <-chan models.ActualLRP
+			creates chan models.ActualLRP
+			changes chan models.ActualLRPChange
+			deletes chan models.ActualLRP
+			stop    chan<- bool
 			errors  <-chan error
 
 			lrpProcessGuid string
@@ -95,7 +114,15 @@ var _ = Describe("LrpWatchers", func() {
 		)
 
 		BeforeEach(func() {
-			creates, updates, deletes, errors = bbs.WatchForActualLRPChanges(logger)
+			creates = make(chan models.ActualLRP)
+			changes = make(chan models.ActualLRPChange)
+			deletes = make(chan models.ActualLRP)
+
+			stop, errors = bbs.WatchForActualLRPChanges(logger,
+				func(created models.ActualLRP) { creates <- created },
+				func(changed models.ActualLRPChange) { changes <- changed },
+				func(deleted models.ActualLRP) { deletes <- deleted },
+			)
 
 			lrpProcessGuid = "some-process-guid"
 			desiredLRP = models.DesiredLRP{
@@ -135,7 +162,7 @@ var _ = Describe("LrpWatchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var actualLRPChange models.ActualLRPChange
-			Eventually(updates).Should(Receive(&actualLRPChange))
+			Eventually(changes).Should(Receive(&actualLRPChange))
 
 			before, after := actualLRPChange.Before, actualLRPChange.After
 			Ω(before).Should(Equal(lrp))
@@ -158,6 +185,14 @@ var _ = Describe("LrpWatchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
+		})
+
+		Context("when the caller closes the stop channel", func() {
+			It("closes the error channel without error", func() {
+				close(stop)
+				Consistently(errors).ShouldNot(Receive())
+				Eventually(errors).Should(BeClosed())
+			})
 		})
 	})
 })

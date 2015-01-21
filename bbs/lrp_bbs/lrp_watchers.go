@@ -6,14 +6,10 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger) (<-chan models.DesiredLRP, <-chan models.DesiredLRPChange, <-chan models.DesiredLRP, <-chan error) {
+func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (chan<- bool, <-chan error) {
 	logger = logger.Session("watching-for-desired-lrp-changes")
 
-	creates := make(chan models.DesiredLRP)
-	updates := make(chan models.DesiredLRPChange)
-	deletes := make(chan models.DesiredLRP)
-
-	events, _, err := bbs.store.Watch(shared.DesiredLRPSchemaRoot)
+	events, stop, err := bbs.store.Watch(shared.DesiredLRPSchemaRoot)
 
 	go func() {
 		for event := range events {
@@ -29,7 +25,7 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger) (<-chan models
 				}
 
 				logger.Debug("sending-create", lager.Data{"desired-lrp": desiredLRP})
-				creates <- desiredLRP
+				created(desiredLRP)
 
 			case event.Node != nil && event.PrevNode != nil: // update
 				logger.Debug("received-update")
@@ -49,7 +45,7 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger) (<-chan models
 				}
 
 				logger.Debug("sending-update", lager.Data{"before": before, "after": after})
-				updates <- models.DesiredLRPChange{Before: before, After: after}
+				changed(models.DesiredLRPChange{Before: before, After: after})
 
 			case event.Node == nil && event.PrevNode != nil: // delete
 				logger.Debug("received-delete")
@@ -62,7 +58,7 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger) (<-chan models
 				}
 
 				logger.Debug("sending-delete", lager.Data{"desired-lrp": desiredLRP})
-				deletes <- desiredLRP
+				deleted(desiredLRP)
 
 			default:
 				logger.Debug("received-event-with-both-nodes-nil")
@@ -70,17 +66,13 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger) (<-chan models
 		}
 	}()
 
-	return creates, updates, deletes, err
+	return stop, err
 }
 
-func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger) (<-chan models.ActualLRP, <-chan models.ActualLRPChange, <-chan models.ActualLRP, <-chan error) {
+func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (chan<- bool, <-chan error) {
 	logger = logger.Session("watching-for-actual-lrp-changes")
 
-	creates := make(chan models.ActualLRP)
-	updates := make(chan models.ActualLRPChange)
-	deletes := make(chan models.ActualLRP)
-
-	events, _, err := bbs.store.Watch(shared.ActualLRPSchemaRoot)
+	events, stop, err := bbs.store.Watch(shared.ActualLRPSchemaRoot)
 
 	go func() {
 		for event := range events {
@@ -96,7 +88,7 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger) (<-chan models.
 				}
 
 				logger.Debug("sending-create", lager.Data{"actual-lrp": actualLRP})
-				creates <- actualLRP
+				created(actualLRP)
 
 			case event.Node != nil && event.PrevNode != nil:
 				logger.Debug("received-update")
@@ -116,7 +108,7 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger) (<-chan models.
 				}
 
 				logger.Debug("sending-update", lager.Data{"before": before, "after": after})
-				updates <- models.ActualLRPChange{Before: before, After: after}
+				changed(models.ActualLRPChange{Before: before, After: after})
 
 			case event.PrevNode != nil && event.Node == nil:
 				logger.Debug("received-delete")
@@ -127,7 +119,7 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger) (<-chan models.
 					logger.Error("failed-to-unmarshal-actual-lrp", err, lager.Data{"value": event.PrevNode.Value})
 				} else {
 					logger.Debug("sending-delete", lager.Data{"actual-lrp": actualLRP})
-					deletes <- actualLRP
+					deleted(actualLRP)
 				}
 
 			default:
@@ -136,5 +128,5 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger) (<-chan models.
 		}
 	}()
 
-	return creates, updates, deletes, err
+	return stop, err
 }
