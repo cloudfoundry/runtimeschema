@@ -328,6 +328,7 @@ func (bbs *LRPBBS) RemoveActualLRP(
 ) error {
 	logger = logger.Session("remove-actual-lrp")
 	logger.Info("starting")
+
 	lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
@@ -352,10 +353,12 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	return nil
 }
 
+const RetireActualPoolSize = 20
+
 func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) {
 	logger = logger.Session("retire-actual-lrps")
 
-	pool := workpool.NewWorkPool(workerPoolSize)
+	pool := workpool.NewWorkPool(RetireActualPoolSize)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(len(lrps))
@@ -380,23 +383,19 @@ func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger
 }
 
 func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {
-	var err error
-
 	if lrp.State == models.ActualLRPStateUnclaimed {
-		logger.Info("removing-unclaimed-actual")
-		err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
-	} else {
-		logger.Info("stopping-actual")
-		err = bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+		return bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
 	}
 
+	logger.Info("stopping-actual")
+	err := bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 	if err != nil {
 		logger.Error("failed-to-retire-actual-lrp", err, lager.Data{
 			"actual-lrp": lrp,
 		})
+		return err
 	}
-
-	return err
+	return nil
 }
 
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {

@@ -2,8 +2,6 @@ package lrp_bbs
 
 import "github.com/cloudfoundry-incubator/runtime-schema/models"
 
-const workerPoolSize = 20
-
 func (bbs *LRPBBS) RequestStopLRPInstance(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,

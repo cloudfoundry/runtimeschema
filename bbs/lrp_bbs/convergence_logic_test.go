@@ -75,13 +75,14 @@ var _ = Describe("CalculateConvergence", func() {
 		})
 
 		It("reports them", func() {
-			Ω(changes.ActualLRPsWithMissingCells).Should(ConsistOf(
-				newRunningActualLRP(lrpA, cellA.CellID, 0),
-				newRunningActualLRP(lrpA, cellA.CellID, 1),
-			))
+			output := &lrp_bbs.ConvergenceChanges{
+				ActualLRPsWithMissingCells: []models.ActualLRP{
+					newRunningActualLRP(lrpA, cellA.CellID, 0),
+					newRunningActualLRP(lrpA, cellA.CellID, 1),
+				},
+			}
 
-			changes.ActualLRPsWithMissingCells = nil
-			Ω(changes).Should(Equal(&lrp_bbs.ConvergenceChanges{}))
+			changesEqual(changes, output)
 		})
 	})
 
@@ -103,7 +104,7 @@ var _ = Describe("CalculateConvergence", func() {
 				},
 			}
 
-			Ω(changes).Should(Equal(output))
+			changesEqual(changes, output)
 		})
 	})
 
@@ -128,7 +129,7 @@ var _ = Describe("CalculateConvergence", func() {
 				},
 			}
 
-			Ω(changes).Should(Equal(output))
+			changesEqual(changes, output)
 		})
 	})
 
@@ -152,7 +153,7 @@ var _ = Describe("CalculateConvergence", func() {
 				},
 			}
 
-			Ω(changes).Should(Equal(output))
+			changesEqual(changes, output)
 		})
 	})
 
@@ -176,7 +177,7 @@ var _ = Describe("CalculateConvergence", func() {
 				},
 			}
 
-			Ω(changes).Should(Equal(output))
+			changesEqual(changes, output)
 		})
 	})
 
@@ -191,18 +192,16 @@ var _ = Describe("CalculateConvergence", func() {
 		})
 
 		It("performs all checks except stopping extra indices", func() {
-			expectedMissingIndexKeys := []models.ActualLRPKey{
-				actualLRPKey(lrpA, 0),
-				actualLRPKey(lrpA, 1),
-				actualLRPKey(lrpB, 0),
-				actualLRPKey(lrpB, 1),
+			output := &lrp_bbs.ConvergenceChanges{
+				ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
+					actualLRPKey(lrpA, 0),
+					actualLRPKey(lrpA, 1),
+					actualLRPKey(lrpB, 0),
+					actualLRPKey(lrpB, 1),
+				},
 			}
 
-			Ω(changes.ActualLRPKeysForMissingIndices).Should(ConsistOf(expectedMissingIndexKeys))
-			Ω(changes.ActualLRPsForExtraIndices).Should(BeEmpty())
-			Ω(changes.ActualLRPsWithMissingCells).Should(BeEmpty())
-			Ω(changes.RestartableCrashedActualLRPs).Should(BeEmpty())
-			Ω(changes.StaleUnclaimedActualLRPs).Should(BeEmpty())
+			changesEqual(changes, output)
 		})
 	})
 
@@ -220,10 +219,18 @@ var _ = Describe("CalculateConvergence", func() {
 		})
 
 		It("reports nothing", func() {
-			Ω(changes).Should(Equal(&lrp_bbs.ConvergenceChanges{}))
+			changesEqual(changes, &lrp_bbs.ConvergenceChanges{})
 		})
 	})
 })
+
+func changesEqual(actual *lrp_bbs.ConvergenceChanges, expected *lrp_bbs.ConvergenceChanges) {
+	Ω(actual.ActualLRPsWithMissingCells).Should(ConsistOf(expected.ActualLRPsWithMissingCells))
+	Ω(actual.ActualLRPsForExtraIndices).Should(ConsistOf(expected.ActualLRPsForExtraIndices))
+	Ω(actual.ActualLRPKeysForMissingIndices).Should(ConsistOf(expected.ActualLRPKeysForMissingIndices))
+	Ω(actual.RestartableCrashedActualLRPs).Should(ConsistOf(expected.RestartableCrashedActualLRPs))
+	Ω(actual.StaleUnclaimedActualLRPs).Should(ConsistOf(expected.StaleUnclaimedActualLRPs))
+}
 
 func domainSet(domains ...string) models.DomainSet {
 	set := models.DomainSet{}
