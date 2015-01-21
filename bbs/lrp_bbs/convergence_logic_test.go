@@ -191,16 +191,18 @@ var _ = Describe("CalculateConvergence", func() {
 		})
 
 		It("performs all checks except stopping extra indices", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
-					actualLRPKey(lrpA, 0),
-					actualLRPKey(lrpA, 1),
-					actualLRPKey(lrpB, 0),
-					actualLRPKey(lrpB, 1),
-				},
+			expectedMissingIndexKeys := []models.ActualLRPKey{
+				actualLRPKey(lrpA, 0),
+				actualLRPKey(lrpA, 1),
+				actualLRPKey(lrpB, 0),
+				actualLRPKey(lrpB, 1),
 			}
 
-			Ω(changes).Should(Equal(output))
+			Ω(changes.ActualLRPKeysForMissingIndices).Should(ConsistOf(expectedMissingIndexKeys))
+			Ω(changes.ActualLRPsForExtraIndices).Should(BeEmpty())
+			Ω(changes.ActualLRPsWithMissingCells).Should(BeEmpty())
+			Ω(changes.RestartableCrashedActualLRPs).Should(BeEmpty())
+			Ω(changes.StaleUnclaimedActualLRPs).Should(BeEmpty())
 		})
 	})
 
