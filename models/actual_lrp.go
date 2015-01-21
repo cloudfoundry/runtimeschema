@@ -156,14 +156,7 @@ func NewActualLRPCrashInfo(crashCount int, lastCrashedAt int64) ActualLRPCrashIn
 }
 
 func (crashInfo ActualLRPCrashInfo) ShouldRestartImmediately() bool {
-	return crashInfo.CrashCount <= 3
-}
-
-func powerOfTwo(pow int) int64 {
-	if pow < 0 {
-		panic("pow cannot be negative")
-	}
-	return 1 << uint(pow)
+	return crashInfo.CrashCount < CrashImmediateRestartThreshold
 }
 
 type ActualLRP struct {
@@ -181,6 +174,7 @@ type ActualLRPChange struct {
 }
 
 const StaleUnclaimedActualLRPDuration = 30 * time.Second
+
 func (actual ActualLRP) ShouldStartUnclaimed(now time.Time) bool {
 	if actual.State != ActualLRPStateUnclaimed {
 		return false
@@ -208,18 +202,18 @@ func (actual ActualLRP) ShouldRestartCrash(now time.Time) bool {
 	}
 
 	lastCrashedAt := actual.ActualLRPCrashInfo.LastCrashedAt
-	count := actual.ActualLRPCrashInfo.CrashCount
+
 	switch {
-	case count < 3:
+	case actual.ShouldRestartImmediately():
 		return true
 
-	case count < 8:
-		threshhold := lastCrashedAt + (30*time.Second.Nanoseconds())*powerOfTwo(count-3)
-		if threshhold <= now.UnixNano() {
+	case actual.CrashCount < 8:
+		nextRestartTime := lastCrashedAt + exponentialBackoff(actual.CrashCount)
+		if nextRestartTime <= now.UnixNano() {
 			return true
 		}
 
-	case count < 200:
+	case actual.CrashCount < 200:
 		threshhold := lastCrashedAt + MaxCrashBackoff.Nanoseconds()
 		if threshhold <= now.UnixNano() {
 			return true
@@ -227,6 +221,21 @@ func (actual ActualLRP) ShouldRestartCrash(now time.Time) bool {
 	}
 
 	return false
+}
+
+const CrashImmediateRestartThreshold = 3
+const CrashBackoffBaseDuration = 30 * time.Second
+
+func exponentialBackoff(crashCount int) int64 {
+	pow := crashCount - CrashImmediateRestartThreshold
+	return CrashBackoffBaseDuration.Nanoseconds() * powerOfTwo(pow)
+}
+
+func powerOfTwo(pow int) int64 {
+	if pow < 0 {
+		panic("pow cannot be negative")
+	}
+	return 1 << uint(pow)
 }
 
 func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey ActualLRPContainerKey, newState ActualLRPState) bool {
