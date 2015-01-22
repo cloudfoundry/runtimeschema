@@ -60,18 +60,6 @@ type mTask struct {
 	*InnerTask
 }
 
-type StagingResult struct {
-	BuildpackKey         string            `json:"buildpack_key,omitempty"`
-	DetectedBuildpack    string            `json:"detected_buildpack"`
-	ExecutionMetadata    string            `json:"execution_metadata"`
-	DetectedStartCommand map[string]string `json:"detected_start_command"`
-}
-
-type StagingDockerResult struct {
-	ExecutionMetadata    string            `json:"execution_metadata"`
-	DetectedStartCommand map[string]string `json:"detected_start_command"`
-}
-
 type StagingTaskAnnotation struct {
 	AppId  string `json:"app_id"`
 	TaskId string `json:"task_id"`
