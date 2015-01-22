@@ -15,7 +15,10 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
 
 	startRequests := newStartRequests(desiredLRPs)
+
 	pool := workpool.NewWorkPool(ConvergencePoolSize)
+	defer pool.Stop()
+
 	wg := new(sync.WaitGroup)
 
 	for _, actual := range changes.StaleUnclaimedActualLRPs {
@@ -35,6 +38,7 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	}
 
 	wg.Wait()
+
 	bbs.startActualLRPs(logger, startRequests)
 }
 
