@@ -383,19 +383,22 @@ func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger
 }
 
 func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {
-	if lrp.State == models.ActualLRPStateUnclaimed {
-		return bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
-	}
+	switch lrp.State {
 
-	logger.Info("stopping-actual")
-	err := bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
-	if err != nil {
-		logger.Error("failed-to-retire-actual-lrp", err, lager.Data{
-			"actual-lrp": lrp,
-		})
-		return err
+	case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
+		return bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
+
+	default:
+		logger.Info("stopping-actual")
+		err := bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+		if err != nil {
+			logger.Error("failed-to-retire-actual-lrp", err, lager.Data{
+				"actual-lrp": lrp,
+			})
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
 func (bbs *LRPBBS) getActualLRP(processGuid string, index int) (*models.ActualLRP, uint64, error) {

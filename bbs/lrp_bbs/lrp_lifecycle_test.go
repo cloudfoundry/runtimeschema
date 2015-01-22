@@ -13,6 +13,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("LrpLifecycle", func() {
@@ -846,6 +847,33 @@ var _ = Describe("LrpLifecycle", func() {
 
 				_, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
+
+		Context("when the LRP is Crashed", func() {
+			var actual models.ActualLRP
+
+			BeforeEach(func() {
+				actual = models.ActualLRP{
+					ActualLRPKey: models.NewActualLRPKey("processGuid", 0, "domain"),
+					CrashCount:   1,
+					State:        models.ActualLRPStateCrashed,
+					Since:        777,
+				}
+				createRawActualLRP(actual)
+			})
+
+			JustBeforeEach(func() {
+				bbs.RetireActualLRPs([]models.ActualLRP{actual}, logger)
+			})
+
+			It("should remove the actual", func() {
+				_, err := bbs.ActualLRPByProcessGuidAndIndex(actual.ProcessGuid, actual.Index)
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+
+			It("should not log a failure", func() {
+				Ω(logger).ShouldNot(gbytes.Say("fail"))
 			})
 		})
 
