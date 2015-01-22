@@ -50,7 +50,8 @@ type Task struct {
 	CompletionCallbackURL *url.URL `json:"completion_callback_url,omitempty"`
 	Annotation            string   `json:"annotation,omitempty"`
 
-	EgressRules []SecurityGroupRule `json:"egress_rules,omitempty"`
+	EgressRules    []SecurityGroupRule `json:"egress_rules,omitempty"`
+	PlacementError string              `json:"placement_error,omitempty"`
 }
 
 type InnerTask Task
