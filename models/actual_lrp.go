@@ -144,8 +144,8 @@ func (key ActualLRPNetInfo) Validate() error {
 const MaxCrashBackoff = 16 * time.Minute
 
 type ActualLRPCrashInfo struct {
-	CrashCount    int   `json:"crash_count"`
-	LastCrashedAt int64 `json:"last_crashed_at"`
+	CrashCount    int
+	LastCrashedAt int64
 }
 
 func NewActualLRPCrashInfo(crashCount int, lastCrashedAt int64) ActualLRPCrashInfo {
@@ -159,13 +159,34 @@ func (crashInfo ActualLRPCrashInfo) ShouldRestartImmediately() bool {
 	return crashInfo.CrashCount < CrashImmediateRestartThreshold
 }
 
+func (crashInfo ActualLRPCrashInfo) ShouldRestart(now int64) bool {
+	switch {
+	case crashInfo.ShouldRestartImmediately():
+		return true
+
+	case crashInfo.CrashCount < 8:
+		nextRestartTime := crashInfo.LastCrashedAt + exponentialBackoff(crashInfo.CrashCount)
+		if nextRestartTime <= now {
+			return true
+		}
+
+	case crashInfo.CrashCount < 200:
+		threshhold := crashInfo.LastCrashedAt + MaxCrashBackoff.Nanoseconds()
+		if threshhold <= now {
+			return true
+		}
+	}
+
+	return false
+}
+
 type ActualLRP struct {
 	ActualLRPKey
 	ActualLRPContainerKey
 	ActualLRPNetInfo
-	ActualLRPCrashInfo
-	State ActualLRPState `json:"state"`
-	Since int64          `json:"since"`
+	CrashCount int            `json:"crash_count"`
+	State      ActualLRPState `json:"state"`
+	Since      int64          `json:"since"`
 }
 
 type ActualLRPChange struct {
@@ -196,31 +217,20 @@ func (actual ActualLRP) CellIsMissing(cellSet CellSet) bool {
 	return !cellSet.HasCellID(actual.CellID)
 }
 
+func (actual ActualLRP) ShouldRestartImmediately() bool {
+	if actual.State != ActualLRPStateCrashed {
+		return false
+	}
+
+	return NewActualLRPCrashInfo(actual.CrashCount, actual.Since).ShouldRestartImmediately()
+}
+
 func (actual ActualLRP) ShouldRestartCrash(now time.Time) bool {
 	if actual.State != ActualLRPStateCrashed {
 		return false
 	}
 
-	lastCrashedAt := actual.ActualLRPCrashInfo.LastCrashedAt
-
-	switch {
-	case actual.ShouldRestartImmediately():
-		return true
-
-	case actual.CrashCount < 8:
-		nextRestartTime := lastCrashedAt + exponentialBackoff(actual.CrashCount)
-		if nextRestartTime <= now.UnixNano() {
-			return true
-		}
-
-	case actual.CrashCount < 200:
-		threshhold := lastCrashedAt + MaxCrashBackoff.Nanoseconds()
-		if threshhold <= now.UnixNano() {
-			return true
-		}
-	}
-
-	return false
+	return NewActualLRPCrashInfo(actual.CrashCount, actual.Since).ShouldRestart(now.UnixNano())
 }
 
 const CrashImmediateRestartThreshold = 3

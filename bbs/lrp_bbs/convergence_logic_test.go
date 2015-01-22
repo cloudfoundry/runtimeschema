@@ -284,19 +284,19 @@ func actualLRPKey(lrp models.DesiredLRP, index int) models.ActualLRPKey {
 
 func crashedActualReadyForRestart(lrp models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:       actualLRPKey(lrp, index),
-		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(1, 1234),
-		State:              models.ActualLRPStateCrashed,
-		Since:              1138,
+		ActualLRPKey: actualLRPKey(lrp, index),
+		CrashCount:   1,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
 	}
 }
 
 func crashedActualNeverRestart(lrp models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:       actualLRPKey(lrp, index),
-		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(201, 1234),
-		State:              models.ActualLRPStateCrashed,
-		Since:              1138,
+		ActualLRPKey: actualLRPKey(lrp, index),
+		CrashCount:   201,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
 	}
 }
 

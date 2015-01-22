@@ -13,9 +13,10 @@ import (
 
 func defaultCrashedActual(crashCount int, lastCrashed int64) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:       models.NewActualLRPKey("p-guid", 0, "domain"),
-		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(crashCount, lastCrashed),
-		State:              models.ActualLRPStateCrashed,
+		ActualLRPKey: models.NewActualLRPKey("p-guid", 0, "domain"),
+		State:        models.ActualLRPStateCrashed,
+		CrashCount:   crashCount,
+		Since:        lastCrashed,
 	}
 }
 
@@ -46,12 +47,12 @@ func newCrashInfoBackoffTest(crashCount int, lastCrashed int64, waitTime time.Du
 func (test crashInfoBackoffTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d and the wait time is %s", test.CrashCount, test.WaitTime), func() {
 		It("should NOT restart before the expected wait time", func() {
-			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds() - time.Second.Nanoseconds()
+			currentTimestamp := test.Since + test.WaitTime.Nanoseconds() - time.Second.Nanoseconds()
 			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeFalse())
 		})
 
 		It("should restart after the expected wait time", func() {
-			currentTimestamp := test.LastCrashedAt + test.WaitTime.Nanoseconds()
+			currentTimestamp := test.Since + test.WaitTime.Nanoseconds()
 			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeTrue())
 		})
 	})
@@ -70,9 +71,9 @@ func newCrashInfoNeverStartTest(crashCount int, lastCrashed int64) crashInfoTest
 func (test crashInfoNeverStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should never restart regardless of the wait time", func() {
-			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
+			theFuture := test.Since + time.Hour.Nanoseconds()
 			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeFalse())
-			Ω(test.ShouldRestartCrash(time.Unix(0, test.LastCrashedAt))).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since))).Should(BeFalse())
 			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeFalse())
 		})
 	})
@@ -91,9 +92,9 @@ func newCrashInfoAlwaysStartTest(crashCount int, lastCrashed int64) crashInfoTes
 func (test crashInfoAlwaysStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should restart regardless of the wait time", func() {
-			theFuture := test.LastCrashedAt + time.Hour.Nanoseconds()
+			theFuture := test.Since + time.Hour.Nanoseconds()
 			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeTrue())
-			Ω(test.ShouldRestartCrash(time.Unix(0, test.LastCrashedAt))).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since))).Should(BeTrue())
 			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeTrue())
 		})
 	})
@@ -222,11 +223,8 @@ var _ = Describe("ActualLRP", func() {
 		var lrp models.ActualLRP
 		var lrpKey models.ActualLRPKey
 		var containerKey models.ActualLRPContainerKey
-		var crashInfo models.ActualLRPCrashInfo
 		var netInfo models.ActualLRPNetInfo
 
-		BeforeEach(func() {
-		})
 		lrpPayload := `{
     "process_guid":"some-guid",
     "instance_guid":"some-instance-guid",
@@ -240,14 +238,12 @@ var _ = Describe("ActualLRP", func() {
     "since": 1138,
     "cell_id":"some-cell-id",
     "domain":"some-domain",
-		"crash_count": 1,
-		"last_crashed_at": 999
+		"crash_count": 1
   }`
 
 		BeforeEach(func() {
 			lrpKey = models.NewActualLRPKey("some-guid", 2, "some-domain")
 			containerKey = models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id")
-			crashInfo = models.NewActualLRPCrashInfo(1, 999)
 			netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{
 				{ContainerPort: 8080},
 				{ContainerPort: 8081, HostPort: 1234},
@@ -257,7 +253,7 @@ var _ = Describe("ActualLRP", func() {
 				ActualLRPKey:          lrpKey,
 				ActualLRPContainerKey: containerKey,
 				ActualLRPNetInfo:      netInfo,
-				ActualLRPCrashInfo:    crashInfo,
+				CrashCount:            1,
 				State:                 models.ActualLRPStateRunning,
 				Since:                 1138,
 			}

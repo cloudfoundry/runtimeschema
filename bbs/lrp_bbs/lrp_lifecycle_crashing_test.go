@@ -19,7 +19,7 @@ var _ = Describe("CrashActualLRP", func() {
 			Name: "when the lrp is RUNNING and the crash count is greater than 3",
 			LRP: func() models.ActualLRP {
 				lrp := lrpForState(models.ActualLRPStateRunning, time.Minute)
-				lrp.ActualLRPCrashInfo = models.NewActualLRPCrashInfo(4, lrp.Since)
+				lrp.CrashCount = 4
 				return lrp
 			},
 			Result: itCrashesTheLRP(),
@@ -35,7 +35,7 @@ var _ = Describe("CrashActualLRP", func() {
 			Name: "when the lrp is RUNNING and has crashes and Since is older than 5 minutes",
 			LRP: func() models.ActualLRP {
 				lrp := lrpForState(models.ActualLRPStateRunning, OverTime)
-				lrp.ActualLRPCrashInfo = models.NewActualLRPCrashInfo(4, lrp.Since)
+				lrp.CrashCount = 4
 				return lrp
 			},
 			Result: itUnclaimsTheLRP(),
@@ -59,7 +59,7 @@ func resetOnlyRunningLRPsThatHaveNotCrashedRecently() []crashTest {
 
 		lrpGenerator := func() models.ActualLRP {
 			lrp := lrpForState(state, OverTime)
-			lrp.ActualLRPCrashInfo = models.NewActualLRPCrashInfo(4, lrp.Since)
+			lrp.CrashCount = 4
 			return lrp
 		}
 
@@ -157,7 +157,7 @@ func (t crashTest) Test() {
 		It(fmt.Sprintf("increments the crash count to %d", t.Result.CrashCount), func() {
 			actualLRP := getActualLRP(actualLRPKey)
 			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
-			Ω(actualLRP.LastCrashedAt).Should(Equal(timeProvider.Now().UnixNano()))
+			Ω(actualLRP.Since).Should(Equal(timeProvider.Now().UnixNano()))
 		})
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {

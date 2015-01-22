@@ -234,18 +234,18 @@ func newRunningActualLRP(d models.DesiredLRP, cellID string, index int) models.A
 
 func newStartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:       models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(1, 1234),
-		State:              models.ActualLRPStateCrashed,
-		Since:              1138,
+		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		CrashCount:   1,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
 	}
 }
 
 func newUnstartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:       models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPCrashInfo: models.NewActualLRPCrashInfo(201, 1234),
-		State:              models.ActualLRPStateCrashed,
-		Since:              1138,
+		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		CrashCount:   201,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
 	}
 }

@@ -278,7 +278,7 @@ func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models
 	if latestChangeTime > CrashResetTimeout && lrp.State == models.ActualLRPStateRunning {
 		newCrashCount = 1
 	} else {
-		newCrashCount = lrp.ActualLRPCrashInfo.CrashCount + 1
+		newCrashCount = lrp.CrashCount + 1
 	}
 
 	crashInfo := models.NewActualLRPCrashInfo(newCrashCount, bbs.timeProvider.Now().UnixNano())
@@ -298,7 +298,7 @@ func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models
 
 	lrp.State = state
 	lrp.Since = bbs.timeProvider.Now().UnixNano()
-	lrp.ActualLRPCrashInfo = crashInfo
+	lrp.CrashCount = newCrashCount
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
 

@@ -135,17 +135,17 @@ var _ = Describe("LrpConvergence", func() {
 				twentyMinutesAgo := timeProvider.Now().Add(-20 * time.Minute).UnixNano()
 
 				crashedRecently := models.ActualLRP{
-					ActualLRPKey:       models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
-					ActualLRPCrashInfo: models.NewActualLRPCrashInfo(5, now),
-					State:              models.ActualLRPStateCrashed,
-					Since:              now,
+					ActualLRPKey: models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
+					CrashCount:   5,
+					State:        models.ActualLRPStateCrashed,
+					Since:        now,
 				}
 
 				crashedLongAgo := models.ActualLRP{
-					ActualLRPKey:       models.NewActualLRPKey(desiredLRP.ProcessGuid, 1, desiredLRP.Domain),
-					ActualLRPCrashInfo: models.NewActualLRPCrashInfo(5, twentyMinutesAgo),
-					State:              models.ActualLRPStateCrashed,
-					Since:              twentyMinutesAgo,
+					ActualLRPKey: models.NewActualLRPKey(desiredLRP.ProcessGuid, 1, desiredLRP.Domain),
+					CrashCount:   5,
+					State:        models.ActualLRPStateCrashed,
+					Since:        twentyMinutesAgo,
 				}
 
 				createRawActualLRP(crashedRecently)
