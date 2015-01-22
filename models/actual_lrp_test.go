@@ -422,6 +422,7 @@ var _ = Describe("ActualLRP", func() {
 				itValidatesPresenceOfTheLRPKey(&lrp)
 				itValidatesAbsenceOfTheContainerKey(&lrp)
 				itValidatesAbsenceOfNetInfo(&lrp)
+				itValidatesPresenceOfPlacementError(&lrp)
 			})
 
 			Context("when state is claimed", func() {
@@ -437,6 +438,7 @@ var _ = Describe("ActualLRP", func() {
 				itValidatesPresenceOfTheLRPKey(&lrp)
 				itValidatesPresenceOfTheContainerKey(&lrp)
 				itValidatesAbsenceOfNetInfo(&lrp)
+				itValidatesAbsenceOfPlacementError(&lrp)
 			})
 
 			Context("when state is running", func() {
@@ -453,6 +455,7 @@ var _ = Describe("ActualLRP", func() {
 				itValidatesPresenceOfTheLRPKey(&lrp)
 				itValidatesPresenceOfTheContainerKey(&lrp)
 				itValidatesPresenceOfNetInfo(&lrp)
+				itValidatesAbsenceOfPlacementError(&lrp)
 			})
 
 			Context("when state is not set", func() {
@@ -469,6 +472,7 @@ var _ = Describe("ActualLRP", func() {
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring("state"))
 				})
+
 			})
 
 			Context("when since is not set", func() {
@@ -499,6 +503,7 @@ var _ = Describe("ActualLRP", func() {
 				itValidatesPresenceOfTheLRPKey(&lrp)
 				itValidatesAbsenceOfTheContainerKey(&lrp)
 				itValidatesAbsenceOfNetInfo(&lrp)
+				itValidatesAbsenceOfPlacementError(&lrp)
 			})
 		})
 	})
@@ -616,6 +621,52 @@ func itValidatesAbsenceOfNetInfo(lrp *models.ActualLRP) {
 	Context("when net info is not set", func() {
 		BeforeEach(func() {
 			lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+}
+
+func itValidatesPresenceOfPlacementError(lrp *models.ActualLRP) {
+	Context("when placement error is set", func() {
+		BeforeEach(func() {
+			lrp.PlacementError = "insufficient capacity"
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Context("when placement error is not set", func() {
+		BeforeEach(func() {
+			lrp.PlacementError = ""
+		})
+
+		It("validate does not return an error", func() {
+			Ω(lrp.Validate()).ShouldNot(HaveOccurred())
+		})
+	})
+}
+
+func itValidatesAbsenceOfPlacementError(lrp *models.ActualLRP) {
+	Context("when placement error is set", func() {
+		BeforeEach(func() {
+			lrp.PlacementError = "insufficient capacity"
+		})
+
+		It("validate returns an error", func() {
+			err := lrp.Validate()
+			Ω(err).Should(HaveOccurred())
+			Ω(err.Error()).Should(ContainSubstring("placement error"))
+		})
+	})
+
+	Context("when placement error is not set", func() {
+		BeforeEach(func() {
+			lrp.PlacementError = ""
 		})
 
 		It("validate does not return an error", func() {

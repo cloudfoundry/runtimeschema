@@ -75,6 +75,7 @@ type RepBBS interface {
 	StartActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, lager.Logger) error
 	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, lager.Logger) error
 	CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error
+	FailLRP(lager.Logger, models.ActualLRPKey, string) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
@@ -109,6 +110,9 @@ type AuctioneerBBS interface {
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
+
+	//lrp
+	FailLRP(lager.Logger, models.ActualLRPKey, string) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS

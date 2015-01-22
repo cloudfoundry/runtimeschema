@@ -24,6 +24,8 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 
 	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")
+
+	ErrCannotFailLRP = errors.New("placement error cannot be set")
 )
 
 func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {

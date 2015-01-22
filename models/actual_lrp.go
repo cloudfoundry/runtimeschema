@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -184,9 +185,10 @@ type ActualLRP struct {
 	ActualLRPKey
 	ActualLRPContainerKey
 	ActualLRPNetInfo
-	CrashCount int            `json:"crash_count"`
-	State      ActualLRPState `json:"state"`
-	Since      int64          `json:"since"`
+	CrashCount     int            `json:"crash_count"`
+	State          ActualLRPState `json:"state"`
+	PlacementError string         `json:"placement_error,omitempty"`
+	Since          int64          `json:"since"`
 }
 
 type ActualLRPChange struct {
@@ -294,6 +296,9 @@ func (actual ActualLRP) Validate() error {
 		if !actual.ActualLRPNetInfo.Empty() {
 			validationError = validationError.Append(errors.New("net info cannot be set when state is claimed"))
 		}
+		if strings.TrimSpace(actual.PlacementError) != "" {
+			validationError = validationError.Append(errors.New("placement error cannot be set when state is claimed"))
+		}
 
 	case ActualLRPStateRunning:
 		if err := actual.ActualLRPContainerKey.Validate(); err != nil {
@@ -302,6 +307,9 @@ func (actual ActualLRP) Validate() error {
 		if err := actual.ActualLRPNetInfo.Validate(); err != nil {
 			validationError = validationError.Append(err)
 		}
+		if strings.TrimSpace(actual.PlacementError) != "" {
+			validationError = validationError.Append(errors.New("placement error cannot be set when state is running"))
+		}
 
 	case ActualLRPStateCrashed:
 		if !actual.ActualLRPContainerKey.Empty() {
@@ -309,6 +317,9 @@ func (actual ActualLRP) Validate() error {
 		}
 		if !actual.ActualLRPNetInfo.Empty() {
 			validationError = validationError.Append(errors.New("net info cannot be set when state is crashed"))
+		}
+		if strings.TrimSpace(actual.PlacementError) != "" {
+			validationError = validationError.Append(errors.New("placement error cannot be set when state is crashed"))
 		}
 
 	default:

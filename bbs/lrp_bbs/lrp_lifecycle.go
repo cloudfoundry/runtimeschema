@@ -165,6 +165,7 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	lrp.State = models.ActualLRPStateClaimed
 	lrp.ActualLRPContainerKey = containerKey
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+	lrp.PlacementError = ""
 
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -220,6 +221,7 @@ func (bbs *LRPBBS) StartActualLRP(
 	lrp.Since = bbs.timeProvider.Now().UnixNano()
 	lrp.ActualLRPContainerKey = containerKey
 	lrp.ActualLRPNetInfo = netInfo
+	lrp.PlacementError = ""
 
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -444,4 +446,47 @@ func (bbs *LRPBBS) requestLRPAuctionForLRPKey(key models.ActualLRPKey) error {
 
 	lrpStart := models.NewLRPStartRequest(desiredLRP, []uint{uint(key.Index)})
 	return bbs.requestLRPAuctions([]models.LRPStartRequest{lrpStart})
+}
+
+func (bbs *LRPBBS) FailLRP(
+	logger lager.Logger,
+	key models.ActualLRPKey,
+	errorMessage string,
+) error {
+	logger = logger.Session("set-placement-error-actual-lrp")
+	logger.Info("starting")
+	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
+	if err == bbserrors.ErrStoreResourceNotFound {
+		logger.Error("failed-actual-lrp-not-found", err)
+		return bbserrors.ErrCannotFailLRP
+	} else if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
+		return err
+	}
+
+	if lrp.ActualLRPKey == key && lrp.State != models.ActualLRPStateUnclaimed {
+		logger.Error("failed-to-set-placement-error", bbserrors.ErrCannotFailLRP, lager.Data{"lrp": lrp})
+		return bbserrors.ErrCannotFailLRP
+	}
+
+	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.PlacementError = errorMessage
+
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
+	}
+
+	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
+	})
+	if err != nil {
+		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return shared.ConvertStoreError(err)
+	}
+
+	logger.Info("succeeded")
+	return nil
 }

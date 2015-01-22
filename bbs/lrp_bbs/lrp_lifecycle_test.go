@@ -63,6 +63,7 @@ var _ = Describe("LrpLifecycle", func() {
 					Ω(actualLRP.Domain).Should(Equal(desiredLRP.Domain))
 					Ω(actualLRP.Index).Should(Equal(index))
 					Ω(actualLRP.State).Should(Equal(models.ActualLRPStateUnclaimed))
+					Ω(actualLRP.PlacementError).Should(BeEmpty())
 				})
 
 				Context("when able to fetch the auctioneer address", func() {
@@ -486,6 +487,19 @@ var _ = Describe("LrpLifecycle", func() {
 					})
 				})
 			})
+
+			Context("when there is a placement error", func() {
+				BeforeEach(func() {
+					err := bbs.FailLRP(logger, lrpKey, "insufficient resources")
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("should clear placement error", func() {
+					createdLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(createdLRP.PlacementError).Should(BeEmpty())
+				})
+			})
 		})
 
 		Context("when the actual LRP does not exist", func() {
@@ -604,6 +618,19 @@ var _ = Describe("LrpLifecycle", func() {
 
 					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateRunning))
 				})
+
+				Context("when there is a placement error", func() {
+					BeforeEach(func() {
+						err := bbs.FailLRP(logger, lrpKey, "found no compatible cells")
+						Ω(err).ShouldNot(HaveOccurred())
+					})
+
+					It("should clear placement error", func() {
+						createdLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						Ω(err).ShouldNot(HaveOccurred())
+						Ω(createdLRP.PlacementError).Should(BeEmpty())
+					})
+				})
 			})
 
 			Context("when the existing ActualLRP is Claimed", func() {
@@ -675,6 +702,7 @@ var _ = Describe("LrpLifecycle", func() {
 						Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateRunning))
 					})
 				})
+
 			})
 
 			Context("when the existing ActualLRP is Running", func() {
@@ -977,6 +1005,75 @@ var _ = Describe("LrpLifecycle", func() {
 				It("logs the error", func() {
 					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire-actual-lrp"))
 				})
+			})
+		})
+	})
+
+	Describe("FailLRP", func() {
+
+		Context("when lrp exists", func() {
+			var (
+				placementError string
+				instanceGuid   string
+				processGuid    string
+				index          int
+			)
+
+			BeforeEach(func() {
+				index = 1
+				placementError = "insufficient resources"
+				processGuid = "process-guid"
+				instanceGuid = "instance-guid"
+
+				desiredLRP := models.DesiredLRP{
+					ProcessGuid: processGuid,
+					Domain:      "the-domain",
+					Instances:   3,
+				}
+
+				errCreate := bbs.CreateActualLRP(desiredLRP, index, logger)
+				Ω(errCreate).ShouldNot(HaveOccurred())
+
+				lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				actualLRPKey = lrp.ActualLRPKey
+				containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+			})
+
+			Context("in unclaimed state", func() {
+				BeforeEach(func() {
+					err := bbs.FailLRP(logger, actualLRPKey, placementError)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("sets the placement error", func() {
+					lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(lrp.PlacementError).Should(Equal(placementError))
+				})
+
+			})
+
+			Context("not in unclaimed state", func() {
+				BeforeEach(func() {
+					claimErr := bbs.ClaimActualLRP(actualLRPKey, containerKey, logger)
+					Ω(claimErr).ShouldNot(HaveOccurred())
+				})
+
+				It("error", func() {
+					err := bbs.FailLRP(logger, actualLRPKey, placementError)
+					Ω(err).Should(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when lrp does not exist", func() {
+			It("error", func() {
+				err := bbs.FailLRP(logger, models.NewActualLRPKey("non-existent-process-guid", index, "tests"),
+					"non existent resources")
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(Equal(bbserrors.ErrCannotFailLRP))
 			})
 		})
 	})
