@@ -123,13 +123,6 @@ var _ = Describe("Cell Service Registry", func() {
 		})
 
 		Context("when there are none", func() {
-			BeforeEach(func() {
-				heartbeat1.Signal(os.Interrupt)
-				heartbeat2.Signal(os.Interrupt)
-				Eventually(heartbeat1.Wait()).Should(Receive(BeNil()))
-				Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
-			})
-
 			It("should return empty", func() {
 				reps, err := bbs.Cells()
 				Ω(err).ShouldNot(HaveOccurred())
