@@ -490,6 +490,9 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when there is a placement error", func() {
 				BeforeEach(func() {
+					lrpKey = createdLRP.ActualLRPKey
+					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+
 					err := bbs.FailLRP(logger, lrpKey, "insufficient resources")
 					Ω(err).ShouldNot(HaveOccurred())
 				})

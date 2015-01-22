@@ -66,8 +66,7 @@ var _ = Describe("Task", func() {
 				"ports": [53],
 				"log": false
 			}
-		],
-		"placement_error": "some-error"
+		]
 	}`
 
 		task = Task{
@@ -120,8 +119,7 @@ var _ = Describe("Task", func() {
 				},
 			},
 
-			Annotation:     `[{"anything": "you want!"}]... dude`,
-			PlacementError: "some-error",
+			Annotation: `[{"anything": "you want!"}]... dude`,
 		}
 	})
 
