@@ -10,6 +10,7 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -36,18 +37,25 @@ var _ = Describe("Cell Service Registry", func() {
 		firstCellPresence = models.NewCellPresence("first-rep", "lucid64", "1.2.3.4", "the-zone")
 		secondCellPresence = models.NewCellPresence("second-rep", ".Net", "4.5.6.7", "the-zone")
 
-		heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
-		heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
 	})
 
 	AfterEach(func() {
-		heartbeat1.Signal(os.Interrupt)
-		heartbeat2.Signal(os.Interrupt)
-		Eventually(heartbeat1.Wait()).Should(Receive(BeNil()))
-		Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
+		if heartbeat1 != nil {
+			heartbeat1.Signal(os.Interrupt)
+			Eventually(heartbeat1.Wait()).Should(Receive(BeNil()))
+		}
+
+		if heartbeat2 != nil {
+			heartbeat2.Signal(os.Interrupt)
+			Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
+		}
 	})
 
 	Describe("MaintainCellPresence", func() {
+		BeforeEach(func() {
+			heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+		})
+
 		It("should put /cell/CELL_ID in the store with a TTL", func() {
 			node, err := etcdClient.Get("/v1/cell/" + firstCellPresence.CellID)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -62,6 +70,10 @@ var _ = Describe("Cell Service Registry", func() {
 
 	Describe("CellById", func() {
 		Context("when the cell exists", func() {
+			BeforeEach(func() {
+				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+			})
+
 			It("returns the correct CellPresence", func() {
 				cellPresence, err := bbs.CellById(firstCellPresence.CellID)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -69,11 +81,21 @@ var _ = Describe("Cell Service Registry", func() {
 			})
 		})
 
-		Context("when the cell does not exist", func() {})
+		Context("when the cell does not exist", func() {
+			It("returns ErrStoreResourceNotFound", func() {
+				_, err := bbs.CellById(firstCellPresence.CellID)
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
 	})
 
 	Describe("Cells", func() {
 		Context("when there are available Cells", func() {
+			BeforeEach(func() {
+				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+				heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
+			})
+
 			It("should get from /v1/cell/", func() {
 				cellPresences, err := bbs.Cells()
 				Ω(err).ShouldNot(HaveOccurred())
@@ -137,28 +159,13 @@ var _ = Describe("Cell Service Registry", func() {
 			})
 
 			Context("when a cell presence appears", func() {
-				cellPresence := models.CellPresence{
-					CellID:     "some-cell",
-					Stack:      "some-stack",
-					RepAddress: "some-rep-address",
-					Zone:       "some-zone",
-				}
-
-				var (
-					process ifrit.Process
-				)
-
 				BeforeEach(func() {
-					process = ifrit.Invoke(bbs.NewCellHeartbeat(cellPresence, time.Second))
-				})
-
-				AfterEach(func() {
-					ginkgomon.Interrupt(process)
+					heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
 				})
 
 				It("receives a CellAppeared event", func() {
 					Eventually(receivedEvents).Should(Receive(Equal(CellAppearedEvent{
-						Presence: cellPresence,
+						Presence: firstCellPresence,
 					})))
 				})
 
@@ -183,12 +190,12 @@ var _ = Describe("Cell Service Registry", func() {
 
 					Context("when the cell then disappears", func() {
 						BeforeEach(func() {
-							ginkgomon.Interrupt(process)
+							ginkgomon.Interrupt(heartbeat1)
 						})
 
 						It("receives a CellDisappeared event", func() {
 							Eventually(receivedEvents).Should(Receive(Equal(CellDisappearedEvent{
-								Presence: cellPresence,
+								Presence: firstCellPresence,
 							})))
 						})
 					})
