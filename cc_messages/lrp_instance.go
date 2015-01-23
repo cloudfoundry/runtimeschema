@@ -5,6 +5,7 @@ type LRPInstanceState string
 const (
 	LRPInstanceStateStarting LRPInstanceState = "STARTING"
 	LRPInstanceStateRunning  LRPInstanceState = "RUNNING"
+	LRPInstanceStateFlapping LRPInstanceState = "FLAPPING"
 	LRPInstanceStateUnknown  LRPInstanceState = "UNKNOWN"
 )
 
