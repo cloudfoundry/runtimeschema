@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("LRP", func() {
+var _ = Describe("DesiredLRP Lifecycle", func() {
 	const cellID = "some-cell-id"
 
 	var lrp models.DesiredLRP

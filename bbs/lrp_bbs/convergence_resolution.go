@@ -3,9 +3,15 @@ package lrp_bbs
 import (
 	"sync"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/pivotal-golang/lager"
+)
+
+var (
+	lrpStartInstanceCounter = metric.Counter("LRPInstanceStartRequests")
+	lrpStopInstanceCounter  = metric.Counter("LRPInstanceStopRequests")
 )
 
 const ConvergencePoolSize = 20

@@ -8,6 +8,14 @@ import (
 
 type ActualLRPsByIndex map[int]ActualLRP
 
+func (actuals ActualLRPsByIndex) Slice() []ActualLRP {
+	aSlice := make([]ActualLRP, 0, len(actuals))
+	for _, actual := range actuals {
+		aSlice = append(aSlice, actual)
+	}
+	return aSlice
+}
+
 type ActualLRPsByProcessGuidAndIndex map[string]ActualLRPsByIndex
 
 func (set ActualLRPsByProcessGuidAndIndex) Add(actual ActualLRP) {
