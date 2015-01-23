@@ -160,38 +160,38 @@ type VeritasBBS interface {
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ReceptorBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewRepBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) RepBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewConvergerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) ConvergerBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewNsyncBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) NsyncBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewAuctioneerBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) AuctioneerBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewMetricsBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) MetricsBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewRouteEmitterBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) RouteEmitterBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
 func NewVeritasBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) VeritasBBS {
-	return NewBBS(store, timeProvider, logger)
+	return NewBBS(store, timeProvider, models.NewDefaultRestartCalculator(), logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, logger lager.Logger) *BBS {
+func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvider, calc models.RestartCalculator, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, timeProvider, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 
@@ -199,7 +199,7 @@ func NewBBS(store storeadapter.StoreAdapter, timeProvider timeprovider.TimeProvi
 
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, timeProvider, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(storeadapter.NewRetryable(store, timeProvider, retryPolicy), timeProvider, cb.NewCellClient(), auctioneerClient, services),
+		LRPBBS:      lrp_bbs.New(storeadapter.NewRetryable(store, timeProvider, retryPolicy), timeProvider, cb.NewCellClient(), auctioneerClient, services, calc),
 		ServicesBBS: services,
 		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, timeProvider, retryPolicy), timeProvider, cb.NewTaskClient(), auctioneerClient, services),
 		DomainBBS:   domain_bbs.New(store, logger),

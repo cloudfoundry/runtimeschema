@@ -261,35 +261,16 @@ func (bbs *LRPBBS) StartActualLRP(
 
 }
 
+const CrashResetTimeout = 5 * time.Minute
+
 func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error {
 	logger = logger.Session("crash-actual-lrp", lager.Data{"process-guid": key.ProcessGuid})
 	logger.Info("starting")
 
-	crashInfo, err := bbs.updateCrashState(key, containerKey, logger)
-	if err != nil {
-		logger.Error("failed-to-update-crash-state", err)
-		return err
-	}
-
-	if crashInfo.ShouldRestartImmediately() {
-		err := bbs.requestLRPAuctionForLRPKey(key)
-		if err != nil {
-			logger.Error("failed-to-request-auction", err)
-			return err
-		}
-	}
-
-	logger.Info("succeeded")
-	return nil
-}
-
-const CrashResetTimeout = 5 * time.Minute
-
-func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) (models.ActualLRPCrashInfo, error) {
 	lrp, storeIndex, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
-		return models.ActualLRPCrashInfo{}, err
+		return err
 	}
 
 	latestChangeTime := time.Duration(bbs.timeProvider.Now().UnixNano() - lrp.Since)
@@ -301,31 +282,28 @@ func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models
 		newCrashCount = lrp.CrashCount + 1
 	}
 
-	crashInfo := models.NewActualLRPCrashInfo(newCrashCount, bbs.timeProvider.Now().UnixNano())
-
-	var state models.ActualLRPState
-	if crashInfo.ShouldRestartImmediately() {
-		state = models.ActualLRPStateUnclaimed
-	} else {
-		state = models.ActualLRPStateCrashed
-	}
-
-	if !lrp.AllowsTransitionTo(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, state) {
-		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, state)
+	if !lrp.AllowsTransitionTo(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, models.ActualLRPStateCrashed) {
+		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, models.ActualLRPStateCrashed)
 		logger.Error("failed-to-transition-actual", err)
-		return crashInfo, err
+		return err
 	}
 
-	lrp.State = state
+	lrp.State = models.ActualLRPStateCrashed
 	lrp.Since = bbs.timeProvider.Now().UnixNano()
 	lrp.CrashCount = newCrashCount
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
 
+	var immediateRestart bool
+	if lrp.ShouldRestartImmediately(bbs.restartCalculator) {
+		lrp.State = models.ActualLRPStateUnclaimed
+		immediateRestart = true
+	}
+
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return crashInfo, err
+		return err
 	}
 
 	err = bbs.store.CompareAndSwapByIndex(storeIndex, storeadapter.StoreNode{
@@ -335,10 +313,19 @@ func (bbs *LRPBBS) updateCrashState(key models.ActualLRPKey, containerKey models
 
 	if err != nil {
 		logger.Error("failed-to-CAS-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return models.ActualLRPCrashInfo{}, shared.ConvertStoreError(err)
+		return shared.ConvertStoreError(err)
 	}
 
-	return crashInfo, nil
+	if immediateRestart {
+		err := bbs.requestLRPAuctionForLRPKey(key)
+		if err != nil {
+			logger.Error("failed-to-request-auction", err)
+			return err
+		}
+	}
+
+	logger.Info("succeeded")
+	return nil
 }
 
 func (bbs *LRPBBS) RemoveActualLRP(

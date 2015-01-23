@@ -47,13 +47,15 @@ func newCrashInfoBackoffTest(crashCount int, lastCrashed int64, waitTime time.Du
 func (test crashInfoBackoffTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d and the wait time is %s", test.CrashCount, test.WaitTime), func() {
 		It("should NOT restart before the expected wait time", func() {
+			calc := models.NewDefaultRestartCalculator()
 			currentTimestamp := test.Since + test.WaitTime.Nanoseconds() - time.Second.Nanoseconds()
-			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp), calc)).Should(BeFalse())
 		})
 
 		It("should restart after the expected wait time", func() {
+			calc := models.NewDefaultRestartCalculator()
 			currentTimestamp := test.Since + test.WaitTime.Nanoseconds()
-			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp))).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, currentTimestamp), calc)).Should(BeTrue())
 		})
 	})
 }
@@ -71,10 +73,11 @@ func newCrashInfoNeverStartTest(crashCount int, lastCrashed int64) crashInfoTest
 func (test crashInfoNeverStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should never restart regardless of the wait time", func() {
+			calc := models.NewDefaultRestartCalculator()
 			theFuture := test.Since + time.Hour.Nanoseconds()
-			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeFalse())
-			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since))).Should(BeFalse())
-			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, 0), calc)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since), calc)).Should(BeFalse())
+			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture), calc)).Should(BeFalse())
 		})
 	})
 }
@@ -92,10 +95,11 @@ func newCrashInfoAlwaysStartTest(crashCount int, lastCrashed int64) crashInfoTes
 func (test crashInfoAlwaysStartTest) Test() {
 	Context(fmt.Sprintf("when the crashCount is %d", test.CrashCount), func() {
 		It("should restart regardless of the wait time", func() {
+			calc := models.NewDefaultRestartCalculator()
 			theFuture := test.Since + time.Hour.Nanoseconds()
-			Ω(test.ShouldRestartCrash(time.Unix(0, 0))).Should(BeTrue())
-			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since))).Should(BeTrue())
-			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture))).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, 0), calc)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, test.Since), calc)).Should(BeTrue())
+			Ω(test.ShouldRestartCrash(time.Unix(0, theFuture), calc)).Should(BeTrue())
 		})
 	})
 }
@@ -124,12 +128,13 @@ var _ = Describe("ActualLRP", func() {
 			It("returns false", func() {
 				now := time.Now()
 				actual := defaultCrashedActual(0, now.UnixNano())
+				calc := models.NewDefaultRestartCalculator()
 				for _, state := range models.ActualLRPStates {
 					actual.State = state
 					if state == models.ActualLRPStateCrashed {
-						Ω(actual.ShouldRestartCrash(now)).Should(BeTrue(), "should restart CRASHED lrp")
+						Ω(actual.ShouldRestartCrash(now, calc)).Should(BeTrue(), "should restart CRASHED lrp")
 					} else {
-						Ω(actual.ShouldRestartCrash(now)).Should(BeFalse(), fmt.Sprintf("should not restart %s lrp", state))
+						Ω(actual.ShouldRestartCrash(now, calc)).Should(BeFalse(), fmt.Sprintf("should not restart %s lrp", state))
 					}
 				}
 			})

@@ -58,7 +58,7 @@ var _ = Describe("CalculateConvergence", func() {
 	})
 
 	JustBeforeEach(func() {
-		changes = lrp_bbs.CalculateConvergence(logger, fakeTimeProvider, input)
+		changes = lrp_bbs.CalculateConvergence(logger, fakeTimeProvider, models.NewDefaultRestartCalculator(), input)
 	})
 
 	Context("actual LRPs with missing cells", func() {

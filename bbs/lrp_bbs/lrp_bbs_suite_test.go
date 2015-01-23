@@ -61,7 +61,14 @@ var _ = BeforeEach(func() {
 
 	servicesBBS := services_bbs.New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
 
-	bbs = lrp_bbs.New(etcdClient, timeProvider, fakeCellClient, fakeAuctioneerClient, servicesBBS)
+	bbs = lrp_bbs.New(
+		etcdClient,
+		timeProvider,
+		fakeCellClient,
+		fakeAuctioneerClient,
+		servicesBBS,
+		models.NewDefaultRestartCalculator(),
+	)
 
 	domainBBS = domain_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 })

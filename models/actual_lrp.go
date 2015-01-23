@@ -150,38 +150,53 @@ func (key ActualLRPNetInfo) Validate() error {
 	return nil
 }
 
-const MaxCrashBackoff = 16 * time.Minute
+const DefaultCrashBackoffMinCount = 3
+const DefaultCrashBackoffMaxCount = 8
+const DefaultMaxCrashes = 200
 
-type ActualLRPCrashInfo struct {
-	CrashCount    int
-	LastCrashedAt int64
+const CrashBackoffMinDuration = 30 * time.Second
+
+func exponentialBackoff(exponent, max int) time.Duration {
+	if exponent > max {
+		exponent = max
+	}
+	return CrashBackoffMinDuration * time.Duration(powerOfTwo(exponent))
 }
 
-func NewActualLRPCrashInfo(crashCount int, lastCrashedAt int64) ActualLRPCrashInfo {
-	return ActualLRPCrashInfo{
-		CrashCount:    crashCount,
-		LastCrashedAt: lastCrashedAt,
+func powerOfTwo(pow int) int64 {
+	if pow < 0 {
+		panic("pow cannot be negative")
+	}
+	return 1 << uint(pow)
+}
+
+type RestartCalculator struct {
+	MinBackoffCount int
+	MaxBackoffCount int
+	MaxCrashes      int
+}
+
+func NewDefaultRestartCalculator() RestartCalculator {
+	return NewRestartCalculator(DefaultCrashBackoffMinCount, DefaultCrashBackoffMaxCount, DefaultMaxCrashes)
+}
+
+func NewRestartCalculator(minBackoffCount, maxBackoffCount, maxCrashes int) RestartCalculator {
+	return RestartCalculator{
+		MinBackoffCount: minBackoffCount,
+		MaxBackoffCount: maxBackoffCount,
+		MaxCrashes:      maxCrashes,
 	}
 }
 
-func (crashInfo ActualLRPCrashInfo) ShouldRestartImmediately() bool {
-	return crashInfo.CrashCount < CrashImmediateRestartThreshold
-}
-
-func (crashInfo ActualLRPCrashInfo) ShouldRestart(now int64) bool {
+func (r RestartCalculator) ShouldRestart(now, crashedAt int64, crashCount int) bool {
 	switch {
-	case crashInfo.ShouldRestartImmediately():
+	case crashCount < r.MinBackoffCount:
 		return true
 
-	case crashInfo.CrashCount < 8:
-		nextRestartTime := crashInfo.LastCrashedAt + exponentialBackoff(crashInfo.CrashCount)
+	case crashCount < r.MaxCrashes:
+		backoffDuration := exponentialBackoff(crashCount-r.MinBackoffCount, r.MaxBackoffCount-r.MinBackoffCount)
+		nextRestartTime := crashedAt + backoffDuration.Nanoseconds()
 		if nextRestartTime <= now {
-			return true
-		}
-
-	case crashInfo.CrashCount < 200:
-		threshhold := crashInfo.LastCrashedAt + MaxCrashBackoff.Nanoseconds()
-		if threshhold <= now {
 			return true
 		}
 	}
@@ -227,35 +242,20 @@ func (actual ActualLRP) CellIsMissing(cellSet CellSet) bool {
 	return !cellSet.HasCellID(actual.CellID)
 }
 
-func (actual ActualLRP) ShouldRestartImmediately() bool {
+func (actual ActualLRP) ShouldRestartImmediately(calc RestartCalculator) bool {
 	if actual.State != ActualLRPStateCrashed {
 		return false
 	}
 
-	return NewActualLRPCrashInfo(actual.CrashCount, actual.Since).ShouldRestartImmediately()
+	return calc.ShouldRestart(0, 0, actual.CrashCount)
 }
 
-func (actual ActualLRP) ShouldRestartCrash(now time.Time) bool {
+func (actual ActualLRP) ShouldRestartCrash(now time.Time, calc RestartCalculator) bool {
 	if actual.State != ActualLRPStateCrashed {
 		return false
 	}
 
-	return NewActualLRPCrashInfo(actual.CrashCount, actual.Since).ShouldRestart(now.UnixNano())
-}
-
-const CrashImmediateRestartThreshold = 3
-const CrashBackoffBaseDuration = 30 * time.Second
-
-func exponentialBackoff(crashCount int) int64 {
-	pow := crashCount - CrashImmediateRestartThreshold
-	return CrashBackoffBaseDuration.Nanoseconds() * powerOfTwo(pow)
-}
-
-func powerOfTwo(pow int) int64 {
-	if pow < 0 {
-		panic("pow cannot be negative")
-	}
-	return 1 << uint(pow)
+	return calc.ShouldRestart(now.UnixNano(), actual.Since, actual.CrashCount)
 }
 
 func (before ActualLRP) AllowsTransitionTo(lrpKey ActualLRPKey, containerKey ActualLRPContainerKey, newState ActualLRPState) bool {

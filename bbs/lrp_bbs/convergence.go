@@ -31,7 +31,7 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 		return
 	}
 
-	changes := CalculateConvergence(logger, bbs.timeProvider, convergenceInput)
+	changes := CalculateConvergence(logger, bbs.timeProvider, bbs.restartCalculator, convergenceInput)
 
 	bbs.ResolveConvergence(logger, convergenceInput.DesiredLRPs, changes)
 }

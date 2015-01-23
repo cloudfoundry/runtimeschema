@@ -17,7 +17,12 @@ type ConvergenceChanges struct {
 	StaleUnclaimedActualLRPs       []models.ActualLRP
 }
 
-func CalculateConvergence(logger lager.Logger, timeProvider timeprovider.TimeProvider, input *ConvergenceInput) *ConvergenceChanges {
+func CalculateConvergence(
+	logger lager.Logger,
+	timeProvider timeprovider.TimeProvider,
+	restartCalculator models.RestartCalculator,
+	input *ConvergenceInput,
+) *ConvergenceChanges {
 	sess := logger.Session("calculate-convergence")
 
 	sess.Info("start")
@@ -55,7 +60,7 @@ func CalculateConvergence(logger lager.Logger, timeProvider timeprovider.TimePro
 					continue
 				}
 
-				if actual.ShouldRestartCrash(now) {
+				if actual.ShouldRestartCrash(now, restartCalculator) {
 					pLog.Info("restart-crash", lager.Data{"index": i})
 					changes.RestartableCrashedActualLRPs = append(changes.RestartableCrashedActualLRPs, actual)
 					continue

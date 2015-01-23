@@ -2,38 +2,11 @@ package lrp_bbs
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
-	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
-
-type LRPBBS struct {
-	store            storeadapter.StoreAdapter
-	timeProvider     timeprovider.TimeProvider
-	cellClient       cb.CellClient
-	auctioneerClient cb.AuctioneerClient
-	services         *services_bbs.ServicesBBS
-}
-
-func New(
-	store storeadapter.StoreAdapter,
-	timeProvider timeprovider.TimeProvider,
-	cellClient cb.CellClient,
-	auctioneerClient cb.AuctioneerClient,
-	services *services_bbs.ServicesBBS,
-) *LRPBBS {
-	return &LRPBBS{
-		store:            store,
-		timeProvider:     timeProvider,
-		cellClient:       cellClient,
-		auctioneerClient: auctioneerClient,
-		services:         services,
-	}
-}
 
 func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 	logger = logger.Session("create-desired-lrp", lager.Data{"process-guid": lrp.ProcessGuid})
