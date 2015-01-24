@@ -76,6 +76,7 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 
 	go func() {
 		for event := range events {
+			logger.Debug("event-node", lager.Data{"event": event})
 			switch {
 			case event.Node != nil && event.PrevNode == nil:
 				logger.Debug("received-create")
@@ -83,7 +84,7 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 				var actualLRP models.ActualLRP
 				err := models.FromJSON(event.Node.Value, &actualLRP)
 				if err != nil {
-					logger.Error("failed-to-unmarshal-actual-lrp", err, lager.Data{"value": event.Node.Value})
+					logger.Error("failed-to-unmarshal-actual-lrp-on-create", err, lager.Data{"key": event.Node.Key, "value": event.Node.Value})
 					continue
 				}
 
@@ -91,32 +92,35 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 				created(actualLRP)
 
 			case event.Node != nil && event.PrevNode != nil:
-				logger.Debug("received-update")
+				logger.Debug("received-change")
 
 				var before models.ActualLRP
 				err := models.FromJSON(event.PrevNode.Value, &before)
 				if err != nil {
-					logger.Error("failed-to-unmarshal-actual-lrp", err, lager.Data{"value": event.PrevNode.Value})
+					logger.Error("failed-to-unmarshal-prev-actual-lrp-on-change", err, lager.Data{"key": event.PrevNode.Key, "value": event.PrevNode.Value})
 					continue
 				}
 
 				var after models.ActualLRP
 				err = models.FromJSON(event.Node.Value, &after)
 				if err != nil {
-					logger.Error("failed-to-unmarshal-actual-lrp", err, lager.Data{"value": event.Node.Value})
+					logger.Error("failed-to-unmarshal-actual-lrp-on-change", err, lager.Data{"key": event.Node.Key, "value": event.Node.Value})
 					continue
 				}
 
-				logger.Debug("sending-update", lager.Data{"before": before, "after": after})
+				logger.Debug("sending-change", lager.Data{"before": before, "after": after})
 				changed(models.ActualLRPChange{Before: before, After: after})
 
 			case event.PrevNode != nil && event.Node == nil:
 				logger.Debug("received-delete")
 
 				var actualLRP models.ActualLRP
+				if event.PrevNode.Dir {
+					continue
+				}
 				err := models.FromJSON(event.PrevNode.Value, &actualLRP)
 				if err != nil {
-					logger.Error("failed-to-unmarshal-actual-lrp", err, lager.Data{"value": event.PrevNode.Value})
+					logger.Error("failed-to-unmarshal-prev-actual-lrp-on-delete", err, lager.Data{"key": event.PrevNode.Key, "value": event.PrevNode.Value})
 				} else {
 					logger.Debug("sending-delete", lager.Data{"actual-lrp": actualLRP})
 					deleted(actualLRP)

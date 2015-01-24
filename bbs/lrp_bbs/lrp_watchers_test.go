@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("LrpWatchers", func() {
@@ -185,6 +186,25 @@ var _ = Describe("LrpWatchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
+		})
+
+		It("ignores delete events for directories", func() {
+			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(creates).Should(Receive())
+
+			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(deletes).Should(Receive(Equal(lrp)))
+
+			bbs.ConvergeLRPs(logger)
+
+			Consistently(logger).ShouldNot(Say("failed-to-unmarshal"))
 		})
 
 		Context("when the caller closes the stop channel", func() {
