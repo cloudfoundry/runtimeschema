@@ -1,7 +1,6 @@
 package lrp_bbs
 
 import (
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -16,16 +15,6 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		return err
-	}
-
-	actuals, err := bbs.ActualLRPsByProcessGuid(lrp.ProcessGuid)
-	if err != nil {
-		return err
-	}
-
-	if len(actuals) > 0 {
-		logger.Error("actual-lrps-already-exist-for-new-desired-lrp", nil)
-		return bbserrors.ErrStoreResourceExists
 	}
 
 	err = bbs.store.Create(storeadapter.StoreNode{
