@@ -295,7 +295,7 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
 
 	var immediateRestart bool
-	if lrp.ShouldRestartImmediately(bbs.restartCalculator) {
+	if lrp.ShouldRestartImmediately(models.NewDefaultRestartCalculator()) {
 		lrp.State = models.ActualLRPStateUnclaimed
 		immediateRestart = true
 	}

@@ -2,6 +2,7 @@ package lrp_bbs
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -31,7 +32,7 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 		return
 	}
 
-	changes := CalculateConvergence(logger, bbs.clock, bbs.restartCalculator, convergenceInput)
+	changes := CalculateConvergence(logger, bbs.clock, models.NewDefaultRestartCalculator(), convergenceInput)
 
 	bbs.ResolveConvergence(logger, convergenceInput.DesiredLRPs, changes)
 }

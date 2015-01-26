@@ -67,7 +67,6 @@ var _ = BeforeEach(func() {
 		fakeCellClient,
 		fakeAuctioneerClient,
 		servicesBBS,
-		models.NewDefaultRestartCalculator(),
 	)
 
 	domainBBS = domain_bbs.New(etcdClient, lagertest.NewTestLogger("test"))

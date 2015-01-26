@@ -2,14 +2,13 @@ package bbs_test
 
 import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
 )
 
 var _ = Describe("BBS", func() {
 	It("should compile and be able to construct and return each BBS", func() {
-		NewBBS(etcdClient, clock, models.NewDefaultRestartCalculator(), logger)
+		NewBBS(etcdClient, clock, logger)
 		NewRepBBS(etcdClient, clock, logger)
 		NewConvergerBBS(etcdClient, clock, logger)
 		NewNsyncBBS(etcdClient, clock, logger)
