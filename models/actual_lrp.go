@@ -2,6 +2,8 @@ package models
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"strings"
 	"time"
 )
@@ -150,9 +152,9 @@ func (key ActualLRPNetInfo) Validate() error {
 	return nil
 }
 
-const DefaultCrashBackoffMinCount = 3
-const DefaultCrashBackoffMaxCount = 8
-const DefaultMaxCrashes = 200
+const DefaultImmediateRestarts = 3
+const DefaultMaxBackoffDuration = 16 * time.Minute
+const DefaultMaxRestarts = 200
 
 const CrashBackoffMinDuration = 30 * time.Second
 
@@ -170,31 +172,55 @@ func powerOfTwo(pow int) int64 {
 	return 1 << uint(pow)
 }
 
+func calculateMaxBackoffCount(maxDuration time.Duration) int {
+	total := maxDuration / CrashBackoffMinDuration
+	return int(math.Logb(float64(total)))
+}
+
 type RestartCalculator struct {
-	MinBackoffCount int
-	MaxBackoffCount int
-	MaxCrashes      int
+	ImmediateRestarts  int           `json:"immediate_restarts"`
+	MaxBackoffCount    int           `json:"max_backoff_count"`
+	MaxBackoffDuration time.Duration `json:"max_backoff_duration"`
+	MaxRestartAttempts int           `json:"max_restart_attempts"`
 }
 
 func NewDefaultRestartCalculator() RestartCalculator {
-	return NewRestartCalculator(DefaultCrashBackoffMinCount, DefaultCrashBackoffMaxCount, DefaultMaxCrashes)
+	return NewRestartCalculator(DefaultImmediateRestarts, DefaultMaxBackoffDuration, DefaultMaxRestarts)
 }
 
-func NewRestartCalculator(minBackoffCount, maxBackoffCount, maxCrashes int) RestartCalculator {
+func NewRestartCalculator(immediateRestarts int, maxBackoffDuration time.Duration, maxRestarts int) RestartCalculator {
 	return RestartCalculator{
-		MinBackoffCount: minBackoffCount,
-		MaxBackoffCount: maxBackoffCount,
-		MaxCrashes:      maxCrashes,
+		ImmediateRestarts:  immediateRestarts,
+		MaxBackoffDuration: maxBackoffDuration,
+		MaxBackoffCount:    calculateMaxBackoffCount(maxBackoffDuration),
+		MaxRestartAttempts: maxRestarts,
 	}
+}
+
+func (r RestartCalculator) Validate() error {
+	var validationError ValidationError
+	if r.MaxBackoffDuration < CrashBackoffMinDuration {
+		err := fmt.Errorf("MaxBackoffDuration '%s' must be larger than CrashBackoffMinDuration '%s'", r.MaxBackoffDuration, CrashBackoffMinDuration)
+		validationError = validationError.Append(err)
+	}
+
+	if !validationError.Empty() {
+		return validationError
+	}
+
+	return nil
 }
 
 func (r RestartCalculator) ShouldRestart(now, crashedAt int64, crashCount int) bool {
 	switch {
-	case crashCount < r.MinBackoffCount:
+	case crashCount < r.ImmediateRestarts:
 		return true
 
-	case crashCount < r.MaxCrashes:
-		backoffDuration := exponentialBackoff(crashCount-r.MinBackoffCount, r.MaxBackoffCount-r.MinBackoffCount)
+	case crashCount < r.MaxRestartAttempts:
+		backoffDuration := exponentialBackoff(crashCount-r.ImmediateRestarts, r.MaxBackoffCount)
+		if backoffDuration > r.MaxBackoffDuration {
+			backoffDuration = r.MaxBackoffDuration
+		}
 		nextRestartTime := crashedAt + backoffDuration.Nanoseconds()
 		if nextRestartTime <= now {
 			return true

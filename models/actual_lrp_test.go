@@ -104,6 +104,35 @@ func (test crashInfoAlwaysStartTest) Test() {
 	})
 }
 
+func testBackoffCount(maxBackoffDuration time.Duration, expectedBackoffCount int) {
+	It(fmt.Sprintf("sets the MaxBackoffCount to %d based on the MaxBackoffDuration %s and the CrashBackoffMinDuration", expectedBackoffCount, maxBackoffDuration), func() {
+		calc := models.NewRestartCalculator(models.DefaultImmediateRestarts, maxBackoffDuration, models.DefaultMaxRestarts)
+		Ω(calc.MaxBackoffCount).Should(Equal(expectedBackoffCount))
+	})
+}
+
+var _ = Describe("RestartCalculator", func() {
+
+	Describe("NewRestartCalculator", func() {
+		testBackoffCount(20*time.Minute, 5)
+		testBackoffCount(16*time.Minute, 5)
+		testBackoffCount(8*time.Minute, 4)
+		testBackoffCount(models.CrashBackoffMinDuration, 0)
+	})
+
+	Describe("Validate", func() {
+		It("the default values are valid", func() {
+			calc := models.NewDefaultRestartCalculator()
+			Ω(calc.Validate()).ShouldNot(HaveOccurred())
+		})
+
+		It("invalid when MaxBackoffDuration is lower than the CrashBackoffMinDuration", func() {
+			calc := models.NewRestartCalculator(models.DefaultImmediateRestarts, models.CrashBackoffMinDuration-time.Second, models.DefaultMaxRestarts)
+			Ω(calc.Validate()).Should(HaveOccurred())
+		})
+	})
+})
+
 var _ = Describe("ActualLRP", func() {
 	Describe("ShouldRestartCrash", func() {
 		Context("when the lpr is CRASHED", func() {
