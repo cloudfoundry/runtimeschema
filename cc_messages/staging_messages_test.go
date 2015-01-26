@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/cc_messages"
+	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -152,9 +154,12 @@ var _ = Describe("StagingMessages", func() {
 
 		Context("with an error", func() {
 			It("generates valid JSON with the error", func() {
-				stagingResponseForCC.Error = "FAIL, missing camels!"
+				stagingResponseForCC.Error = &StagingError{
+					Id:      "StagingError",
+					Message: "FAIL, missing camels!",
+				}
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
-					"error": "FAIL, missing camels!",
+					"error": { "id": "StagingError", "message": "FAIL, missing camels!" },
 
 					"app_id": "the-app-id",
 					"buildpack_key": "the-buildpack-key",
@@ -192,9 +197,13 @@ var _ = Describe("StagingMessages", func() {
 
 		Context("with an error", func() {
 			It("generates valid JSON with the error", func() {
-				stagingResponseForCC.Error = "FAIL, missing camels!"
+				stagingResponseForCC.Error = &StagingError{
+					Id:      "StagingError",
+					Message: "FAIL, missing camels!",
+				}
+
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
-					"error": "FAIL, missing camels!",
+					"error": { "id": "StagingError", "message": "FAIL, missing camels!" },
 
 					"app_id": "the-app-id",
 					"execution_metadata": "the-execution-metadata",
@@ -225,6 +234,31 @@ var _ = Describe("StagingMessages", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(stopStagingRequest).Should(Equal(stopStagingRequestFromCC))
+		})
+	})
+
+	Describe("SanitizeErrorMessage", func() {
+		Context("when the message is InsufficientResources", func() {
+			It("returns a InsufficientResources", func() {
+				stagingErr := SanitizeErrorMessage(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE)
+				Ω(stagingErr.Id).Should(Equal("InsufficientResources"))
+				Ω(stagingErr.Message).Should(Equal(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE))
+			})
+		})
+		Context("when the message is NoCompatibleCell", func() {
+			It("returns a NoCompatibleCell", func() {
+				stagingErr := SanitizeErrorMessage(diego_errors.CELL_MISMATCH_MESSAGE)
+				Ω(stagingErr.Id).Should(Equal("NoCompatibleCell"))
+				Ω(stagingErr.Message).Should(Equal(diego_errors.CELL_MISMATCH_MESSAGE))
+			})
+		})
+
+		Context("any other message", func() {
+			It("returns a StagingError", func() {
+				stagingErr := SanitizeErrorMessage("some-error")
+				Ω(stagingErr.Id).Should(Equal("StagingError"))
+				Ω(stagingErr.Message).Should(Equal("some-error"))
+			})
 		})
 	})
 })

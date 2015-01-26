@@ -1,6 +1,12 @@
 package cc_messages
 
 import "github.com/cloudfoundry-incubator/runtime-schema/models"
+import "github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
+
+type StagingError struct {
+	Id      string `json:"id"`
+	Message string `json:"message"`
+}
 
 type DockerStagingRequestFromCC struct {
 	AppId           string                     `json:"app_id"`
@@ -20,7 +26,7 @@ type DockerStagingResponseForCC struct {
 	TaskId               string            `json:"task_id"`
 	ExecutionMetadata    string            `json:"execution_metadata"`
 	DetectedStartCommand map[string]string `json:"detected_start_command"`
-	Error                string            `json:"error,omitempty"`
+	Error                *StagingError     `json:"error,omitempty"`
 }
 
 type StagingRequestFromCC struct {
@@ -55,10 +61,25 @@ type StagingResponseForCC struct {
 	DetectedBuildpack    string            `json:"detected_buildpack"`
 	ExecutionMetadata    string            `json:"execution_metadata"`
 	DetectedStartCommand map[string]string `json:"detected_start_command"`
-	Error                string            `json:"error,omitempty"`
+	Error                *StagingError     `json:"error,omitempty"`
 }
 
 type StopStagingRequestFromCC struct {
 	AppId  string `json:"app_id"`
 	TaskId string `json:"task_id"`
+}
+
+func SanitizeErrorMessage(message string) *StagingError {
+	id := "StagingError"
+	switch message {
+	case diego_errors.INSUFFICIENT_RESOURCES_MESSAGE:
+		id = "InsufficientResources"
+	case diego_errors.CELL_MISMATCH_MESSAGE:
+		id = "NoCompatibleCell"
+	}
+
+	return &StagingError{
+		Id:      id,
+		Message: message,
+	}
 }
