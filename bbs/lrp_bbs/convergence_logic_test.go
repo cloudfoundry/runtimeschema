@@ -5,9 +5,9 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager/lagertest"
 )
 
@@ -44,21 +44,21 @@ var _ = Describe("CalculateConvergence", func() {
 	}
 
 	var (
-		logger           *lagertest.TestLogger
-		fakeTimeProvider *faketimeprovider.FakeTimeProvider
-		input            *lrp_bbs.ConvergenceInput
+		logger    *lagertest.TestLogger
+		fakeClock *fakeclock.FakeClock
+		input     *lrp_bbs.ConvergenceInput
 
 		changes *lrp_bbs.ConvergenceChanges
 	)
 
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("test")
-		fakeTimeProvider = faketimeprovider.New(time.Unix(0, 1138))
+		fakeClock = fakeclock.NewFakeClock(time.Unix(0, 1138))
 		input = nil
 	})
 
 	JustBeforeEach(func() {
-		changes = lrp_bbs.CalculateConvergence(logger, fakeTimeProvider, models.NewDefaultRestartCalculator(), input)
+		changes = lrp_bbs.CalculateConvergence(logger, fakeClock, models.NewDefaultRestartCalculator(), input)
 	})
 
 	Context("actual LRPs with missing cells", func() {

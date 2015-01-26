@@ -81,7 +81,7 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 			desiredLRP.Domain,
 		),
 		State: models.ActualLRPStateUnclaimed,
-		Since: bbs.timeProvider.Now().UnixNano(),
+		Since: bbs.clock.Now().UnixNano(),
 	}
 
 	err = bbs.createRawActualLRP(&actualLRP, logger)
@@ -106,7 +106,7 @@ func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.Actua
 		return models.ActualLRP{}, bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.State = models.ActualLRPStateUnclaimed
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
@@ -179,7 +179,7 @@ func (bbs *LRPBBS) ClaimActualLRP(
 		return bbserrors.ErrActualLRPCannotBeClaimed
 	}
 
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.State = models.ActualLRPStateClaimed
 	lrp.ActualLRPContainerKey = containerKey
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
@@ -236,7 +236,7 @@ func (bbs *LRPBBS) StartActualLRP(
 	}
 
 	lrp.State = models.ActualLRPStateRunning
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.ActualLRPContainerKey = containerKey
 	lrp.ActualLRPNetInfo = netInfo
 	lrp.PlacementError = ""
@@ -273,7 +273,7 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 		return err
 	}
 
-	latestChangeTime := time.Duration(bbs.timeProvider.Now().UnixNano() - lrp.Since)
+	latestChangeTime := time.Duration(bbs.clock.Now().UnixNano() - lrp.Since)
 
 	var newCrashCount int
 	if latestChangeTime > CrashResetTimeout && lrp.State == models.ActualLRPStateRunning {
@@ -289,7 +289,7 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 	}
 
 	lrp.State = models.ActualLRPStateCrashed
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.CrashCount = newCrashCount
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
@@ -429,7 +429,7 @@ func (bbs *LRPBBS) newRunningActualLRP(
 		ActualLRPKey:          key,
 		ActualLRPContainerKey: containerKey,
 		ActualLRPNetInfo:      netInfo,
-		Since:                 bbs.timeProvider.Now().UnixNano(),
+		Since:                 bbs.clock.Now().UnixNano(),
 		State:                 models.ActualLRPStateRunning,
 	}
 }
@@ -474,7 +474,7 @@ func (bbs *LRPBBS) FailLRP(
 		return bbserrors.ErrCannotFailLRP
 	}
 
-	lrp.Since = bbs.timeProvider.Now().UnixNano()
+	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.PlacementError = errorMessage
 
 	value, err := models.ToJSON(lrp)

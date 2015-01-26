@@ -351,8 +351,8 @@ var _ = Describe("LrpLifecycle", func() {
 						lrpKey = createdLRP.ActualLRPKey
 						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
 
-						previousTime = timeProvider.Now().UnixNano()
-						timeProvider.IncrementBySeconds(1)
+						previousTime = clock.Now().UnixNano()
+						clock.IncrementBySeconds(1)
 					})
 
 					It("does not return an error", func() {
@@ -754,8 +754,8 @@ var _ = Describe("LrpLifecycle", func() {
 							containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
 							netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 
-							previousTime = timeProvider.Now().UnixNano()
-							timeProvider.IncrementBySeconds(1)
+							previousTime = clock.Now().UnixNano()
+							clock.IncrementBySeconds(1)
 						})
 
 						It("does not update the timestamp of the persisted actual lrp", func() {

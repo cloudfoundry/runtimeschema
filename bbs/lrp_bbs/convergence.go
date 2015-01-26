@@ -20,9 +20,9 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 	convergeLRPRunsCounter.Increment()
 
 	// make sure to get funcy here otherwise the time will be precomputed
-	convergeStart := bbs.timeProvider.Now()
+	convergeStart := bbs.clock.Now()
 	defer func() {
-		convergeLRPDuration.Send(bbs.timeProvider.Now().Sub(convergeStart))
+		convergeLRPDuration.Send(bbs.clock.Now().Sub(convergeStart))
 	}()
 
 	convergenceInput, err := bbs.GatherAndPruneLRPConvergenceInput(logger)
@@ -31,7 +31,7 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 		return
 	}
 
-	changes := CalculateConvergence(logger, bbs.timeProvider, bbs.restartCalculator, convergenceInput)
+	changes := CalculateConvergence(logger, bbs.clock, bbs.restartCalculator, convergenceInput)
 
 	bbs.ResolveConvergence(logger, convergenceInput.DesiredLRPs, changes)
 }

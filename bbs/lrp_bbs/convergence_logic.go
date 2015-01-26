@@ -2,7 +2,7 @@ package lrp_bbs
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider"
+	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -19,7 +19,7 @@ type ConvergenceChanges struct {
 
 func CalculateConvergence(
 	logger lager.Logger,
-	timeProvider timeprovider.TimeProvider,
+	clock clock.Clock,
 	restartCalculator models.RestartCalculator,
 	input *ConvergenceInput,
 ) *ConvergenceChanges {
@@ -30,7 +30,7 @@ func CalculateConvergence(
 
 	changes := &ConvergenceChanges{}
 
-	now := timeProvider.Now()
+	now := clock.Now()
 
 	for processGuid, _ := range input.AllProcessGuids {
 		pLog := sess.WithData(lager.Data{

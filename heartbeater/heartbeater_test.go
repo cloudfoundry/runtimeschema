@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
-	"github.com/cloudfoundry/gunk/timeprovider"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/etcdstoreadapter"
+	"github.com/pivotal-golang/clock"
+	"github.com/pivotal-golang/clock/fakeclock"
 
 	"github.com/pivotal-golang/lager"
 	"github.com/pivotal-golang/lager/lagertest"
@@ -33,14 +33,14 @@ var _ = Describe("Heartbeater", func() {
 		heart     ifrit.Runner
 		logger    lager.Logger
 
-		timeProvider      timeprovider.TimeProvider
+		heartbeatClock    clock.Clock
 		heartbeatInterval time.Duration
 
 		expectedHeartbeatNode storeadapter.StoreNode
 	)
 
 	BeforeEach(func() {
-		timeProvider = timeprovider.NewTimeProvider()
+		heartbeatClock = clock.NewClock()
 
 		etcdRunner.Stop()
 		etcdRunner.Start()
@@ -58,7 +58,7 @@ var _ = Describe("Heartbeater", func() {
 			TTL:   1,
 		}
 
-		heart = heartbeater.New(etcdClient, timeProvider, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
+		heart = heartbeater.New(etcdClient, heartbeatClock, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
 	})
 
 	AfterEach(func() {
@@ -253,17 +253,17 @@ var _ = Describe("Heartbeater", func() {
 		})
 
 		Context("and the other maintainer goes away", func() {
-			var fakeTimeProvider *faketimeprovider.FakeTimeProvider
+			var fakeClock *fakeclock.FakeClock
 			var done chan struct{}
 
 			BeforeEach(func() {
-				fakeTimeProvider = faketimeprovider.New(time.Now())
-				timeProvider = fakeTimeProvider
+				fakeClock = fakeclock.NewFakeClock(time.Now())
+				heartbeatClock = fakeClock
 
 				heartbeatInterval = time.Minute
 				expectedHeartbeatNode.TTL = 120
 
-				heart = heartbeater.New(etcdClient, timeProvider, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
+				heart = heartbeater.New(etcdClient, heartbeatClock, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
 
 				done = make(chan struct{})
 				go func(etcdClient storeadapter.StoreAdapter) {
@@ -278,9 +278,9 @@ var _ = Describe("Heartbeater", func() {
 
 			It("registers an interval timer as a fallback", func() {
 				<-done
-				Eventually(fakeTimeProvider.WatcherCount).Should(Equal(1))
+				Eventually(fakeClock.WatcherCount).Should(Equal(1))
 
-				fakeTimeProvider.Increment(heartbeatInterval)
+				fakeClock.Increment(heartbeatInterval)
 				Eventually(matchHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
 			})
 

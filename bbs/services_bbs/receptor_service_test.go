@@ -13,12 +13,12 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
+	"github.com/pivotal-golang/clock/fakeclock"
 )
 
 var _ = Describe("Receptor Service Registry", func() {
 	var (
-		timeProvider *faketimeprovider.FakeTimeProvider
+		clock *fakeclock.FakeClock
 
 		bbs                    *ServicesBBS
 		interval               = time.Second
@@ -29,8 +29,8 @@ var _ = Describe("Receptor Service Registry", func() {
 	)
 
 	BeforeEach(func() {
-		timeProvider = faketimeprovider.New(time.Now())
-		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
+		clock = fakeclock.NewFakeClock(time.Now())
+		bbs = New(etcdClient, clock, lagertest.NewTestLogger("test"))
 
 		firstReceptorPresence = models.NewReceptorPresence("first-receptor", "first-receptor-url")
 		secondReceptorPresence = models.NewReceptorPresence("second-receptor", "second-receptor-url")

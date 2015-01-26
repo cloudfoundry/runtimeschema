@@ -3,16 +3,16 @@ package lrp_bbs_test
 import (
 	"time"
 
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
+	"github.com/pivotal-golang/clock/fakeclock"
 )
 
-type AdvancingFakeTimeProvider struct {
-	*faketimeprovider.FakeTimeProvider
+type AdvancingFakeClock struct {
+	*fakeclock.FakeClock
 	IntervalToAdvance time.Duration
 }
 
-func (p *AdvancingFakeTimeProvider) Now() time.Time {
-	timeToReturn := p.FakeTimeProvider.Now()
-	p.FakeTimeProvider.Increment(p.IntervalToAdvance)
+func (p *AdvancingFakeClock) Now() time.Time {
+	timeToReturn := p.FakeClock.Now()
+	p.FakeClock.Increment(p.IntervalToAdvance)
 	return timeToReturn
 }

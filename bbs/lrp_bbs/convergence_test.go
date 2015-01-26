@@ -44,7 +44,7 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("reports the duration that it took to converge", func() {
-			timeProvider.IntervalToAdvance = 500 * time.Nanosecond
+			clock.IntervalToAdvance = 500 * time.Nanosecond
 			bbs.ConvergeLRPs(logger)
 
 			reportedDuration := sender.GetValue("ConvergenceLRPDuration")
@@ -108,7 +108,7 @@ var _ = Describe("LrpConvergence", func() {
 					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", cellId),
 					ActualLRPNetInfo:      defaultNetInfo(),
 					State:                 models.ActualLRPStateRunning,
-					Since:                 timeProvider.Now().Add(-time.Minute).UnixNano(),
+					Since:                 clock.Now().Add(-time.Minute).UnixNano(),
 				}
 				createRawActualLRP(actualLRP)
 			})
@@ -131,8 +131,8 @@ var _ = Describe("LrpConvergence", func() {
 			const missingIndex = 0
 
 			BeforeEach(func() {
-				now := timeProvider.Now().UnixNano()
-				twentyMinutesAgo := timeProvider.Now().Add(-20 * time.Minute).UnixNano()
+				now := clock.Now().UnixNano()
+				twentyMinutesAgo := clock.Now().Add(-20 * time.Minute).UnixNano()
 
 				crashedRecently := models.ActualLRP{
 					ActualLRPKey: models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
@@ -678,7 +678,7 @@ var _ = Describe("LrpConvergence", func() {
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
 			registerAuctioneer(auctioneerPresence)
 
-			timeProvider.Increment(models.StaleUnclaimedActualLRPDuration + 1*time.Second)
+			clock.Increment(models.StaleUnclaimedActualLRPDuration + 1*time.Second)
 		})
 
 		It("logs", func() {

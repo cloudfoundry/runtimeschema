@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager/lagertest"
 
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -15,13 +15,13 @@ import (
 
 var _ = Context("Getting Generic Services", func() {
 	var (
-		timeProvider *faketimeprovider.FakeTimeProvider
-		bbs          *ServicesBBS
+		clock *fakeclock.FakeClock
+		bbs   *ServicesBBS
 	)
 
 	BeforeEach(func() {
-		timeProvider = faketimeprovider.New(time.Now())
-		bbs = New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
+		clock = fakeclock.NewFakeClock(time.Now())
+		bbs = New(etcdClient, clock, lagertest.NewTestLogger("test"))
 	})
 
 	Describe("ServiceRegistrations", func() {

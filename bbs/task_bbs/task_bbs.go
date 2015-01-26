@@ -3,13 +3,13 @@ package task_bbs
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
-	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/clock"
 )
 
 type TaskBBS struct {
 	store            storeadapter.StoreAdapter
-	timeProvider     timeprovider.TimeProvider
+	clock            clock.Clock
 	taskClient       cb.TaskClient
 	auctioneerClient cb.AuctioneerClient
 	services         *services_bbs.ServicesBBS
@@ -17,14 +17,14 @@ type TaskBBS struct {
 
 func New(
 	store storeadapter.StoreAdapter,
-	timeProvider timeprovider.TimeProvider,
+	clock clock.Clock,
 	taskClient cb.TaskClient,
 	auctioneerClient cb.AuctioneerClient,
 	services *services_bbs.ServicesBBS,
 ) *TaskBBS {
 	return &TaskBBS{
 		store:            store,
-		timeProvider:     timeProvider,
+		clock:            clock,
 		taskClient:       taskClient,
 		auctioneerClient: auctioneerClient,
 		services:         services,

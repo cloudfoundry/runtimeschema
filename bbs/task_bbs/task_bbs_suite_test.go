@@ -6,12 +6,12 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager/lagertest"
 
 	"testing"
@@ -24,7 +24,7 @@ var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
 var fakeTaskClient *cbfakes.FakeTaskClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
-var timeProvider *faketimeprovider.FakeTimeProvider
+var clock *fakeclock.FakeClock
 var bbs *task_bbs.TaskBBS
 
 var dummyAction = &models.RunAction{
@@ -54,9 +54,9 @@ var _ = BeforeEach(func() {
 
 	fakeTaskClient = new(cbfakes.FakeTaskClient)
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
-	timeProvider = faketimeprovider.New(time.Unix(1238, 0))
-	servicesBBS = services_bbs.New(etcdClient, timeProvider, logger)
-	bbs = task_bbs.New(etcdClient, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
+	clock = fakeclock.NewFakeClock(time.Unix(1238, 0))
+	servicesBBS = services_bbs.New(etcdClient, clock, logger)
+	bbs = task_bbs.New(etcdClient, clock, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
 })
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {

@@ -9,12 +9,12 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	cbfakes "github.com/cloudfoundry-incubator/runtime-schema/cb/fakes"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/timeprovider/faketimeprovider"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager"
 	"github.com/pivotal-golang/lager/lagertest"
 
@@ -26,7 +26,7 @@ var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var bbs *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
-var timeProvider *AdvancingFakeTimeProvider
+var clock *AdvancingFakeClock
 var fakeCellClient *cbfakes.FakeCellClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
 
@@ -53,17 +53,17 @@ var _ = BeforeEach(func() {
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
 	fakeAuctioneerClient = &cbfakes.FakeAuctioneerClient{}
-	timeProvider = &AdvancingFakeTimeProvider{
-		FakeTimeProvider: faketimeprovider.New(time.Unix(0, 1138)),
+	clock = &AdvancingFakeClock{
+		FakeClock: fakeclock.NewFakeClock(time.Unix(0, 1138)),
 	}
 
 	logger = lagertest.NewTestLogger("test")
 
-	servicesBBS := services_bbs.New(etcdClient, timeProvider, lagertest.NewTestLogger("test"))
+	servicesBBS := services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
 
 	bbs = lrp_bbs.New(
 		etcdClient,
-		timeProvider,
+		clock,
 		fakeCellClient,
 		fakeAuctioneerClient,
 		servicesBBS,

@@ -140,7 +140,7 @@ func (t crashTest) Test() {
 		})
 
 		JustBeforeEach(func() {
-			timeProvider.Increment(600)
+			clock.Increment(600)
 			crashErr = bbs.CrashActualLRP(actualLRPKey, containerKey, logger)
 		})
 
@@ -157,7 +157,7 @@ func (t crashTest) Test() {
 		It(fmt.Sprintf("increments the crash count to %d", t.Result.CrashCount), func() {
 			actualLRP := getActualLRP(actualLRPKey)
 			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
-			Ω(actualLRP.Since).Should(Equal(timeProvider.Now().UnixNano()))
+			Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
 		})
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {
@@ -193,7 +193,7 @@ func lrpForState(state models.ActualLRPState, timeInState time.Duration) models.
 	lrp := models.ActualLRP{
 		ActualLRPKey: actualLRPKey,
 		State:        state,
-		Since:        timeProvider.Now().Add(-timeInState).UnixNano(),
+		Since:        clock.Now().Add(-timeInState).UnixNano(),
 	}
 
 	switch state {

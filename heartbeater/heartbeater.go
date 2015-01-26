@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/cloudfoundry/gunk/timeprovider"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -23,24 +23,24 @@ type Heartbeater struct {
 	interval time.Duration
 	logger   lager.Logger
 
-	timeProvider timeprovider.TimeProvider
+	clock clock.Clock
 }
 
 func New(
 	etcdClient storeadapter.StoreAdapter,
-	timeProvider timeprovider.TimeProvider,
+	clock clock.Clock,
 	heartbeatKey string,
 	heartbeatValue string,
 	heartbeatInterval time.Duration,
 	logger lager.Logger,
 ) Heartbeater {
 	return Heartbeater{
-		client:       etcdClient,
-		timeProvider: timeProvider,
-		key:          heartbeatKey,
-		value:        heartbeatValue,
-		interval:     heartbeatInterval,
-		logger:       logger,
+		client:   etcdClient,
+		clock:    clock,
+		key:      heartbeatKey,
+		value:    heartbeatValue,
+		interval: heartbeatInterval,
+		logger:   logger,
 	}
 }
 
@@ -76,7 +76,7 @@ func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.Sto
 		watchEvents, stopWatch, watchErrors = h.client.Watch(h.key)
 		defer close(stopWatch)
 
-		intervalTimer := h.timeProvider.NewTimer(0)
+		intervalTimer := h.clock.NewTimer(0)
 		defer intervalTimer.Stop()
 
 	WATCH:
@@ -109,10 +109,10 @@ func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.Sto
 }
 
 func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) error {
-	var connectionTimer timeprovider.Timer
+	var connectionTimer clock.Timer
 	var connectionTimeout <-chan time.Time
 
-	intervalTimer := h.timeProvider.NewTimer(h.interval)
+	intervalTimer := h.clock.NewTimer(h.interval)
 	defer intervalTimer.Stop()
 
 	for {
@@ -136,13 +136,13 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 			case storeadapter.ErrorTimeout:
 				logger.Error("store-timeout", err)
 				if connectionTimeout == nil {
-					connectionTimer = h.timeProvider.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimer = h.clock.NewTimer(time.Duration(ttl) * time.Second)
 					connectionTimeout = connectionTimer.C()
 				}
 			case storeadapter.ErrorKeyNotFound:
 				err = h.client.Create(node)
 				if err != nil && connectionTimeout == nil {
-					connectionTimer = h.timeProvider.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimer = h.clock.NewTimer(time.Duration(ttl) * time.Second)
 					connectionTimeout = connectionTimer.C()
 				}
 			case nil:

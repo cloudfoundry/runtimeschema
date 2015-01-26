@@ -19,10 +19,10 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 	task.State = models.TaskStatePending
 
 	if task.CreatedAt == 0 {
-		task.CreatedAt = bbs.timeProvider.Now().UnixNano()
+		task.CreatedAt = bbs.clock.Now().UnixNano()
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
+	task.UpdatedAt = bbs.clock.Now().UnixNano()
 
 	value, err := models.ToJSON(task)
 	if err != nil {
@@ -65,7 +65,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 		return false, err
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
+	task.UpdatedAt = bbs.clock.Now().UnixNano()
 	task.State = models.TaskStateRunning
 	task.CellID = cellID
 
@@ -175,7 +175,7 @@ func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 		return err
 	}
 
-	task.UpdatedAt = bbs.timeProvider.Now().UnixNano()
+	task.UpdatedAt = bbs.clock.Now().UnixNano()
 	task.State = models.TaskStateResolving
 
 	value, err := models.ToJSON(task)

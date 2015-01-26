@@ -70,7 +70,7 @@ var _ = Describe("Task BBS", func() {
 					It("sets the UpdatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
 						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+						Ω(persistedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 					})
 
 					Context("when able to fetch the Auctioneer address", func() {
@@ -161,13 +161,13 @@ var _ = Describe("Task BBS", func() {
 					It("provides a CreatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
 						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.CreatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+						Ω(persistedTask.CreatedAt).Should(Equal(clock.Now().UnixNano()))
 					})
 
 					It("sets the UpdatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
 						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+						Ω(persistedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 					})
 				})
 			})
@@ -258,7 +258,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("should bump UpdatedAt", func() {
-				timeProvider.IncrementBySeconds(1)
+				clock.IncrementBySeconds(1)
 
 				started, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				Ω(err).ShouldNot(HaveOccurred())
@@ -267,7 +267,7 @@ var _ = Describe("Task BBS", func() {
 				tasks, err := bbs.RunningTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 			})
 		})
 
@@ -287,8 +287,8 @@ var _ = Describe("Task BBS", func() {
 				var previousTime int64
 
 				BeforeEach(func() {
-					previousTime = timeProvider.Now().UnixNano()
-					timeProvider.IncrementBySeconds(1)
+					previousTime = clock.Now().UnixNano()
+					clock.IncrementBySeconds(1)
 
 					changed, startErr = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
 				})
@@ -357,7 +357,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("bumps UpdatedAt", func() {
-					Ω(taskAfterCancel.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(taskAfterCancel.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 			}
 
@@ -435,7 +435,7 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, timeProvider, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
+					bbs = New(fakeStoreAdapter, clock, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
 				})
 
 				It("returns an error", func() {
@@ -498,7 +498,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("should bump UpdatedAt", func() {
-					timeProvider.IncrementBySeconds(1)
+					clock.IncrementBySeconds(1)
 
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -506,11 +506,11 @@ var _ = Describe("Task BBS", func() {
 					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 
 				It("sets FirstCompletedAt", func() {
-					timeProvider.IncrementBySeconds(1)
+					clock.IncrementBySeconds(1)
 
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -518,7 +518,7 @@ var _ = Describe("Task BBS", func() {
 					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(tasks[0].FirstCompletedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 
 				Context("when a receptor is present", func() {
@@ -688,7 +688,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("should bump UpdatedAt", func() {
-					timeProvider.IncrementBySeconds(1)
+					clock.IncrementBySeconds(1)
 
 					err := bbs.FailTask(logger, task.TaskGuid, "because i said so")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -696,11 +696,11 @@ var _ = Describe("Task BBS", func() {
 					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 
 				It("sets FirstCompletedAt", func() {
-					timeProvider.IncrementBySeconds(1)
+					clock.IncrementBySeconds(1)
 
 					err := bbs.FailTask(logger, task.TaskGuid, "because i said so")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -708,7 +708,7 @@ var _ = Describe("Task BBS", func() {
 					tasks, err := bbs.CompletedTasks(logger)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					Ω(tasks[0].FirstCompletedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(tasks[0].FirstCompletedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 
 				Context("when a receptor is present", func() {
@@ -863,14 +863,14 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("bumps UpdatedAt", func() {
-				timeProvider.IncrementBySeconds(1)
+				clock.IncrementBySeconds(1)
 
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks(logger)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks[0].UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+				Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 			})
 
 			Context("when the Task is already resolving", func() {

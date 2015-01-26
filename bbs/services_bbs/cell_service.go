@@ -18,7 +18,7 @@ func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, inter
 		panic(err)
 	}
 
-	return heartbeater.New(bbs.store, bbs.timeProvider, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
+	return heartbeater.New(bbs.store, bbs.clock, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
 }
 
 func (bbs *ServicesBBS) CellById(cellId string) (models.CellPresence, error) {

@@ -132,7 +132,7 @@ var _ = Describe("LrpGetters", func() {
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-1", "cell-id"),
 				ActualLRPNetInfo:      netInfo,
 				State:                 models.ActualLRPStateRunning,
-				Since:                 timeProvider.Now().UnixNano(),
+				Since:                 clock.Now().UnixNano(),
 			}
 
 			runningLrp2 = models.ActualLRP{
@@ -140,7 +140,7 @@ var _ = Describe("LrpGetters", func() {
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-2", "cell-id"),
 				ActualLRPNetInfo:      netInfo,
 				State:                 models.ActualLRPStateRunning,
-				Since:                 timeProvider.Now().UnixNano(),
+				Since:                 clock.Now().UnixNano(),
 			}
 
 			runningLrp3 = models.ActualLRP{
@@ -148,7 +148,7 @@ var _ = Describe("LrpGetters", func() {
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
 				ActualLRPNetInfo:      netInfo,
 				State:                 models.ActualLRPStateRunning,
-				Since:                 timeProvider.Now().UnixNano(),
+				Since:                 clock.Now().UnixNano(),
 			}
 
 			err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo, logger)

@@ -110,7 +110,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the Task has NOT been pending for too long", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds - 1)
+					clock.IncrementBySeconds(convergenceIntervalInSeconds - 1)
 
 					auctioneerPresence := models.AuctioneerPresence{
 						AuctioneerID:      "the-auctioneer-id",
@@ -127,7 +127,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the Tasks have been pending for longer than the convergence interval", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+					clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -179,7 +179,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the Task has been pending for longer than the timeToStart", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(timeToStartInSeconds + 1)
+					clock.IncrementBySeconds(timeToStartInSeconds + 1)
 				})
 
 				It("should mark the Task as completed & failed", func() {
@@ -292,7 +292,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
-						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+						clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 					})
 
 					Context("when a receptor is present", func() {
@@ -381,7 +381,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
-						timeProvider.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+						clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
 					})
 
 					Context("when a receptor is present", func() {
@@ -411,7 +411,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("when the task has been completed for longer than the time-to-resolve interval", func() {
 					BeforeEach(func() {
-						timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+						clock.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
 					})
 
 					It("should delete the task", func() {
@@ -428,8 +428,8 @@ var _ = Describe("Convergence of Tasks", func() {
 					var previousTime int64
 
 					BeforeEach(func() {
-						previousTime = timeProvider.Now().UnixNano()
-						timeProvider.IncrementBySeconds(1)
+						previousTime = clock.Now().UnixNano()
+						clock.IncrementBySeconds(1)
 					})
 
 					It("should NOT kick the Task", func() {
@@ -463,8 +463,8 @@ var _ = Describe("Convergence of Tasks", func() {
 				var previousTime int64
 
 				BeforeEach(func() {
-					previousTime = timeProvider.Now().UnixNano()
-					timeProvider.IncrementBySeconds(1)
+					previousTime = clock.Now().UnixNano()
+					clock.IncrementBySeconds(1)
 				})
 
 				It("should do nothing", func() {
@@ -477,14 +477,14 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the task has been resolving for longer than a convergence interval", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(convergenceIntervalInSeconds)
+					clock.IncrementBySeconds(convergenceIntervalInSeconds)
 				})
 
 				It("should put the Task back into the completed state", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
-					Ω(returnedTask.UpdatedAt).Should(Equal(timeProvider.Now().UnixNano()))
+					Ω(returnedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
 				})
 
 				It("logs that it is demoting task from resolving to completed", func() {
@@ -538,7 +538,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the resolving task has been completed for longer than the time-to-resolve interval", func() {
 				BeforeEach(func() {
-					timeProvider.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+					clock.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
 				})
 
 				It("should delete the task", func() {
