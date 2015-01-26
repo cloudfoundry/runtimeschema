@@ -241,14 +241,14 @@ var _ = Describe("StagingMessages", func() {
 		Context("when the message is InsufficientResources", func() {
 			It("returns a InsufficientResources", func() {
 				stagingErr := SanitizeErrorMessage(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE)
-				Ω(stagingErr.Id).Should(Equal("InsufficientResources"))
+				Ω(stagingErr.Id).Should(Equal(INSUFFICIENT_RESOURCES))
 				Ω(stagingErr.Message).Should(Equal(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE))
 			})
 		})
 		Context("when the message is NoCompatibleCell", func() {
 			It("returns a NoCompatibleCell", func() {
 				stagingErr := SanitizeErrorMessage(diego_errors.CELL_MISMATCH_MESSAGE)
-				Ω(stagingErr.Id).Should(Equal("NoCompatibleCell"))
+				Ω(stagingErr.Id).Should(Equal(NO_COMPATIBLE_CELL))
 				Ω(stagingErr.Message).Should(Equal(diego_errors.CELL_MISMATCH_MESSAGE))
 			})
 		})
@@ -256,8 +256,8 @@ var _ = Describe("StagingMessages", func() {
 		Context("any other message", func() {
 			It("returns a StagingError", func() {
 				stagingErr := SanitizeErrorMessage("some-error")
-				Ω(stagingErr.Id).Should(Equal("StagingError"))
-				Ω(stagingErr.Message).Should(Equal("some-error"))
+				Ω(stagingErr.Id).Should(Equal(STAGING_ERROR))
+				Ω(stagingErr.Message).Should(Equal("staging failed"))
 			})
 		})
 	})

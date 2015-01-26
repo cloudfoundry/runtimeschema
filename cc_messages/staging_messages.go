@@ -3,9 +3,17 @@ package cc_messages
 import "github.com/cloudfoundry-incubator/runtime-schema/models"
 import "github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 
+type StagingErrorID string
+
+var (
+	STAGING_ERROR          StagingErrorID = "StagingError"
+	INSUFFICIENT_RESOURCES StagingErrorID = "InsufficientResources"
+	NO_COMPATIBLE_CELL     StagingErrorID = "NoCompatibleCell"
+)
+
 type StagingError struct {
-	Id      string `json:"id"`
-	Message string `json:"message"`
+	Id      StagingErrorID `json:"id"`
+	Message string         `json:"message"`
 }
 
 type DockerStagingRequestFromCC struct {
@@ -70,12 +78,14 @@ type StopStagingRequestFromCC struct {
 }
 
 func SanitizeErrorMessage(message string) *StagingError {
-	id := "StagingError"
+	id := STAGING_ERROR
 	switch message {
 	case diego_errors.INSUFFICIENT_RESOURCES_MESSAGE:
-		id = "InsufficientResources"
+		id = INSUFFICIENT_RESOURCES
 	case diego_errors.CELL_MISMATCH_MESSAGE:
-		id = "NoCompatibleCell"
+		id = NO_COMPATIBLE_CELL
+	default:
+		message = "staging failed"
 	}
 
 	return &StagingError{
