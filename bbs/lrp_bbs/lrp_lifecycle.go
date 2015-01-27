@@ -93,7 +93,7 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 }
 
 func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.ActualLRPKey) error {
-	logger = logger.Session("unlaim-crashed-actual-lrp")
+	logger = logger.Session("unclaim-crashed-actual-lrp")
 	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err != nil {
