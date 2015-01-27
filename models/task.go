@@ -6,7 +6,6 @@ import (
 	"regexp"
 )
 
-//go:generate stringer -type=TaskState
 type TaskState int
 
 const (
