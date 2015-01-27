@@ -113,7 +113,7 @@ func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *
 			return
 		}
 
-		err := bbs.unclaimActualLRP(logger, actualKey)
+		err := bbs.UnclaimActualLRP(logger, actualLRP.ActualLRPKey, actualLRP.ActualLRPContainerKey)
 		if err != nil {
 			logger.Error("failed-to-unclaim-crash", err)
 			return

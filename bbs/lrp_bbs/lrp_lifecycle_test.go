@@ -523,6 +523,126 @@ var _ = Describe("LrpLifecycle", func() {
 		})
 	})
 
+	Describe("UnclaimActualLRP", func() {
+		var unclaimErr error
+		var actual models.ActualLRP
+		var lrpKey models.ActualLRPKey
+		var containerKey models.ActualLRPContainerKey
+
+		JustBeforeEach(func() {
+			unclaimErr = bbs.UnclaimActualLRP(logger, lrpKey, containerKey)
+		})
+
+		Context("when the actual LRP exists", func() {
+			var (
+				processGuid, cellID string
+				createdLRP          models.ActualLRP
+				index               int
+			)
+
+			BeforeEach(func() {
+				cellID = "cell-id"
+				processGuid = "process-guid"
+				index = 0
+				actual = models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey(processGuid, index, "domain"),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("instanceGuid", cellID),
+					State: models.ActualLRPStateClaimed,
+					Since: 777,
+				}
+				createRawActualLRP(actual)
+
+				var err error
+				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(actual.ActualLRPKey.ProcessGuid, actual.ActualLRPKey.Index)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			Context("when the container key is not the same", func() {
+				BeforeEach(func() {
+					lrpKey = createdLRP.ActualLRPKey
+					containerKey = models.NewActualLRPContainerKey(
+						"", // invalid InstanceGuid
+						cellID,
+					)
+				})
+
+				It("returns a validation error", func() {
+					Ω(unclaimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeUnclaimed))
+				})
+
+				It("does not modify the persisted actual LRP", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateClaimed))
+				})
+
+				It("logs the error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.unclaim-actual-lrp.failed-actual-lrp-container-key-differs"))
+				})
+			})
+
+			Context("when the actualLRPKey is not the same", func() {
+				BeforeEach(func() {
+					lrpKey = createdLRP.ActualLRPKey
+					lrpKey.Domain = "some-other-domain"
+					containerKey = createdLRP.ActualLRPContainerKey
+				})
+
+				It("returns a validation error", func() {
+					Ω(unclaimErr).Should(Equal(bbserrors.ErrActualLRPCannotBeUnclaimed))
+				})
+
+				It("does not modify the persisted actual LRP", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateClaimed))
+				})
+
+				It("logs the error", func() {
+					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.unclaim-actual-lrp.failed-actual-lrp-key-differs"))
+				})
+			})
+
+			Context("when the actualLRPKey and actualLRPContainerKey are the same", func() {
+				BeforeEach(func() {
+					clock.IntervalToAdvance = 0
+					lrpKey = createdLRP.ActualLRPKey
+					containerKey = createdLRP.ActualLRPContainerKey
+				})
+
+				It("sets the State to Unclaimed", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateUnclaimed))
+				})
+
+				It("clears the ActualLRPContainerKey", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.ActualLRPContainerKey).Should(Equal(models.ActualLRPContainerKey{}))
+				})
+
+				It("clears the ActualLRPNetInfo", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(models.ActualLRPNetInfo{}))
+				})
+
+				It("updates the Since", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
+				})
+			})
+		})
+	})
+
 	Describe("StartActualLRP", func() {
 		var startErr error
 		var lrpKey models.ActualLRPKey

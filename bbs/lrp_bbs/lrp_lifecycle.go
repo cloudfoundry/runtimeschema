@@ -92,13 +92,27 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
-func (bbs *LRPBBS) unclaimActualLRP(logger lager.Logger, key models.ActualLRPKey) error {
+func (bbs *LRPBBS) UnclaimActualLRP(
+	logger lager.Logger,
+	actualLRPKey models.ActualLRPKey,
+	actualLRPContainerKey models.ActualLRPContainerKey,
+) error {
 	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
-	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
+	lrp, index, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return err
+	}
+
+	if lrp.ActualLRPKey != actualLRPKey {
+		logger.Error("failed-actual-lrp-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
+		return bbserrors.ErrActualLRPCannotBeUnclaimed
+	}
+
+	if lrp.ActualLRPContainerKey != actualLRPContainerKey {
+		logger.Error("failed-actual-lrp-container-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
+		return bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
