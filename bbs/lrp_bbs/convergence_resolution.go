@@ -40,7 +40,7 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	}
 
 	for _, actual := range changes.RestartableCrashedActualLRPs {
-		pool.Submit(bbs.resolveRestartableCrashedActualLRPS(logger, wg, actual.ActualLRPKey, startRequests))
+		pool.Submit(bbs.resolveRestartableCrashedActualLRPS(logger, wg, actual, startRequests))
 	}
 
 	wg.Wait()
@@ -95,18 +95,25 @@ func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, wg *syn
 	}
 }
 
-func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *sync.WaitGroup, actualKey models.ActualLRPKey, starts *startRequests) func() {
+func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *sync.WaitGroup, actualLRP models.ActualLRP, starts *startRequests) func() {
 	wg.Add(1)
 
 	return func() {
 		defer wg.Done()
+
+		actualKey := actualLRP.ActualLRPKey
 
 		logger = logger.Session("restart-crash", lager.Data{
 			"process-guid": actualKey.ProcessGuid,
 			"index":        actualKey.Index,
 		})
 
-		err := bbs.unclaimCrashedActualLRP(logger, actualKey)
+		if actualLRP.State != models.ActualLRPStateCrashed {
+			logger.Error("failed-actual-lrp-state-is-not-crashed", nil)
+			return
+		}
+
+		err := bbs.unclaimActualLRP(logger, actualKey)
 		if err != nil {
 			logger.Error("failed-to-unclaim-crash", err)
 			return

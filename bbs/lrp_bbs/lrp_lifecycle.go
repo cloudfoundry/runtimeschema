@@ -92,18 +92,13 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
-func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.ActualLRPKey) error {
-	logger = logger.Session("unclaim-crashed-actual-lrp")
+func (bbs *LRPBBS) unclaimActualLRP(logger lager.Logger, key models.ActualLRPKey) error {
+	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return err
-	}
-
-	if lrp.State != models.ActualLRPStateCrashed {
-		logger.Error("failed-actual-lrp-state-is-not-crashed", nil, lager.Data{"actual-lrp": lrp})
-		return bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
