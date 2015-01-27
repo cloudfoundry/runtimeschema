@@ -92,18 +92,18 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
-func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.ActualLRPKey) (models.ActualLRP, error) {
+func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.ActualLRPKey) error {
 	logger = logger.Session("unlaim-crashed-actual-lrp")
 	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(key.ProcessGuid, key.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
-		return models.ActualLRP{}, err
+		return err
 	}
 
 	if lrp.State != models.ActualLRPStateCrashed {
 		logger.Error("failed-actual-lrp-state-is-not-crashed", nil, lager.Data{"actual-lrp": lrp})
-		return models.ActualLRP{}, bbserrors.ErrActualLRPCannotBeUnclaimed
+		return bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
@@ -114,7 +114,7 @@ func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.Actua
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return models.ActualLRP{}, err
+		return err
 	}
 
 	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
@@ -124,11 +124,11 @@ func (bbs *LRPBBS) unclaimCrashedActualLRP(logger lager.Logger, key models.Actua
 
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return models.ActualLRP{}, shared.ConvertStoreError(err)
+		return shared.ConvertStoreError(err)
 	}
 
 	logger.Info("succeeded")
-	return *lrp, nil
+	return nil
 }
 
 func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {

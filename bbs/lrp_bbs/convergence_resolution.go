@@ -106,13 +106,13 @@ func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *
 			"index":        actualKey.Index,
 		})
 
-		unclaimedActualLRP, err := bbs.unclaimCrashedActualLRP(logger, actualKey)
+		err := bbs.unclaimCrashedActualLRP(logger, actualKey)
 		if err != nil {
 			logger.Error("failed-to-unclaim-crash", err)
 			return
 		}
 
-		starts.Add(logger, unclaimedActualLRP.ActualLRPKey)
+		starts.Add(logger, actualKey)
 	}
 }
 
