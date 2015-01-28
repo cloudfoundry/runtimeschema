@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"encoding/json"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -21,6 +23,7 @@ var _ = Describe("LrpWatchers", func() {
 		)
 
 		newLRP := func() models.DesiredLRP {
+			rawMessage := json.RawMessage([]byte(`{"port":8080,"hosts":["route-1","route-2"]}`))
 			return models.DesiredLRP{
 				Domain:      "tests",
 				ProcessGuid: "some-process-guid",
@@ -28,7 +31,9 @@ var _ = Describe("LrpWatchers", func() {
 				Stack:       "some-stack",
 				MemoryMB:    1024,
 				DiskMB:      512,
-				Routes:      []string{"route-1", "route-2"},
+				Routes: map[string]*json.RawMessage{
+					"router": &rawMessage,
+				},
 				Action: &models.DownloadAction{
 					From: "http://example.com",
 					To:   "/tmp/internet",

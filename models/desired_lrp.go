@@ -35,26 +35,26 @@ func (set DesiredLRPsByProcessGuid) Each(predicate func(desired DesiredLRP)) {
 }
 
 type DesiredLRP struct {
-	ProcessGuid          string                `json:"process_guid"`
-	Domain               string                `json:"domain"`
-	RootFSPath           string                `json:"root_fs"`
-	Instances            int                   `json:"instances"`
-	Stack                string                `json:"stack"`
-	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
-	Setup                Action                `json:"-"`
-	Action               Action                `json:"-"`
-	StartTimeout         uint                  `json:"start_timeout"`
-	Monitor              Action                `json:"-"`
-	DiskMB               int                   `json:"disk_mb"`
-	MemoryMB             int                   `json:"memory_mb"`
-	CPUWeight            uint                  `json:"cpu_weight"`
-	Privileged           bool                  `json:"privileged"`
-	Ports                []uint32              `json:"ports"`
-	Routes               []string              `json:"routes"`
-	LogSource            string                `json:"log_source"`
-	LogGuid              string                `json:"log_guid"`
-	Annotation           string                `json:"annotation,omitempty"`
-	EgressRules          []SecurityGroupRule   `json:"egress_rules,omitempty"`
+	ProcessGuid          string                      `json:"process_guid"`
+	Domain               string                      `json:"domain"`
+	RootFSPath           string                      `json:"root_fs"`
+	Instances            int                         `json:"instances"`
+	Stack                string                      `json:"stack"`
+	EnvironmentVariables []EnvironmentVariable       `json:"env,omitempty"`
+	Setup                Action                      `json:"-"`
+	Action               Action                      `json:"-"`
+	StartTimeout         uint                        `json:"start_timeout"`
+	Monitor              Action                      `json:"-"`
+	DiskMB               int                         `json:"disk_mb"`
+	MemoryMB             int                         `json:"memory_mb"`
+	CPUWeight            uint                        `json:"cpu_weight"`
+	Privileged           bool                        `json:"privileged"`
+	Ports                []uint16                    `json:"ports"`
+	Routes               map[string]*json.RawMessage `json:"routes,omitempty"`
+	LogSource            string                      `json:"log_source"`
+	LogGuid              string                      `json:"log_guid"`
+	Annotation           string                      `json:"annotation,omitempty"`
+	EgressRules          []SecurityGroupRule         `json:"egress_rules,omitempty"`
 }
 
 type InnerDesiredLRP DesiredLRP
@@ -67,9 +67,9 @@ type mDesiredLRP struct {
 }
 
 type DesiredLRPUpdate struct {
-	Instances  *int
-	Routes     []string
-	Annotation *string
+	Instances  *int                        `json:"instances,omitempty"`
+	Routes     map[string]*json.RawMessage `json:"routes,omitempty"`
+	Annotation *string                     `json:"annotation,omitempty"`
 }
 
 type DesiredLRPChange struct {

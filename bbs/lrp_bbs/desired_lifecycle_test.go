@@ -1,6 +1,7 @@
 package lrp_bbs_test
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -16,6 +17,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 	var lrp models.DesiredLRP
 
 	BeforeEach(func() {
+		rawMessage := json.RawMessage([]byte(`{"port":8080,"hosts":["route-1","route-2"]}`))
 		lrp = models.DesiredLRP{
 			Domain:      "tests",
 			ProcessGuid: "some-process-guid",
@@ -23,7 +25,9 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			Stack:       "some-stack",
 			MemoryMB:    1024,
 			DiskMB:      512,
-			Routes:      []string{"route-1", "route-2"},
+			Routes: map[string]*json.RawMessage{
+				"router": &rawMessage,
+			},
 			Action: &models.DownloadAction{
 				From: "http://example.com",
 				To:   "/tmp/internet",
@@ -176,7 +180,10 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				annotation := "new-annotation"
 				instances := 16
 
-				update.Routes = []string{"new-route-1", "new-route-2"}
+				rawMessage := json.RawMessage([]byte(`{"port":8080,"hosts":["new-route-1","new-route-2"]}`))
+				update.Routes = map[string]*json.RawMessage{
+					"router": &rawMessage,
+				}
 				update.Annotation = &annotation
 				update.Instances = &instances
 			})
@@ -188,7 +195,12 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(updated.Routes).Should(Equal(update.Routes))
+				Ω(updated.Routes).Should(HaveKey("router"))
+				json, err := update.Routes["router"].MarshalJSON()
+				Ω(err).ShouldNot(HaveOccurred())
+				updatedJson, err := updated.Routes["router"].MarshalJSON()
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(updatedJson).Should(MatchJSON(string(json)))
 				Ω(updated.Annotation).Should(Equal(*update.Annotation))
 				Ω(updated.Instances).Should(Equal(*update.Instances))
 			})

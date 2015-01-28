@@ -58,10 +58,9 @@ var _ = Describe("DesiredLRP", func() {
 	  "ports": [
 	    5678
 	  ],
-	  "routes": [
-	    "route-1",
-	    "route-2"
-	  ],
+	  "routes": {
+	  	"router":	{"port": 8080,"hosts":["route-1","route-2"]}
+	  },
 	  "log_guid": "log-guid",
 	  "log_source": "the cloud",
 	  "egress_rules": [
@@ -84,6 +83,7 @@ var _ = Describe("DesiredLRP", func() {
 	}`
 
 	BeforeEach(func() {
+		rawMessage := json.RawMessage([]byte(`{"port": 8080,"hosts":["route-1","route-2"]}`))
 		lrp = DesiredLRP{
 			Domain:      "some-domain",
 			ProcessGuid: "some-guid",
@@ -95,9 +95,11 @@ var _ = Describe("DesiredLRP", func() {
 			DiskMB:     512,
 			CPUWeight:  42,
 			Privileged: true,
-			Routes:     []string{"route-1", "route-2"},
+			Routes: map[string]*json.RawMessage{
+				"router": &rawMessage,
+			},
 			Annotation: "some-annotation",
-			Ports: []uint32{
+			Ports: []uint16{
 				5678,
 			},
 			LogGuid:   "log-guid",
@@ -159,11 +161,11 @@ var _ = Describe("DesiredLRP", func() {
 
 		It("allows empty routes to be set", func() {
 			update := DesiredLRPUpdate{
-				Routes: []string{},
+				Routes: map[string]*json.RawMessage{},
 			}
 
 			expectedLRP := lrp
-			expectedLRP.Routes = []string{}
+			expectedLRP.Routes = map[string]*json.RawMessage{}
 
 			updatedLRP := lrp.ApplyUpdate(update)
 			Ω(updatedLRP).Should(Equal(expectedLRP))
@@ -196,12 +198,17 @@ var _ = Describe("DesiredLRP", func() {
 		})
 
 		It("updates routes", func() {
+			rawMessage := json.RawMessage([]byte(`{"port": 8080,"hosts":["new-route-1","new-route-2"]}`))
 			update := DesiredLRPUpdate{
-				Routes: []string{"new-route-1", "new-route-2"},
+				Routes: map[string]*json.RawMessage{
+					"router": &rawMessage,
+				},
 			}
 
 			expectedLRP := lrp
-			expectedLRP.Routes = []string{"new-route-1", "new-route-2"}
+			expectedLRP.Routes = map[string]*json.RawMessage{
+				"router": &rawMessage,
+			}
 
 			updatedLRP := lrp.ApplyUpdate(update)
 			Ω(updatedLRP).Should(Equal(expectedLRP))

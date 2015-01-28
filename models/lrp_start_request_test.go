@@ -35,16 +35,16 @@ var _ = Describe("LRPStartRequest", func() {
       "ports": [
         5678
       ],
-      "routes": [
-        "route-1",
-        "route-2"
-      ],
+      "routes": {
+        "router": {"port":5678,"hosts":["route-1","route-2"]}
+      },
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
     "indices": [2]
   }`
 
+		rawMessage := json.RawMessage([]byte(`{"port":5678,"hosts":["route-1","route-2"]}`))
 		lrpStart = LRPStartRequest{
 			Indices: []uint{2},
 
@@ -58,8 +58,10 @@ var _ = Describe("LRPStartRequest", func() {
 				MemoryMB:   1024,
 				DiskMB:     512,
 				CPUWeight:  42,
-				Routes:     []string{"route-1", "route-2"},
-				Ports: []uint32{
+				Routes: map[string]*json.RawMessage{
+					"router": &rawMessage,
+				},
+				Ports: []uint16{
 					5678,
 				},
 				LogGuid:   "log-guid",
@@ -125,10 +127,9 @@ var _ = Describe("LRPStartRequest", func() {
       "ports": [
         5678
       ],
-      "routes": [
-        "route-1",
-        "route-2"
-      ],
+      "routes": {
+        "router": {"port":5678,"hosts":["route-1","route-2"]}
+      },
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
@@ -164,10 +165,9 @@ var _ = Describe("LRPStartRequest", func() {
       "ports": [
         5678
       ],
-      "routes": [
-        "route-1",
-        "route-2"
-      ],
+      "routes": {
+        "router": {"port":5678,"hosts":["route-1","route-2"]}
+      },
       "log_guid": "log-guid",
       "log_source": "the cloud"
     }
@@ -202,10 +202,9 @@ var _ = Describe("LRPStartRequest", func() {
       "ports": [
         5678
       ],
-      "routes": [
-        "route-1",
-        "route-2"
-      ],
+      "routes": {
+        "router": {"port":5678,"hosts":["route-1","route-2"]}
+      },
       "log_guid": "log-guid",
       "log_source": "the cloud"
     },
