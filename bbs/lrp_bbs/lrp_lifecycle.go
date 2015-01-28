@@ -144,15 +144,65 @@ func (bbs *LRPBBS) EvacuateActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
+	timeout time.Duration,
 ) error {
-	err := bbs.UnclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+	logger = logger.Session("evacuate-actual-lrp", lager.Data{
+		"actual-lrp-key": actualLRPKey,
+	})
+
+	lrp, storeIndex, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err != nil {
+		logger.Error("failed-to-get-actual-lrp", err)
 		return err
+	}
+
+	switch lrp.State {
+	case models.ActualLRPStateRunning:
+		err = bbs.moveInstanceToEvacuating(lrp, storeIndex, logger, timeout)
+		if err != nil {
+			logger.Error("failed-to-create-evacuating-lrp", err)
+			return err
+		}
+
+	case models.ActualLRPStateClaimed:
+		err = bbs.UnclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (bbs *LRPBBS) moveInstanceToEvacuating(lrp *models.ActualLRP, storeIndex uint64, logger lager.Logger, ttl time.Duration) error {
+	value, err := models.ToJSON(lrp)
+	if err != nil {
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return err
+	}
+
+	err = bbs.store.Create(storeadapter.StoreNode{
+		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
+		TTL:   uint64(ttl.Seconds()),
+	})
+	if err != nil {
+		logger.Error("failed-to-create-evacuating-lrp", err, lager.Data{"lrp": lrp})
+		return shared.ConvertStoreError(err)
+	}
+
+	err = bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Index: storeIndex,
+	})
+	if err != nil {
+		logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return shared.ConvertStoreError(err)
 	}
 
 	return nil

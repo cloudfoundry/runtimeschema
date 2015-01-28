@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
@@ -644,12 +645,19 @@ var _ = Describe("LrpLifecycle", func() {
 	})
 
 	Describe("EvacuateActualLRP", func() {
-		var evacuateErr error
-		var lrpKey models.ActualLRPKey
-		var containerKey models.ActualLRPContainerKey
+		var (
+			evacuateErr  error
+			lrpKey       models.ActualLRPKey
+			containerKey models.ActualLRPContainerKey
+			timeout      time.Duration
+		)
+
+		BeforeEach(func() {
+			timeout = 30*time.Second + 500*time.Millisecond
+		})
 
 		JustBeforeEach(func() {
-			evacuateErr = bbs.EvacuateActualLRP(logger, lrpKey, containerKey)
+			evacuateErr = bbs.EvacuateActualLRP(logger, lrpKey, containerKey, timeout)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -658,6 +666,7 @@ var _ = Describe("LrpLifecycle", func() {
 				cellID             string
 				domain             string
 				index              int
+				instanceGuid       string
 				createdLRP         models.ActualLRP
 				desiredLRP         models.DesiredLRP
 				auctioneerPresence models.AuctioneerPresence
@@ -668,6 +677,7 @@ var _ = Describe("LrpLifecycle", func() {
 				index = 0
 				domain = "domain"
 				cellID = "cell-id"
+				instanceGuid = "instance-guid"
 
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
@@ -687,58 +697,128 @@ var _ = Describe("LrpLifecycle", func() {
 				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				containerKey = createdLRP.ActualLRPContainerKey
 				lrpKey = createdLRP.ActualLRPKey
+
+				containerKey.CellID = cellID
+				containerKey.InstanceGuid = instanceGuid
 
 				auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
 				registerAuctioneer(auctioneerPresence)
 			})
 
-			It("does not return an error", func() {
-				Ω(evacuateErr).ShouldNot(HaveOccurred())
-			})
-
-			It("sets the ActualLRP state to UNCLAIMED", func() {
-				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateUnclaimed))
-			})
-
-			It("requests an auction for the ActualLRP", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
-
-				requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-				Ω(requestedAuctions).Should(HaveLen(1))
-
-				Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(index)))
-			})
-
-			Context("when unclaiming the actualLRP fails", func() {
+			Context("when the actual LRP is in the CLAIMED state", func() {
 				BeforeEach(func() {
-					containerKey.InstanceGuid = "some-other-guid"
+					err := bbs.ClaimActualLRP(lrpKey, containerKey, logger)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(createdLRP.State).Should(Equal(models.ActualLRPStateClaimed))
 				})
 
-				It("returns an error", func() {
-					Ω(evacuateErr).Should(HaveOccurred())
+				It("does not return an error", func() {
+					Ω(evacuateErr).ShouldNot(HaveOccurred())
 				})
 
-				It("does not request an auction for the ActualLRP", func() {
-					Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
+				It("sets the ActualLRP state to UNCLAIMED", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateUnclaimed))
+				})
+
+				It("requests an auction for the ActualLRP", func() {
+					Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+
+					requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
+					Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
+					Ω(requestedAuctions).Should(HaveLen(1))
+
+					Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+					Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(index)))
+				})
+
+				Context("when unclaiming the actualLRP fails", func() {
+					BeforeEach(func() {
+						containerKey.InstanceGuid = "some-other-guid"
+					})
+
+					It("returns an error", func() {
+						Ω(evacuateErr).Should(HaveOccurred())
+					})
+
+					It("does not request an auction for the ActualLRP", func() {
+						Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
+					})
+				})
+
+				Context("when requesting start auction fails", func() {
+					var err error
+					BeforeEach(func() {
+						err = errors.New("error")
+						fakeAuctioneerClient.RequestLRPAuctionsReturns(err)
+					})
+
+					It("returns an error", func() {
+						Ω(evacuateErr).Should(Equal(err))
+					})
 				})
 			})
 
-			Context("when requesting start auction fails", func() {
-				var err error
+			Context("when the actual LRP is in the RUNNING state", func() {
 				BeforeEach(func() {
-					err = errors.New("error")
-					fakeAuctioneerClient.RequestLRPAuctionsReturns(err)
+					err := bbs.StartActualLRP(lrpKey, containerKey, netInfo, logger)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(createdLRP.State).Should(Equal(models.ActualLRPStateRunning))
 				})
 
-				It("returns an error", func() {
-					Ω(evacuateErr).Should(Equal(err))
+				It("moves the LRP instance to the evacuating path", func() {
+					_, err := etcdClient.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
+					Ω(err).ShouldNot(HaveOccurred())
+
+					_, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
+
+				It("sets the ttl on the evacuating instance", func() {
+					node, err := etcdClient.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(node.TTL).Should(Equal(uint64(30)))
+				})
+
+				It("requests an auction for the ActualLRP", func() {
+					Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+
+					requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
+					Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
+					Ω(requestedAuctions).Should(HaveLen(1))
+
+					Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
+					Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(index)))
+				})
+
+				Context("when moving the LRP to evacuating fails", func() {
+					PIt("it returns an error", func() {
+						// real bbs makes this hard
+					})
+				})
+
+				Context("when requesting start auction fails", func() {
+					var err error
+					BeforeEach(func() {
+						err = errors.New("error")
+						fakeAuctioneerClient.RequestLRPAuctionsReturns(err)
+					})
+
+					It("returns an error", func() {
+						Ω(evacuateErr).Should(Equal(err))
+					})
 				})
 			})
 		})

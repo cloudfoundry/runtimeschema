@@ -93,12 +93,13 @@ type FakeRepBBS struct {
 	claimActualLRPReturns struct {
 		result1 error
 	}
-	EvacuateActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, time.Duration) error
 	evacuateActualLRPMutex       sync.RWMutex
 	evacuateActualLRPArgsForCall []struct {
 		arg1 lager.Logger
 		arg2 models.ActualLRPKey
 		arg3 models.ActualLRPContainerKey
+		arg4 time.Duration
 	}
 	evacuateActualLRPReturns struct {
 		result1 error
@@ -419,16 +420,17 @@ func (fake *FakeRepBBS) ClaimActualLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) EvacuateActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
+func (fake *FakeRepBBS) EvacuateActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey, arg4 time.Duration) error {
 	fake.evacuateActualLRPMutex.Lock()
 	fake.evacuateActualLRPArgsForCall = append(fake.evacuateActualLRPArgsForCall, struct {
 		arg1 lager.Logger
 		arg2 models.ActualLRPKey
 		arg3 models.ActualLRPContainerKey
-	}{arg1, arg2, arg3})
+		arg4 time.Duration
+	}{arg1, arg2, arg3, arg4})
 	fake.evacuateActualLRPMutex.Unlock()
 	if fake.EvacuateActualLRPStub != nil {
-		return fake.EvacuateActualLRPStub(arg1, arg2, arg3)
+		return fake.EvacuateActualLRPStub(arg1, arg2, arg3, arg4)
 	} else {
 		return fake.evacuateActualLRPReturns.result1
 	}
@@ -440,10 +442,10 @@ func (fake *FakeRepBBS) EvacuateActualLRPCallCount() int {
 	return len(fake.evacuateActualLRPArgsForCall)
 }
 
-func (fake *FakeRepBBS) EvacuateActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) {
+func (fake *FakeRepBBS) EvacuateActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, time.Duration) {
 	fake.evacuateActualLRPMutex.RLock()
 	defer fake.evacuateActualLRPMutex.RUnlock()
-	return fake.evacuateActualLRPArgsForCall[i].arg1, fake.evacuateActualLRPArgsForCall[i].arg2, fake.evacuateActualLRPArgsForCall[i].arg3
+	return fake.evacuateActualLRPArgsForCall[i].arg1, fake.evacuateActualLRPArgsForCall[i].arg2, fake.evacuateActualLRPArgsForCall[i].arg3, fake.evacuateActualLRPArgsForCall[i].arg4
 }
 
 func (fake *FakeRepBBS) EvacuateActualLRPReturns(result1 error) {
