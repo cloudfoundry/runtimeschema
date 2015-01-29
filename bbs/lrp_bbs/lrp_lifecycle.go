@@ -92,7 +92,7 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
-func (bbs *LRPBBS) UnclaimActualLRP(
+func (bbs *LRPBBS) unclaimActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
@@ -145,7 +145,7 @@ func (bbs *LRPBBS) EvacuateActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
-	err := bbs.UnclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+	err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err != nil {
 		return err
 	}
