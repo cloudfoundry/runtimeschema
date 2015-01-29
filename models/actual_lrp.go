@@ -173,8 +173,8 @@ func powerOfTwo(pow int) int64 {
 }
 
 func calculateMaxBackoffCount(maxDuration time.Duration) int {
-	total := maxDuration / CrashBackoffMinDuration
-	return int(math.Logb(float64(total)))
+	total := math.Ceil(float64(maxDuration) / float64(CrashBackoffMinDuration))
+	return int(math.Logb(total))
 }
 
 type RestartCalculator struct {

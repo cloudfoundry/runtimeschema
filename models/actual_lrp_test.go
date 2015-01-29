@@ -117,7 +117,30 @@ var _ = Describe("RestartCalculator", func() {
 		testBackoffCount(20*time.Minute, 5)
 		testBackoffCount(16*time.Minute, 5)
 		testBackoffCount(8*time.Minute, 4)
+		testBackoffCount(119*time.Second, 2)
+		testBackoffCount(120*time.Second, 2)
 		testBackoffCount(models.CrashBackoffMinDuration, 0)
+
+		It("should work...", func() {
+			nanoseconds := func(seconds int) int64 {
+				return int64(seconds * 1000000000)
+			}
+
+			calc := models.NewRestartCalculator(3, 119*time.Second, 200)
+			Ω(calc.ShouldRestart(0, 0, 0)).Should(BeTrue())
+			Ω(calc.ShouldRestart(0, 0, 1)).Should(BeTrue())
+			Ω(calc.ShouldRestart(0, 0, 2)).Should(BeTrue())
+
+			Ω(calc.ShouldRestart(0, 0, 3)).Should(BeFalse())
+			Ω(calc.ShouldRestart(nanoseconds(30), 0, 3)).Should(BeTrue())
+
+			Ω(calc.ShouldRestart(nanoseconds(30), 0, 4)).Should(BeFalse())
+			Ω(calc.ShouldRestart(nanoseconds(59), 0, 4)).Should(BeFalse())
+			Ω(calc.ShouldRestart(nanoseconds(60), 0, 4)).Should(BeTrue())
+			Ω(calc.ShouldRestart(nanoseconds(60), 0, 5)).Should(BeFalse())
+			Ω(calc.ShouldRestart(nanoseconds(118), 0, 5)).Should(BeFalse())
+			Ω(calc.ShouldRestart(nanoseconds(119), 0, 5)).Should(BeTrue())
+		})
 	})
 
 	Describe("Validate", func() {
