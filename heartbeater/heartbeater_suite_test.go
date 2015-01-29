@@ -33,6 +33,12 @@ var _ = BeforeSuite(func() {
 
 	proxyUrl = fmt.Sprintf("http://127.0.0.1:%d", 6001+config.GinkgoConfig.ParallelNode)
 	proxyRunner = newEtcdProxy(proxyUrl, etcdPort)
+
+	etcdRunner.Start()
+})
+
+var _ = BeforeEach(func() {
+	etcdRunner.Reset()
 })
 
 var _ = AfterSuite(func() {

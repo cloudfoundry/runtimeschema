@@ -42,8 +42,6 @@ var _ = Describe("Heartbeater", func() {
 	BeforeEach(func() {
 		heartbeatClock = clock.NewClock()
 
-		etcdRunner.Stop()
-		etcdRunner.Start()
 		etcdProxy = ifrit.Invoke(proxyRunner)
 
 		etcdClient = etcdstoreadapter.NewETCDStoreAdapter([]string{proxyUrl}, workpool.NewWorkPool(10))
@@ -322,7 +320,7 @@ var _ = Describe("Heartbeater", func() {
 			})
 
 			It("begins heartbeating", func() {
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
+				Eventually(matchHeartbeatNode(expectedHeartbeatNode), 2*time.Second).Should(BeNil())
 			})
 		})
 

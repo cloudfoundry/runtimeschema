@@ -39,14 +39,17 @@ var _ = Describe("LrpWatchers", func() {
 		BeforeEach(func() {
 			lrp = newLRP()
 
-			creates = make(chan models.DesiredLRP)
-			changes = make(chan models.DesiredLRPChange)
-			deletes = make(chan models.DesiredLRP)
+			createsCh := make(chan models.DesiredLRP)
+			creates = createsCh
+			changesCh := make(chan models.DesiredLRPChange)
+			changes = changesCh
+			deletesCh := make(chan models.DesiredLRP)
+			deletes = deletesCh
 
 			stop, errors = bbs.WatchForDesiredLRPChanges(logger,
-				func(created models.DesiredLRP) { creates <- created },
-				func(changed models.DesiredLRPChange) { changes <- changed },
-				func(deleted models.DesiredLRP) { deletes <- deleted },
+				func(created models.DesiredLRP) { createsCh <- created },
+				func(changed models.DesiredLRPChange) { changesCh <- changed },
+				func(deleted models.DesiredLRP) { deletesCh <- deleted },
 			)
 		})
 
@@ -115,14 +118,17 @@ var _ = Describe("LrpWatchers", func() {
 		)
 
 		BeforeEach(func() {
-			creates = make(chan models.ActualLRP)
-			changes = make(chan models.ActualLRPChange)
-			deletes = make(chan models.ActualLRP)
+			createsCh := make(chan models.ActualLRP)
+			creates = createsCh
+			changesCh := make(chan models.ActualLRPChange)
+			changes = changesCh
+			deletesCh := make(chan models.ActualLRP)
+			deletes = deletesCh
 
 			stop, errors = bbs.WatchForActualLRPChanges(logger,
-				func(created models.ActualLRP) { creates <- created },
-				func(changed models.ActualLRPChange) { changes <- changed },
-				func(deleted models.ActualLRP) { deletes <- deleted },
+				func(created models.ActualLRP) { createsCh <- created },
+				func(changed models.ActualLRPChange) { changesCh <- changed },
+				func(deleted models.ActualLRP) { deletesCh <- deleted },
 			)
 
 			lrpProcessGuid = "some-process-guid"

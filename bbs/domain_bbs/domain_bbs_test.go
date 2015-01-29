@@ -60,7 +60,7 @@ var _ = Describe("DomainBBS", func() {
 	Describe("Domains", func() {
 		Context("when domains exist in the bbs", func() {
 			BeforeEach(func() {
-				err := bbs.UpsertDomain("the-domain", 1)
+				err := bbs.UpsertDomain("the-domain", 2)
 				Ω(err).ShouldNot(HaveOccurred())
 				err = bbs.UpsertDomain("another-domain", 10)
 				Ω(err).ShouldNot(HaveOccurred())
@@ -71,7 +71,7 @@ var _ = Describe("DomainBBS", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(domains).Should(ConsistOf("the-domain", "another-domain"))
 
-				time.Sleep(2 * time.Second)
+				time.Sleep(3001 * time.Millisecond)
 
 				domains, err = bbs.Domains()
 				Ω(err).ShouldNot(HaveOccurred())

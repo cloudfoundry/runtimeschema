@@ -203,6 +203,10 @@ var _ = Describe("Cell Service Registry", func() {
 				etcdRunner.Stop()
 			})
 
+			AfterEach(func() {
+				etcdRunner.Start()
+			})
+
 			It("returns an error", func() {
 				_, err := bbs.WaitForCellEvent()
 				Ω(err).Should(HaveOccurred())
