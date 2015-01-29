@@ -140,24 +140,6 @@ func (bbs *LRPBBS) unclaimActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) EvacuateActualLRP(
-	logger lager.Logger,
-	actualLRPKey models.ActualLRPKey,
-	actualLRPContainerKey models.ActualLRPContainerKey,
-) error {
-	err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
-	if err != nil {
-		return err
-	}
-
-	err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
