@@ -122,6 +122,12 @@ var _ = Describe("LrpGetters", func() {
 			domainCLRP models.ActualLRP
 
 			netInfo models.ActualLRPNetInfo
+
+			actualLRPs []models.ActualLRP
+
+			requestedProcessGuid string
+			requestedCellID      string
+			requestedDomain      string
 		)
 
 		BeforeEach(func() {
@@ -135,9 +141,6 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 clock.Now().UnixNano(),
 			}
 
-			err := bbs.StartActualLRP(domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey, domainALRP.ActualLRPNetInfo, logger)
-			Ω(err).ShouldNot(HaveOccurred())
-
 			domainBLRP = models.ActualLRP{
 				ActualLRPKey:          models.NewActualLRPKey("guidB", 2, "domain-b"),
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-2", "cell-id"),
@@ -146,60 +149,268 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 clock.Now().UnixNano(),
 			}
 
-			err = bbs.StartActualLRP(domainBLRP.ActualLRPKey, domainBLRP.ActualLRPContainerKey, domainBLRP.ActualLRPNetInfo, logger)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			createAndClaim(
-				models.DesiredLRP{ProcessGuid: "guidD", Domain: "domain-c", Instances: 1},
-				0,
-				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
-				logger,
-			)
-
-			domainCLRP = getInstanceActualLRP(models.NewActualLRPKey("guidD", 0, "domain-c"))
+			domainCLRP = models.ActualLRP{
+				ActualLRPKey:          models.NewActualLRPKey("guidD", 0, "domain-c"),
+				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
+				State: models.ActualLRPStateClaimed,
+				Since: clock.Now().UnixNano(),
+			}
 		})
 
-		Describe("ActualLRPs", func() {
-			It("returns all actual long running processes", func() {
-				all, err := bbs.ActualLRPs()
-				Ω(err).ShouldNot(HaveOccurred())
+		itConformsToEvacuatingOverridePolicy := func(filteredByCellID bool) {
+			Context("when there is an /evacuating entry", func() {
+				var (
+					lrpKey                 models.ActualLRPKey
+					instanceContainerKey   models.ActualLRPContainerKey
+					evacuatingContainerKey models.ActualLRPContainerKey
+					netInfo                models.ActualLRPNetInfo
+					evacuatingLRP          models.ActualLRP
+					instanceLRP            models.ActualLRP
+				)
 
-				Ω(all).Should(HaveLen(3))
-				Ω(all).Should(ContainElement(domainALRP))
-				Ω(all).Should(ContainElement(domainBLRP))
-				Ω(all).Should(ContainElement(domainCLRP))
+				BeforeEach(func() {
+					requestedProcessGuid = "evacuating-process-guid"
+					requestedCellID = "evacuating-cell-id"
+					requestedDomain = "evacuating-domain"
+					lrpKey = models.NewActualLRPKey(requestedProcessGuid, 0, requestedDomain)
+					instanceContainerKey = models.NewActualLRPContainerKey("instance-guid", requestedCellID)
+					evacuatingContainerKey = models.NewActualLRPContainerKey("evacuating-guid", requestedCellID)
+					netInfo = models.NewActualLRPNetInfo("address", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
+
+					evacuatingLRP = models.ActualLRP{
+						ActualLRPKey:          lrpKey,
+						ActualLRPContainerKey: evacuatingContainerKey,
+						ActualLRPNetInfo:      netInfo,
+						State:                 models.ActualLRPStateRunning,
+						Since:                 3417,
+					}
+					createRawEvacuatingActualLRP(evacuatingLRP)
+				})
+
+				Context("when there is no /instance entry", func() {
+					It("returns the /evacuating entry", func() {
+						Ω(actualLRPs).Should(ConsistOf(evacuatingLRP))
+					})
+				})
+
+				Context("when there is an UNCLAIMED /instance entry", func() {
+					BeforeEach(func() {
+						instanceLRP = models.ActualLRP{
+							ActualLRPKey: lrpKey,
+							State:        models.ActualLRPStateUnclaimed,
+							Since:        1138,
+						}
+						createRawActualLRP(instanceLRP)
+					})
+
+					It("returns the /evacuating entry", func() {
+						Ω(actualLRPs).Should(ConsistOf(evacuatingLRP))
+					})
+				})
+
+				Context("when there is a CLAIMED /instance entry", func() {
+					BeforeEach(func() {
+						instanceLRP = models.ActualLRP{
+							ActualLRPKey:          lrpKey,
+							ActualLRPContainerKey: instanceContainerKey,
+							State: models.ActualLRPStateClaimed,
+							Since: 1138,
+						}
+						createRawActualLRP(instanceLRP)
+					})
+
+					It("returns the /evacuating entry", func() {
+						Ω(actualLRPs).Should(ConsistOf(evacuatingLRP))
+					})
+				})
+
+				Context("when there is a RUNNING /instance entry", func() {
+					BeforeEach(func() {
+						instanceLRP = models.ActualLRP{
+							ActualLRPKey:          lrpKey,
+							ActualLRPContainerKey: instanceContainerKey,
+							ActualLRPNetInfo:      netInfo,
+							State:                 models.ActualLRPStateRunning,
+							Since:                 1138,
+						}
+						createRawActualLRP(instanceLRP)
+					})
+
+					It("returns the /instance entry", func() {
+						Ω(actualLRPs).Should(ConsistOf(instanceLRP))
+					})
+				})
+
+				Context("when there is a CRASHED /instance entry", func() {
+					BeforeEach(func() {
+						instanceLRP = models.ActualLRP{
+							ActualLRPKey: lrpKey,
+							State:        models.ActualLRPStateCrashed,
+							Since:        1138,
+						}
+						createRawActualLRP(instanceLRP)
+					})
+
+					if filteredByCellID {
+						// the CRASHED instance with no cell ID will shadow the RUNNING
+						// evacuating instance, then get filtered out
+						It("is empty", func() {
+							Ω(actualLRPs).Should(BeEmpty())
+						})
+					} else {
+						It("returns the /instance entry", func() {
+							Ω(actualLRPs).Should(ConsistOf(instanceLRP))
+						})
+					}
+				})
 			})
+		}
+
+		Describe("ActualLRPs", func() {
+			JustBeforeEach(func() {
+				var err error
+				actualLRPs, err = bbs.ActualLRPs()
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			Context("when there are no evacuating LRPs", func() {
+				BeforeEach(func() {
+					createRawActualLRP(domainALRP)
+					createRawActualLRP(domainBLRP)
+					createRawActualLRP(domainCLRP)
+				})
+
+				It("returns all actual long running processes", func() {
+					Ω(actualLRPs).Should(HaveLen(3))
+					Ω(actualLRPs).Should(ContainElement(domainALRP))
+					Ω(actualLRPs).Should(ContainElement(domainBLRP))
+					Ω(actualLRPs).Should(ContainElement(domainCLRP))
+				})
+			})
+
+			itConformsToEvacuatingOverridePolicy(false)
+		})
+
+		Describe("ActualLRPsByProcessGuid", func() {
+			var (
+				sharedProcessGuidLRP1 models.ActualLRP
+				sharedProcessGuidLRP2 models.ActualLRP
+			)
+
+			BeforeEach(func() {
+				requestedProcessGuid = "actual-lrps-by-process-guid"
+				sharedProcessGuidLRP1 = models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey(requestedProcessGuid, 0, "domain-c"),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
+					State: models.ActualLRPStateClaimed,
+					Since: clock.Now().UnixNano(),
+				}
+
+				createRawActualLRP(sharedProcessGuidLRP1)
+
+				sharedProcessGuidLRP2 = models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey(requestedProcessGuid, 1, "domain-c"),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
+					State: models.ActualLRPStateClaimed,
+					Since: clock.Now().UnixNano(),
+				}
+
+				createRawActualLRP(sharedProcessGuidLRP2)
+
+				createRawActualLRP(domainALRP)
+			})
+
+			JustBeforeEach(func() {
+				actualLRPsByIndex, err := bbs.ActualLRPsByProcessGuid(requestedProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+				actualLRPs = actualLRPsByIndex.Slice()
+			})
+
+			It("returns only the LRPs for the requested process guid", func() {
+				Ω(actualLRPs).Should(HaveLen(2))
+				Ω(actualLRPs).Should(ContainElement(sharedProcessGuidLRP1))
+				Ω(actualLRPs).Should(ContainElement(sharedProcessGuidLRP2))
+			})
+
+			itConformsToEvacuatingOverridePolicy(false)
 		})
 
 		Describe("ActualLRPsByCellID", func() {
 			BeforeEach(func() {
-				createAndClaim(
-					models.DesiredLRP{ProcessGuid: "some-other-process", Domain: "some-other-domain", Instances: 1},
-					0,
-					models.NewActualLRPContainerKey("some-other-instance", "some-other-cell"),
-					logger,
-				)
+				requestedCellID = "cell-id"
+				createRawActualLRP(domainALRP)
+				createRawActualLRP(domainBLRP)
+				createRawActualLRP(domainCLRP)
+
+				otherLRP := models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey("some-other-process", 0, "some-other-domain"),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-other-instance-guid", "some-other-cell"),
+					State: models.ActualLRPStateClaimed,
+					Since: clock.Now().UnixNano(),
+				}
+				createRawActualLRP(otherLRP)
 			})
 
-			It("returns actual long running processes belongs to 'cell-id'", func() {
-				actualLrpsForMainCell, err := bbs.ActualLRPsByCellID("cell-id")
+			JustBeforeEach(func() {
+				var err error
+				actualLRPs, err = bbs.ActualLRPsByCellID(requestedCellID)
 				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(actualLrpsForMainCell).Should(ConsistOf(domainALRP, domainCLRP, domainBLRP))
-
-				actualLrpsForOtherCell, err := bbs.ActualLRPsByCellID("some-other-cell")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(actualLrpsForOtherCell).Should(HaveLen(1))
 			})
+
+			It("returns actual lrps belonging to the requested cell id", func() {
+				Ω(actualLRPs).Should(ConsistOf(domainALRP, domainCLRP, domainBLRP))
+			})
+
+			itConformsToEvacuatingOverridePolicy(true)
 		})
 
-		Describe("ActualLRPsByProcessGuid", func() {
-			It("should fetch all LRPs for the specified guid", func() {
-				lrps, err := bbs.ActualLRPsByProcessGuid("guidD")
+		Describe("ActualLRPsByDomain", func() {
+			JustBeforeEach(func() {
+				var err error
+				actualLRPs, err = bbs.ActualLRPsByDomain(requestedDomain)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrps).Should(HaveLen(1))
-				Ω(lrps).Should(ContainElement(domainCLRP))
+			})
+
+			itConformsToEvacuatingOverridePolicy(false)
+
+			Context("when there are no evacuating LRPs", func() {
+				var runningLrp3 models.ActualLRP
+
+				BeforeEach(func() {
+					runningLrp3 = models.ActualLRP{
+						ActualLRPKey:          models.NewActualLRPKey("guidC", 3, "domain-b"),
+						ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
+						ActualLRPNetInfo:      netInfo,
+						State:                 models.ActualLRPStateRunning,
+						Since:                 clock.Now().UnixNano(),
+					}
+					createRawActualLRP(runningLrp3)
+				})
+
+				Context("when there are actual LRPs in the requested domain", func() {
+					BeforeEach(func() {
+						requestedDomain = "domain-b"
+					})
+
+					It("should fetch all LRPs for the specified guid", func() {
+						Ω(actualLRPs).Should(HaveLen(1))
+						Ω(actualLRPs).Should(ConsistOf(runningLrp3))
+					})
+				})
+
+				Context("when there are no actual LRPs in the requested domain", func() {
+					BeforeEach(func() {
+						requestedDomain = "bogus-domain"
+					})
+
+					It("returns an empty list", func() {
+						actualLRPs, err := bbs.ActualLRPsByDomain("bogus-domain")
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Ω(actualLRPs).ShouldNot(BeNil())
+						Ω(actualLRPs).Should(HaveLen(0))
+					})
+				})
 			})
 		})
 
@@ -358,42 +569,6 @@ var _ = Describe("LrpGetters", func() {
 			Context("when there are no entries", func() {
 				It("returns an ErrStoreResourceNotFound", func() {
 					Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
-				})
-			})
-		})
-
-		Describe("ActualLRPsByDomain", func() {
-			var runningLrp3 models.ActualLRP
-
-			BeforeEach(func() {
-				runningLrp3 = models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey("guidC", 3, "domain-b"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
-					ActualLRPNetInfo:      netInfo,
-					State:                 models.ActualLRPStateRunning,
-					Since:                 clock.Now().UnixNano(),
-				}
-				err := bbs.StartActualLRP(runningLrp3.ActualLRPKey, runningLrp3.ActualLRPContainerKey, runningLrp3.ActualLRPNetInfo, logger)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("should fetch all LRPs for the specified guid", func() {
-				lrps, err := bbs.ActualLRPsByDomain("domain-b")
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(lrps).Should(HaveLen(2))
-				Ω(lrps).ShouldNot(ContainElement(domainALRP))
-				Ω(lrps).Should(ContainElement(domainBLRP))
-				Ω(lrps).Should(ContainElement(runningLrp3))
-			})
-
-			Context("when there are no actual LRPs in the requested domain", func() {
-				It("returns an empty list", func() {
-					lrps, err := bbs.ActualLRPsByDomain("bogus-domain")
-					Ω(err).ShouldNot(HaveOccurred())
-
-					Ω(lrps).ShouldNot(BeNil())
-					Ω(lrps).Should(HaveLen(0))
 				})
 			})
 		})

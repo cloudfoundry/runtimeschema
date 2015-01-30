@@ -80,14 +80,12 @@ func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 
 	for _, processNode := range node.ChildNodes {
 		for _, indexNode := range processNode.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.CellID == cellID {
-					lrps = append(lrps, lrp)
-				}
+			lrp, err := extractDominantActualLRP(indexNode)
+			if err != nil {
+				return lrps, err
+			}
+			if lrp.CellID == cellID {
+				lrps = append(lrps, lrp)
 			}
 		}
 	}
@@ -107,15 +105,11 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 
 	for _, node := range node.ChildNodes {
 		for _, indexNode := range node.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else {
-					lrps = append(lrps, lrp)
-				}
+			lrp, err := extractDominantActualLRP(indexNode)
+			if err != nil {
+				return lrps, err
 			}
+			lrps = append(lrps, lrp)
 		}
 	}
 
@@ -133,15 +127,11 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 	}
 
 	for _, indexNode := range node.ChildNodes {
-		for _, instanceNode := range indexNode.ChildNodes {
-			var lrp models.ActualLRP
-			err = models.FromJSON(instanceNode.Value, &lrp)
-			if err != nil {
-				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-			} else {
-				lrps[lrp.Index] = lrp
-			}
+		lrp, err := extractDominantActualLRP(indexNode)
+		if err != nil {
+			return lrps, err
 		}
+		lrps[lrp.Index] = lrp
 	}
 
 	return lrps, nil
@@ -155,6 +145,43 @@ func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int)
 	}
 
 	return extractDominantActualLRP(indexNode)
+}
+
+func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
+	lrps := []models.ActualLRP{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return lrps, nil
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
+	}
+
+	for _, node := range node.ChildNodes {
+		for _, indexNode := range node.ChildNodes {
+			lrp, err := extractDominantActualLRP(indexNode)
+			if err != nil {
+				return lrps, err
+			}
+			if lrp.Domain == domain {
+				lrps = append(lrps, lrp)
+			}
+		}
+	}
+
+	return lrps, nil
+}
+
+func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
+	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
+	if err != nil {
+		return models.DesiredLRP{}, 0, shared.ConvertStoreError(err)
+	}
+
+	var lrp models.DesiredLRP
+	err = models.FromJSON(node.Value, &lrp)
+
+	return lrp, node.Index, err
 }
 
 func extractDominantActualLRP(indexNode storeadapter.StoreNode) (models.ActualLRP, error) {
@@ -205,43 +232,4 @@ func extractDominantActualLRP(indexNode storeadapter.StoreNode) (models.ActualLR
 	}
 
 	return instanceLRP, err
-}
-
-func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
-
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
-	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
-	}
-
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.Domain == domain {
-					lrps = append(lrps, lrp)
-				}
-			}
-		}
-	}
-
-	return lrps, nil
-}
-
-func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
-	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
-	if err != nil {
-		return models.DesiredLRP{}, 0, shared.ConvertStoreError(err)
-	}
-
-	var lrp models.DesiredLRP
-	err = models.FromJSON(node.Value, &lrp)
-
-	return lrp, node.Index, err
 }
