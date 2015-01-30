@@ -1091,7 +1091,7 @@ var _ = Describe("LrpLifecycle", func() {
 
 			Context("when the cell is present", func() {
 				BeforeEach(func() {
-					cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com", "the-zone")
+					cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
 					registerCell(cellPresence)
 				})
 

@@ -117,11 +117,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			})
 
 			Context("when there are running instances on a present cell", func() {
-				cellPresence := models.CellPresence{
-					CellID:     "the-cell-id",
-					Stack:      "the-stack",
-					RepAddress: "cell.example.com",
-				}
+				cellPresence := models.NewCellPresence("the-cell-id", "the-stack", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
 
 				BeforeEach(func() {
 					registerCell(cellPresence)
@@ -236,11 +232,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				})
 
 				Context("when the cell is present", func() {
-					cellPresence := models.CellPresence{
-						CellID:     "the-cell-id",
-						Stack:      "the-stack",
-						RepAddress: "cell.example.com",
-					}
+					cellPresence := models.NewCellPresence("the-cell-id", "the-stack", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
 
 					BeforeEach(func() {
 						registerCell(cellPresence)

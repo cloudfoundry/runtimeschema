@@ -12,14 +12,22 @@ var _ = Describe("CellPresence", func() {
 
 	var payload string
 
+	var capacity models.CellCapacity
+
 	BeforeEach(func() {
-		cellPresence = models.NewCellPresence("some-id", "some-stack", "some-address", "some-zone")
+		capacity = models.NewCellCapacity(128, 1024, 3)
+		cellPresence = models.NewCellPresence("some-id", "some-stack", "some-address", "some-zone", capacity)
 
 		payload = `{
     "cell_id":"some-id",
     "stack": "some-stack",
     "rep_address": "some-address",
-    "zone": "some-zone"
+    "zone": "some-zone",
+    "capacity": {
+       "memory_mb": 128,
+       "disk_mb": 1024,
+       "containers": 3
+    }
   }`
 	})
 
@@ -60,8 +68,66 @@ var _ = Describe("CellPresence", func() {
 					Ω(err.Error()).Should(ContainSubstring("rep_address"))
 				})
 			})
+
+			Context("when cell capacity is invalid", func() {
+				Context("when memory is zero", func() {
+					BeforeEach(func() {
+						cellPresence.Capacity.MemoryMB = 0
+					})
+					It("returns an error", func() {
+						err := cellPresence.Validate()
+						Ω(err).Should(HaveOccurred())
+						Ω(err.Error()).Should(ContainSubstring("memory_mb"))
+					})
+				})
+
+				Context("when memory is negative", func() {
+					BeforeEach(func() {
+						cellPresence.Capacity.MemoryMB = -1
+					})
+					It("returns an error", func() {
+						err := cellPresence.Validate()
+						Ω(err).Should(HaveOccurred())
+						Ω(err.Error()).Should(ContainSubstring("memory_mb"))
+					})
+				})
+
+				Context("when containers are zero", func() {
+					BeforeEach(func() {
+						cellPresence.Capacity.Containers = 0
+					})
+					It("returns an error", func() {
+						err := cellPresence.Validate()
+						Ω(err).Should(HaveOccurred())
+						Ω(err.Error()).Should(ContainSubstring("containers"))
+					})
+				})
+
+				Context("when containers are negative", func() {
+					BeforeEach(func() {
+						cellPresence.Capacity.Containers = -1
+					})
+					It("returns an error", func() {
+						err := cellPresence.Validate()
+						Ω(err).Should(HaveOccurred())
+						Ω(err.Error()).Should(ContainSubstring("containers"))
+					})
+				})
+
+				Context("when disk is negative", func() {
+					BeforeEach(func() {
+						cellPresence.Capacity.DiskMB = -1
+					})
+					It("returns an error", func() {
+						err := cellPresence.Validate()
+						Ω(err).Should(HaveOccurred())
+						Ω(err.Error()).Should(ContainSubstring("disk_mb"))
+					})
+				})
+			})
 		})
 	})
+
 	Describe("ToJSON", func() {
 		It("should JSONify", func() {
 			json, err := models.ToJSON(&cellPresence)

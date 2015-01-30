@@ -214,7 +214,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				var heartbeater ifrit.Process
 
 				BeforeEach(func() {
-					cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4", "the-zone")
+					cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
 
 				})

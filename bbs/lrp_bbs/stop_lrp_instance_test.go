@@ -14,11 +14,7 @@ var _ = Describe("StopLRPInstance", func() {
 	var cellPresence models.CellPresence
 
 	BeforeEach(func() {
-		cellPresence = models.CellPresence{
-			CellID:     "the-cell-id",
-			Stack:      "the-stack",
-			RepAddress: "cell.example.com",
-		}
+		cellPresence = models.NewCellPresence("the-cell-id", "the-stack", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
 		desiredLRP := models.DesiredLRP{
 			ProcessGuid: "some-process-guid",
 			Domain:      "domain",

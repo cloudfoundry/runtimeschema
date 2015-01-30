@@ -189,7 +189,7 @@ func createMalformedValueForKey(key string) {
 }
 
 func newCellPresence(cellID string) models.CellPresence {
-	return models.NewCellPresence(cellID, "some-stack", "1.2.3.4", "az-1")
+	return models.NewCellPresence(cellID, "some-stack", "1.2.3.4", "az-1", models.CellCapacity{128, 1024, 3})
 }
 
 func newDesiredLRP(guid, domain string, instances int) models.DesiredLRP {

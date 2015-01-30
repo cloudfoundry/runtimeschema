@@ -68,7 +68,7 @@ var _ = Describe("LrpConvergence", func() {
 			}
 
 			createRawDesiredLRP(desiredLRP)
-			registerCell(models.NewCellPresence(cellId, "the-stack", "example.com", "the-zone"))
+			registerCell(models.NewCellPresence(cellId, "the-stack", "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3)))
 			registerAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
 		})
 
@@ -218,7 +218,7 @@ var _ = Describe("LrpConvergence", func() {
 			err := bbs.DesireLRP(logger, desiredLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
+			cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
 			registerCell(cellPresence)
 
 			actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -338,7 +338,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
+					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					registerCell(cellPresence)
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -394,7 +394,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
+					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					registerCell(cellPresence)
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -528,7 +528,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
+					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 100))
 					registerCell(cellPresence)
 
 					index = numInstances
@@ -591,7 +591,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone")
+					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(124, 1024, 6))
 					registerCell(cellPresence)
 
 					index = numInstances
