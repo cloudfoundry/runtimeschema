@@ -120,15 +120,6 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	return lrps, nil
 }
 
-func (bbs *LRPBBS) RunningActualLRPs() ([]models.ActualLRP, error) {
-	lrps, err := bbs.ActualLRPs()
-	if err != nil {
-		return []models.ActualLRP{}, err
-	}
-
-	return filterActualLRPs(lrps, models.ActualLRPStateRunning), nil
-}
-
 func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
 	lrps := models.ActualLRPsByIndex{}
 
@@ -206,15 +197,4 @@ func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.
 	err = models.FromJSON(node.Value, &lrp)
 
 	return lrp, node.Index, err
-}
-
-func filterActualLRPs(lrps []models.ActualLRP, state models.ActualLRPState) []models.ActualLRP {
-	filteredLRPs := []models.ActualLRP{}
-	for _, lrp := range lrps {
-		if lrp.State == state {
-			filteredLRPs = append(filteredLRPs, lrp)
-		}
-	}
-
-	return filteredLRPs
 }

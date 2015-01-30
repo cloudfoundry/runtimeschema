@@ -203,17 +203,6 @@ var _ = Describe("LrpGetters", func() {
 			})
 		})
 
-		Describe("RunningActualLRPs", func() {
-			It("returns all actual long running processes", func() {
-				all, err := bbs.RunningActualLRPs()
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(all).Should(HaveLen(2))
-				Ω(all).Should(ContainElement(runningLrp1))
-				Ω(all).Should(ContainElement(runningLrp2))
-			})
-		})
-
 		Describe("ActualLRPsByProcessGuid", func() {
 			It("should fetch all LRPs for the specified guid", func() {
 				lrps, err := bbs.ActualLRPsByProcessGuid("guidA")
