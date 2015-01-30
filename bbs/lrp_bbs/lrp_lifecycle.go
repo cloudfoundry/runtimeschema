@@ -92,27 +92,39 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 	return nil
 }
 
+type stateChange bool
+
+const (
+	stateDidChange    stateChange = true
+	stateDidNotChange stateChange = false
+)
+
 func (bbs *LRPBBS) unclaimActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
-) error {
+) (stateChange, error) {
 	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
 	lrp, index, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
-		return err
+		return stateDidNotChange, err
 	}
 
 	if lrp.ActualLRPKey != actualLRPKey {
 		logger.Error("failed-actual-lrp-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
-		return bbserrors.ErrActualLRPCannotBeUnclaimed
+		return stateDidNotChange, bbserrors.ErrActualLRPCannotBeUnclaimed
+	}
+
+	if lrp.State == models.ActualLRPStateUnclaimed {
+		logger.Info("succeeded")
+		return stateDidNotChange, nil
 	}
 
 	if lrp.ActualLRPContainerKey != actualLRPContainerKey {
 		logger.Error("failed-actual-lrp-container-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
-		return bbserrors.ErrActualLRPCannotBeUnclaimed
+		return stateDidNotChange, bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
@@ -123,7 +135,7 @@ func (bbs *LRPBBS) unclaimActualLRP(
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return err
+		return stateDidNotChange, err
 	}
 
 	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
@@ -133,11 +145,11 @@ func (bbs *LRPBBS) unclaimActualLRP(
 
 	if err != nil {
 		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
-		return shared.ConvertStoreError(err)
+		return stateDidNotChange, shared.ConvertStoreError(err)
 	}
 
 	logger.Info("succeeded")
-	return nil
+	return stateDidChange, nil
 }
 
 func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {

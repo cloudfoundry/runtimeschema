@@ -10,9 +10,13 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
-	err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+	changed, err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err != nil {
 		return err
+	}
+
+	if !changed {
+		return nil
 	}
 
 	err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
