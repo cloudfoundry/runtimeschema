@@ -155,13 +155,13 @@ var _ = Describe("LrpGetters", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			createAndClaim(
-				models.DesiredLRP{ProcessGuid: "guidA", Domain: "test", Instances: 1},
+				models.DesiredLRP{ProcessGuid: "guidD", Domain: "test", Instances: 1},
 				0,
 				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
 				logger,
 			)
 
-			newLrp, err = bbs.ActualLRPByProcessGuidAndIndex("guidA", 0)
+			newLrp, err = bbs.ActualLRPByProcessGuidAndIndex("guidD", 0)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo, logger)
@@ -205,10 +205,9 @@ var _ = Describe("LrpGetters", func() {
 
 		Describe("ActualLRPsByProcessGuid", func() {
 			It("should fetch all LRPs for the specified guid", func() {
-				lrps, err := bbs.ActualLRPsByProcessGuid("guidA")
+				lrps, err := bbs.ActualLRPsByProcessGuid("guidD")
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrps).Should(HaveLen(2))
-				Ω(lrps).Should(ContainElement(runningLrp1))
+				Ω(lrps).Should(HaveLen(1))
 				Ω(lrps).Should(ContainElement(newLrp))
 			})
 		})
