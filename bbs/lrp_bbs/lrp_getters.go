@@ -3,7 +3,9 @@ package lrp_bbs
 import (
 	"errors"
 	"fmt"
+	"path"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -146,18 +148,63 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 }
 
 func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
-	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
-	if err != nil {
-		return models.ActualLRP{}, shared.ConvertStoreError(err)
+	indexNode, indexErr := bbs.store.ListRecursively(shared.ActualLRPIndexDir(processGuid, index))
+
+	if indexErr != nil {
+		return models.ActualLRP{}, shared.ConvertStoreError(indexErr)
 	}
 
-	var lrp models.ActualLRP
-	err = models.FromJSON(node.Value, &lrp)
-	if err != nil {
-		return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+	return extractDominantActualLRP(indexNode)
+}
+
+func extractDominantActualLRP(indexNode storeadapter.StoreNode) (models.ActualLRP, error) {
+	var instanceNode *storeadapter.StoreNode
+	var evacuatingNode *storeadapter.StoreNode
+
+	for _, node := range indexNode.ChildNodes {
+		node := node
+		switch path.Base(node.Key) {
+		case shared.ActualLRPInstanceKey:
+			instanceNode = &node
+		case shared.ActualLRPEvacuatingKey:
+			evacuatingNode = &node
+		}
 	}
 
-	return lrp, err
+	instanceFound := instanceNode != nil
+	evacuatingFound := evacuatingNode != nil
+
+	if !instanceFound && !evacuatingFound {
+		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
+	}
+
+	var err error
+	var instanceLRP models.ActualLRP
+	var evacuatingLRP models.ActualLRP
+
+	if instanceFound {
+		err = models.FromJSON(instanceNode.Value, &instanceLRP)
+		if err != nil {
+			return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+		}
+	}
+
+	if evacuatingFound {
+		err = models.FromJSON(evacuatingNode.Value, &evacuatingLRP)
+		if err != nil {
+			return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", evacuatingNode.Key, err.Error())
+		}
+	}
+
+	if instanceLRP.State == models.ActualLRPStateRunning || instanceLRP.State == models.ActualLRPStateCrashed {
+		return instanceLRP, err
+	}
+
+	if evacuatingFound {
+		return evacuatingLRP, nil
+	}
+
+	return instanceLRP, err
 }
 
 func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {

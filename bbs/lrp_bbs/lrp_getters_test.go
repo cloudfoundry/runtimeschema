@@ -117,17 +117,17 @@ var _ = Describe("LrpGetters", func() {
 
 	Context("ActualLRPs", func() {
 		var (
-			runningLrp1 models.ActualLRP
-			runningLrp2 models.ActualLRP
-			runningLrp3 models.ActualLRP
+			domainALRP models.ActualLRP
+			domainBLRP models.ActualLRP
+			domainCLRP models.ActualLRP
 
-			newLrp models.ActualLRP
+			netInfo models.ActualLRPNetInfo
 		)
 
 		BeforeEach(func() {
-			netInfo := models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}})
+			netInfo = models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}})
 
-			runningLrp1 = models.ActualLRP{
+			domainALRP = models.ActualLRP{
 				ActualLRPKey:          models.NewActualLRPKey("guidA", 1, "domain-a"),
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-1", "cell-id"),
 				ActualLRPNetInfo:      netInfo,
@@ -135,7 +135,10 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 clock.Now().UnixNano(),
 			}
 
-			runningLrp2 = models.ActualLRP{
+			err := bbs.StartActualLRP(domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey, domainALRP.ActualLRPNetInfo, logger)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			domainBLRP = models.ActualLRP{
 				ActualLRPKey:          models.NewActualLRPKey("guidB", 2, "domain-b"),
 				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-2", "cell-id"),
 				ActualLRPNetInfo:      netInfo,
@@ -143,28 +146,17 @@ var _ = Describe("LrpGetters", func() {
 				Since:                 clock.Now().UnixNano(),
 			}
 
-			runningLrp3 = models.ActualLRP{
-				ActualLRPKey:          models.NewActualLRPKey("guidC", 3, "domain-b"),
-				ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
-				ActualLRPNetInfo:      netInfo,
-				State:                 models.ActualLRPStateRunning,
-				Since:                 clock.Now().UnixNano(),
-			}
-
-			err := bbs.StartActualLRP(runningLrp1.ActualLRPKey, runningLrp1.ActualLRPContainerKey, runningLrp1.ActualLRPNetInfo, logger)
+			err = bbs.StartActualLRP(domainBLRP.ActualLRPKey, domainBLRP.ActualLRPContainerKey, domainBLRP.ActualLRPNetInfo, logger)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			createAndClaim(
-				models.DesiredLRP{ProcessGuid: "guidD", Domain: "test", Instances: 1},
+				models.DesiredLRP{ProcessGuid: "guidD", Domain: "domain-c", Instances: 1},
 				0,
 				models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
 				logger,
 			)
 
-			newLrp = getInstanceActualLRP(models.NewActualLRPKey("guidD", 0, "test"))
-
-			err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo, logger)
-			Ω(err).ShouldNot(HaveOccurred())
+			domainCLRP = getInstanceActualLRP(models.NewActualLRPKey("guidD", 0, "domain-c"))
 		})
 
 		Describe("ActualLRPs", func() {
@@ -173,9 +165,9 @@ var _ = Describe("LrpGetters", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(all).Should(HaveLen(3))
-				Ω(all).Should(ContainElement(runningLrp1))
-				Ω(all).Should(ContainElement(newLrp))
-				Ω(all).Should(ContainElement(runningLrp2))
+				Ω(all).Should(ContainElement(domainALRP))
+				Ω(all).Should(ContainElement(domainBLRP))
+				Ω(all).Should(ContainElement(domainCLRP))
 			})
 		})
 
@@ -193,7 +185,7 @@ var _ = Describe("LrpGetters", func() {
 				actualLrpsForMainCell, err := bbs.ActualLRPsByCellID("cell-id")
 				Ω(err).ShouldNot(HaveOccurred())
 
-				Ω(actualLrpsForMainCell).Should(ConsistOf(runningLrp1, newLrp, runningLrp2))
+				Ω(actualLrpsForMainCell).Should(ConsistOf(domainALRP, domainCLRP, domainBLRP))
 
 				actualLrpsForOtherCell, err := bbs.ActualLRPsByCellID("some-other-cell")
 				Ω(err).ShouldNot(HaveOccurred())
@@ -207,20 +199,180 @@ var _ = Describe("LrpGetters", func() {
 				lrps, err := bbs.ActualLRPsByProcessGuid("guidD")
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(lrps).Should(HaveLen(1))
-				Ω(lrps).Should(ContainElement(newLrp))
+				Ω(lrps).Should(ContainElement(domainCLRP))
 			})
 		})
 
 		Describe("ActualLRPByProcessGuidAndIndex", func() {
-			It("should fetch the LRP for the specified guid", func() {
-				lrp, err := bbs.ActualLRPByProcessGuidAndIndex("guidA", 1)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrp).Should(Equal(runningLrp1))
+			var (
+				lrpKey                 models.ActualLRPKey
+				instanceContainerKey   models.ActualLRPContainerKey
+				evacuatingContainerKey models.ActualLRPContainerKey
+				netInfo                models.ActualLRPNetInfo
+				evacuatingLRP          models.ActualLRP
+				returnedLRP            models.ActualLRP
+				returnedErr            error
+				instanceLRP            models.ActualLRP
+			)
+
+			BeforeEach(func() {
+				lrpKey = models.NewActualLRPKey("process-guid", 0, "domain")
+				instanceContainerKey = models.NewActualLRPContainerKey("instance-guid", "cell-id")
+				evacuatingContainerKey = models.NewActualLRPContainerKey("evacuating-guid", "cell-id")
+				netInfo = models.NewActualLRPNetInfo("address", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
+				evacuatingLRP = models.ActualLRP{
+					ActualLRPKey:          lrpKey,
+					ActualLRPContainerKey: evacuatingContainerKey,
+					ActualLRPNetInfo:      netInfo,
+					State:                 models.ActualLRPStateRunning,
+					Since:                 3417,
+				}
+			})
+
+			JustBeforeEach(func() {
+				returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex("process-guid", 0)
+			})
+
+			Context("when there is an UNCLAIMED /instance entry", func() {
+				BeforeEach(func() {
+					instanceLRP = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        models.ActualLRPStateUnclaimed,
+						Since:        1138,
+					}
+					createRawActualLRP(instanceLRP)
+				})
+
+				It("returns the /instance entry", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRP).Should(Equal(instanceLRP))
+				})
+
+				Context("when there is also an /evacuating entry", func() {
+					BeforeEach(func() {
+						createRawEvacuatingActualLRP(evacuatingLRP)
+					})
+
+					It("returns the /evacuating entry", func() {
+						Ω(returnedErr).ShouldNot(HaveOccurred())
+						Ω(returnedLRP).Should(Equal(evacuatingLRP))
+					})
+				})
+			})
+
+			Context("when there is a CLAIMED /instance entry", func() {
+				BeforeEach(func() {
+					instanceLRP = models.ActualLRP{
+						ActualLRPKey:          lrpKey,
+						ActualLRPContainerKey: instanceContainerKey,
+						State: models.ActualLRPStateClaimed,
+						Since: 1138,
+					}
+					createRawActualLRP(instanceLRP)
+				})
+
+				It("returns the /instance entry", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRP).Should(Equal(instanceLRP))
+				})
+
+				Context("when there is also an /evacuating entry", func() {
+					BeforeEach(func() {
+						createRawEvacuatingActualLRP(evacuatingLRP)
+					})
+
+					It("returns the /evacuating entry", func() {
+						Ω(returnedErr).ShouldNot(HaveOccurred())
+						Ω(returnedLRP).Should(Equal(evacuatingLRP))
+					})
+				})
+			})
+
+			Context("when there is a RUNNING /instance entry", func() {
+				BeforeEach(func() {
+					instanceLRP = models.ActualLRP{
+						ActualLRPKey:          lrpKey,
+						ActualLRPContainerKey: instanceContainerKey,
+						ActualLRPNetInfo:      netInfo,
+						State:                 models.ActualLRPStateRunning,
+						Since:                 1138,
+					}
+					createRawActualLRP(instanceLRP)
+				})
+
+				It("returns the /instance entry", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRP).Should(Equal(instanceLRP))
+				})
+
+				Context("when there is also an /evacuating entry", func() {
+					BeforeEach(func() {
+						createRawEvacuatingActualLRP(evacuatingLRP)
+					})
+
+					It("returns the /instance entry", func() {
+						Ω(returnedErr).ShouldNot(HaveOccurred())
+						Ω(returnedLRP).Should(Equal(instanceLRP))
+					})
+				})
+			})
+
+			Context("when there is a CRASHED /instance entry", func() {
+				BeforeEach(func() {
+					instanceLRP = models.ActualLRP{
+						ActualLRPKey: lrpKey,
+						State:        models.ActualLRPStateCrashed,
+						Since:        1138,
+					}
+					createRawActualLRP(instanceLRP)
+				})
+
+				It("returns the /instance entry", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRP).Should(Equal(instanceLRP))
+				})
+
+				Context("when there is also an /evacuating entry", func() {
+					BeforeEach(func() {
+						createRawEvacuatingActualLRP(evacuatingLRP)
+					})
+
+					It("returns the /instance entry", func() {
+						Ω(returnedErr).ShouldNot(HaveOccurred())
+						Ω(returnedLRP).Should(Equal(instanceLRP))
+					})
+				})
+			})
+
+			Context("when there is only an /evacuating entry", func() {
+				BeforeEach(func() {
+					createRawEvacuatingActualLRP(evacuatingLRP)
+				})
+
+				It("returns the /evacuating entry", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRP).Should(Equal(evacuatingLRP))
+				})
+			})
+
+			Context("when there are no entries", func() {
+				It("returns an ErrStoreResourceNotFound", func() {
+					Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
 			})
 		})
 
 		Describe("ActualLRPsByDomain", func() {
+			var runningLrp3 models.ActualLRP
+
 			BeforeEach(func() {
+				runningLrp3 = models.ActualLRP{
+					ActualLRPKey:          models.NewActualLRPKey("guidC", 3, "domain-b"),
+					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-3", "cell-id"),
+					ActualLRPNetInfo:      netInfo,
+					State:                 models.ActualLRPStateRunning,
+					Since:                 clock.Now().UnixNano(),
+				}
 				err := bbs.StartActualLRP(runningLrp3.ActualLRPKey, runningLrp3.ActualLRPContainerKey, runningLrp3.ActualLRPNetInfo, logger)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -230,8 +382,8 @@ var _ = Describe("LrpGetters", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrps).Should(HaveLen(2))
-				Ω(lrps).ShouldNot(ContainElement(runningLrp1))
-				Ω(lrps).Should(ContainElement(runningLrp2))
+				Ω(lrps).ShouldNot(ContainElement(domainALRP))
+				Ω(lrps).Should(ContainElement(domainBLRP))
 				Ω(lrps).Should(ContainElement(runningLrp3))
 			})
 

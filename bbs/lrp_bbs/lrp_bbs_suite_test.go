@@ -116,6 +116,18 @@ func createRawActualLRP(lrp models.ActualLRP) {
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
+func createRawEvacuatingActualLRP(lrp models.ActualLRP) {
+	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
+	Ω(err).ShouldNot(HaveOccurred())
+
+	err = etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Value: value,
+	})
+
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
 func createRawDesiredLRP(d models.DesiredLRP) {
 	value, err := json.Marshal(d) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())

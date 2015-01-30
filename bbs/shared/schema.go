@@ -16,7 +16,8 @@ const TaskSchemaRoot = SchemaRoot + "task"
 const LockSchemaRoot = SchemaRoot + "locks"
 const DomainSchemaRoot = SchemaRoot + "domain"
 
-const DesiredLRPInstanceKey = "instance"
+const ActualLRPInstanceKey = "instance"
+const ActualLRPEvacuatingKey = "evacuating"
 
 func CellSchemaPath(cellID string) string {
 	return path.Join(CellSchemaRoot, cellID)
@@ -35,7 +36,11 @@ func ActualLRPIndexDir(processGuid string, index int) string {
 }
 
 func ActualLRPSchemaPath(processGuid string, index int) string {
-	return path.Join(ActualLRPIndexDir(processGuid, index), DesiredLRPInstanceKey)
+	return path.Join(ActualLRPIndexDir(processGuid, index), ActualLRPInstanceKey)
+}
+
+func EvacuatingActualLRPSchemaPath(processGuid string, index int) string {
+	return path.Join(ActualLRPIndexDir(processGuid, index), ActualLRPEvacuatingKey)
 }
 
 func DesiredLRPSchemaPath(lrp models.DesiredLRP) string {
