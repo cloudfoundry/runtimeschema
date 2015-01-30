@@ -161,8 +161,7 @@ var _ = Describe("LrpGetters", func() {
 				logger,
 			)
 
-			newLrp, err = bbs.ActualLRPByProcessGuidAndIndex("guidD", 0)
-			Ω(err).ShouldNot(HaveOccurred())
+			newLrp = getInstanceActualLRP(models.NewActualLRPKey("guidD", 0, "test"))
 
 			err = bbs.StartActualLRP(runningLrp2.ActualLRPKey, runningLrp2.ActualLRPContainerKey, runningLrp2.ActualLRPNetInfo, logger)
 			Ω(err).ShouldNot(HaveOccurred())

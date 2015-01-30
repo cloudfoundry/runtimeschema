@@ -133,10 +133,15 @@ func createRawDomain(domain string) {
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func getActualLRP(lrpKey models.ActualLRPKey) models.ActualLRP {
-	actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(lrpKey.ProcessGuid, lrpKey.Index)
+func getInstanceActualLRP(lrpKey models.ActualLRPKey) models.ActualLRP {
+	node, err := etcdClient.Get(shared.ActualLRPSchemaPath(lrpKey.ProcessGuid, lrpKey.Index))
 	Ω(err).ShouldNot(HaveOccurred())
-	return actualLRP
+
+	var lrp models.ActualLRP
+	err = models.FromJSON(node.Value, &lrp)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	return lrp
 }
 
 func defaultNetInfo() models.ActualLRPNetInfo {

@@ -155,13 +155,13 @@ func (t crashTest) Test() {
 		}
 
 		It(fmt.Sprintf("increments the crash count to %d", t.Result.CrashCount), func() {
-			actualLRP := getActualLRP(actualLRPKey)
+			actualLRP := getInstanceActualLRP(actualLRPKey)
 			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
 			Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
 		})
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {
-			actualLRP := getActualLRP(actualLRPKey)
+			actualLRP := getInstanceActualLRP(actualLRPKey)
 			Ω(actualLRP.State).Should(Equal(t.Result.State))
 		})
 
