@@ -81,6 +81,9 @@ func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	for _, processNode := range node.ChildNodes {
 		for _, indexNode := range processNode.ChildNodes {
 			lrp, err := extractDominantActualLRP(indexNode)
+			if err == bbserrors.ErrStoreResourceNotFound {
+				continue
+			}
 			if err != nil {
 				return lrps, err
 			}
@@ -106,6 +109,9 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	for _, node := range node.ChildNodes {
 		for _, indexNode := range node.ChildNodes {
 			lrp, err := extractDominantActualLRP(indexNode)
+			if err == bbserrors.ErrStoreResourceNotFound {
+				continue
+			}
 			if err != nil {
 				return lrps, err
 			}
@@ -128,6 +134,9 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 
 	for _, indexNode := range node.ChildNodes {
 		lrp, err := extractDominantActualLRP(indexNode)
+		if err == bbserrors.ErrStoreResourceNotFound {
+			continue
+		}
 		if err != nil {
 			return lrps, err
 		}
@@ -160,6 +169,9 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	for _, node := range node.ChildNodes {
 		for _, indexNode := range node.ChildNodes {
 			lrp, err := extractDominantActualLRP(indexNode)
+			if err == bbserrors.ErrStoreResourceNotFound {
+				continue
+			}
 			if err != nil {
 				return lrps, err
 			}

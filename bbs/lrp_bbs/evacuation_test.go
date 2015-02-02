@@ -13,36 +13,62 @@ import (
 
 var _ = Describe("Evacuation", func() {
 	Describe("EvacuateClaimedActualLRP (tabular)", func() {
+		evacuateClaimedActualLRP := func() error {
+			return bbs.EvacuateClaimedActualLRP(logger, lrpKey, localContainerKey)
+		}
 		tests := []testable{
 			evacuationTest{
+				Name:    "when there is no instance or evacuating LRP",
+				Subject: evacuateClaimedActualLRP,
+				Result:  noInstanceOrEvacuatingLRP(),
+			},
+			evacuationTest{
 				Name:        "when the instance is UNCLAIMED",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateUnclaimed, nullContainerKey, nullNetInfo),
-				Result:      anUnchangedUnclaimedInstance(),
+				Result:      anUnchangedUnclaimedInstanceLRP(),
 			},
 			evacuationTest{
 				Name:        "when the instance is CLAIMED locally",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateClaimed, localContainerKey, nullNetInfo),
-				Result:      anUpdatedUnclaimedInstance(),
+				Result:      anUpdatedUnclaimedInstanceLRP(),
 			},
 			evacuationTest{
 				Name:        "when the instance is CLAIMED elsewhere",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateClaimed, otherContainerKey, nullNetInfo),
-				Result:      anUnchangedInstance(models.ActualLRPStateClaimed, otherContainerKey, nullNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
+				Result:      anUnchangedInstanceLRP(models.ActualLRPStateClaimed, otherContainerKey, nullNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
 			},
 			evacuationTest{
 				Name:        "when the instance is RUNNING locally",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateRunning, localContainerKey, localNetInfo),
-				Result:      anUpdatedUnclaimedInstance(),
+				Result:      anUpdatedUnclaimedInstanceLRP(),
 			},
 			evacuationTest{
 				Name:        "when the instance is RUNNING elsewhere",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateRunning, otherContainerKey, otherNetInfo),
-				Result:      anUnchangedInstance(models.ActualLRPStateRunning, otherContainerKey, otherNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
+				Result:      anUnchangedInstanceLRP(models.ActualLRPStateRunning, otherContainerKey, otherNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
 			},
 			evacuationTest{
 				Name:        "when the instance is CRASHED",
+				Subject:     evacuateClaimedActualLRP,
 				InstanceLRP: lrp(models.ActualLRPStateCrashed, nullContainerKey, nullNetInfo),
-				Result:      anUnchangedInstance(models.ActualLRPStateCrashed, nullContainerKey, nullNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
+				Result:      anUnchangedInstanceLRP(models.ActualLRPStateCrashed, nullContainerKey, nullNetInfo, bbserrors.ErrActualLRPCannotBeUnclaimed),
+			},
+			evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING locally",
+				Subject:       evacuateClaimedActualLRP,
+				EvacuatingLRP: lrp(models.ActualLRPStateRunning, localContainerKey, localNetInfo),
+				Result:        noInstanceOrEvacuatingLRP(),
+			},
+			evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING elsewhere",
+				Subject:       evacuateClaimedActualLRP,
+				EvacuatingLRP: lrp(models.ActualLRPStateRunning, otherContainerKey, otherNetInfo),
+				Result:        anUnchangedEvacuatingLRP(models.ActualLRPStateRunning, otherContainerKey, otherNetInfo),
 			},
 		}
 
@@ -91,9 +117,11 @@ type testable interface {
 }
 
 type evacuationTest struct {
-	Name        string
-	InstanceLRP lrpSetupFunc
-	Result      testResult
+	Name          string
+	Subject       func() error
+	InstanceLRP   lrpSetupFunc
+	EvacuatingLRP lrpSetupFunc
+	Result        testResult
 }
 
 type lrpStatus struct {
@@ -105,6 +133,7 @@ type lrpStatus struct {
 
 type testResult struct {
 	Instance         *lrpStatus
+	Evacuating       *lrpStatus
 	AuctionRequested bool
 	ReturnedError    error
 }
@@ -118,6 +147,61 @@ func lrp(state models.ActualLRPState, containerKey models.ActualLRPContainerKey,
 			State:                 state,
 			Since:                 clock.Now().UnixNano(),
 		}
+	}
+}
+
+func anUnchangedUnclaimedInstanceLRP() testResult {
+	return anUnchangedInstanceLRP(
+		models.ActualLRPStateUnclaimed,
+		models.ActualLRPContainerKey{},
+		models.ActualLRPNetInfo{},
+		nil,
+	)
+}
+
+func anUnchangedInstanceLRP(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo, err error) testResult {
+	return testResult{
+		Instance: &lrpStatus{
+			State: state,
+			ActualLRPContainerKey: containerKey,
+			ActualLRPNetInfo:      netInfo,
+			ShouldUpdate:          false,
+		},
+		AuctionRequested: false,
+		ReturnedError:    err,
+	}
+}
+
+func anUnchangedEvacuatingLRP(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) testResult {
+	return testResult{
+		Evacuating: &lrpStatus{
+			State: state,
+			ActualLRPContainerKey: containerKey,
+			ActualLRPNetInfo:      netInfo,
+			ShouldUpdate:          false,
+		},
+		AuctionRequested: false,
+		ReturnedError:    nil,
+	}
+}
+
+func anUpdatedUnclaimedInstanceLRP() testResult {
+	return testResult{
+		Instance: &lrpStatus{
+			State:                 models.ActualLRPStateUnclaimed,
+			ActualLRPNetInfo:      models.ActualLRPNetInfo{},
+			ActualLRPContainerKey: models.ActualLRPContainerKey{},
+			ShouldUpdate:          true,
+		},
+		AuctionRequested: true,
+		ReturnedError:    nil,
+	}
+}
+
+func noInstanceOrEvacuatingLRP() testResult {
+	return testResult{
+		AuctionRequested: false,
+		ReturnedError:    nil,
 	}
 }
 
@@ -136,11 +220,14 @@ func (t evacuationTest) Test() {
 			if t.InstanceLRP != nil {
 				createRawActualLRP(t.InstanceLRP())
 			}
+			if t.EvacuatingLRP != nil {
+				createRawEvacuatingActualLRP(t.EvacuatingLRP())
+			}
 		})
 
 		JustBeforeEach(func() {
 			clock.Increment(timeIncrement)
-			evacuateErr = bbs.EvacuateClaimedActualLRP(logger, lrpKey, localContainerKey)
+			evacuateErr = t.Subject()
 		})
 
 		if t.Result.ReturnedError == nil {
@@ -184,81 +271,90 @@ func (t evacuationTest) Test() {
 
 		if t.Result.Instance == nil {
 			It("removes the /instance actualLRP", func() {
-				_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+				_, err := getInstanceActualLRP(lrpKey)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		} else {
 			if t.Result.Instance.ShouldUpdate {
-				It("updates the Since", func() {
-					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+				It("updates the /instance Since", func() {
+					lrpInBBS, err := getInstanceActualLRP(lrpKey)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
 				})
 			} else {
-				It("does not update the Since", func() {
-					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+				It("does not update the /instance Since", func() {
+					lrpInBBS, err := getInstanceActualLRP(lrpKey)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(lrpInBBS.Since).Should(Equal(initialTimestamp))
 				})
 			}
 
-			It("has the expected state", func() {
-				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+			It("has the expected /instance state", func() {
+				lrpInBBS, err := getInstanceActualLRP(lrpKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrpInBBS.State).Should(Equal(t.Result.Instance.State))
 			})
 
-			It("has the expected container key", func() {
-				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+			It("has the expected /instance container key", func() {
+				lrpInBBS, err := getInstanceActualLRP(lrpKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrpInBBS.ActualLRPContainerKey).Should(Equal(t.Result.Instance.ActualLRPContainerKey))
 			})
 
-			It("has the expected net info", func() {
-				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+			It("has the expected /instance net info", func() {
+				lrpInBBS, err := getInstanceActualLRP(lrpKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(t.Result.Instance.ActualLRPNetInfo))
 			})
 		}
+
+		if t.Result.Evacuating == nil {
+			It("removes the /evacuating actualLRP", func() {
+				_, err := getEvacuatingActualLRP(lrpKey)
+				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		} else {
+			if t.Result.Evacuating.ShouldUpdate {
+				It("updates the /evacuating Since", func() {
+					lrpInBBS, err := getEvacuatingActualLRP(lrpKey)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
+				})
+			} else {
+				It("does not update the /evacuating Since", func() {
+					lrpInBBS, err := getEvacuatingActualLRP(lrpKey)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.Since).Should(Equal(initialTimestamp))
+				})
+			}
+
+			It("has the expected /evacuating state", func() {
+				lrpInBBS, err := getEvacuatingActualLRP(lrpKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrpInBBS.State).Should(Equal(t.Result.Evacuating.State))
+			})
+
+			It("has the expected /evacuating container key", func() {
+				lrpInBBS, err := getEvacuatingActualLRP(lrpKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrpInBBS.ActualLRPContainerKey).Should(Equal(t.Result.Evacuating.ActualLRPContainerKey))
+			})
+
+			It("has the expected /evacuating net info", func() {
+				lrpInBBS, err := getEvacuatingActualLRP(lrpKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(t.Result.Evacuating.ActualLRPNetInfo))
+			})
+		}
 	})
-}
-
-func anUnchangedUnclaimedInstance() testResult {
-	return anUnchangedInstance(
-		models.ActualLRPStateUnclaimed,
-		models.ActualLRPContainerKey{},
-		models.ActualLRPNetInfo{},
-		nil,
-	)
-}
-
-func anUnchangedInstance(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo, err error) testResult {
-	return testResult{
-		Instance: &lrpStatus{
-			State: state,
-			ActualLRPContainerKey: containerKey,
-			ActualLRPNetInfo:      netInfo,
-			ShouldUpdate:          false,
-		},
-		AuctionRequested: false,
-		ReturnedError:    err,
-	}
-}
-
-func anUpdatedUnclaimedInstance() testResult {
-	return testResult{
-		Instance: &lrpStatus{
-			State:                 models.ActualLRPStateUnclaimed,
-			ActualLRPNetInfo:      models.ActualLRPNetInfo{},
-			ActualLRPContainerKey: models.ActualLRPContainerKey{},
-			ShouldUpdate:          true,
-		},
-		AuctionRequested: true,
-		ReturnedError:    nil,
-	}
 }

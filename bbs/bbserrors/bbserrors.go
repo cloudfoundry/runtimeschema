@@ -11,6 +11,7 @@ var (
 	ErrActualLRPCannotBeUnclaimed = errors.New("cannot unclaim actual LRP")
 	ErrActualLRPCannotBeClaimed   = errors.New("cannot claim actual LRP")
 	ErrActualLRPCannotBeStarted   = errors.New("cannot start actual LRP")
+	ErrActualLRPCannotBeRemoved   = errors.New("cannot remove actual LRP")
 
 	ErrStoreResourceNotFound             = errors.New("the requested resource could not be found in the store")
 	ErrStoreExpectedNonCollectionRequest = errors.New("unable to access single (non-collection) store resource, request body refers to a collection")

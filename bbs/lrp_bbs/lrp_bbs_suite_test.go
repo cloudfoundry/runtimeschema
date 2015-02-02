@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -145,15 +146,32 @@ func createRawDomain(domain string) {
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func getInstanceActualLRP(lrpKey models.ActualLRPKey) models.ActualLRP {
+func getInstanceActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) {
 	node, err := etcdClient.Get(shared.ActualLRPSchemaPath(lrpKey.ProcessGuid, lrpKey.Index))
+	if err == storeadapter.ErrorKeyNotFound {
+		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
+	}
 	Ω(err).ShouldNot(HaveOccurred())
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	return lrp
+	return lrp, nil
+}
+
+func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) {
+	node, err := etcdClient.Get(shared.EvacuatingActualLRPSchemaPath(lrpKey.ProcessGuid, lrpKey.Index))
+	if err == storeadapter.ErrorKeyNotFound {
+		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
+	}
+	Ω(err).ShouldNot(HaveOccurred())
+
+	var lrp models.ActualLRP
+	err = models.FromJSON(node.Value, &lrp)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	return lrp, nil
 }
 
 func defaultNetInfo() models.ActualLRPNetInfo {
