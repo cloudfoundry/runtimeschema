@@ -424,7 +424,7 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 
 	default:
 		logger.Info("stopping-actual")
-		err := bbs.RequestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+		err := bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 		if err != nil {
 			logger.Error("failed-to-retire-actual-lrp", err, lager.Data{
 				"actual-lrp": lrp,
@@ -520,5 +520,22 @@ func (bbs *LRPBBS) FailLRP(
 	}
 
 	logger.Info("succeeded")
+	return nil
+}
+
+func (bbs *LRPBBS) requestStopLRPInstance(
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+) error {
+	cell, err := bbs.services.CellById(containerKey.CellID)
+	if err != nil {
+		return err
+	}
+
+	err = bbs.cellClient.StopLRPInstance(cell.RepAddress, key, containerKey)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
