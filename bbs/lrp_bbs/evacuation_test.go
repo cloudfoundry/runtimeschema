@@ -37,6 +37,18 @@ var _ = Describe("Evacuation", func() {
 			}
 		}
 
+		stoppedTest := func(base evacuationTest) evacuationTest {
+			return evacuationTest{
+				Name: base.Name,
+				Subject: func() error {
+					return bbs.EvacuateStoppedActualLRP(logger, lrpKey, alphaContainerKey)
+				},
+				InstanceLRP:   base.InstanceLRP,
+				EvacuatingLRP: base.EvacuatingLRP,
+				Result:        base.Result,
+			}
+		}
+
 		claimedTests := []testable{
 			claimedTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
@@ -271,6 +283,65 @@ var _ = Describe("Evacuation", func() {
 			}),
 		}
 
+		stoppedTests := []testable{
+			stoppedTest(evacuationTest{
+				Name:   "when there is no instance or evacuating LRP",
+				Result: noInstanceNoEvacuating(nil),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is UNCLAIMED",
+				InstanceLRP: unclaimedLRP(),
+				Result: instanceNoEvacuating(
+					anUnchangedUnclaimedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeRemoved,
+				),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is CLAIMED on alpha",
+				InstanceLRP: claimedLRP(alphaContainerKey),
+				Result:      noInstanceNoEvacuating(nil),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is CLAIMED on omega",
+				InstanceLRP: claimedLRP(omegaContainerKey),
+				Result: instanceNoEvacuating(
+					anUnchangedClaimedInstanceLRP(omegaContainerKey),
+					bbserrors.ErrActualLRPCannotBeRemoved,
+				),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is RUNNING on alpha",
+				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
+				Result:      noInstanceNoEvacuating(nil),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is RUNNING on omega",
+				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
+				Result: instanceNoEvacuating(
+					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
+					bbserrors.ErrActualLRPCannotBeRemoved,
+				),
+			}),
+			stoppedTest(evacuationTest{
+				Name:        "when the instance is CRASHED",
+				InstanceLRP: crashedLRP(),
+				Result: instanceNoEvacuating(
+					anUnchangedCrashedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeRemoved,
+				),
+			}),
+			stoppedTest(evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING on alpha",
+				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
+				Result:        noInstanceNoEvacuating(nil),
+			}),
+			stoppedTest(evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING on beta",
+				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
+				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), nil),
+			}),
+		}
+
 		Context("when the LRP is to be CLAIMED", func() {
 			for _, test := range claimedTests {
 				test.Test()
@@ -279,6 +350,12 @@ var _ = Describe("Evacuation", func() {
 
 		Context("when the LRP is to be RUNNING", func() {
 			for _, test := range runningTests {
+				test.Test()
+			}
+		})
+
+		Context("when the LRP is to be STOPPED", func() {
+			for _, test := range stoppedTests {
 				test.Test()
 			}
 		})
