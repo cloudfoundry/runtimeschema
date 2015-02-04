@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -51,31 +52,39 @@ var _ = Describe("CrashActualLRP", func() {
 })
 
 func resetOnlyRunningLRPsThatHaveNotCrashedRecently() []crashTest {
-	tests := []crashTest{}
-
-	for _, s := range models.ActualLRPStates {
-		var state = s
-		name := fmt.Sprintf("when the lrp is %s and has crashes and Since is older than 5 minutes", state)
-
-		lrpGenerator := func() models.ActualLRP {
+	lrpGenerator := func(state models.ActualLRPState) lrpSetupFunc {
+		return func() models.ActualLRP {
 			lrp := lrpForState(state, OverTime)
 			lrp.CrashCount = 4
 			return lrp
 		}
+	}
 
-		if state == models.ActualLRPStateRunning {
-			tests = append(tests, crashTest{
-				Name:   name,
-				LRP:    lrpGenerator,
-				Result: itUnclaimsTheLRP(),
-			})
-		} else {
-			tests = append(tests, crashTest{
-				Name:   name,
-				LRP:    lrpGenerator,
-				Result: itCrashesTheLRP(),
-			})
-		}
+	nameGenerator := func(state models.ActualLRPState) string {
+		return fmt.Sprintf("when the lrp is %s and has crashes and Since is older than 5 minutes", state)
+	}
+
+	tests := []crashTest{
+		crashTest{
+			Name:   nameGenerator(models.ActualLRPStateUnclaimed),
+			LRP:    lrpGenerator(models.ActualLRPStateUnclaimed),
+			Result: itDoesNotChangeTheUnclaimedLRP(),
+		},
+		crashTest{
+			Name:   nameGenerator(models.ActualLRPStateClaimed),
+			LRP:    lrpGenerator(models.ActualLRPStateClaimed),
+			Result: itCrashesTheLRP(),
+		},
+		crashTest{
+			Name:   nameGenerator(models.ActualLRPStateRunning),
+			LRP:    lrpGenerator(models.ActualLRPStateRunning),
+			Result: itUnclaimsTheLRP(),
+		},
+		crashTest{
+			Name:   nameGenerator(models.ActualLRPStateCrashed),
+			LRP:    lrpGenerator(models.ActualLRPStateCrashed),
+			Result: itDoesNotChangeTheCrashedLRP(),
+		},
 	}
 
 	return tests
@@ -90,25 +99,50 @@ type crashTest struct {
 }
 
 type crashTestResult struct {
-	State       models.ActualLRPState
-	CrashCount  int
-	Auction     bool
-	ReturnedErr error
+	State        models.ActualLRPState
+	CrashCount   int
+	ShouldUpdate bool
+	Auction      bool
+	ReturnedErr  error
 }
 
 func itUnclaimsTheLRP() crashTestResult {
 	return crashTestResult{
-		CrashCount: 1,
-		State:      models.ActualLRPStateUnclaimed,
-		Auction:    true,
+		CrashCount:   1,
+		State:        models.ActualLRPStateUnclaimed,
+		ShouldUpdate: true,
+		Auction:      true,
+		ReturnedErr:  nil,
 	}
 }
 
 func itCrashesTheLRP() crashTestResult {
 	return crashTestResult{
-		CrashCount: 5,
-		State:      models.ActualLRPStateCrashed,
-		Auction:    false,
+		CrashCount:   5,
+		State:        models.ActualLRPStateCrashed,
+		ShouldUpdate: true,
+		Auction:      false,
+		ReturnedErr:  nil,
+	}
+}
+
+func itDoesNotChangeTheUnclaimedLRP() crashTestResult {
+	return crashTestResult{
+		CrashCount:   4,
+		State:        models.ActualLRPStateUnclaimed,
+		ShouldUpdate: false,
+		Auction:      false,
+		ReturnedErr:  bbserrors.ErrActualLRPCannotBeCrashed,
+	}
+}
+
+func itDoesNotChangeTheCrashedLRP() crashTestResult {
+	return crashTestResult{
+		CrashCount:   4,
+		State:        models.ActualLRPStateCrashed,
+		ShouldUpdate: false,
+		Auction:      false,
+		ReturnedErr:  bbserrors.ErrActualLRPCannotBeCrashed,
 	}
 }
 
@@ -118,6 +152,7 @@ func (t crashTest) Test() {
 		var actualLRPKey models.ActualLRPKey
 		var containerKey models.ActualLRPContainerKey
 		var auctioneerPresence models.AuctioneerPresence
+		var initialTimestamp int64
 
 		BeforeEach(func() {
 			actualLRP := t.LRP()
@@ -125,6 +160,7 @@ func (t crashTest) Test() {
 			containerKey = actualLRP.ActualLRPContainerKey
 
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
+			initialTimestamp = actualLRP.Since
 
 			desiredLRP := models.DesiredLRP{
 				ProcessGuid: actualLRPKey.ProcessGuid,
@@ -154,12 +190,25 @@ func (t crashTest) Test() {
 			})
 		}
 
-		It(fmt.Sprintf("increments the crash count to %d", t.Result.CrashCount), func() {
+		It(fmt.Sprintf("has crash count %d", t.Result.CrashCount), func() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
-			Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
 		})
+
+		if t.Result.ShouldUpdate {
+			It("updates the LRP", func() {
+				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
+			})
+		} else {
+			It("does not update the LRP", func() {
+				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(actualLRP.Since).Should(Equal(initialTimestamp))
+			})
+		}
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)

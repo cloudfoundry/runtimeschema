@@ -318,17 +318,23 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 		newCrashCount = lrp.CrashCount + 1
 	}
 
-	if !lrp.AllowsTransitionTo(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, models.ActualLRPStateCrashed) {
+	logger.Debug("retrieved-lrp", lager.Data{"lrp": lrp})
+	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateCrashed) {
 		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, models.ActualLRPStateCrashed)
 		logger.Error("failed-to-transition-actual", err)
-		return err
+		return bbserrors.ErrActualLRPCannotBeCrashed
+	}
+
+	if lrp.State == models.ActualLRPStateUnclaimed || lrp.State == models.ActualLRPStateCrashed ||
+		((lrp.State == models.ActualLRPStateClaimed || lrp.State == models.ActualLRPStateRunning) && lrp.ActualLRPContainerKey != containerKey) {
+		return bbserrors.ErrActualLRPCannotBeCrashed
 	}
 
 	lrp.State = models.ActualLRPStateCrashed
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.CrashCount = newCrashCount
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
-	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+	lrp.ActualLRPNetInfo = models.EmptyActualLRPNetInfo()
 
 	var immediateRestart bool
 	if lrp.ShouldRestartImmediately(models.NewDefaultRestartCalculator()) {

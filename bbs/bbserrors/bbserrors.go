@@ -11,6 +11,7 @@ var (
 	ErrActualLRPCannotBeUnclaimed = errors.New("cannot unclaim actual LRP")
 	ErrActualLRPCannotBeClaimed   = errors.New("cannot claim actual LRP")
 	ErrActualLRPCannotBeStarted   = errors.New("cannot start actual LRP")
+	ErrActualLRPCannotBeCrashed   = errors.New("cannot crash actual LRP")
 	ErrActualLRPCannotBeRemoved   = errors.New("cannot remove actual LRP")
 	ErrActualLRPCannotBeEvacuated = errors.New("cannot evacuate actual LRP")
 

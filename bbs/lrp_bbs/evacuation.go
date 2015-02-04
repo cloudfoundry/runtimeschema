@@ -133,6 +133,23 @@ func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 	return nil
 }
 
+func (bbs *LRPBBS) EvacuateCrashedActualLRP(
+	logger lager.Logger,
+	actualLRPKey models.ActualLRPKey,
+	actualLRPContainerKey models.ActualLRPContainerKey,
+) error {
+	_ = bbs.removeEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+	err := bbs.CrashActualLRP(actualLRPKey, actualLRPContainerKey, logger)
+
+	if err == bbserrors.ErrStoreResourceNotFound {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (bbs *LRPBBS) unconditionallyEvacuateActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,

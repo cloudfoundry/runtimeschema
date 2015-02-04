@@ -49,6 +49,18 @@ var _ = Describe("Evacuation", func() {
 			}
 		}
 
+		crashedTest := func(base evacuationTest) evacuationTest {
+			return evacuationTest{
+				Name: base.Name,
+				Subject: func() error {
+					return bbs.EvacuateCrashedActualLRP(logger, lrpKey, alphaContainerKey)
+				},
+				InstanceLRP:   base.InstanceLRP,
+				EvacuatingLRP: base.EvacuatingLRP,
+				Result:        base.Result,
+			}
+		}
+
 		claimedTests := []testable{
 			claimedTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
@@ -342,6 +354,65 @@ var _ = Describe("Evacuation", func() {
 			}),
 		}
 
+		crashedTests := []testable{
+			crashedTest(evacuationTest{
+				Name:   "when there is no instance or evacuating LRP",
+				Result: noInstanceNoEvacuating(nil),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is UNCLAIMED",
+				InstanceLRP: unclaimedLRP(),
+				Result: instanceNoEvacuating(
+					anUnchangedUnclaimedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeCrashed,
+				),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is CLAIMED on alpha",
+				InstanceLRP: claimedLRP(alphaContainerKey),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), nil),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is CLAIMED on omega",
+				InstanceLRP: claimedLRP(omegaContainerKey),
+				Result: instanceNoEvacuating(
+					anUnchangedClaimedInstanceLRP(omegaContainerKey),
+					bbserrors.ErrActualLRPCannotBeCrashed,
+				),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is RUNNING on alpha",
+				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), nil),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is RUNNING on omega",
+				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
+				Result: instanceNoEvacuating(
+					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
+					bbserrors.ErrActualLRPCannotBeCrashed,
+				),
+			}),
+			crashedTest(evacuationTest{
+				Name:        "when the instance is CRASHED",
+				InstanceLRP: crashedLRP(),
+				Result: instanceNoEvacuating(
+					anUnchangedCrashedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeCrashed,
+				),
+			}),
+			crashedTest(evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING on alpha",
+				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
+				Result:        noInstanceNoEvacuating(nil),
+			}),
+			crashedTest(evacuationTest{
+				Name:          "when the evacuating LRP is RUNNING on beta",
+				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
+				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), nil),
+			}),
+		}
+
 		Context("when the LRP is to be CLAIMED", func() {
 			for _, test := range claimedTests {
 				test.Test()
@@ -356,6 +427,12 @@ var _ = Describe("Evacuation", func() {
 
 		Context("when the LRP is to be STOPPED", func() {
 			for _, test := range stoppedTests {
+				test.Test()
+			}
+		})
+
+		Context("when the LRP is to be CRASHED", func() {
+			for _, test := range crashedTests {
 				test.Test()
 			}
 		})
@@ -456,13 +533,18 @@ type lrpStatus struct {
 	ShouldUpdate bool
 }
 
+type instanceLRPStatus struct {
+	lrpStatus
+	CrashCount int
+}
+
 type evacuatingLRPStatus struct {
 	lrpStatus
 	TTL uint64
 }
 
 type testResult struct {
-	Instance         *lrpStatus
+	Instance         *instanceLRPStatus
 	Evacuating       *evacuatingLRPStatus
 	AuctionRequested bool
 	ReturnedError    error
@@ -497,41 +579,50 @@ func newEvacuatingLRPStatus(containerKey models.ActualLRPContainerKey, netInfo m
 	return status
 }
 
-func anUpdatedUnclaimedInstanceLRP() *lrpStatus {
-	return &lrpStatus{
-		State: models.ActualLRPStateUnclaimed,
-		ActualLRPContainerKey: emptyContainerKey,
-		ActualLRPNetInfo:      emptyNetInfo,
-		ShouldUpdate:          true,
+func anUpdatedUnclaimedInstanceLRP() *instanceLRPStatus {
+	return anUpdatedUnclaimedInstanceLRPWithCrashCount(0)
+}
+
+func anUpdatedUnclaimedInstanceLRPWithCrashCount(crashCount int) *instanceLRPStatus {
+	return &instanceLRPStatus{
+		lrpStatus: lrpStatus{
+			State: models.ActualLRPStateUnclaimed,
+			ActualLRPContainerKey: emptyContainerKey,
+			ActualLRPNetInfo:      emptyNetInfo,
+			ShouldUpdate:          true,
+		},
+		CrashCount: crashCount,
 	}
 }
 
-func anUnchangedInstanceLRP(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) *lrpStatus {
-	return &lrpStatus{
-		State: state,
-		ActualLRPContainerKey: containerKey,
-		ActualLRPNetInfo:      netInfo,
-		ShouldUpdate:          false,
+func anUnchangedInstanceLRP(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) *instanceLRPStatus {
+	return &instanceLRPStatus{
+		lrpStatus: lrpStatus{
+			State: state,
+			ActualLRPContainerKey: containerKey,
+			ActualLRPNetInfo:      netInfo,
+			ShouldUpdate:          false,
+		},
 	}
 }
 
-func anUnchangedUnclaimedInstanceLRP() *lrpStatus {
+func anUnchangedUnclaimedInstanceLRP() *instanceLRPStatus {
 	return anUnchangedInstanceLRP(models.ActualLRPStateUnclaimed, emptyContainerKey, emptyNetInfo)
 }
 
-func anUnchangedClaimedInstanceLRP(containerKey models.ActualLRPContainerKey) *lrpStatus {
+func anUnchangedClaimedInstanceLRP(containerKey models.ActualLRPContainerKey) *instanceLRPStatus {
 	return anUnchangedInstanceLRP(models.ActualLRPStateClaimed, containerKey, emptyNetInfo)
 }
 
-func anUnchangedRunningInstanceLRP(containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) *lrpStatus {
+func anUnchangedRunningInstanceLRP(containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) *instanceLRPStatus {
 	return anUnchangedInstanceLRP(models.ActualLRPStateRunning, containerKey, netInfo)
 }
 
-func anUnchangedCrashedInstanceLRP() *lrpStatus {
+func anUnchangedCrashedInstanceLRP() *instanceLRPStatus {
 	return anUnchangedInstanceLRP(models.ActualLRPStateCrashed, emptyContainerKey, emptyNetInfo)
 }
 
-func newTestResult(instanceStatus *lrpStatus, evacuatingStatus *evacuatingLRPStatus, err error) testResult {
+func newTestResult(instanceStatus *instanceLRPStatus, evacuatingStatus *evacuatingLRPStatus, err error) testResult {
 	result := testResult{
 		Instance:      instanceStatus,
 		Evacuating:    evacuatingStatus,
@@ -545,7 +636,7 @@ func newTestResult(instanceStatus *lrpStatus, evacuatingStatus *evacuatingLRPSta
 	return result
 }
 
-func instanceNoEvacuating(instanceStatus *lrpStatus, err error) testResult {
+func instanceNoEvacuating(instanceStatus *instanceLRPStatus, err error) testResult {
 	return newTestResult(instanceStatus, nil, err)
 }
 
@@ -648,6 +739,13 @@ func (t evacuationTest) Test() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrpInBBS.State).Should(Equal(t.Result.Instance.State))
+			})
+
+			It("has the expected /instance crash count", func() {
+				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrpInBBS.CrashCount).Should(Equal(t.Result.Instance.CrashCount))
 			})
 
 			It("has the expected /instance container key", func() {
