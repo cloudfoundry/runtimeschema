@@ -5,6 +5,8 @@ import (
 	"regexp"
 )
 
+const maximumRouteLength = 4 * 1024
+
 type DomainSet map[string]struct{}
 
 func (set DomainSet) Add(domain string) {
@@ -140,6 +142,15 @@ func (desired DesiredLRP) Validate() error {
 
 	if len(desired.Annotation) > maximumAnnotationLength {
 		validationError = validationError.Append(ErrInvalidField{"annotation"})
+	}
+
+	totalRoutesLength := 0
+	for _, value := range desired.Routes {
+		totalRoutesLength += len(*value)
+		if totalRoutesLength > maximumRouteLength {
+			validationError = validationError.Append(ErrInvalidField{"routes"})
+			break
+		}
 	}
 
 	for _, rule := range desired.EgressRules {

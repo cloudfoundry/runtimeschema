@@ -408,16 +408,6 @@ var _ = Describe("DesiredLRP", func() {
 				"action":
 					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
 			}`,
-			"annotation": `{
-				"stack": "some-stack",
-				"domain": "some-domain",
-				"process_guid": "process_guid",
-				"instances": 1,
-				"action": {
-					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
-				},
-				"annotation":"` + strings.Repeat("a", 10*1024+1) + `"
-			}`,
 		} {
 			missingField := field
 			jsonBytes := payload
@@ -429,6 +419,44 @@ var _ = Describe("DesiredLRP", func() {
 					err := FromJSON([]byte(jsonBytes), decodedLRP)
 					Ω(err).Should(HaveOccurred())
 					Ω(err.Error()).Should(ContainSubstring(missingField))
+				})
+			})
+		}
+
+		for field, payload := range map[string]string{
+			"annotation": `{
+				"stack": "some-stack",
+				"domain": "some-domain",
+				"process_guid": "process_guid",
+				"instances": 1,
+				"action": {
+					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+				},
+				"annotation":"` + strings.Repeat("a", 10*1024+1) + `"
+			}`,
+			"routes": `{
+				"stack": "some-stack",
+				"domain": "some-domain",
+				"process_guid": "process_guid",
+				"instances": 1,
+				"action": {
+					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+				},
+				"routes": {
+					"cf-route": "` + strings.Repeat("r", 4*1024) + `"
+				}
+			}`,
+		} {
+			tooLongField := field
+			jsonBytes := payload
+
+			Context("when the json field "+tooLongField+" is too long", func() {
+				It("returns an error indicating so", func() {
+					decodedLRP := &DesiredLRP{}
+
+					err := FromJSON([]byte(jsonBytes), decodedLRP)
+					Ω(err).Should(HaveOccurred())
+					Ω(err.Error()).Should(ContainSubstring(tooLongField))
 				})
 			})
 		}
