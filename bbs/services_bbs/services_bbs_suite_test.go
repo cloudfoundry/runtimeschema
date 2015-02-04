@@ -20,12 +20,13 @@ func TestServicesBbs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.Adapter()
+	etcdClient = etcdRunner.RetryableAdapter()
 
 	etcdRunner.Start()
 })
 
 var _ = AfterSuite(func() {
+	etcdClient.Disconnect()
 	etcdRunner.Stop()
 })
 
