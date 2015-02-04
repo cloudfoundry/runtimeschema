@@ -24,7 +24,7 @@ type DesireAppRequestFromCC struct {
 	DiskMB                      int                        `json:"disk_mb"`
 	FileDescriptors             uint64                     `json:"file_descriptors"`
 	NumInstances                int                        `json:"num_instances"`
-	Routes                      []string                   `json:"routes"`
+	Hostnames                   []string                   `json:"routes"`
 	LogGuid                     string                     `json:"log_guid"`
 	HealthCheckType             HealthCheckType            `json:"health_check_type"`
 	HealthCheckTimeoutInSeconds uint                       `json:"health_check_timeout_in_seconds"`
