@@ -274,6 +274,18 @@ var _ = Describe("ActualLRP", func() {
 				})
 			})
 		})
+
+		Describe("ActualLRPNetInfo", func() {
+			Describe("EmptyActualLRPNetInfo", func() {
+				It("returns a net info with an empty address and non-nil empty PortMapping slice", func() {
+					netInfo := models.EmptyActualLRPNetInfo()
+
+					Ω(netInfo.Address).Should(BeEmpty())
+					Ω(netInfo.Ports).ShouldNot(BeNil())
+					Ω(netInfo.Ports).Should(HaveLen(0))
+				})
+			})
+		})
 	})
 
 	Describe("ActualLRP", func() {

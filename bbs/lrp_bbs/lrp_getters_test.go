@@ -116,6 +116,8 @@ var _ = Describe("LrpGetters", func() {
 	})
 
 	Context("ActualLRPs", func() {
+		const defaultEvacuationTTL = 0
+
 		var (
 			domainALRP           models.ActualLRP
 			domainBLRP           models.ActualLRP
@@ -178,7 +180,7 @@ var _ = Describe("LrpGetters", func() {
 					createRawActualLRP(domainALRP)
 					createRawActualLRP(domainBLRP)
 					createRawActualLRP(domainCLRP)
-					createRawEvacuatingActualLRP(evacuatingDomainCLRP)
+					createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
 				})
 
 				It("returns all the /instance LRPs and no /evacuating LRPs", func() {
@@ -249,7 +251,7 @@ var _ = Describe("LrpGetters", func() {
 						Since:                 clock.Now().UnixNano(),
 					}
 
-					createRawEvacuatingActualLRP(sharedProcessGuidEvacuatingLRP)
+					createRawEvacuatingActualLRP(sharedProcessGuidEvacuatingLRP, defaultEvacuationTTL)
 
 					createRawActualLRP(domainALRP)
 				})
@@ -299,7 +301,7 @@ var _ = Describe("LrpGetters", func() {
 					createRawActualLRP(domainALRP)
 					createRawActualLRP(domainBLRP)
 					createRawActualLRP(domainCLRP)
-					createRawEvacuatingActualLRP(evacuatingDomainCLRP)
+					createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
 
 					otherLRP := models.ActualLRP{
 						ActualLRPKey:          models.NewActualLRPKey("some-other-process", 0, "some-other-domain"),
@@ -347,7 +349,7 @@ var _ = Describe("LrpGetters", func() {
 				BeforeEach(func() {
 					createRawActualLRP(domainBLRP)
 					createRawActualLRP(domainCLRP)
-					createRawEvacuatingActualLRP(evacuatingDomainCLRP)
+					createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
 				})
 
 				It("should fetch all the instance LRPs for the specified domain", func() {
@@ -421,7 +423,7 @@ var _ = Describe("LrpGetters", func() {
 
 				Context("when there is also an /evacuating entry", func() {
 					BeforeEach(func() {
-						createRawEvacuatingActualLRP(evacuatingLRP)
+						createRawEvacuatingActualLRP(evacuatingLRP, defaultEvacuationTTL)
 					})
 
 					It("returns the /instance entry", func() {
@@ -433,7 +435,7 @@ var _ = Describe("LrpGetters", func() {
 
 			Context("when there is only an /evacuating entry", func() {
 				BeforeEach(func() {
-					createRawEvacuatingActualLRP(evacuatingLRP)
+					createRawEvacuatingActualLRP(evacuatingLRP, defaultEvacuationTTL)
 				})
 
 				It("returns an ErrStoreResourceNotFound", func() {

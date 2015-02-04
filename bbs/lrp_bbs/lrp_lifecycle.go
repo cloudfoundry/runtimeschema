@@ -106,12 +106,28 @@ func (bbs *LRPBBS) unclaimActualLRP(
 ) (stateChange, error) {
 	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
-	lrp, index, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	lrp, storeIndex, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return stateDidNotChange, err
 	}
 
+	changed, err := bbs.unclaimActualLRPWithIndex(logger, lrp, storeIndex, actualLRPKey, actualLRPContainerKey)
+	if err != nil {
+		return changed, err
+	}
+
+	logger.Info("succeeded")
+	return changed, nil
+}
+
+func (bbs *LRPBBS) unclaimActualLRPWithIndex(
+	logger lager.Logger,
+	lrp *models.ActualLRP,
+	storeIndex uint64,
+	actualLRPKey models.ActualLRPKey,
+	actualLRPContainerKey models.ActualLRPContainerKey,
+) (stateChange, error) {
 	if lrp.ActualLRPKey != actualLRPKey {
 		logger.Error("failed-actual-lrp-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
 		return stateDidNotChange, bbserrors.ErrActualLRPCannotBeUnclaimed
@@ -130,7 +146,7 @@ func (bbs *LRPBBS) unclaimActualLRP(
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.State = models.ActualLRPStateUnclaimed
 	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
-	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
+	lrp.ActualLRPNetInfo = models.EmptyActualLRPNetInfo()
 
 	value, err := models.ToJSON(lrp)
 	if err != nil {
@@ -138,7 +154,7 @@ func (bbs *LRPBBS) unclaimActualLRP(
 		return stateDidNotChange, err
 	}
 
-	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
+	err = bbs.store.CompareAndSwapByIndex(storeIndex, storeadapter.StoreNode{
 		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
 		Value: value,
 	})
@@ -148,7 +164,6 @@ func (bbs *LRPBBS) unclaimActualLRP(
 		return stateDidNotChange, shared.ConvertStoreError(err)
 	}
 
-	logger.Info("succeeded")
 	return stateDidChange, nil
 }
 

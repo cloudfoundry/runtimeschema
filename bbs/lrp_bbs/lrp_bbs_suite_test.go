@@ -117,13 +117,14 @@ func createRawActualLRP(lrp models.ActualLRP) {
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawEvacuatingActualLRP(lrp models.ActualLRP) {
+func createRawEvacuatingActualLRP(lrp models.ActualLRP, ttlInSeconds uint64) {
 	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
 	err = etcdClient.Create(storeadapter.StoreNode{
 		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
 		Value: value,
+		TTL:   ttlInSeconds,
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
@@ -160,10 +161,10 @@ func getInstanceActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) 
 	return lrp, nil
 }
 
-func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) {
+func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, uint64, error) {
 	node, err := etcdClient.Get(shared.EvacuatingActualLRPSchemaPath(lrpKey.ProcessGuid, lrpKey.Index))
 	if err == storeadapter.ErrorKeyNotFound {
-		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
+		return models.ActualLRP{}, 0, bbserrors.ErrStoreResourceNotFound
 	}
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -171,7 +172,7 @@ func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error
 	err = models.FromJSON(node.Value, &lrp)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	return lrp, nil
+	return lrp, node.TTL, nil
 }
 
 func defaultNetInfo() models.ActualLRPNetInfo {

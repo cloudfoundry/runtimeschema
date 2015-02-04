@@ -138,6 +138,10 @@ func NewActualLRPNetInfo(address string, ports []PortMapping) ActualLRPNetInfo {
 	}
 }
 
+func EmptyActualLRPNetInfo() ActualLRPNetInfo {
+	return NewActualLRPNetInfo("", []PortMapping{})
+}
+
 func (info *ActualLRPNetInfo) Empty() bool {
 	return info.Address == "" && len(info.Ports) == 0
 }
