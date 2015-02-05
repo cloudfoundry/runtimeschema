@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega/gbytes"
 )
 
-var _ = Describe("LrpWatchers", func() {
+var _ = Describe("Watchers", func() {
 	Describe("WatchForDesiredLRPChanges", func() {
 		var (
 			creates chan models.DesiredLRP

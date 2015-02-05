@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 )
 
-var _ = Describe("LrpLifecycle", func() {
+var _ = Describe("Actual LRP Lifecycle", func() {
 	const cellID = "some-cell-id"
 	var actualLRPKey models.ActualLRPKey
 	var containerKey models.ActualLRPContainerKey
