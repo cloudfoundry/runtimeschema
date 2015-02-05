@@ -89,7 +89,39 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // Will fail if the task has already been cancelled or completed normally
 func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
-	return bbs.FailTask(logger, taskGuid, "task was cancelled")
+	logger = logger.Session("cancel-task")
+
+	task, index, err := bbs.getTask(taskGuid)
+	if err != nil {
+		return err
+	}
+
+	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
+		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
+	}
+
+	err = bbs.completeTask(logger, task, index, true, "task was cancelled", "")
+	if err != nil {
+		return err
+	}
+
+	if task.CellID == "" {
+		return nil
+	}
+
+	cellPresence, err := bbs.services.CellById(task.CellID)
+	if err != nil {
+		logger.Error("failed-to-cancel-immediately", err)
+		return nil
+	}
+
+	err = bbs.cellClient.CancelTask(cellPresence.RepAddress, task.TaskGuid)
+	if err != nil {
+		logger.Error("failed-to-cancel-immediately", err)
+		return nil
+	}
+
+	return nil
 }
 
 func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {

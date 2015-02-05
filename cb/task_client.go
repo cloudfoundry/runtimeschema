@@ -13,6 +13,7 @@ import (
 )
 
 //go:generate counterfeiter . TaskClient
+
 type TaskClient interface {
 	CompleteTasks(receptorURL string, tasks []models.Task) error
 }

@@ -12,6 +12,7 @@ type TaskBBS struct {
 	clock            clock.Clock
 	taskClient       cb.TaskClient
 	auctioneerClient cb.AuctioneerClient
+	cellClient       cb.CellClient
 	services         *services_bbs.ServicesBBS
 }
 
@@ -20,6 +21,7 @@ func New(
 	clock clock.Clock,
 	taskClient cb.TaskClient,
 	auctioneerClient cb.AuctioneerClient,
+	cellClient cb.CellClient,
 	services *services_bbs.ServicesBBS,
 ) *TaskBBS {
 	return &TaskBBS{
@@ -27,6 +29,7 @@ func New(
 		clock:            clock,
 		taskClient:       taskClient,
 		auctioneerClient: auctioneerClient,
+		cellClient:       cellClient,
 		services:         services,
 	}
 }

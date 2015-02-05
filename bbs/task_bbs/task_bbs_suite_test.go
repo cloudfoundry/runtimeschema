@@ -24,6 +24,7 @@ var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
 var fakeTaskClient *cbfakes.FakeTaskClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
+var fakeCellClient *cbfakes.FakeCellClient
 var clock *fakeclock.FakeClock
 var bbs *task_bbs.TaskBBS
 
@@ -56,9 +57,10 @@ var _ = BeforeEach(func() {
 
 	fakeTaskClient = new(cbfakes.FakeTaskClient)
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
+	fakeCellClient = new(cbfakes.FakeCellClient)
 	clock = fakeclock.NewFakeClock(time.Unix(1238, 0))
 	servicesBBS = services_bbs.New(etcdClient, clock, logger)
-	bbs = task_bbs.New(etcdClient, clock, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
+	bbs = task_bbs.New(etcdClient, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
 })
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {
@@ -67,6 +69,16 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 
 	etcdClient.Create(storeadapter.StoreNode{
 		Key:   shared.LockSchemaPath("auctioneer_lock"),
+		Value: jsonBytes,
+	})
+}
+
+func registerCell(cell models.CellPresence) {
+	jsonBytes, err := models.ToJSON(cell)
+	Ω(err).ShouldNot(HaveOccurred())
+
+	etcdClient.Create(storeadapter.StoreNode{
+		Key:   shared.CellSchemaPath(cell.CellID),
 		Value: jsonBytes,
 	})
 }

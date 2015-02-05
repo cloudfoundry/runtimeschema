@@ -37,7 +37,7 @@ type FakeConvergerBBS struct {
 	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
 	waitForCellEventMutex       sync.RWMutex
 	waitForCellEventArgsForCall []struct{}
-	waitForCellEventReturns struct {
+	waitForCellEventReturns     struct {
 		result1 services_bbs.CellEvent
 		result2 error
 	}

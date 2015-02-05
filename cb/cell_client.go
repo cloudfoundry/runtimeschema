@@ -12,8 +12,10 @@ import (
 )
 
 //go:generate counterfeiter . CellClient
+
 type CellClient interface {
-	StopLRPInstance(cellAddr string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
+	StopLRPInstance(cellURL string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
+	CancelTask(cellURL string, taskGuid string) error
 }
 
 type cellClient struct {
@@ -44,6 +46,28 @@ func (c *cellClient) StopLRPInstance(
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("http error: status code %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	return nil
+}
+
+func (c *cellClient) CancelTask(cellURL string, taskGuid string) error {
+	reqGen := rata.NewRequestGenerator(cellURL, routes.CancelTaskRoutes)
+
+	req, err := reqGen.CreateRequest(routes.CancelTask, rata.Params{"task_guid": taskGuid}, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusAccepted {

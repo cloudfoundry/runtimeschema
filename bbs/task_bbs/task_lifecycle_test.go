@@ -368,18 +368,53 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				itMarksTaskAsCancelled()
+
+				It("does not cancel the task", func() {
+					Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(0))
+				})
 			})
 
 			Context("when the task is in running state", func() {
+				var cellID string
+
 				BeforeEach(func() {
+					cellID = "cell-ID"
+
 					err := bbs.DesireTask(logger, task)
 					Ω(err).ShouldNot(HaveOccurred())
 
-					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+					_, err = bbs.StartTask(logger, task.TaskGuid, cellID)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				itMarksTaskAsCancelled()
+
+				Context("when the cell is present", func() {
+					var cellPresence models.CellPresence
+
+					BeforeEach(func() {
+						cellPresence = models.NewCellPresence(cellID, "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
+						registerCell(cellPresence)
+					})
+
+					It("cancels the task", func() {
+						Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(1))
+
+						addr, taskGuid := fakeCellClient.CancelTaskArgsForCall(0)
+						Ω(addr).Should(Equal(cellPresence.RepAddress))
+						Ω(taskGuid).Should(Equal(task.TaskGuid))
+					})
+				})
+
+				Context("when the cell is not present", func() {
+					It("does not cancel the task", func() {
+						Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(0))
+					})
+
+					It("logs the error", func() {
+						Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.cancel-task.failed-to-cancel-immediately"))
+					})
+				})
 			})
 
 			Context("when the task is in completed state", func() {
@@ -435,7 +470,7 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, clock, fakeTaskClient, fakeAuctioneerClient, servicesBBS)
+					bbs = New(fakeStoreAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
 				})
 
 				It("returns an error", func() {

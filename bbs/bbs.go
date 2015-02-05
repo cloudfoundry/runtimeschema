@@ -201,7 +201,7 @@ func NewBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Log
 		LockBBS:     lock_bbs.New(store, clock, logger.Session("lock-bbs")),
 		LRPBBS:      lrp_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewTaskClient(), auctioneerClient, services),
+		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }
