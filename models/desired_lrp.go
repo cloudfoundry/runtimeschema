@@ -55,6 +55,7 @@ type DesiredLRP struct {
 	Routes               map[string]*json.RawMessage `json:"routes,omitempty"`
 	LogSource            string                      `json:"log_source"`
 	LogGuid              string                      `json:"log_guid"`
+	MetricsGuid          string                      `json:"metrics_guid"`
 	Annotation           string                      `json:"annotation,omitempty"`
 	EgressRules          []SecurityGroupRule         `json:"egress_rules,omitempty"`
 }

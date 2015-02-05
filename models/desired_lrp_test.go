@@ -63,6 +63,7 @@ var _ = Describe("DesiredLRP", func() {
 	  },
 	  "log_guid": "log-guid",
 	  "log_source": "the cloud",
+		"metrics_guid": "metrics-guid",
 	  "egress_rules": [
 		  {
 				"protocol": "tcp",
@@ -102,8 +103,9 @@ var _ = Describe("DesiredLRP", func() {
 			Ports: []uint16{
 				5678,
 			},
-			LogGuid:   "log-guid",
-			LogSource: "the cloud",
+			LogGuid:     "log-guid",
+			LogSource:   "the cloud",
+			MetricsGuid: "metrics-guid",
 			EnvironmentVariables: []EnvironmentVariable{
 				{
 					Name:  "ENV_VAR_NAME",

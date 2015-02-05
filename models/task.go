@@ -31,8 +31,9 @@ type Task struct {
 	Privileged           bool                  `json:"privileged"`
 	DiskMB               int                   `json:"disk_mb"`
 	CPUWeight            uint                  `json:"cpu_weight"`
-	LogSource            string                `json:"log_source"`
 	LogGuid              string                `json:"log_guid"`
+	LogSource            string                `json:"log_source"`
+	MetricsGuid          string                `json:"metrics_guid"`
 	CreatedAt            int64                 `json:"created_at"` //  the number of nanoseconds elapsed since January 1, 1970 UTC
 	UpdatedAt            int64                 `json:"updated_at"`
 	FirstCompletedAt     int64                 `json:"first_completed_at"`

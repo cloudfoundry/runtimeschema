@@ -39,7 +39,8 @@ var _ = Describe("LRPStartRequest", func() {
         "router": {"port":5678,"hosts":["route-1","route-2"]}
       },
       "log_guid": "log-guid",
-      "log_source": "the cloud"
+      "log_source": "the cloud",
+      "metrics_guid": "metrics-guid"
     },
     "indices": [2]
   }`
@@ -64,8 +65,9 @@ var _ = Describe("LRPStartRequest", func() {
 				Ports: []uint16{
 					5678,
 				},
-				LogGuid:   "log-guid",
-				LogSource: "the cloud",
+				LogGuid:     "log-guid",
+				LogSource:   "the cloud",
+				MetricsGuid: "metrics-guid",
 				Action: &DownloadAction{
 					From: "http://example.com",
 					To:   "/tmp/internet",
