@@ -21,7 +21,7 @@ var _ = Describe("LRPStartRequest", func() {
       "instances": 1,
       "stack": "some-stack",
       "start_timeout": 0,
-      "root_fs": "docker:///docker.com/docker",
+      "rootfs": "docker:///docker.com/docker",
       "action": {"download": {
           "from": "http://example.com",
           "to": "/tmp/internet",
@@ -114,7 +114,7 @@ var _ = Describe("LRPStartRequest", func() {
       "instances": 1,
       "stack": "some-stack",
       "start_timeout": 0,
-      "root_fs": "docker:///docker.com/docker",
+      "rootfs": "docker:///docker.com/docker",
       "action": {"download": {
           "from": "http://example.com",
           "to": "/tmp/internet",
@@ -152,7 +152,7 @@ var _ = Describe("LRPStartRequest", func() {
       "instances": 1,
       "stack": "some-stack",
       "start_timeout": 0,
-      "root_fs": "docker:///docker.com/docker",
+      "rootfs": "docker:///docker.com/docker",
       "action": {"download": {
           "from": "http://example.com",
           "to": "/tmp/internet",
@@ -189,7 +189,7 @@ var _ = Describe("LRPStartRequest", func() {
       "instances": 1,
       "stack": "some-stack",
       "start_timeout": 0,
-      "root_fs": "docker:///docker.com/docker",
+      "rootfs": "docker:///docker.com/docker",
       "action": {"download": {
           "from": "http://example.com",
           "to": "/tmp/internet",

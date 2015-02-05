@@ -17,7 +17,7 @@ var _ = Describe("DesiredLRP", func() {
 	lrpPayload := `{
 	  "process_guid": "some-guid",
 	  "domain": "some-domain",
-	  "root_fs": "docker:///docker.com/docker",
+	  "rootfs": "docker:///docker.com/docker",
 	  "instances": 1,
 	  "stack": "some-stack",
 		"annotation": "some-annotation",

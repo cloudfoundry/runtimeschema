@@ -23,7 +23,7 @@ var taskGuidPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 type Task struct {
 	TaskGuid             string                `json:"task_guid"`
 	Domain               string                `json:"domain"`
-	RootFSPath           string                `json:"root_fs"`
+	RootFSPath           string                `json:"rootfs"`
 	Stack                string                `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable `json:"env,omitempty"`
 	Action               Action                `json:"-"`

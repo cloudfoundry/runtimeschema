@@ -19,7 +19,7 @@ var _ = Describe("Task", func() {
 		taskPayload = `{
 		"task_guid":"some-guid",
 		"domain":"some-domain",
-		"root_fs": "docker:///docker.com/docker",
+		"rootfs": "docker:///docker.com/docker",
 		"stack":"some-stack",
 		"env":[
 			{

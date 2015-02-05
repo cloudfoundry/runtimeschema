@@ -39,7 +39,7 @@ func (set DesiredLRPsByProcessGuid) Each(predicate func(desired DesiredLRP)) {
 type DesiredLRP struct {
 	ProcessGuid          string                      `json:"process_guid"`
 	Domain               string                      `json:"domain"`
-	RootFSPath           string                      `json:"root_fs"`
+	RootFSPath           string                      `json:"rootfs"`
 	Instances            int                         `json:"instances"`
 	Stack                string                      `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable       `json:"env,omitempty"`
