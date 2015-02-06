@@ -75,10 +75,12 @@ type RepBBS interface {
 	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) error
 	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
 	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	RemoveEvacuatingActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS

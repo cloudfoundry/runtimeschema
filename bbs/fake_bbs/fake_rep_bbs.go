@@ -166,6 +166,16 @@ type FakeRepBBS struct {
 	evacuateCrashedActualLRPReturns struct {
 		result1 error
 	}
+	RemoveEvacuatingActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	removeEvacuatingActualLRPMutex       sync.RWMutex
+	removeEvacuatingActualLRPArgsForCall []struct {
+		arg1 lager.Logger
+		arg2 models.ActualLRPKey
+		arg3 models.ActualLRPContainerKey
+	}
+	removeEvacuatingActualLRPReturns struct {
+		result1 error
+	}
 }
 
 func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
@@ -678,6 +688,40 @@ func (fake *FakeRepBBS) EvacuateCrashedActualLRPArgsForCall(i int) (lager.Logger
 func (fake *FakeRepBBS) EvacuateCrashedActualLRPReturns(result1 error) {
 	fake.EvacuateCrashedActualLRPStub = nil
 	fake.evacuateCrashedActualLRPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeRepBBS) RemoveEvacuatingActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
+	fake.removeEvacuatingActualLRPMutex.Lock()
+	fake.removeEvacuatingActualLRPArgsForCall = append(fake.removeEvacuatingActualLRPArgsForCall, struct {
+		arg1 lager.Logger
+		arg2 models.ActualLRPKey
+		arg3 models.ActualLRPContainerKey
+	}{arg1, arg2, arg3})
+	fake.removeEvacuatingActualLRPMutex.Unlock()
+	if fake.RemoveEvacuatingActualLRPStub != nil {
+		return fake.RemoveEvacuatingActualLRPStub(arg1, arg2, arg3)
+	} else {
+		return fake.removeEvacuatingActualLRPReturns.result1
+	}
+}
+
+func (fake *FakeRepBBS) RemoveEvacuatingActualLRPCallCount() int {
+	fake.removeEvacuatingActualLRPMutex.RLock()
+	defer fake.removeEvacuatingActualLRPMutex.RUnlock()
+	return len(fake.removeEvacuatingActualLRPArgsForCall)
+}
+
+func (fake *FakeRepBBS) RemoveEvacuatingActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) {
+	fake.removeEvacuatingActualLRPMutex.RLock()
+	defer fake.removeEvacuatingActualLRPMutex.RUnlock()
+	return fake.removeEvacuatingActualLRPArgsForCall[i].arg1, fake.removeEvacuatingActualLRPArgsForCall[i].arg2, fake.removeEvacuatingActualLRPArgsForCall[i].arg3
+}
+
+func (fake *FakeRepBBS) RemoveEvacuatingActualLRPReturns(result1 error) {
+	fake.RemoveEvacuatingActualLRPStub = nil
+	fake.removeEvacuatingActualLRPReturns = struct {
 		result1 error
 	}{result1}
 }
