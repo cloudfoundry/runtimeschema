@@ -124,6 +124,15 @@ type FakeRepBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
+	EvacuatingActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
+	evacuatingActualLRPsByCellIDMutex       sync.RWMutex
+	evacuatingActualLRPsByCellIDArgsForCall []struct {
+		cellID string
+	}
+	evacuatingActualLRPsByCellIDReturns struct {
+		result1 []models.ActualLRP
+		result2 error
+	}
 	EvacuateClaimedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	evacuateClaimedActualLRPMutex       sync.RWMutex
 	evacuateClaimedActualLRPArgsForCall []struct {
@@ -552,6 +561,39 @@ func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	fake.removeActualLRPReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeRepBBS) EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
+	fake.evacuatingActualLRPsByCellIDMutex.Lock()
+	fake.evacuatingActualLRPsByCellIDArgsForCall = append(fake.evacuatingActualLRPsByCellIDArgsForCall, struct {
+		cellID string
+	}{cellID})
+	fake.evacuatingActualLRPsByCellIDMutex.Unlock()
+	if fake.EvacuatingActualLRPsByCellIDStub != nil {
+		return fake.EvacuatingActualLRPsByCellIDStub(cellID)
+	} else {
+		return fake.evacuatingActualLRPsByCellIDReturns.result1, fake.evacuatingActualLRPsByCellIDReturns.result2
+	}
+}
+
+func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDCallCount() int {
+	fake.evacuatingActualLRPsByCellIDMutex.RLock()
+	defer fake.evacuatingActualLRPsByCellIDMutex.RUnlock()
+	return len(fake.evacuatingActualLRPsByCellIDArgsForCall)
+}
+
+func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDArgsForCall(i int) string {
+	fake.evacuatingActualLRPsByCellIDMutex.RLock()
+	defer fake.evacuatingActualLRPsByCellIDMutex.RUnlock()
+	return fake.evacuatingActualLRPsByCellIDArgsForCall[i].cellID
+}
+
+func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
+	fake.EvacuatingActualLRPsByCellIDStub = nil
+	fake.evacuatingActualLRPsByCellIDReturns = struct {
+		result1 []models.ActualLRP
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) EvacuateClaimedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {

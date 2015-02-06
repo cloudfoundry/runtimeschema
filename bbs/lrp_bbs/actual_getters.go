@@ -146,6 +146,41 @@ func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	return lrps, nil
 }
 
+func (bbs *LRPBBS) EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
+	lrps := []models.ActualLRP{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return lrps, nil
+	} else if err != nil {
+		return lrps, shared.ConvertStoreError(err)
+	}
+
+	for _, processNode := range node.ChildNodes {
+		for _, indexNode := range processNode.ChildNodes {
+			for _, instanceNode := range indexNode.ChildNodes {
+				if !isEvacuatingActualLRPNode(instanceNode) {
+					continue
+				}
+
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
+				if err != nil {
+					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+				} else if lrp.CellID == cellID {
+					lrps = append(lrps, lrp)
+				}
+			}
+		}
+	}
+
+	return lrps, nil
+}
+
 func isInstanceActualLRPNode(node storeadapter.StoreNode) bool {
 	return path.Base(node.Key) == shared.ActualLRPInstanceKey
+}
+
+func isEvacuatingActualLRPNode(node storeadapter.StoreNode) bool {
+	return path.Base(node.Key) == shared.ActualLRPEvacuatingKey
 }

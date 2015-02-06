@@ -316,4 +316,40 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 		})
 	})
+
+	Describe("EvacuatingActualLRPsByCellID", func() {
+		JustBeforeEach(func() {
+			var err error
+			actualLRPs, err = bbs.EvacuatingActualLRPsByCellID(cellID)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when there are both instance and evacuating LRPs on the requested cell", func() {
+			BeforeEach(func() {
+				createRawEvacuatingActualLRP(baseLRP, defaultEvacuationTTL)
+				createRawEvacuatingActualLRP(yetAnotherIndexLRP, defaultEvacuationTTL)
+				createRawActualLRP(otherIndexLRP)
+				createRawEvacuatingActualLRP(otherCellIDLRP, defaultEvacuationTTL)
+			})
+
+			It("returns only the evacuating LRPs", func() {
+				Ω(actualLRPs).Should(HaveLen(2))
+				Ω(actualLRPs).Should(ConsistOf(baseLRP, yetAnotherIndexLRP))
+			})
+		})
+
+		Context("when there are no LRPs", func() {
+			BeforeEach(func() {
+				// leave some intermediate directories in the store
+				createRawEvacuatingActualLRP(baseLRP, defaultEvacuationTTL)
+				err := bbs.RemoveEvacuatingActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				Ω(actualLRPs).ShouldNot(BeNil())
+				Ω(actualLRPs).Should(BeEmpty())
+			})
+		})
+	})
 })

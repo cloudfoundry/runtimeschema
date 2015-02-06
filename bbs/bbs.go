@@ -76,6 +76,8 @@ type RepBBS interface {
 	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 
+	// LRP evacuation
+	EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
 	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
