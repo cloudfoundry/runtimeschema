@@ -149,7 +149,7 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(logger, desiredLRP, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var actualLRP models.ActualLRP
@@ -161,7 +161,7 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(logger, desiredLRP, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
@@ -170,7 +170,7 @@ var _ = Describe("Watchers", func() {
 			Eventually(creates).Should(Receive())
 
 			containerKey := models.NewActualLRPContainerKey("instance-guid", lrpCellId)
-			err = bbs.ClaimActualLRP(lrp.ActualLRPKey, containerKey, logger)
+			err = bbs.ClaimActualLRP(logger, lrp.ActualLRPKey, containerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var actualLRPChange models.ActualLRPChange
@@ -185,7 +185,7 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for delete", func() {
-			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(logger, desiredLRP, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
@@ -193,14 +193,14 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
+			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
 		})
 
 		It("ignores delete events for directories", func() {
-			err := bbs.CreateActualLRP(desiredLRP, lrpIndex, logger)
+			err := bbs.CreateActualLRP(logger, desiredLRP, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
@@ -208,7 +208,7 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			err = bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
+			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))

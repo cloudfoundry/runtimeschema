@@ -89,7 +89,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey, logger)
+				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -164,7 +164,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey, logger)
+				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 				requestedProcessGuid = domainALRP.ProcessGuid
 			})
@@ -216,7 +216,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey, logger)
+				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -256,7 +256,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no actual LRPs in the requested domain", func() {
 			BeforeEach(func() {
 				createRawActualLRP(domainCLRP)
-				err := bbs.RemoveActualLRP(domainCLRP.ActualLRPKey, domainCLRP.ActualLRPContainerKey, logger)
+				err := bbs.RemoveActualLRP(logger, domainCLRP.ActualLRPKey, domainCLRP.ActualLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

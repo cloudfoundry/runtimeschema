@@ -177,7 +177,7 @@ func (t crashTest) Test() {
 
 		JustBeforeEach(func() {
 			clock.Increment(600)
-			crashErr = bbs.CrashActualLRP(actualLRPKey, containerKey, logger)
+			crashErr = bbs.CrashActualLRP(logger, actualLRPKey, containerKey)
 		})
 
 		if t.Result.ReturnedErr == nil {

@@ -120,7 +120,7 @@ func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
 	_ = bbs.removeEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
-	err := bbs.RemoveActualLRP(actualLRPKey, actualLRPContainerKey, logger)
+	err := bbs.RemoveActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return nil
 	} else if err == bbserrors.ErrStoreComparisonFailed {
@@ -139,7 +139,7 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
 	_ = bbs.removeEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
-	err := bbs.CrashActualLRP(actualLRPKey, actualLRPContainerKey, logger)
+	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return nil

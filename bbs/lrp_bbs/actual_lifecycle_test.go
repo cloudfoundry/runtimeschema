@@ -39,7 +39,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		)
 
 		JustBeforeEach(func() {
-			errCreate = bbs.CreateActualLRP(desiredLRP, index, logger)
+			errCreate = bbs.CreateActualLRP(logger, desiredLRP, index)
 		})
 
 		Context("when given a desired LRP and valid index", func() {
@@ -135,7 +135,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					}
 					index = 2
 
-					err := bbs.CreateActualLRP(desiredLRP, index, logger)
+					err := bbs.CreateActualLRP(logger, desiredLRP, index)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -241,7 +241,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		var containerKey models.ActualLRPContainerKey
 
 		JustBeforeEach(func() {
-			claimErr = bbs.ClaimActualLRP(lrpKey, containerKey, logger)
+			claimErr = bbs.ClaimActualLRP(logger, lrpKey, containerKey)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -259,7 +259,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   index + 1,
 				}
 
-				err := bbs.CreateActualLRP(desiredLRP, index, logger)
+				err := bbs.CreateActualLRP(logger, desiredLRP, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -337,9 +337,9 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
 					err := bbs.ClaimActualLRP(
+						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -417,10 +417,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
 					err := bbs.StartActualLRP(
+						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -530,7 +530,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		var netInfo models.ActualLRPNetInfo
 
 		JustBeforeEach(func() {
-			startErr = bbs.StartActualLRP(lrpKey, containerKey, netInfo, logger)
+			startErr = bbs.StartActualLRP(logger, lrpKey, containerKey, netInfo)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -548,7 +548,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   index + 1,
 				}
 
-				err := bbs.CreateActualLRP(desiredLRP, index, logger)
+				err := bbs.CreateActualLRP(logger, desiredLRP, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -642,9 +642,9 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
 					err := bbs.ClaimActualLRP(
+						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -714,10 +714,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
 					err := bbs.StartActualLRP(
+						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -828,13 +828,13 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 	Describe("RemoveActualLRP", func() {
 		BeforeEach(func() {
 			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
-			err := bbs.StartActualLRP(actualLRPKey, containerKey, netInfo, logger)
+			err := bbs.StartActualLRP(logger, actualLRPKey, containerKey, netInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
+				err := bbs.RemoveActualLRP(logger, actualLRPKey, containerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
@@ -845,7 +845,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
 				containerKey.InstanceGuid = "another-instance-guid"
-				err := bbs.RemoveActualLRP(actualLRPKey, containerKey, logger)
+				err := bbs.RemoveActualLRP(logger, actualLRPKey, containerKey)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
@@ -866,7 +866,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   2,
 				}
 
-				err := bbs.CreateActualLRP(desiredLRP, index, logger)
+				err := bbs.CreateActualLRP(logger, desiredLRP, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -874,7 +874,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				bbs.RetireActualLRPs([]models.ActualLRP{lrpInBBS}, logger)
+				bbs.RetireActualLRPs(logger, []models.ActualLRP{lrpInBBS})
 
 				_, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
@@ -895,7 +895,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			JustBeforeEach(func() {
-				bbs.RetireActualLRPs([]models.ActualLRP{actual}, logger)
+				bbs.RetireActualLRPs(logger, []models.ActualLRP{actual})
 			})
 
 			It("should remove the actual", func() {
@@ -948,7 +948,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				doneRetiring = make(chan struct{})
 
 				go func(lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
-					bbs.RetireActualLRPs([]models.ActualLRP{lrp1, lrp2}, logger)
+					bbs.RetireActualLRPs(logger, []models.ActualLRP{lrp1, lrp2})
 					close(doneRetiring)
 				}(claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})
@@ -1033,7 +1033,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   3,
 				}
 
-				errCreate := bbs.CreateActualLRP(desiredLRP, index, logger)
+				errCreate := bbs.CreateActualLRP(logger, desiredLRP, index)
 				Ω(errCreate).ShouldNot(HaveOccurred())
 
 				lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -1059,7 +1059,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("not in unclaimed state", func() {
 				BeforeEach(func() {
-					claimErr := bbs.ClaimActualLRP(actualLRPKey, containerKey, logger)
+					claimErr := bbs.ClaimActualLRP(logger, actualLRPKey, containerKey)
 					Ω(claimErr).ShouldNot(HaveOccurred())
 				})
 

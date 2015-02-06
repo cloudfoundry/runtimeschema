@@ -225,9 +225,9 @@ var _ = Describe("LrpConvergence", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ClaimActualLRP(
+				logger,
 				actualLRP.ActualLRPKey,
 				models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
-				logger,
 			)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -293,7 +293,7 @@ var _ = Describe("LrpConvergence", func() {
 					Action:      dummyAction,
 				}
 
-				err := bbs.CreateActualLRP(nonPersistedDesiredLRP, index, logger)
+				err := bbs.CreateActualLRP(logger, nonPersistedDesiredLRP, index)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -345,9 +345,9 @@ var _ = Describe("LrpConvergence", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -401,17 +401,17 @@ var _ = Describe("LrpConvergence", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -485,7 +485,7 @@ var _ = Describe("LrpConvergence", func() {
 					fakeBiggerLRP := desiredLRP
 					fakeBiggerLRP.Instances++
 
-					err := bbs.CreateActualLRP(fakeBiggerLRP, index, logger)
+					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -536,16 +536,16 @@ var _ = Describe("LrpConvergence", func() {
 					fakeBiggerLRP := desiredLRP
 					fakeBiggerLRP.Instances++
 
-					err := bbs.CreateActualLRP(fakeBiggerLRP, index, logger)
+					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -599,24 +599,24 @@ var _ = Describe("LrpConvergence", func() {
 					fakeBiggerLRP := desiredLRP
 					fakeBiggerLRP.Instances++
 
-					err := bbs.CreateActualLRP(fakeBiggerLRP, index, logger)
+					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
+						logger,
 						actualLRP.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
-						logger,
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})

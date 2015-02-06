@@ -95,13 +95,13 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 }
 
 func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLRPContainerKey, logger lager.Logger) {
-	err := bbs.CreateActualLRP(d, index, logger)
+	err := bbs.CreateActualLRP(logger, d, index)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	unclaimed, err := bbs.ActualLRPByProcessGuidAndIndex(d.ProcessGuid, index)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = bbs.ClaimActualLRP(unclaimed.ActualLRPKey, containerKey, logger)
+	err = bbs.ClaimActualLRP(logger, unclaimed.ActualLRPKey, containerKey)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 

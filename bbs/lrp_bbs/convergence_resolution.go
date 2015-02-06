@@ -17,7 +17,7 @@ var (
 const ConvergencePoolSize = 20
 
 func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.DesiredLRPsByProcessGuid, changes *ConvergenceChanges) {
-	bbs.RetireActualLRPs(changes.ActualLRPsForExtraIndices, logger)
+	bbs.RetireActualLRPs(logger, changes.ActualLRPsForExtraIndices)
 	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
 
 	startRequests := newStartRequests(desiredLRPs)
@@ -58,7 +58,7 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.
 			"index":        actual.Index,
 		})
 
-		err := bbs.RemoveActualLRP(actual.ActualLRPKey, actual.ActualLRPContainerKey, logger)
+		err := bbs.RemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPContainerKey)
 		if err != nil {
 			logger.Error("failed-to-remove-actual-lrp", err)
 			return

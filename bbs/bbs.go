@@ -43,7 +43,7 @@ type ReceptorBBS interface {
 	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
-	RetireActualLRPs([]models.ActualLRP, lager.Logger)
+	RetireActualLRPs(lager.Logger, []models.ActualLRP)
 	WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (stop chan<- bool, errs <-chan error)
 
 	// cells
@@ -71,10 +71,10 @@ type RepBBS interface {
 
 	//lrp
 	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
-	ClaimActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, lager.Logger) error
-	StartActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, lager.Logger) error
-	RemoveActualLRP(models.ActualLRPKey, models.ActualLRPContainerKey, lager.Logger) error
-	CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error
+	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) error
+	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
 	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error

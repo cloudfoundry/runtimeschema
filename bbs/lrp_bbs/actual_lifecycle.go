@@ -30,7 +30,11 @@ func NewActualLRPIndexTooLargeError(actualIndex, desiredInstances int) error {
 	return actualLRPIndexTooLargeError{actualIndex: actualIndex, desiredInstances: desiredInstances}
 }
 
-func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
+func (bbs *LRPBBS) CreateActualLRP(
+	logger lager.Logger,
+	desiredLRP models.DesiredLRP,
+	index int,
+) error {
 	err := bbs.createActualLRP(desiredLRP, index, logger)
 	if err != nil {
 		return err
@@ -51,9 +55,9 @@ func (bbs *LRPBBS) CreateActualLRP(desiredLRP models.DesiredLRP, index int, logg
 }
 
 func (bbs *LRPBBS) ClaimActualLRP(
+	logger lager.Logger,
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
-	logger lager.Logger,
 ) error {
 	logger = logger.Session("claim-actual-lrp")
 	logger.Info("starting")
@@ -95,10 +99,10 @@ func (bbs *LRPBBS) ClaimActualLRP(
 }
 
 func (bbs *LRPBBS) StartActualLRP(
+	logger lager.Logger,
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
 	netInfo models.ActualLRPNetInfo,
-	logger lager.Logger,
 ) error {
 	logger = logger.Session("start-actual-lrp")
 	logger.Info("starting")
@@ -140,7 +144,11 @@ func (bbs *LRPBBS) StartActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.ActualLRPContainerKey, logger lager.Logger) error {
+func (bbs *LRPBBS) CrashActualLRP(
+	logger lager.Logger,
+	key models.ActualLRPKey,
+	containerKey models.ActualLRPContainerKey,
+) error {
 	logger = logger.Session("crash-actual-lrp", lager.Data{"process-guid": key.ProcessGuid})
 	logger.Info("starting")
 
@@ -201,9 +209,9 @@ func (bbs *LRPBBS) CrashActualLRP(key models.ActualLRPKey, containerKey models.A
 }
 
 func (bbs *LRPBBS) RemoveActualLRP(
+	logger lager.Logger,
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
-	logger lager.Logger,
 ) error {
 	logger = logger.Session("remove-actual-lrp")
 	logger.Info("starting")
@@ -228,7 +236,10 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) RetireActualLRPs(lrps []models.ActualLRP, logger lager.Logger) {
+func (bbs *LRPBBS) RetireActualLRPs(
+	logger lager.Logger,
+	lrps []models.ActualLRP,
+) {
 	logger = logger.Session("retire-actual-lrps")
 
 	pool := workpool.NewWorkPool(RetireActualPoolSize)
@@ -404,7 +415,7 @@ func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) er
 	switch lrp.State {
 
 	case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
-		return bbs.RemoveActualLRP(lrp.ActualLRPKey, lrp.ActualLRPContainerKey, logger)
+		return bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 
 	default:
 		logger.Info("stopping-actual")
