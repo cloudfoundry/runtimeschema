@@ -43,7 +43,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 	actualLRPNetInfo models.ActualLRPNetInfo,
 	evacuationTTLInSeconds uint64,
 ) error {
-	instanceLRP, storeIndex, err := bbs.getActualLRP(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	instanceLRP, storeIndex, err := bbs.actualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		err := bbs.removeEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {
@@ -223,6 +223,45 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 	return bbs.compareAndSwapRawEvacuatingActualLRP(logger, &lrp, storeIndex, evacuationTTLInSeconds)
 }
 
+func (bbs *LRPBBS) removeEvacuatingActualLRP(
+	logger lager.Logger,
+	actualLRPKey models.ActualLRPKey,
+	actualLRPContainerKey models.ActualLRPContainerKey,
+) error {
+	lrp, storeIndex, err := bbs.evacuatingActualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	if err == bbserrors.ErrStoreResourceNotFound {
+		logger.Debug("evacuating-actual-lrp-already-removed", lager.Data{"lrp-key": actualLRPKey, "container-key": actualLRPContainerKey})
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	if lrp.ActualLRPKey != actualLRPKey || lrp.ActualLRPContainerKey != actualLRPContainerKey {
+		return bbserrors.ErrActualLRPCannotBeRemoved
+	}
+
+	err = bbs.compareAndDeleteRawEvacuatingActualLRP(logger, lrp, storeIndex)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("succeeded")
+	return nil
+}
+
+func (bbs *LRPBBS) evacuatingActualLRPWithIndex(processGuid string, index int) (*models.ActualLRP, uint64, error) {
+	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
+	if err != nil {
+		return nil, 0, shared.ConvertStoreError(err)
+	}
+
+	var lrp models.ActualLRP
+	err = models.FromJSON(node.Value, &lrp)
+
+	return &lrp, node.Index, err
+}
+
 func (bbs *LRPBBS) createRawEvacuatingActualLRP(
 	logger lager.Logger,
 	lrp *models.ActualLRP,
@@ -273,45 +312,20 @@ func (bbs *LRPBBS) compareAndSwapRawEvacuatingActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) removeEvacuatingActualLRP(
+func (bbs *LRPBBS) compareAndDeleteRawEvacuatingActualLRP(
 	logger lager.Logger,
-	actualLRPKey models.ActualLRPKey,
-	actualLRPContainerKey models.ActualLRPContainerKey,
+	lrp *models.ActualLRP,
+	storeIndex uint64,
 ) error {
-	lrp, storeIndex, err := bbs.evacuatingActualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
-	if err == bbserrors.ErrStoreResourceNotFound {
-		logger.Debug("evacuating-actual-lrp-already-removed", lager.Data{"lrp-key": actualLRPKey, "container-key": actualLRPContainerKey})
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if lrp.ActualLRPKey != actualLRPKey || lrp.ActualLRPContainerKey != actualLRPContainerKey {
-		return bbserrors.ErrActualLRPCannotBeRemoved
-	}
-
-	err = bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
+	err := bbs.store.CompareAndDeleteByIndex(storeadapter.StoreNode{
 		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
 		Index: storeIndex,
 	})
+
 	if err != nil {
-		logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-compare-and-delete-evacuating-actual-lrp", err, lager.Data{"actual-lrp": lrp})
 		return shared.ConvertStoreError(err)
 	}
 
-	logger.Info("succeeded")
 	return nil
-}
-
-func (bbs *LRPBBS) evacuatingActualLRPWithIndex(processGuid string, index int) (*models.ActualLRP, uint64, error) {
-	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
-	if err != nil {
-		return nil, 0, shared.ConvertStoreError(err)
-	}
-
-	var lrp models.ActualLRP
-	err = models.FromJSON(node.Value, &lrp)
-
-	return &lrp, node.Index, err
 }
