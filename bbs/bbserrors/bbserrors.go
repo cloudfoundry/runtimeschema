@@ -28,7 +28,7 @@ var (
 
 	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")
 
-	ErrCannotFailLRP = errors.New("placement error cannot be set")
+	ErrActualLRPCannotBeFailed = errors.New("cannot set placement error on actual LRP")
 )
 
 func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {

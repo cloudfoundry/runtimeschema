@@ -493,7 +493,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					lrpKey = createdLRP.ActualLRPKey
 					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
 
-					err := bbs.FailLRP(logger, lrpKey, "insufficient resources")
+					err := bbs.FailActualLRP(logger, lrpKey, "insufficient resources")
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -624,7 +624,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				Context("when there is a placement error", func() {
 					BeforeEach(func() {
-						err := bbs.FailLRP(logger, lrpKey, "found no compatible cells")
+						err := bbs.FailActualLRP(logger, lrpKey, "found no compatible cells")
 						Ω(err).ShouldNot(HaveOccurred())
 					})
 
@@ -1012,8 +1012,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		})
 	})
 
-	Describe("FailLRP", func() {
-
+	Describe("FailActualLRP", func() {
 		Context("when lrp exists", func() {
 			var (
 				placementError string
@@ -1046,7 +1045,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("in unclaimed state", func() {
 				BeforeEach(func() {
-					err := bbs.FailLRP(logger, actualLRPKey, placementError)
+					err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
@@ -1065,7 +1064,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("error", func() {
-					err := bbs.FailLRP(logger, actualLRPKey, placementError)
+					err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
 					Ω(err).Should(HaveOccurred())
 				})
 			})
@@ -1073,10 +1072,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 		Context("when lrp does not exist", func() {
 			It("error", func() {
-				err := bbs.FailLRP(logger, models.NewActualLRPKey("non-existent-process-guid", index, "tests"),
+				err := bbs.FailActualLRP(logger, models.NewActualLRPKey("non-existent-process-guid", index, "tests"),
 					"non existent resources")
 				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(bbserrors.ErrCannotFailLRP))
+				Ω(err).Should(Equal(bbserrors.ErrActualLRPCannotBeFailed))
 			})
 		})
 	})
