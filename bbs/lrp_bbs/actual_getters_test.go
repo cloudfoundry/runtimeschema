@@ -9,55 +9,92 @@ import (
 )
 
 var _ = Describe("Actual LRP Getters", func() {
-	const defaultEvacuationTTL = 0
+	const (
+		cellID               = "cell-id"
+		defaultEvacuationTTL = 0
+
+		baseProcessGuid  = "base-process-guid"
+		baseDomain       = "base-domain"
+		baseInstanceGuid = "base-instance-guid"
+
+		baseIndex       = 1
+		otherIndex      = 2
+		yetAnotherIndex = 3
+
+		otherCellID            = "other-cell-id"
+		otherCellIDProcessGuid = "other-cell-id-process-guid"
+
+		otherDomainProcessGuid = "other-domain-process-guid"
+		otherDomain            = "other-domain"
+
+		otherProcessGuid = "other-process-guid"
+	)
 
 	var (
-		domainALRP           models.ActualLRP
-		domainBLRP           models.ActualLRP
-		domainCLRP           models.ActualLRP
-		evacuatingDomainCLRP models.ActualLRP
+		baseLRP             models.ActualLRP
+		otherIndexLRP       models.ActualLRP
+		yetAnotherIndexLRP  models.ActualLRP
+		otherCellIDLRP      models.ActualLRP
+		otherDomainLRP      models.ActualLRP
+		otherProcessGuidLRP models.ActualLRP
+
+		baseLRPKey          models.ActualLRPKey
+		baseLRPContainerKey models.ActualLRPContainerKey
 
 		netInfo models.ActualLRPNetInfo
 
 		actualLRPs []models.ActualLRP
-
-		requestedProcessGuid string
-		requestedCellID      string
-		requestedDomain      string
 	)
 
 	BeforeEach(func() {
+		baseLRPKey = models.NewActualLRPKey(baseProcessGuid, baseIndex, baseDomain)
+		baseLRPContainerKey = models.NewActualLRPContainerKey(baseInstanceGuid, cellID)
 		netInfo = models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}})
 
-		domainALRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey("guid-a", 1, "domain-a"),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-1", "cell-id"),
+		baseLRP = models.ActualLRP{
+			ActualLRPKey:          baseLRPKey,
+			ActualLRPContainerKey: baseLRPContainerKey,
 			ActualLRPNetInfo:      netInfo,
 			State:                 models.ActualLRPStateRunning,
 			Since:                 clock.Now().UnixNano(),
 		}
 
-		domainBLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey("guid-b", 2, "domain-b"),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid-2", "cell-id"),
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano(),
-		}
-
-		domainCLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey("guid-c", 0, "domain-c"),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
+		otherIndexLRP = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey(baseProcessGuid, otherIndex, baseDomain),
+			ActualLRPContainerKey: baseLRPContainerKey,
 			State: models.ActualLRPStateClaimed,
 			Since: clock.Now().UnixNano(),
 		}
 
-		evacuatingDomainCLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey("guid-c", 0, "domain-c"),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey("evacuating-instance-guid", "cell-id"),
+		yetAnotherIndexLRP = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey(baseProcessGuid, yetAnotherIndex, baseDomain),
+			ActualLRPContainerKey: baseLRPContainerKey,
 			ActualLRPNetInfo:      netInfo,
 			State:                 models.ActualLRPStateRunning,
 			Since:                 clock.Now().UnixNano(),
+		}
+
+		otherCellIDLRP = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey(otherCellIDProcessGuid, baseIndex, baseDomain),
+			ActualLRPContainerKey: models.NewActualLRPContainerKey(baseInstanceGuid, otherCellID),
+			ActualLRPNetInfo:      netInfo,
+			State:                 models.ActualLRPStateRunning,
+			Since:                 clock.Now().UnixNano(),
+		}
+
+		otherDomainLRP = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey(otherDomainProcessGuid, baseIndex, otherDomain),
+			ActualLRPContainerKey: baseLRPContainerKey,
+			ActualLRPNetInfo:      netInfo,
+			State:                 models.ActualLRPStateRunning,
+			Since:                 clock.Now().UnixNano(),
+		}
+
+		otherProcessGuidLRP = models.ActualLRP{
+			ActualLRPKey:          models.NewActualLRPKey(otherProcessGuid, baseIndex, baseDomain),
+			ActualLRPContainerKey: baseLRPContainerKey,
+			State: models.ActualLRPStateUnclaimed,
+			Since: clock.Now().UnixNano(),
 		}
 	})
 
@@ -70,26 +107,26 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(domainALRP)
-				createRawActualLRP(domainBLRP)
-				createRawActualLRP(domainCLRP)
-				createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
+				createRawActualLRP(baseLRP)
+				createRawActualLRP(otherIndexLRP)
+				createRawActualLRP(otherDomainLRP)
+				createRawEvacuatingActualLRP(yetAnotherIndexLRP, defaultEvacuationTTL)
 			})
 
 			It("returns all the /instance LRPs and no /evacuating LRPs", func() {
 				Ω(actualLRPs).Should(HaveLen(3))
-				Ω(actualLRPs).Should(ContainElement(domainALRP))
-				Ω(actualLRPs).Should(ContainElement(domainBLRP))
-				Ω(actualLRPs).Should(ContainElement(domainCLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(evacuatingDomainCLRP))
+				Ω(actualLRPs).Should(ContainElement(baseLRP))
+				Ω(actualLRPs).Should(ContainElement(otherIndexLRP))
+				Ω(actualLRPs).Should(ContainElement(otherDomainLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
 			})
 		})
 
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -105,68 +142,35 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		JustBeforeEach(func() {
 			var err error
-			actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(requestedProcessGuid)
+			actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when there are only /instance LRPs", func() {
-			var (
-				sharedProcessGuidLRP1          models.ActualLRP
-				sharedProcessGuidLRP2          models.ActualLRP
-				sharedProcessGuidEvacuatingLRP models.ActualLRP
-			)
-
 			BeforeEach(func() {
-				requestedProcessGuid = "actual-lrps-by-process-guid"
-				sharedProcessGuidLRP1 = models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey(requestedProcessGuid, 0, "domain-c"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
-					State: models.ActualLRPStateClaimed,
-					Since: clock.Now().UnixNano(),
-				}
-
-				createRawActualLRP(sharedProcessGuidLRP1)
-
-				sharedProcessGuidLRP2 = models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey(requestedProcessGuid, 1, "domain-c"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "cell-id"),
-					State: models.ActualLRPStateClaimed,
-					Since: clock.Now().UnixNano(),
-				}
-
-				createRawActualLRP(sharedProcessGuidLRP2)
-
-				sharedProcessGuidEvacuatingLRP = models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey(requestedProcessGuid, 2, "domain-c"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("evacuating-instance-guid", "cell-id"),
-					ActualLRPNetInfo:      netInfo,
-					State:                 models.ActualLRPStateRunning,
-					Since:                 clock.Now().UnixNano(),
-				}
-
-				createRawEvacuatingActualLRP(sharedProcessGuidEvacuatingLRP, defaultEvacuationTTL)
-
-				createRawActualLRP(domainALRP)
+				createRawActualLRP(baseLRP)
+				createRawActualLRP(otherIndexLRP)
+				createRawEvacuatingActualLRP(yetAnotherIndexLRP, defaultEvacuationTTL)
+				createRawActualLRP(otherProcessGuidLRP)
 			})
 
 			It("returns only the /instance LRPs for the requested process guid", func() {
 				Ω(actualLRPsByIndex).Should(HaveLen(2))
-				Ω(actualLRPsByIndex[0]).Should(Equal(sharedProcessGuidLRP1))
-				Ω(actualLRPsByIndex[1]).Should(Equal(sharedProcessGuidLRP2))
+				Ω(actualLRPsByIndex[baseIndex]).Should(Equal(baseLRP))
+				Ω(actualLRPsByIndex[otherIndex]).Should(Equal(otherIndexLRP))
 
 				actualLRPs = actualLRPsByIndex.Slice()
-				Ω(actualLRPs).ShouldNot(ContainElement(sharedProcessGuidEvacuatingLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(domainALRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(otherProcessGuidLRP))
 			})
 		})
 
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
-				requestedProcessGuid = domainALRP.ProcessGuid
 			})
 
 			It("returns an empty map", func() {
@@ -177,46 +181,33 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPsByCellID", func() {
-		BeforeEach(func() {
-			requestedCellID = "cell-id"
-		})
-
 		JustBeforeEach(func() {
 			var err error
-			actualLRPs, err = bbs.ActualLRPsByCellID(requestedCellID)
+			actualLRPs, err = bbs.ActualLRPsByCellID(cellID)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when there are /instance and /evacuating LRPs", func() {
-			var otherLRP models.ActualLRP
-
 			BeforeEach(func() {
-				createRawActualLRP(domainALRP)
-				createRawActualLRP(domainBLRP)
-				createRawActualLRP(domainCLRP)
-				createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
-
-				otherLRP := models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey("some-other-process", 0, "some-other-domain"),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-other-instance-guid", "some-other-cell"),
-					State: models.ActualLRPStateClaimed,
-					Since: clock.Now().UnixNano(),
-				}
-				createRawActualLRP(otherLRP)
+				createRawActualLRP(baseLRP)
+				createRawActualLRP(otherIndexLRP)
+				createRawActualLRP(otherDomainLRP)
+				createRawEvacuatingActualLRP(yetAnotherIndexLRP, defaultEvacuationTTL)
+				createRawActualLRP(otherCellIDLRP)
 			})
 
 			It("returns the /instance actual lrps belonging to the requested cell id", func() {
-				Ω(actualLRPs).Should(ConsistOf(domainALRP, domainCLRP, domainBLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(evacuatingDomainCLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(otherLRP))
+				Ω(actualLRPs).Should(ConsistOf(baseLRP, otherIndexLRP, otherDomainLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(otherCellIDLRP))
 			})
 		})
 
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(domainALRP)
-				err := bbs.RemoveActualLRP(logger, domainALRP.ActualLRPKey, domainALRP.ActualLRPContainerKey)
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -228,35 +219,32 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPsByDomain", func() {
-		BeforeEach(func() {
-			requestedDomain = "domain-c"
-		})
-
 		JustBeforeEach(func() {
 			var err error
-			actualLRPs, err = bbs.ActualLRPsByDomain(requestedDomain)
+			actualLRPs, err = bbs.ActualLRPsByDomain(baseDomain)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
 			BeforeEach(func() {
-				createRawActualLRP(domainBLRP)
-				createRawActualLRP(domainCLRP)
-				createRawEvacuatingActualLRP(evacuatingDomainCLRP, defaultEvacuationTTL)
+				createRawActualLRP(baseLRP)
+				createRawActualLRP(yetAnotherIndexLRP)
+				createRawActualLRP(otherDomainLRP)
+				createRawEvacuatingActualLRP(otherIndexLRP, defaultEvacuationTTL)
 			})
 
 			It("should fetch all the instance LRPs for the specified domain", func() {
-				Ω(actualLRPs).Should(HaveLen(1))
-				Ω(actualLRPs).Should(ConsistOf(domainCLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(domainBLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(evacuatingDomainCLRP))
+				Ω(actualLRPs).Should(HaveLen(2))
+				Ω(actualLRPs).Should(ConsistOf(baseLRP, yetAnotherIndexLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(otherDomainLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(otherIndexLRP))
 			})
 		})
 
 		Context("when there are no actual LRPs in the requested domain", func() {
 			BeforeEach(func() {
-				createRawActualLRP(domainCLRP)
-				err := bbs.RemoveActualLRP(logger, domainCLRP.ActualLRPKey, domainCLRP.ActualLRPContainerKey)
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -269,49 +257,35 @@ var _ = Describe("Actual LRP Getters", func() {
 
 	Describe("ActualLRPByProcessGuidAndIndex", func() {
 		var (
-			lrpKey                 models.ActualLRPKey
-			instanceContainerKey   models.ActualLRPContainerKey
 			evacuatingContainerKey models.ActualLRPContainerKey
-			netInfo                models.ActualLRPNetInfo
 			evacuatingLRP          models.ActualLRP
 			returnedLRP            models.ActualLRP
 			returnedErr            error
-			instanceLRP            models.ActualLRP
 		)
 
 		BeforeEach(func() {
-			lrpKey = models.NewActualLRPKey("process-guid", 0, "domain")
-			instanceContainerKey = models.NewActualLRPContainerKey("instance-guid", "cell-id")
 			evacuatingContainerKey = models.NewActualLRPContainerKey("evacuating-guid", "cell-id")
-			netInfo = models.NewActualLRPNetInfo("address", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 			evacuatingLRP = models.ActualLRP{
-				ActualLRPKey:          lrpKey,
+				ActualLRPKey:          baseLRPKey,
 				ActualLRPContainerKey: evacuatingContainerKey,
 				ActualLRPNetInfo:      netInfo,
 				State:                 models.ActualLRPStateRunning,
-				Since:                 3417,
+				Since:                 clock.Now().UnixNano() - 1000,
 			}
 		})
 
 		JustBeforeEach(func() {
-			returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex("process-guid", 0)
+			returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 		})
 
-		Context("when there is a RUNNING /instance entry", func() {
+		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
-				instanceLRP = models.ActualLRP{
-					ActualLRPKey:          lrpKey,
-					ActualLRPContainerKey: instanceContainerKey,
-					ActualLRPNetInfo:      netInfo,
-					State:                 models.ActualLRPStateRunning,
-					Since:                 1138,
-				}
-				createRawActualLRP(instanceLRP)
+				createRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
 				Ω(returnedErr).ShouldNot(HaveOccurred())
-				Ω(returnedLRP).Should(Equal(instanceLRP))
+				Ω(returnedLRP).Should(Equal(baseLRP))
 			})
 
 			Context("when there is also an /evacuating entry", func() {
@@ -321,7 +295,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 				It("returns the /instance entry", func() {
 					Ω(returnedErr).ShouldNot(HaveOccurred())
-					Ω(returnedLRP).Should(Equal(instanceLRP))
+					Ω(returnedLRP).Should(Equal(baseLRP))
 				})
 			})
 		})
