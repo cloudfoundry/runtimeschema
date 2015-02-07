@@ -62,7 +62,7 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	logger = logger.Session("claim-actual-lrp")
 	logger.Info("starting")
 
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(key.ProcessGuid, key.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		logger.Error("failed-actual-lrp-not-found", err)
 		return bbserrors.ErrActualLRPCannotBeClaimed
@@ -106,10 +106,10 @@ func (bbs *LRPBBS) StartActualLRP(
 ) error {
 	logger = logger.Session("start-actual-lrp")
 	logger.Info("starting")
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(key.ProcessGuid, key.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		newLRP := bbs.newRunningActualLRP(key, containerKey, netInfo)
-		return bbs.createRawActualLRP(&newLRP, logger)
+		return bbs.createRawActualLRP(logger, &newLRP)
 	} else if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return err
@@ -152,7 +152,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	logger = logger.Session("crash-actual-lrp", lager.Data{"process-guid": key.ProcessGuid})
 	logger.Info("starting")
 
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(key.ProcessGuid, key.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return err
@@ -216,9 +216,8 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	logger = logger.Session("remove-actual-lrp")
 	logger.Info("starting")
 
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(key.ProcessGuid, key.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err != nil {
-		logger.Error("failed-to-get-actual-lrp", err)
 		return err
 	}
 
@@ -274,7 +273,7 @@ func (bbs *LRPBBS) FailActualLRP(
 	logger = logger.Session("set-placement-error-actual-lrp")
 	logger.Info("starting")
 
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(key.ProcessGuid, key.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		logger.Error("failed-actual-lrp-not-found", err)
 		return bbserrors.ErrActualLRPCannotBeFailed
@@ -337,7 +336,7 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 		Since: bbs.clock.Now().UnixNano(),
 	}
 
-	err = bbs.createRawActualLRP(&actualLRP, logger)
+	err = bbs.createRawActualLRP(logger, &actualLRP)
 	if err != nil {
 		return err
 	}
@@ -360,7 +359,7 @@ func (bbs *LRPBBS) unclaimActualLRP(
 	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
 
-	lrp, storeIndex, err := bbs.actualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
 		return stateDidNotChange, err
@@ -480,19 +479,31 @@ func (bbs *LRPBBS) requestStopLRPInstance(
 	return nil
 }
 
-func (bbs *LRPBBS) actualLRPWithIndex(processGuid string, index int) (*models.ActualLRP, uint64, error) {
+func (bbs *LRPBBS) actualLRPWithIndex(
+	logger lager.Logger,
+	processGuid string,
+	index int,
+) (*models.ActualLRP, uint64, error) {
 	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 	if err != nil {
+		if err != storeadapter.ErrorKeyNotFound {
+			logger.Error("failed-to-get-actual-lrp", err)
+		}
 		return nil, 0, shared.ConvertStoreError(err)
 	}
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
 
+	if err != nil {
+		logger.Error("failed-to-unmarshal-actual-lrp", err)
+		return nil, 0, err
+	}
+
 	return &lrp, node.Index, err
 }
 
-func (bbs *LRPBBS) createRawActualLRP(lrp *models.ActualLRP, logger lager.Logger) error {
+func (bbs *LRPBBS) createRawActualLRP(logger lager.Logger, lrp *models.ActualLRP) error {
 	value, err := models.ToJSON(lrp)
 	if err != nil {
 		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})

@@ -15,6 +15,12 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
+	logger = logger.Session("evacuating-claimed-actual-lrp", lager.Data{
+		"lrp-key":           actualLRPKey,
+		"lrp-container-key": actualLRPContainerKey,
+	})
+	logger.Info("started")
+
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	changed, err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
@@ -28,11 +34,15 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 		return nil
 	}
 
+	logger.Info("requesting-start-lrp-auction")
 	err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
 	if err != nil {
+		logger.Error("failed-requesting-start-lrp-auction", err)
 		return err
 	}
+	logger.Info("succeeded-requesting-start-lrp-auction")
 
+	logger.Info("succeeded")
 	return nil
 }
 
@@ -43,19 +53,24 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 	actualLRPNetInfo models.ActualLRPNetInfo,
 	evacuationTTLInSeconds uint64,
 ) error {
-	instanceLRP, storeIndex, err := bbs.actualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	logger = logger.Session("evacuating-running-actual-lrp", lager.Data{
+		"lrp-key":           actualLRPKey,
+		"lrp-container-key": actualLRPContainerKey,
+	})
+	logger.Info("started")
+
+	instanceLRP, storeIndex, err := bbs.actualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		err := bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {
 			return bbserrors.ErrActualLRPCannotBeEvacuated
-		}
-		if err != nil {
+		} else if err != nil {
 			return err
 		}
 
 		return bbserrors.ErrActualLRPCannotBeEvacuated
-	}
-	if err != nil {
+
+	} else if err != nil {
 		return err
 	}
 
@@ -68,6 +83,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		if err != nil {
 			return err
 		}
+		logger.Info("succeded")
 		return nil
 	}
 
@@ -87,14 +103,19 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		}
 
 		if !changed {
+			logger.Info("succeded")
 			return nil
 		}
 
+		logger.Info("requesting-start-lrp-auction")
 		err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
 		if err != nil {
+			logger.Error("failed-requesting-start-lrp-auction", err)
 			return err
 		}
+		logger.Info("succeeded-requesting-start-lrp-auction")
 
+		logger.Info("succeded")
 		return nil
 	}
 
@@ -111,6 +132,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		return bbserrors.ErrActualLRPCannotBeEvacuated
 	}
 
+	logger.Info("succeded")
 	return nil
 }
 
@@ -119,6 +141,12 @@ func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
+	logger = logger.Session("evacuating-stopped-actual-lrp", lager.Data{
+		"lrp-key":           actualLRPKey,
+		"lrp-container-key": actualLRPContainerKey,
+	})
+	logger.Info("started")
+
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	err := bbs.RemoveActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
@@ -130,6 +158,7 @@ func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 		return err
 	}
 
+	logger.Info("succeeded")
 	return nil
 }
 
@@ -138,6 +167,12 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
+	logger = logger.Session("evacuating-crashed-actual-lrp", lager.Data{
+		"lrp-key":           actualLRPKey,
+		"lrp-container-key": actualLRPContainerKey,
+	})
+	logger.Info("started")
+
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 
@@ -147,6 +182,7 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 		return err
 	}
 
+	logger.Info("succeeded")
 	return nil
 }
 
@@ -155,12 +191,18 @@ func (bbs *LRPBBS) RemoveEvacuatingActualLRP(
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
 ) error {
-	lrp, storeIndex, err := bbs.evacuatingActualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	logger = logger.Session("removing-evacuating-actual-lrp", lager.Data{
+		"lrp-key":           actualLRPKey,
+		"lrp-container-key": actualLRPContainerKey,
+	})
+	logger.Info("started")
+
+	lrp, storeIndex, err := bbs.evacuatingActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		logger.Debug("evacuating-actual-lrp-already-removed", lager.Data{"lrp-key": actualLRPKey, "container-key": actualLRPContainerKey})
 		return nil
-	}
-	if err != nil {
+	} else if err != nil {
+		logger.Error("failed-to-get-evacuating-actual-lrp", err)
 		return err
 	}
 
@@ -184,7 +226,7 @@ func (bbs *LRPBBS) unconditionallyEvacuateActualLRP(
 	actualLRPNetInfo models.ActualLRPNetInfo,
 	evacuationTTLInSeconds uint64,
 ) error {
-	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		lrp := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
 		return bbs.createRawEvacuatingActualLRP(logger, &lrp, evacuationTTLInSeconds)
@@ -218,7 +260,7 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 	actualLRPNetInfo models.ActualLRPNetInfo,
 	evacuationTTLInSeconds uint64,
 ) error {
-	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		lrp := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
 		return bbs.createRawEvacuatingActualLRP(logger, &lrp, evacuationTTLInSeconds)
@@ -250,14 +292,26 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 	return bbs.compareAndSwapRawEvacuatingActualLRP(logger, &lrp, storeIndex, evacuationTTLInSeconds)
 }
 
-func (bbs *LRPBBS) evacuatingActualLRPWithIndex(processGuid string, index int) (*models.ActualLRP, uint64, error) {
+func (bbs *LRPBBS) evacuatingActualLRPWithIndex(
+	logger lager.Logger,
+	processGuid string,
+	index int,
+) (*models.ActualLRP, uint64, error) {
 	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
 	if err != nil {
+		if err != storeadapter.ErrorKeyNotFound {
+			logger.Error("failed-to-get-evacuating-actual-lrp", err)
+		}
 		return nil, 0, shared.ConvertStoreError(err)
 	}
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
+
+	if err != nil {
+		logger.Error("failed-to-unmarshal-actual-lrp", err)
+		return nil, 0, err
+	}
 
 	return &lrp, node.Index, err
 }
