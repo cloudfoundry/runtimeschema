@@ -16,6 +16,7 @@ import (
 
 const CrashResetTimeout = 5 * time.Minute
 const RetireActualPoolSize = 20
+const RetireActualLRPRetryAttempts = 5
 
 type actualLRPIndexTooLargeError struct {
 	actualIndex      int
@@ -251,7 +252,18 @@ func (bbs *LRPBBS) RetireActualLRPs(
 		pool.Submit(func() {
 			defer wg.Done()
 
-			err := bbs.retireActualLRP(lrp, logger)
+			var err error
+			for i := 0; i < RetireActualLRPRetryAttempts; i++ {
+				err = bbs.retireActualLRP(lrp, logger)
+				if err == bbserrors.ErrStoreComparisonFailed {
+					logger.Error("retrying-failed-retire-actual-lrp", err, lager.Data{
+						"lrp": lrp,
+					})
+					continue
+				}
+				break
+			}
+
 			if err != nil {
 				logger.Error("failed-to-retire", err, lager.Data{
 					"lrp": lrp,
