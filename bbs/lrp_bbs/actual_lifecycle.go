@@ -197,7 +197,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	}
 
 	if immediateRestart {
-		err := bbs.requestLRPAuctionForLRPKey(key)
+		err = bbs.requestLRPAuctionForLRPKey(logger, key)
 		if err != nil {
 			logger.Error("failed-to-request-auction", err)
 			return err
@@ -300,7 +300,7 @@ func (bbs *LRPBBS) FailActualLRP(
 }
 
 func (bbs *LRPBBS) createAndStartActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) error {
-	start := models.NewLRPStartRequest(lrp, indices)
+	start := models.NewLRPStartRequest(lrp, indices...)
 
 	for _, actualIndex := range indices {
 		err := bbs.createActualLRP(lrp, int(actualIndex), logger)
@@ -452,13 +452,17 @@ func (bbs *LRPBBS) requestLRPAuctions(lrpStarts []models.LRPStartRequest) error 
 	return bbs.auctioneerClient.RequestLRPAuctions(auctioneerAddress, lrpStarts)
 }
 
-func (bbs *LRPBBS) requestLRPAuctionForLRPKey(key models.ActualLRPKey) error {
+func (bbs *LRPBBS) requestLRPAuctionForLRPKey(logger lager.Logger, key models.ActualLRPKey) error {
 	desiredLRP, err := bbs.DesiredLRPByProcessGuid(key.ProcessGuid)
+	if err == bbserrors.ErrStoreResourceNotFound {
+		return bbs.deleteRawActualLRPKey(logger, &key)
+	}
+
 	if err != nil {
 		return err
 	}
 
-	lrpStart := models.NewLRPStartRequest(desiredLRP, []uint{uint(key.Index)})
+	lrpStart := models.NewLRPStartRequest(desiredLRP, uint(key.Index))
 	return bbs.requestLRPAuctions([]models.LRPStartRequest{lrpStart})
 }
 
@@ -558,6 +562,20 @@ func (bbs *LRPBBS) compareAndDeleteRawActualLRP(
 
 	if err != nil {
 		logger.Error("failed-to-compare-and-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		return shared.ConvertStoreError(err)
+	}
+
+	return nil
+}
+
+func (bbs *LRPBBS) deleteRawActualLRPKey(
+	logger lager.Logger,
+	lrp *models.ActualLRPKey,
+) error {
+	err := bbs.store.Delete(shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index))
+
+	if err != nil {
+		logger.Error("failed-to-delete-actual-lrp", err, lager.Data{"actual-lrp": lrp})
 		return shared.ConvertStoreError(err)
 	}
 

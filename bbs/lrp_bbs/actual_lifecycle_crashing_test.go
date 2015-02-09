@@ -229,6 +229,20 @@ func (t crashTest) Test() {
 				Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
 				Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(actualLRPKey.Index)))
 			})
+
+			Context("when the desired LRP no longer exists", func() {
+				BeforeEach(func() {
+					err := bbs.RemoveDesiredLRPByProcessGuid(logger, actualLRPKey.ProcessGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("the actual LRP is also deleted", func() {
+					Ω(crashErr).ShouldNot(HaveOccurred())
+
+					_, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
+			})
 		} else {
 			It("does not start an auction", func() {
 				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))

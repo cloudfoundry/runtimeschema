@@ -21,7 +21,7 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	})
 	logger.Info("started")
 
-	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
+	bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	changed, err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return nil
@@ -35,7 +35,7 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	}
 
 	logger.Info("requesting-start-lrp-auction")
-	err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
+	err = bbs.requestLRPAuctionForLRPKey(logger, actualLRPKey)
 	if err != nil {
 		logger.Error("failed-requesting-start-lrp-auction", err)
 		return err
@@ -108,7 +108,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		}
 
 		logger.Info("requesting-start-lrp-auction")
-		err = bbs.requestLRPAuctionForLRPKey(actualLRPKey)
+		err = bbs.requestLRPAuctionForLRPKey(logger, actualLRPKey)
 		if err != nil {
 			logger.Error("failed-requesting-start-lrp-auction", err)
 			return err

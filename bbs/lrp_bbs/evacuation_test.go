@@ -774,6 +774,20 @@ func (t evacuationTest) Test() {
 					Ω(evacuateErr).Should(Equal(err))
 				})
 			})
+
+			Context("when the desired LRP no longer exists", func() {
+				BeforeEach(func() {
+					err := bbs.RemoveDesiredLRPByProcessGuid(logger, desiredLRP.ProcessGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("the actual LRP is also deleted", func() {
+					Ω(evacuateErr).ShouldNot(HaveOccurred())
+
+					_, err := bbs.ActualLRPByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
+					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				})
+			})
 		} else {
 			It("does not start an auction", func() {
 				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
