@@ -80,6 +80,10 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 }
 
 func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error) {
+	if len(domain) == 0 {
+		return nil, bbserrors.ErrNoDomain
+	}
+
 	groups := []models.ActualLRPGroup{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)

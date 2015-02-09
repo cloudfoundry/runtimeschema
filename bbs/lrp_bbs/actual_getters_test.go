@@ -341,10 +341,8 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPGroupsByDomain", func() {
+		var err error
 		JustBeforeEach(func() {
-			var err error
-			actualLRPGroups, err = bbs.ActualLRPGroupsByDomain(baseDomain)
-			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
@@ -357,6 +355,8 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("should fetch all the instance and evacuating LRPs for the specified domain", func() {
+				actualLRPGroups, err = bbs.ActualLRPGroupsByDomain(baseDomain)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroups).Should(ConsistOf(
 					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: &evacuatingLRP},
 					models.ActualLRPGroup{Instance: &yetAnotherIndexLRP, Evacuating: nil},
@@ -373,8 +373,17 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
+				actualLRPGroups, err = bbs.ActualLRPGroupsByDomain(baseDomain)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroups).ShouldNot(BeNil())
 				Ω(actualLRPGroups).Should(HaveLen(0))
+			})
+		})
+
+		Context("when given an empty domain", func() {
+			It("returns an error", func() {
+				_, err = bbs.ActualLRPGroupsByDomain("")
+				Ω(err).Should(Equal(bbserrors.ErrNoDomain))
 			})
 		})
 	})
