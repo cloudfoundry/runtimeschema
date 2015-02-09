@@ -83,7 +83,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		if err != nil {
 			return err
 		}
-		logger.Info("succeded")
+		logger.Info("succeeded")
 		return nil
 	}
 
@@ -103,7 +103,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		}
 
 		if !changed {
-			logger.Info("succeded")
+			logger.Info("succeeded")
 			return nil
 		}
 
@@ -115,7 +115,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		}
 		logger.Info("succeeded-requesting-start-lrp-auction")
 
-		logger.Info("succeded")
+		logger.Info("succeeded")
 		return nil
 	}
 
@@ -132,7 +132,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		return bbserrors.ErrActualLRPCannotBeEvacuated
 	}
 
-	logger.Info("succeded")
+	logger.Info("succeeded")
 	return nil
 }
 
