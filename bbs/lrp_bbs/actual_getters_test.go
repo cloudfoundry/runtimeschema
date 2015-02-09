@@ -292,11 +292,7 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPGroupsByCellID", func() {
-		JustBeforeEach(func() {
-			var err error
-			actualLRPGroups, err = bbs.ActualLRPGroupsByCellID(cellID)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
+		var err error
 
 		Context("when there are /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
@@ -309,6 +305,8 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns both /instance and /evacuting actual lrps for the requested cell id", func() {
+				actualLRPGroups, err = bbs.ActualLRPGroupsByCellID(cellID)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroups).Should(ConsistOf(
 					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: nil},
 					models.ActualLRPGroup{Instance: &otherIndexLRP, Evacuating: nil},
@@ -327,8 +325,17 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
+				actualLRPGroups, err = bbs.ActualLRPGroupsByCellID(cellID)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroups).ShouldNot(BeNil())
 				Ω(actualLRPGroups).Should(BeEmpty())
+			})
+		})
+
+		Context("when given an empty cell id", func() {
+			It("returns an error", func() {
+				_, err = bbs.ActualLRPGroupsByCellID("")
+				Ω(err).Should(Equal(bbserrors.ErrNoCellID))
 			})
 		})
 	})

@@ -193,6 +193,10 @@ func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(processGuid string) (models.Actu
 }
 
 func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error) {
+	if len(cellID) == 0 {
+		return nil, bbserrors.ErrNoCellID
+	}
+
 	groups := []models.ActualLRPGroup{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)

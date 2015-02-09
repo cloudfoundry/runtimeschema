@@ -26,6 +26,7 @@ var (
 
 	ErrNoDomain      = errors.New("no domain given")
 	ErrNoProcessGuid = errors.New("no process guid given")
+	ErrNoCellID      = errors.New("no cell id given")
 
 	ErrServiceUnavailable = errors.New("service unavailable")
 
