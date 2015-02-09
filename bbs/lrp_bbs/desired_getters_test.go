@@ -110,5 +110,12 @@ var _ = Describe("Desired LRP Getters", func() {
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
+
+		Context("when the process guid is empty", func() {
+			It("returns an error", func() {
+				_, err := bbs.DesiredLRPByProcessGuid("")
+				Ω(err).Should(Equal(bbserrors.ErrNoProcessGuid))
+			})
+		})
 	})
 })

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -120,6 +121,10 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 }
 
 func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
+	if len(processGuid) == 0 {
+		return models.ActualLRPsByIndex{}, bbserrors.ErrNoProcessGuid
+	}
+
 	lrps := models.ActualLRPsByIndex{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
@@ -149,6 +154,10 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 }
 
 func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(processGuid string) (models.ActualLRPGroupsByIndex, error) {
+	if len(processGuid) == 0 {
+		return models.ActualLRPGroupsByIndex{}, bbserrors.ErrNoProcessGuid
+	}
+
 	groups := models.ActualLRPGroupsByIndex{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
@@ -225,6 +234,10 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 }
 
 func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
+	if len(processGuid) == 0 {
+		return models.ActualLRP{}, bbserrors.ErrNoProcessGuid
+	}
+
 	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
 	if err != nil {
 		return models.ActualLRP{}, shared.ConvertStoreError(err)
@@ -240,6 +253,10 @@ func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int)
 }
 
 func (bbs *LRPBBS) ActualLRPGroupByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRPGroup, error) {
+	if len(processGuid) == 0 {
+		return models.ActualLRPGroup{}, bbserrors.ErrNoProcessGuid
+	}
+
 	indexNode, err := bbs.store.ListRecursively(shared.ActualLRPIndexDir(processGuid, index))
 	if err != nil {
 		return models.ActualLRPGroup{}, shared.ConvertStoreError(err)
@@ -266,6 +283,10 @@ func (bbs *LRPBBS) ActualLRPGroupByProcessGuidAndIndex(processGuid string, index
 }
 
 func (bbs *LRPBBS) EvacuatingActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
+	if len(processGuid) == 0 {
+		return models.ActualLRP{}, bbserrors.ErrNoProcessGuid
+	}
+
 	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
 	if err != nil {
 		return models.ActualLRP{}, shared.ConvertStoreError(err)

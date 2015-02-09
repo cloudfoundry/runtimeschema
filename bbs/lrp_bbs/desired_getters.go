@@ -3,6 +3,7 @@ package lrp_bbs
 import (
 	"fmt"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -64,6 +65,10 @@ func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLR
 }
 
 func (bbs *LRPBBS) desiredLRPByProcessGuidWithIndex(processGuid string) (models.DesiredLRP, uint64, error) {
+	if len(processGuid) == 0 {
+		return models.DesiredLRP{}, 0, bbserrors.ErrNoProcessGuid
+	}
+
 	node, err := bbs.store.Get(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: processGuid}))
 	if err != nil {
 		return models.DesiredLRP{}, 0, shared.ConvertStoreError(err)

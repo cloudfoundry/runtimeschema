@@ -184,13 +184,10 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPsByProcessGuid", func() {
-		var actualLRPsByIndex models.ActualLRPsByIndex
-
-		JustBeforeEach(func() {
-			var err error
-			actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
+		var (
+			actualLRPsByIndex models.ActualLRPsByIndex
+			err               error
+		)
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
@@ -201,10 +198,21 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns only the /instance LRPs for the requested process guid", func() {
+				actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				Ω(actualLRPsByIndex).Should(Equal(models.ActualLRPsByIndex{
 					baseIndex:  baseLRP,
 					otherIndex: otherIndexLRP,
 				}))
+
+				Ω(actualLRPsByIndex).Should(HaveLen(2))
+				Ω(actualLRPsByIndex[baseIndex]).Should(Equal(baseLRP))
+				Ω(actualLRPsByIndex[otherIndex]).Should(Equal(otherIndexLRP))
+
+				actualLRPs = actualLRPsByIndex.Slice()
+				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
+				Ω(actualLRPs).ShouldNot(ContainElement(otherProcessGuidLRP))
 			})
 		})
 
@@ -217,20 +225,27 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty map", func() {
+				actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				Ω(actualLRPsByIndex).ShouldNot(BeNil())
 				Ω(actualLRPsByIndex).Should(BeEmpty())
+			})
+		})
+
+		Context("when given an empty process guid", func() {
+			It("returns an error", func() {
+				_, err = bbs.ActualLRPsByProcessGuid("")
+				Ω(err).Should(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
 	})
 
 	Describe("ActualLRPGroupsByProcessGuid", func() {
-		var actualLRPGroupsByIndex models.ActualLRPGroupsByIndex
-
-		JustBeforeEach(func() {
-			var err error
-			actualLRPGroupsByIndex, err = bbs.ActualLRPGroupsByProcessGuid(baseProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
+		var (
+			actualLRPGroupsByIndex models.ActualLRPGroupsByIndex
+			err                    error
+		)
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
@@ -242,6 +257,8 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
+				actualLRPGroupsByIndex, err = bbs.ActualLRPGroupsByProcessGuid(baseProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroupsByIndex).Should(Equal(models.ActualLRPGroupsByIndex{
 					baseIndex:       {Instance: &baseLRP, Evacuating: nil},
 					otherIndex:      {Instance: &otherIndexLRP, Evacuating: nil},
@@ -259,8 +276,17 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty map", func() {
+				actualLRPGroupsByIndex, err = bbs.ActualLRPGroupsByProcessGuid(baseProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRPGroupsByIndex).ShouldNot(BeNil())
 				Ω(actualLRPGroupsByIndex).Should(BeEmpty())
+			})
+		})
+
+		Context("when given an empty process guid", func() {
+			It("returns an error", func() {
+				_, err = bbs.ActualLRPGroupsByProcessGuid("")
+				Ω(err).Should(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
 	})
@@ -352,16 +378,13 @@ var _ = Describe("Actual LRP Getters", func() {
 			returnedErr error
 		)
 
-		JustBeforeEach(func() {
-			returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-		})
-
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
+				returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).ShouldNot(HaveOccurred())
 				Ω(returnedLRP).Should(Equal(baseLRP))
 			})
@@ -372,6 +395,7 @@ var _ = Describe("Actual LRP Getters", func() {
 				})
 
 				It("returns the /instance entry", func() {
+					returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 					Ω(returnedErr).ShouldNot(HaveOccurred())
 					Ω(returnedLRP).Should(Equal(baseLRP))
 				})
@@ -384,12 +408,14 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
+				_, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when there are no entries", func() {
 			It("returns an ErrStoreResourceNotFound", func() {
+				_, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
@@ -449,7 +475,15 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no entries", func() {
 			It("returns an ErrStoreResourceNotFound", func() {
+				_, returnedErr = bbs.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
+
+		Context("when given an empty process guid", func() {
+			It("returns an error", func() {
+				_, returnedErr = bbs.ActualLRPGroupByProcessGuidAndIndex("", baseIndex)
+				Ω(returnedErr).Should(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
 	})
@@ -460,10 +494,6 @@ var _ = Describe("Actual LRP Getters", func() {
 			returnedErr error
 		)
 
-		JustBeforeEach(func() {
-			returnedLRP, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-		})
-
 		Context("when there is both an /instance and an /evacuating entry", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -471,6 +501,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns the /evacuating entry", func() {
+				returnedLRP, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).ShouldNot(HaveOccurred())
 				Ω(returnedLRP).Should(Equal(evacuatingLRP))
 			})
@@ -482,6 +513,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns ErrStoreResourceNotFound", func() {
+				returnedLRP, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
@@ -492,6 +524,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns the /evacuating entry", func() {
+				returnedLRP, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).ShouldNot(HaveOccurred())
 				Ω(returnedLRP).Should(Equal(evacuatingLRP))
 			})
@@ -499,7 +532,15 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no entries", func() {
 			It("returns ErrStoreResourceNotFound", func() {
+				_, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
+
+		Context("when given an empty process guid", func() {
+			It("returns an error", func() {
+				_, returnedErr = bbs.EvacuatingActualLRPByProcessGuidAndIndex("", baseIndex)
+				Ω(returnedErr).Should(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
 	})
