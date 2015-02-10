@@ -727,12 +727,12 @@ func (t evacuationTest) Test() {
 			initialTimestamp = clock.Now().UnixNano()
 
 			registerAuctioneer(auctioneerPresence)
-			createRawDesiredLRP(desiredLRP)
+			setRawDesiredLRP(desiredLRP)
 			if t.InstanceLRP != nil {
-				createRawActualLRP(t.InstanceLRP())
+				setRawActualLRP(t.InstanceLRP())
 			}
 			if t.EvacuatingLRP != nil {
-				createRawEvacuatingActualLRP(t.EvacuatingLRP(), omegaEvacuationTTL)
+				setRawEvacuatingActualLRP(t.EvacuatingLRP(), omegaEvacuationTTL)
 			}
 		})
 

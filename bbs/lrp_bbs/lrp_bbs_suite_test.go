@@ -105,40 +105,56 @@ func createAndClaim(d models.DesiredLRP, index int, containerKey models.ActualLR
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawActualLRP(lrp models.ActualLRP) {
+func setRawActualLRP(lrp models.ActualLRP) {
 	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = etcdClient.Create(storeadapter.StoreNode{
-		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-		Value: value,
+	err = etcdClient.SetMulti([]storeadapter.StoreNode{
+		{
+			Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+		},
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawEvacuatingActualLRP(lrp models.ActualLRP, ttlInSeconds uint64) {
+func setRawEvacuatingActualLRP(lrp models.ActualLRP, ttlInSeconds uint64) {
 	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = etcdClient.Create(storeadapter.StoreNode{
-		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
-		Value: value,
-		TTL:   ttlInSeconds,
+	err = etcdClient.SetMulti([]storeadapter.StoreNode{
+		{
+			Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+			Value: value,
+			TTL:   ttlInSeconds,
+		},
 	})
 
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
-func createRawDesiredLRP(d models.DesiredLRP) {
+func setRawDesiredLRP(d models.DesiredLRP) {
 	value, err := json.Marshal(d) // do NOT use models.ToJSON; don't want validations
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = etcdClient.Create(storeadapter.StoreNode{
-		Key:   shared.DesiredLRPSchemaPath(d),
-		Value: value,
+	err = etcdClient.SetMulti([]storeadapter.StoreNode{
+		{
+			Key:   shared.DesiredLRPSchemaPath(d),
+			Value: value,
+		},
 	})
 
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func deleteActualLRP(key models.ActualLRPKey) {
+	err := etcdClient.Delete(shared.ActualLRPSchemaPath(key.ProcessGuid, key.Index))
+	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func deleteEvacuatingActualLRP(key models.ActualLRPKey) {
+	err := etcdClient.Delete(shared.EvacuatingActualLRPSchemaPath(key.ProcessGuid, key.Index))
 	Ω(err).ShouldNot(HaveOccurred())
 }
 

@@ -891,7 +891,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					State:        models.ActualLRPStateCrashed,
 					Since:        777,
 				}
-				createRawActualLRP(actual)
+				setRawActualLRP(actual)
 			})
 
 			JustBeforeEach(func() {

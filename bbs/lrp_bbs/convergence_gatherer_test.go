@@ -148,7 +148,7 @@ var _ = Describe("Convergence", func() {
 
 func createGatherTestData(test *gatherTestData) {
 	test.desiredsToKeep.Each(func(desired models.DesiredLRP) {
-		createRawDesiredLRP(desired)
+		setRawDesiredLRP(desired)
 	})
 
 	test.desiredsToPrune.Each(func(desired models.DesiredLRP) {
@@ -156,11 +156,11 @@ func createGatherTestData(test *gatherTestData) {
 	})
 
 	test.actualsToKeep.Each(func(actual models.ActualLRP) {
-		createRawActualLRP(actual)
+		setRawActualLRP(actual)
 	})
 
 	test.actualsToPrune.Each(func(actual models.ActualLRP) {
-		createRawActualLRP(actual)
+		setRawActualLRP(actual)
 	})
 
 	test.domains.Each(func(domain string) {

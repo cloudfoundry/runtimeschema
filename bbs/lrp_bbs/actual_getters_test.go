@@ -118,10 +118,10 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				createRawActualLRP(otherDomainLRP)
-				createRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				setRawActualLRP(baseLRP)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawActualLRP(otherDomainLRP)
+				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("returns all the /instance LRPs and no /evacuating LRPs", func() {
@@ -132,7 +132,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -153,10 +153,10 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				createRawActualLRP(otherDomainLRP)
-				createRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				setRawActualLRP(baseLRP)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawActualLRP(otherDomainLRP)
+				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
@@ -171,7 +171,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -194,10 +194,10 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawActualLRP(otherIndexLRP)
-				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				createRawActualLRP(otherProcessGuidLRP)
+				setRawActualLRP(baseLRP)
+				setRawActualLRP(otherIndexLRP)
+				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				setRawActualLRP(otherProcessGuidLRP)
 			})
 
 			It("returns only the /instance LRPs for the requested process guid", func() {
@@ -211,7 +211,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -234,11 +234,11 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawActualLRP(otherIndexLRP)
-				createRawActualLRP(yetAnotherIndexLRP)
-				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				createRawActualLRP(otherProcessGuidLRP)
+				setRawActualLRP(baseLRP)
+				setRawActualLRP(otherIndexLRP)
+				setRawActualLRP(yetAnotherIndexLRP)
+				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				setRawActualLRP(otherProcessGuidLRP)
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
@@ -253,7 +253,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -274,11 +274,11 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawActualLRP(otherIndexLRP)
-				createRawActualLRP(otherDomainLRP)
-				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				createRawActualLRP(otherCellIDLRP)
+				setRawActualLRP(baseLRP)
+				setRawActualLRP(otherIndexLRP)
+				setRawActualLRP(otherDomainLRP)
+				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				setRawActualLRP(otherCellIDLRP)
 			})
 
 			It("returns the /instance actual lrps belonging to the requested cell id", func() {
@@ -291,7 +291,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -312,11 +312,11 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				createRawActualLRP(yetAnotherIndexLRP)
-				createRawActualLRP(otherDomainLRP)
-				createRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				setRawActualLRP(baseLRP)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawActualLRP(yetAnotherIndexLRP)
+				setRawActualLRP(otherDomainLRP)
+				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("should fetch all the instance and evacuating LRPs for the specified domain", func() {
@@ -330,7 +330,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no actual LRPs in the requested domain", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -354,7 +354,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
@@ -364,7 +364,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 			Context("when there is also an /evacuating entry", func() {
 				BeforeEach(func() {
-					createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+					setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 				})
 
 				It("returns the /instance entry", func() {
@@ -376,7 +376,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /evacuating entry", func() {
 			BeforeEach(func() {
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
@@ -403,7 +403,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
@@ -416,7 +416,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 			Context("when there is also an /evacuating entry", func() {
 				BeforeEach(func() {
-					createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+					setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 				})
 
 				It("returns both the /instance LRPs and /evacuating LRPs the group", func() {
@@ -431,7 +431,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /evacuating entry", func() {
 			BeforeEach(func() {
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
@@ -462,8 +462,8 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is both an /instance and an /evacuating entry", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawActualLRP(baseLRP)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns the /evacuating entry", func() {
@@ -474,7 +474,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /instance entry", func() {
 			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
+				setRawActualLRP(baseLRP)
 			})
 
 			It("returns ErrStoreResourceNotFound", func() {
@@ -484,7 +484,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /evacuating entry", func() {
 			BeforeEach(func() {
-				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns the /evacuating entry", func() {
@@ -509,10 +509,10 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are both instance and evacuating LRPs on the requested cell", func() {
 			BeforeEach(func() {
-				createRawEvacuatingActualLRP(baseLRP, noExpirationTTL)
-				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				createRawActualLRP(otherIndexLRP)
-				createRawEvacuatingActualLRP(otherCellIDLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(baseLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				setRawActualLRP(otherIndexLRP)
+				setRawEvacuatingActualLRP(otherCellIDLRP, noExpirationTTL)
 			})
 
 			It("returns only the evacuating LRPs", func() {
@@ -524,7 +524,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				createRawEvacuatingActualLRP(baseLRP, noExpirationTTL)
+				setRawEvacuatingActualLRP(baseLRP, noExpirationTTL)
 				err := bbs.RemoveEvacuatingActualLRP(logger, baseLRPKey, baseLRPContainerKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})

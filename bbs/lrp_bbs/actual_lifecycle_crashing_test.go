@@ -171,8 +171,8 @@ func (t crashTest) Test() {
 			}
 
 			registerAuctioneer(auctioneerPresence)
-			createRawDesiredLRP(desiredLRP)
-			createRawActualLRP(actualLRP)
+			setRawDesiredLRP(desiredLRP)
+			setRawActualLRP(actualLRP)
 		})
 
 		JustBeforeEach(func() {

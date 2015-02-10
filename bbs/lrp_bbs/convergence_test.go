@@ -67,7 +67,7 @@ var _ = Describe("LrpConvergence", func() {
 				Action:      dummyAction,
 			}
 
-			createRawDesiredLRP(desiredLRP)
+			setRawDesiredLRP(desiredLRP)
 			registerCell(models.NewCellPresence(cellId, "the-stack", "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3)))
 			registerAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
 		})
@@ -110,7 +110,7 @@ var _ = Describe("LrpConvergence", func() {
 					State:                 models.ActualLRPStateRunning,
 					Since:                 clock.Now().Add(-time.Minute).UnixNano(),
 				}
-				createRawActualLRP(actualLRP)
+				setRawActualLRP(actualLRP)
 			})
 
 			It("emits a start auction request for the missing index", func() {
@@ -148,8 +148,8 @@ var _ = Describe("LrpConvergence", func() {
 					Since:        twentyMinutesAgo,
 				}
 
-				createRawActualLRP(crashedRecently)
-				createRawActualLRP(crashedLongAgo)
+				setRawActualLRP(crashedRecently)
+				setRawActualLRP(crashedLongAgo)
 			})
 
 			It("emits a start auction request for the crashed index", func() {
