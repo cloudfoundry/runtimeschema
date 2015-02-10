@@ -288,6 +288,132 @@ var _ = Describe("ActualLRP", func() {
 		})
 	})
 
+	Describe("ActualLRPGroup", func() {
+		Describe("Resolve", func() {
+			var (
+				instanceLRP   *models.ActualLRP
+				evacuatingLRP *models.ActualLRP
+
+				group models.ActualLRPGroup
+
+				resolvedLRP *models.ActualLRP
+				evacuating  bool
+				resolveErr  error
+			)
+
+			BeforeEach(func() {
+				lrpKey := models.NewActualLRPKey("process-guid", 1, "domain")
+				instanceLRP = &models.ActualLRP{
+					ActualLRPKey: lrpKey,
+					Since:        1138,
+				}
+				evacuatingLRP = &models.ActualLRP{
+					ActualLRPKey: lrpKey,
+					Since:        3417,
+				}
+			})
+
+			JustBeforeEach(func() {
+				resolvedLRP, evacuating, resolveErr = group.Resolve()
+			})
+
+			Context("When neither the Instance nor the Evacuating LRP is set", func() {
+				BeforeEach(func() {
+					group = models.ActualLRPGroup{}
+				})
+
+				It("returns ErrActualLRPGroupInvalid", func() {
+					Ω(resolveErr).Should(Equal(models.ErrActualLRPGroupInvalid))
+				})
+			})
+
+			Context("When only the Instance LRP is set", func() {
+				BeforeEach(func() {
+					group = models.ActualLRPGroup{
+						Instance: instanceLRP,
+					}
+				})
+
+				It("returns the Instance LRP", func() {
+					Ω(resolveErr).ShouldNot(HaveOccurred())
+					Ω(resolvedLRP).Should(Equal(instanceLRP))
+					Ω(evacuating).Should(BeFalse())
+				})
+			})
+
+			Context("When only the Evacuating LRP is set", func() {
+				BeforeEach(func() {
+					group = models.ActualLRPGroup{
+						Evacuating: evacuatingLRP,
+					}
+				})
+
+				It("returns the Evacuating LRP", func() {
+					Ω(resolveErr).ShouldNot(HaveOccurred())
+					Ω(resolvedLRP).Should(Equal(evacuatingLRP))
+					Ω(evacuating).Should(BeTrue())
+				})
+			})
+
+			Context("When both the Instance and the Evacuating LRP are set", func() {
+				BeforeEach(func() {
+					group = models.ActualLRPGroup{
+						Evacuating: evacuatingLRP,
+						Instance:   instanceLRP,
+					}
+				})
+
+				Context("When the Instance is UNCLAIMED", func() {
+					BeforeEach(func() {
+						instanceLRP.State = models.ActualLRPStateUnclaimed
+					})
+
+					It("returns the Evacuating LRP", func() {
+						Ω(resolveErr).ShouldNot(HaveOccurred())
+						Ω(resolvedLRP).Should(Equal(evacuatingLRP))
+						Ω(evacuating).Should(BeTrue())
+					})
+				})
+
+				Context("When the Instance is CLAIMED", func() {
+					BeforeEach(func() {
+						instanceLRP.State = models.ActualLRPStateClaimed
+					})
+
+					It("returns the Evacuating LRP", func() {
+						Ω(resolveErr).ShouldNot(HaveOccurred())
+						Ω(resolvedLRP).Should(Equal(evacuatingLRP))
+						Ω(evacuating).Should(BeTrue())
+					})
+				})
+
+				Context("When the Instance is RUNNING", func() {
+					BeforeEach(func() {
+						instanceLRP.State = models.ActualLRPStateRunning
+					})
+
+					It("returns the Instance LRP", func() {
+						Ω(resolveErr).ShouldNot(HaveOccurred())
+						Ω(resolvedLRP).Should(Equal(instanceLRP))
+						Ω(evacuating).Should(BeFalse())
+					})
+				})
+
+				Context("When the Instance is CRASHED", func() {
+					BeforeEach(func() {
+						instanceLRP.State = models.ActualLRPStateCrashed
+					})
+
+					It("returns the Instance LRP", func() {
+						Ω(resolveErr).ShouldNot(HaveOccurred())
+						Ω(resolvedLRP).Should(Equal(instanceLRP))
+						Ω(evacuating).Should(BeFalse())
+					})
+				})
+			})
+		})
+	})
+
 	Describe("ActualLRP", func() {
 		var lrp models.ActualLRP
 		var lrpKey models.ActualLRPKey

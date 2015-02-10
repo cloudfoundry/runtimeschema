@@ -38,6 +38,33 @@ func (set ActualLRPsByProcessGuidAndIndex) Each(predicate func(actual ActualLRP)
 	}
 }
 
+var ErrActualLRPGroupInvalid = errors.New("ActualLRPGroup invalid")
+
+type ActualLRPGroup struct {
+	Instance   *ActualLRP
+	Evacuating *ActualLRP
+}
+
+func (group ActualLRPGroup) Resolve() (*ActualLRP, bool, error) {
+	if group.Instance == nil && group.Evacuating == nil {
+		return nil, false, ErrActualLRPGroupInvalid
+	}
+
+	if group.Instance == nil {
+		return group.Evacuating, true, nil
+	}
+
+	if group.Evacuating == nil {
+		return group.Instance, false, nil
+	}
+
+	if group.Instance.State == ActualLRPStateRunning || group.Instance.State == ActualLRPStateCrashed {
+		return group.Instance, false, nil
+	} else {
+		return group.Evacuating, true, nil
+	}
+}
+
 type ActualLRPState string
 
 const (

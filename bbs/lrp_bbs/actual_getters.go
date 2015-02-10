@@ -9,6 +9,44 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
+func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
+	groups := []models.ActualLRPGroup{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return groups, nil
+	} else if err != nil {
+		return groups, shared.ConvertStoreError(err)
+	}
+
+	for _, node := range node.ChildNodes {
+		for _, indexNode := range node.ChildNodes {
+			group := models.ActualLRPGroup{}
+			for _, instanceNode := range indexNode.ChildNodes {
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
+				if err != nil {
+					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+				}
+
+				if isInstanceActualLRPNode(instanceNode) {
+					group.Instance = &lrp
+				}
+
+				if isEvacuatingActualLRPNode(instanceNode) {
+					group.Evacuating = &lrp
+				}
+			}
+
+			if group.Instance != nil || group.Evacuating != nil {
+				groups = append(groups, group)
+			}
+		}
+	}
+
+	return groups, nil
+}
+
 func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
@@ -38,6 +76,47 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	}
 
 	return lrps, nil
+}
+
+func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error) {
+	groups := []models.ActualLRPGroup{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	if err == storeadapter.ErrorKeyNotFound {
+		return groups, nil
+	} else if err != nil {
+		return groups, shared.ConvertStoreError(err)
+	}
+
+	for _, node := range node.ChildNodes {
+		for _, indexNode := range node.ChildNodes {
+			group := models.ActualLRPGroup{}
+			for _, instanceNode := range indexNode.ChildNodes {
+				var lrp models.ActualLRP
+				err = models.FromJSON(instanceNode.Value, &lrp)
+				if err != nil {
+					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+				}
+				if lrp.Domain != domain {
+					continue
+				}
+
+				if isInstanceActualLRPNode(instanceNode) {
+					group.Instance = &lrp
+				}
+
+				if isEvacuatingActualLRPNode(instanceNode) {
+					group.Evacuating = &lrp
+				}
+			}
+
+			if group.Instance != nil || group.Evacuating != nil {
+				groups = append(groups, group)
+			}
+		}
+	}
+
+	return groups, nil
 }
 
 func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
@@ -115,35 +194,19 @@ func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int)
 	return lrp, err
 }
 
-func (bbs *LRPBBS) ActualLRPsByDomain(domain string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
-
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
-	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
+func (bbs *LRPBBS) EvacuatingActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
+	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
+	if err != nil {
+		return models.ActualLRP{}, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				if !isInstanceActualLRPNode(instanceNode) {
-					continue
-				}
-
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.Domain == domain {
-					lrps = append(lrps, lrp)
-				}
-			}
-		}
+	var lrp models.ActualLRP
+	err = models.FromJSON(node.Value, &lrp)
+	if err != nil {
+		return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
 	}
 
-	return lrps, nil
+	return lrp, err
 }
 
 func (bbs *LRPBBS) EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {

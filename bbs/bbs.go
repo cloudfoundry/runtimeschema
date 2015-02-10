@@ -40,7 +40,8 @@ type ReceptorBBS interface {
 
 	//actual lrp
 	ActualLRPs() ([]models.ActualLRP, error)
-	ActualLRPsByDomain(domain string) ([]models.ActualLRP, error)
+	ActualLRPGroups() ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error)
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RetireActualLRPs(lager.Logger, []models.ActualLRP)
