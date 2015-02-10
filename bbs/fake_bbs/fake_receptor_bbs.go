@@ -173,6 +173,15 @@ type FakeReceptorBBS struct {
 		result1 models.ActualLRPsByIndex
 		result2 error
 	}
+	ActualLRPGroupsByProcessGuidStub        func(string) (models.ActualLRPGroupsByIndex, error)
+	actualLRPGroupsByProcessGuidMutex       sync.RWMutex
+	actualLRPGroupsByProcessGuidArgsForCall []struct {
+		arg1 string
+	}
+	actualLRPGroupsByProcessGuidReturns struct {
+		result1 models.ActualLRPGroupsByIndex
+		result2 error
+	}
 	ActualLRPByProcessGuidAndIndexStub        func(string, int) (models.ActualLRP, error)
 	actualLRPByProcessGuidAndIndexMutex       sync.RWMutex
 	actualLRPByProcessGuidAndIndexArgsForCall []struct {
@@ -806,6 +815,39 @@ func (fake *FakeReceptorBBS) ActualLRPsByProcessGuidReturns(result1 models.Actua
 	fake.ActualLRPsByProcessGuidStub = nil
 	fake.actualLRPsByProcessGuidReturns = struct {
 		result1 models.ActualLRPsByIndex
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuid(arg1 string) (models.ActualLRPGroupsByIndex, error) {
+	fake.actualLRPGroupsByProcessGuidMutex.Lock()
+	fake.actualLRPGroupsByProcessGuidArgsForCall = append(fake.actualLRPGroupsByProcessGuidArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.actualLRPGroupsByProcessGuidMutex.Unlock()
+	if fake.ActualLRPGroupsByProcessGuidStub != nil {
+		return fake.ActualLRPGroupsByProcessGuidStub(arg1)
+	} else {
+		return fake.actualLRPGroupsByProcessGuidReturns.result1, fake.actualLRPGroupsByProcessGuidReturns.result2
+	}
+}
+
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidCallCount() int {
+	fake.actualLRPGroupsByProcessGuidMutex.RLock()
+	defer fake.actualLRPGroupsByProcessGuidMutex.RUnlock()
+	return len(fake.actualLRPGroupsByProcessGuidArgsForCall)
+}
+
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidArgsForCall(i int) string {
+	fake.actualLRPGroupsByProcessGuidMutex.RLock()
+	defer fake.actualLRPGroupsByProcessGuidMutex.RUnlock()
+	return fake.actualLRPGroupsByProcessGuidArgsForCall[i].arg1
+}
+
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidReturns(result1 models.ActualLRPGroupsByIndex, result2 error) {
+	fake.ActualLRPGroupsByProcessGuidStub = nil
+	fake.actualLRPGroupsByProcessGuidReturns = struct {
+		result1 models.ActualLRPGroupsByIndex
 		result2 error
 	}{result1, result2}
 }

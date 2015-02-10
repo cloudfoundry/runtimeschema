@@ -148,6 +148,41 @@ func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRP
 	return lrps, nil
 }
 
+func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(processGuid string) (models.ActualLRPGroupsByIndex, error) {
+	groups := models.ActualLRPGroupsByIndex{}
+
+	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
+	if err == storeadapter.ErrorKeyNotFound {
+		return groups, nil
+	} else if err != nil {
+		return groups, shared.ConvertStoreError(err)
+	}
+
+	for _, indexNode := range node.ChildNodes {
+		for _, instanceNode := range indexNode.ChildNodes {
+			var lrp models.ActualLRP
+			err = models.FromJSON(instanceNode.Value, &lrp)
+			if err != nil {
+				return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+			}
+
+			group := groups[lrp.Index]
+
+			if isInstanceActualLRPNode(instanceNode) {
+				group.Instance = &lrp
+			}
+
+			if isEvacuatingActualLRPNode(instanceNode) {
+				group.Evacuating = &lrp
+			}
+
+			groups[lrp.Index] = group
+		}
+	}
+
+	return groups, nil
+}
+
 func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 

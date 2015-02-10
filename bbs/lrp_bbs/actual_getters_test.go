@@ -109,10 +109,10 @@ var _ = Describe("Actual LRP Getters", func() {
 		}
 	})
 
-	Describe("ActualLRPGroups", func() {
+	Describe("ActualLRPs", func() {
 		JustBeforeEach(func() {
 			var err error
-			actualLRPGroups, err = bbs.ActualLRPGroups()
+			actualLRPs, err = bbs.ActualLRPs()
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -124,67 +124,8 @@ var _ = Describe("Actual LRP Getters", func() {
 				createRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
-			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
-				Ω(actualLRPGroups).Should(HaveLen(3))
-
-				groupsByKey := make(map[models.ActualLRPKey]models.ActualLRPGroup)
-				for _, group := range actualLRPGroups {
-					var key models.ActualLRPKey
-					if group.Instance != nil {
-						key = group.Instance.ActualLRPKey
-					} else {
-						key = group.Evacuating.ActualLRPKey
-					}
-					groupsByKey[key] = group
-				}
-
-				Ω(groupsByKey[baseLRP.ActualLRPKey].Instance).Should(Equal(&baseLRP))
-				Ω(groupsByKey[baseLRP.ActualLRPKey].Evacuating).Should(Equal(&evacuatingLRP))
-
-				Ω(groupsByKey[otherDomainLRP.ActualLRPKey].Instance).Should(Equal(&otherDomainLRP))
-				Ω(groupsByKey[otherDomainLRP.ActualLRPKey].Evacuating).Should(BeNil())
-
-				Ω(groupsByKey[otherIndexLRP.ActualLRPKey].Instance).Should(BeNil())
-				Ω(groupsByKey[otherIndexLRP.ActualLRPKey].Evacuating).Should(Equal(&otherIndexLRP))
-			})
-		})
-
-		Context("when there are no LRPs", func() {
-			BeforeEach(func() {
-				// leave some intermediate directories in the store
-				createRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("returns an empty list", func() {
-				Ω(actualLRPGroups).ShouldNot(BeNil())
-				Ω(actualLRPGroups).Should(BeEmpty())
-			})
-		})
-	})
-
-	Describe("ActualLRPs", func() {
-		JustBeforeEach(func() {
-			var err error
-			actualLRPs, err = bbs.ActualLRPs()
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		Context("when there are both /instance and /evacuating LRPs", func() {
-			BeforeEach(func() {
-				createRawActualLRP(baseLRP)
-				createRawActualLRP(otherIndexLRP)
-				createRawActualLRP(otherDomainLRP)
-				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-			})
-
 			It("returns all the /instance LRPs and no /evacuating LRPs", func() {
-				Ω(actualLRPs).Should(HaveLen(3))
-				Ω(actualLRPs).Should(ContainElement(baseLRP))
-				Ω(actualLRPs).Should(ContainElement(otherIndexLRP))
-				Ω(actualLRPs).Should(ContainElement(otherDomainLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
+				Ω(actualLRPs).Should(ConsistOf(baseLRP, otherDomainLRP))
 			})
 		})
 
@@ -203,6 +144,45 @@ var _ = Describe("Actual LRP Getters", func() {
 		})
 	})
 
+	Describe("ActualLRPGroups", func() {
+		JustBeforeEach(func() {
+			var err error
+			actualLRPGroups, err = bbs.ActualLRPGroups()
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when there are both /instance and /evacuating LRPs", func() {
+			BeforeEach(func() {
+				createRawActualLRP(baseLRP)
+				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				createRawActualLRP(otherDomainLRP)
+				createRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+			})
+
+			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
+				Ω(actualLRPGroups).Should(ConsistOf(
+					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: &evacuatingLRP},
+					models.ActualLRPGroup{Instance: &otherDomainLRP, Evacuating: nil},
+					models.ActualLRPGroup{Instance: nil, Evacuating: &otherIndexLRP},
+				))
+			})
+		})
+
+		Context("when there are no LRPs", func() {
+			BeforeEach(func() {
+				// leave some intermediate directories in the store
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				Ω(actualLRPGroups).ShouldNot(BeNil())
+				Ω(actualLRPGroups).Should(BeEmpty())
+			})
+		})
+	})
+
 	Describe("ActualLRPsByProcessGuid", func() {
 		var actualLRPsByIndex models.ActualLRPsByIndex
 
@@ -212,7 +192,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
-		Context("when there are only /instance LRPs", func() {
+		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
 				createRawActualLRP(baseLRP)
 				createRawActualLRP(otherIndexLRP)
@@ -221,13 +201,10 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns only the /instance LRPs for the requested process guid", func() {
-				Ω(actualLRPsByIndex).Should(HaveLen(2))
-				Ω(actualLRPsByIndex[baseIndex]).Should(Equal(baseLRP))
-				Ω(actualLRPsByIndex[otherIndex]).Should(Equal(otherIndexLRP))
-
-				actualLRPs = actualLRPsByIndex.Slice()
-				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(otherProcessGuidLRP))
+				Ω(actualLRPsByIndex).Should(Equal(models.ActualLRPsByIndex{
+					baseIndex:  baseLRP,
+					otherIndex: otherIndexLRP,
+				}))
 			})
 		})
 
@@ -242,6 +219,48 @@ var _ = Describe("Actual LRP Getters", func() {
 			It("returns an empty map", func() {
 				Ω(actualLRPsByIndex).ShouldNot(BeNil())
 				Ω(actualLRPsByIndex).Should(BeEmpty())
+			})
+		})
+	})
+
+	Describe("ActualLRPGroupsByProcessGuid", func() {
+		var actualLRPGroupsByIndex models.ActualLRPGroupsByIndex
+
+		JustBeforeEach(func() {
+			var err error
+			actualLRPGroupsByIndex, err = bbs.ActualLRPGroupsByProcessGuid(baseProcessGuid)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		Context("when there are both /instance and /evacuating LRPs", func() {
+			BeforeEach(func() {
+				createRawActualLRP(baseLRP)
+				createRawActualLRP(otherIndexLRP)
+				createRawActualLRP(yetAnotherIndexLRP)
+				createRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				createRawActualLRP(otherProcessGuidLRP)
+			})
+
+			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
+				Ω(actualLRPGroupsByIndex).Should(Equal(models.ActualLRPGroupsByIndex{
+					baseIndex:       {Instance: &baseLRP, Evacuating: nil},
+					otherIndex:      {Instance: &otherIndexLRP, Evacuating: nil},
+					yetAnotherIndex: {Instance: &yetAnotherIndexLRP, Evacuating: &yetAnotherIndexLRP},
+				}))
+			})
+		})
+
+		Context("when there are no LRPs", func() {
+			BeforeEach(func() {
+				// leave some intermediate directories in the store
+				createRawActualLRP(baseLRP)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an empty map", func() {
+				Ω(actualLRPGroupsByIndex).ShouldNot(BeNil())
+				Ω(actualLRPGroupsByIndex).Should(BeEmpty())
 			})
 		})
 	})

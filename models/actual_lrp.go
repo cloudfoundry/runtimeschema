@@ -65,6 +65,16 @@ func (group ActualLRPGroup) Resolve() (*ActualLRP, bool, error) {
 	}
 }
 
+type ActualLRPGroupsByIndex map[int]ActualLRPGroup
+
+func (actuals ActualLRPGroupsByIndex) Slice() []ActualLRPGroup {
+	aSlice := make([]ActualLRPGroup, 0, len(actuals))
+	for _, actual := range actuals {
+		aSlice = append(aSlice, actual)
+	}
+	return aSlice
+}
+
 type ActualLRPState string
 
 const (

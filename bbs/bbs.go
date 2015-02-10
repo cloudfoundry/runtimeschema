@@ -43,6 +43,7 @@ type ReceptorBBS interface {
 	ActualLRPGroups() ([]models.ActualLRPGroup, error)
 	ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error)
 	ActualLRPsByProcessGuid(string) (models.ActualLRPsByIndex, error)
+	ActualLRPGroupsByProcessGuid(string) (models.ActualLRPGroupsByIndex, error)
 	ActualLRPByProcessGuidAndIndex(string, int) (models.ActualLRP, error)
 	RetireActualLRPs(lager.Logger, []models.ActualLRP)
 	WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (stop chan<- bool, errs <-chan error)
