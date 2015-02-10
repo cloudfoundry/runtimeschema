@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -108,11 +109,14 @@ var _ = Describe("Watchers", func() {
 
 	Describe("WatchForActualLRPChanges", func() {
 		var (
-			creates chan models.ActualLRP
-			changes chan models.ActualLRPChange
-			deletes chan models.ActualLRP
-			stop    chan<- bool
-			errors  <-chan error
+			creates           chan models.ActualLRP
+			createsEvacuating chan bool
+			changes           chan models.ActualLRPChange
+			changesEvacuating chan bool
+			deletes           chan models.ActualLRP
+			deletesEvacuating chan bool
+			stop              chan<- bool
+			errors            <-chan error
 
 			lrpProcessGuid string
 			desiredLRP     models.DesiredLRP
@@ -125,35 +129,54 @@ var _ = Describe("Watchers", func() {
 		BeforeEach(func() {
 			createsCh := make(chan models.ActualLRP)
 			creates = createsCh
+			createsEvacuatingCh := make(chan bool)
+			createsEvacuating = createsEvacuatingCh
+
 			changesCh := make(chan models.ActualLRPChange)
 			changes = changesCh
+			changesEvacuatingCh := make(chan bool)
+			changesEvacuating = changesEvacuatingCh
+
 			deletesCh := make(chan models.ActualLRP)
 			deletes = deletesCh
+			deletesEvacuatingCh := make(chan bool)
+			deletesEvacuating = deletesEvacuatingCh
 
 			stop, errors = bbs.WatchForActualLRPChanges(logger,
-				func(created models.ActualLRP) { createsCh <- created },
-				func(changed models.ActualLRPChange) { changesCh <- changed },
-				func(deleted models.ActualLRP) { deletesCh <- deleted },
+				func(created models.ActualLRP, evacuating bool) {
+					createsCh <- created
+					createsEvacuatingCh <- evacuating
+				},
+				func(changed models.ActualLRPChange, evacuating bool) {
+					changesCh <- changed
+					changesEvacuatingCh <- evacuating
+				},
+				func(deleted models.ActualLRP, evacuating bool) {
+					deletesCh <- deleted
+					deletesEvacuatingCh <- evacuating
+				},
 			)
 
 			lrpProcessGuid = "some-process-guid"
 			desiredLRP = models.DesiredLRP{
 				ProcessGuid: lrpProcessGuid,
 				Domain:      "lrp-domain",
+				Stack:       "some-stack",
 				Instances:   1,
+				Action:      &models.RunAction{Path: "/bin/true"},
 			}
 
 			lrpIndex = 0
-
 			lrpCellId = "cell-id"
 		})
 
-		It("sends an event down the pipe for creates", func() {
+		It("sends an event down the pipe for create", func() {
 			err := bbs.CreateActualLRP(logger, desiredLRP, lrpIndex)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			var actualLRP models.ActualLRP
 			Eventually(creates).Should(Receive(&actualLRP))
+			Eventually(createsEvacuating).Should(Receive(Equal(false)))
 
 			Ω(actualLRP.ProcessGuid).Should(Equal(lrpProcessGuid))
 			Ω(actualLRP.Index).Should(Equal(lrpIndex))
@@ -168,6 +191,7 @@ var _ = Describe("Watchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
+			Eventually(createsEvacuating).Should(Receive())
 
 			containerKey := models.NewActualLRPContainerKey("instance-guid", lrpCellId)
 			err = bbs.ClaimActualLRP(logger, lrp.ActualLRPKey, containerKey)
@@ -175,6 +199,7 @@ var _ = Describe("Watchers", func() {
 
 			var actualLRPChange models.ActualLRPChange
 			Eventually(changes).Should(Receive(&actualLRPChange))
+			Eventually(changesEvacuating).Should(Receive(Equal(false)))
 
 			before, after := actualLRPChange.Before, actualLRPChange.After
 			Ω(before).Should(Equal(lrp))
@@ -192,11 +217,13 @@ var _ = Describe("Watchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
+			Eventually(createsEvacuating).Should(Receive())
 
 			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
+			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
 		})
 
 		It("ignores delete events for directories", func() {
@@ -207,15 +234,90 @@ var _ = Describe("Watchers", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
+			Eventually(createsEvacuating).Should(Receive())
 
 			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(lrp)))
+			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
 
 			bbs.ConvergeLRPs(logger)
 
 			Consistently(logger).ShouldNot(Say("failed-to-unmarshal"))
+		})
+
+		Context("when an actual LRP begins evacuation", func() {
+			var key models.ActualLRPKey
+
+			BeforeEach(func() {
+				err := bbs.DesireLRP(logger, desiredLRP)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				key = models.ActualLRPKey{
+					Domain:      desiredLRP.Domain,
+					ProcessGuid: lrpProcessGuid,
+					Index:       lrpIndex,
+				}
+			})
+
+			It("indicates passes the correct evacuating flag on event callbacks", func() {
+				lrp, err := bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Eventually(creates).Should(Receive(Equal(lrp)))
+				Eventually(createsEvacuating).Should(Receive(Equal(false)))
+
+				By("evacuating")
+				containerKey := models.NewActualLRPContainerKey("instance-guid", "cell-id")
+				netInfo := models.ActualLRPNetInfo{Address: "1.1.1.1"}
+				err = bbs.EvacuateRunningActualLRP(logger, key, containerKey, netInfo, 0)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				lrpGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				evacuatedLRP := *lrpGroup.Evacuating
+
+				Eventually(creates).Should(Receive(Equal(evacuatedLRP)))
+				Eventually(createsEvacuating).Should(Receive(Equal(true)))
+
+				By("restarting on new cell")
+				lrp, err = bbs.ActualLRPByProcessGuidAndIndex(lrpProcessGuid, lrpIndex)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				newContainerKey := models.NewActualLRPContainerKey("instance-guid-2", "cell-id-2")
+				netInfo = models.ActualLRPNetInfo{Address: "2.2.2.2"}
+				err = bbs.StartActualLRP(logger, key, newContainerKey, netInfo)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				var actualLRPChange models.ActualLRPChange
+				Eventually(changes).Should(Receive(&actualLRPChange))
+				Eventually(changesEvacuating).Should(Receive(Equal(false)))
+
+				Ω(actualLRPChange.Before).Should(Equal(lrp))
+				lrp = actualLRPChange.After
+
+				By("evacuating the new cell")
+				err = bbs.EvacuateRunningActualLRP(logger, key, newContainerKey, netInfo, 0)
+				Ω(err).Should(Equal(bbserrors.ErrServiceUnavailable))
+
+				Eventually(changes).Should(Receive(&actualLRPChange))
+				Eventually(changesEvacuating).Should(Receive(Equal(true)))
+				Ω(actualLRPChange.Before).Should(Equal(evacuatedLRP))
+				evacuatedLRP = actualLRPChange.After
+
+				Eventually(changes).Should(Receive(&actualLRPChange))
+				Eventually(changesEvacuating).Should(Receive(Equal(false)))
+				Ω(actualLRPChange.Before).Should(Equal(evacuatedLRP))
+
+				By("completion")
+				err = bbs.RemoveEvacuatingActualLRP(logger, key, newContainerKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Eventually(deletes).Should(Receive(Equal(evacuatedLRP)))
+				Eventually(deletesEvacuating).Should(Receive(Equal(true)))
+			})
 		})
 
 		Context("when the caller closes the stop channel", func() {

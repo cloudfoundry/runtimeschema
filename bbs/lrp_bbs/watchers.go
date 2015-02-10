@@ -69,7 +69,12 @@ func (bbs *LRPBBS) WatchForDesiredLRPChanges(logger lager.Logger, created func(m
 	return stop, err
 }
 
-func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (chan<- bool, <-chan error) {
+func (bbs *LRPBBS) WatchForActualLRPChanges(
+	logger lager.Logger,
+	created func(models.ActualLRP, bool),
+	changed func(models.ActualLRPChange, bool),
+	deleted func(models.ActualLRP, bool),
+) (chan<- bool, <-chan error) {
 	logger = logger.Session("watching-for-actual-lrp-changes")
 
 	events, stop, err := bbs.store.Watch(shared.ActualLRPSchemaRoot)
@@ -88,8 +93,10 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 					continue
 				}
 
-				logger.Debug("sending-create", lager.Data{"actual-lrp": actualLRP})
-				created(actualLRP)
+				evacuating := isEvacuatingActualLRPNode(*event.Node)
+
+				logger.Debug("sending-create", lager.Data{"actual-lrp": actualLRP, "evacuating": evacuating})
+				created(actualLRP, evacuating)
 
 			case event.Node != nil && event.PrevNode != nil:
 				logger.Debug("received-change")
@@ -108,8 +115,10 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 					continue
 				}
 
-				logger.Debug("sending-change", lager.Data{"before": before, "after": after})
-				changed(models.ActualLRPChange{Before: before, After: after})
+				evacuating := isEvacuatingActualLRPNode(*event.Node)
+
+				logger.Debug("sending-change", lager.Data{"before": before, "after": after, "evacuating": evacuating})
+				changed(models.ActualLRPChange{Before: before, After: after}, evacuating)
 
 			case event.PrevNode != nil && event.Node == nil:
 				logger.Debug("received-delete")
@@ -122,8 +131,10 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(logger lager.Logger, created func(mo
 				if err != nil {
 					logger.Error("failed-to-unmarshal-prev-actual-lrp-on-delete", err, lager.Data{"key": event.PrevNode.Key, "value": event.PrevNode.Value})
 				} else {
-					logger.Debug("sending-delete", lager.Data{"actual-lrp": actualLRP})
-					deleted(actualLRP)
+					evacuating := isEvacuatingActualLRPNode(*event.PrevNode)
+
+					logger.Debug("sending-delete", lager.Data{"actual-lrp": actualLRP, "evacuating": evacuating})
+					deleted(actualLRP, evacuating)
 				}
 
 			default:

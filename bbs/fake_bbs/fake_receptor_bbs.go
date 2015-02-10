@@ -208,13 +208,13 @@ type FakeReceptorBBS struct {
 		arg1 lager.Logger
 		arg2 []models.ActualLRP
 	}
-	WatchForActualLRPChangesStub        func(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (stop chan<- bool, errs <-chan error)
+	WatchForActualLRPChangesStub        func(logger lager.Logger, created func(models.ActualLRP, bool), changed func(models.ActualLRPChange, bool), deleted func(models.ActualLRP, bool)) (stop chan<- bool, errs <-chan error)
 	watchForActualLRPChangesMutex       sync.RWMutex
 	watchForActualLRPChangesArgsForCall []struct {
 		logger  lager.Logger
-		created func(models.ActualLRP)
-		changed func(models.ActualLRPChange)
-		deleted func(models.ActualLRP)
+		created func(models.ActualLRP, bool)
+		changed func(models.ActualLRPChange, bool)
+		deleted func(models.ActualLRP, bool)
 	}
 	watchForActualLRPChangesReturns struct {
 		result1 chan<- bool
@@ -954,13 +954,13 @@ func (fake *FakeReceptorBBS) RetireActualLRPsArgsForCall(i int) (lager.Logger, [
 	return fake.retireActualLRPsArgsForCall[i].arg1, fake.retireActualLRPsArgsForCall[i].arg2
 }
 
-func (fake *FakeReceptorBBS) WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP), changed func(models.ActualLRPChange), deleted func(models.ActualLRP)) (stop chan<- bool, errs <-chan error) {
+func (fake *FakeReceptorBBS) WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP, bool), changed func(models.ActualLRPChange, bool), deleted func(models.ActualLRP, bool)) (stop chan<- bool, errs <-chan error) {
 	fake.watchForActualLRPChangesMutex.Lock()
 	fake.watchForActualLRPChangesArgsForCall = append(fake.watchForActualLRPChangesArgsForCall, struct {
 		logger  lager.Logger
-		created func(models.ActualLRP)
-		changed func(models.ActualLRPChange)
-		deleted func(models.ActualLRP)
+		created func(models.ActualLRP, bool)
+		changed func(models.ActualLRPChange, bool)
+		deleted func(models.ActualLRP, bool)
 	}{logger, created, changed, deleted})
 	fake.watchForActualLRPChangesMutex.Unlock()
 	if fake.WatchForActualLRPChangesStub != nil {
@@ -976,7 +976,7 @@ func (fake *FakeReceptorBBS) WatchForActualLRPChangesCallCount() int {
 	return len(fake.watchForActualLRPChangesArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) WatchForActualLRPChangesArgsForCall(i int) (lager.Logger, func(models.ActualLRP), func(models.ActualLRPChange), func(models.ActualLRP)) {
+func (fake *FakeReceptorBBS) WatchForActualLRPChangesArgsForCall(i int) (lager.Logger, func(models.ActualLRP, bool), func(models.ActualLRPChange, bool), func(models.ActualLRP, bool)) {
 	fake.watchForActualLRPChangesMutex.RLock()
 	defer fake.watchForActualLRPChangesMutex.RUnlock()
 	return fake.watchForActualLRPChangesArgsForCall[i].logger, fake.watchForActualLRPChangesArgsForCall[i].created, fake.watchForActualLRPChangesArgsForCall[i].changed, fake.watchForActualLRPChangesArgsForCall[i].deleted
