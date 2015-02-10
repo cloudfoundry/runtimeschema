@@ -320,29 +320,11 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("should fetch all the instance and evacuating LRPs for the specified domain", func() {
-				Ω(actualLRPGroups).Should(HaveLen(3))
-
-				groupsByKey := make(map[models.ActualLRPKey]models.ActualLRPGroup)
-				for _, group := range actualLRPGroups {
-					var key models.ActualLRPKey
-					if group.Instance != nil {
-						key = group.Instance.ActualLRPKey
-					} else {
-						key = group.Evacuating.ActualLRPKey
-					}
-					groupsByKey[key] = group
-				}
-
-				Ω(groupsByKey[baseLRP.ActualLRPKey].Instance).Should(Equal(&baseLRP))
-				Ω(groupsByKey[baseLRP.ActualLRPKey].Evacuating).Should(Equal(&evacuatingLRP))
-
-				Ω(groupsByKey[yetAnotherIndexLRP.ActualLRPKey].Instance).Should(Equal(&yetAnotherIndexLRP))
-				Ω(groupsByKey[yetAnotherIndexLRP.ActualLRPKey].Evacuating).Should(BeNil())
-
-				Ω(groupsByKey[otherIndexLRP.ActualLRPKey].Instance).Should(BeNil())
-				Ω(groupsByKey[otherIndexLRP.ActualLRPKey].Evacuating).Should(Equal(&otherIndexLRP))
-
-				Ω(groupsByKey).ShouldNot(HaveKey(otherDomainLRP.ActualLRPKey))
+				Ω(actualLRPGroups).Should(ConsistOf(
+					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: &evacuatingLRP},
+					models.ActualLRPGroup{Instance: &yetAnotherIndexLRP, Evacuating: nil},
+					models.ActualLRPGroup{Instance: nil, Evacuating: &otherIndexLRP},
+				))
 			})
 		})
 
@@ -399,6 +381,65 @@ var _ = Describe("Actual LRP Getters", func() {
 
 			It("returns an ErrStoreResourceNotFound", func() {
 				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
+
+		Context("when there are no entries", func() {
+			It("returns an ErrStoreResourceNotFound", func() {
+				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+			})
+		})
+	})
+
+	Describe("ActualLRPGroupByProcessGuidAndIndex", func() {
+		var (
+			returnedLRPGroup models.ActualLRPGroup
+			returnedErr      error
+		)
+
+		JustBeforeEach(func() {
+			returnedLRPGroup, returnedErr = bbs.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+		})
+
+		Context("when there is an /instance entry", func() {
+			BeforeEach(func() {
+				createRawActualLRP(baseLRP)
+			})
+
+			It("returns the /instance entry", func() {
+				Ω(returnedErr).ShouldNot(HaveOccurred())
+				Ω(returnedLRPGroup).Should(Equal(models.ActualLRPGroup{
+					Instance:   &baseLRP,
+					Evacuating: nil,
+				}))
+			})
+
+			Context("when there is also an /evacuating entry", func() {
+				BeforeEach(func() {
+					createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				})
+
+				It("returns both the /instance LRPs and /evacuating LRPs the group", func() {
+					Ω(returnedErr).ShouldNot(HaveOccurred())
+					Ω(returnedLRPGroup).Should(Equal(models.ActualLRPGroup{
+						Instance:   &baseLRP,
+						Evacuating: &evacuatingLRP,
+					}))
+				})
+			})
+		})
+
+		Context("when there is only an /evacuating entry", func() {
+			BeforeEach(func() {
+				createRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+			})
+
+			It("returns an ErrStoreResourceNotFound", func() {
+				Ω(returnedErr).ShouldNot(HaveOccurred())
+				Ω(returnedLRPGroup).Should(Equal(models.ActualLRPGroup{
+					Instance:   nil,
+					Evacuating: &evacuatingLRP,
+				}))
 			})
 		})
 
