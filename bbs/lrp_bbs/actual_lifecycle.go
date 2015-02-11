@@ -16,6 +16,7 @@ import (
 
 const CrashResetTimeout = 5 * time.Minute
 const RetireActualPoolSize = 20
+const RetireActualLRPRetryAttempts = 5
 
 type actualLRPIndexTooLargeError struct {
 	actualIndex      int
@@ -223,11 +224,11 @@ func (bbs *LRPBBS) RetireActualLRPs(
 	wg.Add(len(lrps))
 
 	for _, lrp := range lrps {
-		lrp := lrp
+		lrpKey := lrp.ActualLRPKey
 		pool.Submit(func() {
 			defer wg.Done()
 
-			err := bbs.retireActualLRP(lrp, logger)
+			err := bbs.retireActualLRP(lrpKey, logger)
 			if err != nil {
 				logger.Error("failed-to-retire", err, lager.Data{
 					"lrp": lrp,
@@ -386,23 +387,41 @@ func (bbs *LRPBBS) unclaimActualLRPWithIndex(
 	return stateDidChange, nil
 }
 
-func (bbs *LRPBBS) retireActualLRP(lrp models.ActualLRP, logger lager.Logger) error {
-	switch lrp.State {
+func (bbs *LRPBBS) retireActualLRP(actualLRPKey models.ActualLRPKey, logger lager.Logger) error {
+	var err error
+	var lrp *models.ActualLRP
 
-	case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
-		return bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
-
-	default:
-		logger.Info("stopping-actual")
-		err := bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+	for i := 0; i < RetireActualLRPRetryAttempts; i++ {
+		lrp, _, err = bbs.actualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 		if err != nil {
-			logger.Error("failed-to-retire-actual-lrp", err, lager.Data{
-				"actual-lrp": lrp,
+			logger.Error("failed-fetching-actual-lrp", err, lager.Data{
+				"actual-lrp-key": actualLRPKey,
 			})
-			return err
+			break
 		}
-		return nil
+
+		switch lrp.State {
+		case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
+			logger.Info("removing-actual")
+			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+		default:
+			logger.Info("stopping-actual")
+			err = bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+		}
+
+		if err == nil {
+			break
+		}
+
+		if i+1 < RetireActualLRPRetryAttempts {
+			logger.Error("retrying-failed-retire-of-actual-lrp", err, lager.Data{
+				"actual-lrp-key": actualLRPKey,
+				"attempt":        i + 1,
+			})
+		}
 	}
+
+	return err
 }
 
 func (bbs *LRPBBS) newRunningActualLRP(

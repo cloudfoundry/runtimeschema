@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -808,8 +809,17 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 					It("logs the failure", func() {
 						Eventually(doneRetiring).Should(BeClosed())
-
 						Ω(logger.LogMessages()).Should(ContainElement("test.retire-actual-lrps.failed-to-retire"))
+					})
+
+					It("retries", func() {
+						Eventually(doneRetiring).Should(BeClosed())
+						Ω(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(2 * lrp_bbs.RetireActualLRPRetryAttempts))
+					})
+
+					It("logs each retry", func() {
+						Eventually(doneRetiring).Should(BeClosed())
+						Ω(logger.LogMessages()).Should(ContainElement("test.retire-actual-lrps.retrying-failed-retire-of-actual-lrp"))
 					})
 				})
 			})
@@ -820,7 +830,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("logs the error", func() {
-					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire-actual-lrp"))
+					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire"))
 				})
 			})
 		})
