@@ -285,16 +285,14 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the actual LRP has no corresponding desired LRP", func() {
 			JustBeforeEach(func() {
-				nonPersistedDesiredLRP := models.DesiredLRP{
-					ProcessGuid: processGuid,
-					Instances:   1,
-					Domain:      domain,
-					Stack:       "pancake",
-					Action:      dummyAction,
+
+				actualUnclaimedLRP := models.ActualLRP{
+					ActualLRPKey: models.NewActualLRPKey(processGuid, index, domain),
+					State:        models.ActualLRPStateUnclaimed,
+					Since:        clock.Now().UnixNano(),
 				}
 
-				err := bbs.CreateActualLRP(logger, nonPersistedDesiredLRP, index)
-				Ω(err).ShouldNot(HaveOccurred())
+				setRawActualLRP(actualUnclaimedLRP)
 			})
 
 			Context("when the actual LRP is UNCLAIMED", func() {
@@ -482,11 +480,13 @@ var _ = Describe("LrpConvergence", func() {
 				JustBeforeEach(func() {
 					index = numInstances
 
-					fakeBiggerLRP := desiredLRP
-					fakeBiggerLRP.Instances++
+					higherIndexActualLRP := models.ActualLRP{
+						ActualLRPKey: models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
+						State:        models.ActualLRPStateUnclaimed,
+						Since:        clock.Now().UnixNano(),
+					}
 
-					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					setRawActualLRP(higherIndexActualLRP)
 				})
 
 				It("removes the actual LRP", func() {
@@ -533,11 +533,14 @@ var _ = Describe("LrpConvergence", func() {
 
 					index = numInstances
 
-					fakeBiggerLRP := desiredLRP
-					fakeBiggerLRP.Instances++
+					higherIndexActualLRP := models.ActualLRP{
+						ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
+						ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", "cell-id"),
+						State: models.ActualLRPStateClaimed,
+						Since: clock.Now().UnixNano(),
+					}
 
-					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					setRawActualLRP(higherIndexActualLRP)
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -596,11 +599,15 @@ var _ = Describe("LrpConvergence", func() {
 
 					index = numInstances
 
-					fakeBiggerLRP := desiredLRP
-					fakeBiggerLRP.Instances++
+					higherIndexActualLRP := models.ActualLRP{
+						ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
+						ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", "cell-id"),
+						ActualLRPNetInfo:      models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}}),
+						State:                 models.ActualLRPStateRunning,
+						Since:                 clock.Now().UnixNano(),
+					}
 
-					err := bbs.CreateActualLRP(logger, fakeBiggerLRP, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					setRawActualLRP(higherIndexActualLRP)
 
 					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())

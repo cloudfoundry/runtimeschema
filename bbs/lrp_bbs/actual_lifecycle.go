@@ -31,30 +31,6 @@ func NewActualLRPIndexTooLargeError(actualIndex, desiredInstances int) error {
 	return actualLRPIndexTooLargeError{actualIndex: actualIndex, desiredInstances: desiredInstances}
 }
 
-func (bbs *LRPBBS) CreateActualLRP(
-	logger lager.Logger,
-	desiredLRP models.DesiredLRP,
-	index int,
-) error {
-	err := bbs.createActualLRP(desiredLRP, index, logger)
-	if err != nil {
-		return err
-	}
-
-	lrpStart := models.LRPStartRequest{
-		DesiredLRP: desiredLRP,
-		Indices:    []uint{uint(index)},
-	}
-
-	err = bbs.requestLRPAuctions([]models.LRPStartRequest{lrpStart})
-	if err != nil {
-		logger.Error("failed-to-request-start-auctions", err, lager.Data{"lrp-start": lrpStart})
-		// The creation succeeded, the start request error can be dropped
-	}
-
-	return nil
-}
-
 func (bbs *LRPBBS) ClaimActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,

@@ -1,11 +1,9 @@
 package lrp_bbs_test
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -30,211 +28,6 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 	})
 
-	Describe("CreateActualLRP", func() {
-		var (
-			desiredLRP models.DesiredLRP
-			index      int
-
-			errCreate error
-		)
-
-		JustBeforeEach(func() {
-			errCreate = bbs.CreateActualLRP(logger, desiredLRP, index)
-		})
-
-		Context("when given a desired LRP and valid index", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: "the-process-guid",
-					Domain:      "the-domain",
-					Instances:   3,
-				}
-				index = 1
-			})
-
-			Context("when an LRP is not already present at the desired key", func() {
-				It("persists the actual LRP", func() {
-					actualLRPs, err := bbs.ActualLRPs()
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(actualLRPs).Should(HaveLen(1))
-
-					actualLRP := actualLRPs[0]
-					Ω(actualLRP.ProcessGuid).Should(Equal(desiredLRP.ProcessGuid))
-					Ω(actualLRP.Domain).Should(Equal(desiredLRP.Domain))
-					Ω(actualLRP.Index).Should(Equal(index))
-					Ω(actualLRP.State).Should(Equal(models.ActualLRPStateUnclaimed))
-					Ω(actualLRP.PlacementError).Should(BeEmpty())
-				})
-
-				Context("when able to fetch the auctioneer address", func() {
-					var auctioneerPresence models.AuctioneerPresence
-
-					BeforeEach(func() {
-						auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
-						registerAuctioneer(auctioneerPresence)
-					})
-
-					It("requests an auction", func() {
-						Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
-
-						requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-						Ω(requestedAuctions).Should(HaveLen(1))
-						Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-						Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(index)))
-					})
-
-					Context("when requesting an auction is successful", func() {
-						BeforeEach(func() {
-							fakeAuctioneerClient.RequestLRPAuctionsReturns(nil)
-						})
-
-						It("does not return an error", func() {
-							Ω(errCreate).ShouldNot(HaveOccurred())
-						})
-					})
-
-					Context("when requesting an auction is unsuccessful", func() {
-						BeforeEach(func() {
-							fakeAuctioneerClient.RequestLRPAuctionsReturns(errors.New("oops"))
-						})
-
-						It("does not return an error", func() {
-							// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
-							Ω(errCreate).ShouldNot(HaveOccurred())
-						})
-
-						It("logs the error", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.failed-to-request-start-auctions"))
-						})
-					})
-				})
-
-				Context("when unable to fetch the auctioneer address", func() {
-					It("does not request an auction", func() {
-						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(BeZero())
-					})
-
-					It("does not return an error", func() {
-						// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
-						Ω(errCreate).ShouldNot(HaveOccurred())
-					})
-
-					It("logs the error", func() {
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.failed-to-request-start-auctions"))
-					})
-				})
-			})
-
-			Context("when an LRP is already present at the desired key", func() {
-				BeforeEach(func() {
-					desiredLRP = models.DesiredLRP{
-						ProcessGuid: "the-process-guid",
-						Domain:      "the-domain",
-						Instances:   3,
-					}
-					index = 2
-
-					err := bbs.CreateActualLRP(logger, desiredLRP, index)
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				It("does not persist an actual LRP", func() {
-					Consistently(bbs.ActualLRPs).Should(HaveLen(1))
-				})
-
-				It("does not request an auction", func() {
-					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(BeZero())
-				})
-
-				It("returns an error", func() {
-					Ω(errCreate).Should(Equal(bbserrors.ErrStoreResourceExists))
-				})
-
-				It("logs the error", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-create-actual-lrp"))
-				})
-			})
-		})
-
-		Context("when given a negative index", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: "the-process-guid",
-					Domain:      "the-domain",
-					Instances:   3,
-				}
-				index = -1
-			})
-
-			It("does not persist an actual LRP", func() {
-				Consistently(bbs.ActualLRPs).Should(BeEmpty())
-			})
-
-			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(BeZero())
-			})
-
-			It("returns an error", func() {
-				Ω(errCreate).Should(ContainElement(models.ErrInvalidField{"index"}))
-			})
-
-			It("logs the error", func() {
-				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.failed-to-marshal-actual-lrp"))
-			})
-		})
-
-		Context("when given an index that is too large relative to the desired instances", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: "the-process-guid",
-					Domain:      "the-domain",
-					Instances:   3,
-				}
-				index = 4
-			})
-
-			It("does not persist an actual LRP", func() {
-				Consistently(bbs.ActualLRPs).Should(BeEmpty())
-			})
-
-			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(BeZero())
-			})
-
-			It("returns an error", func() {
-				Ω(errCreate).Should(Equal(lrp_bbs.NewActualLRPIndexTooLargeError(index, desiredLRP.Instances)))
-			})
-
-			It("logs the error", func() {
-				Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.create-actual-lrp.actual-lrp-index-too-large"))
-			})
-		})
-
-		Context("when given a desired LRP with invalid information to construct an actual LRP", func() {
-			BeforeEach(func() {
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: "the-process-guid",
-					Instances:   3,
-					// missing Domain
-				}
-				index = 1
-			})
-
-			It("does not persist an actual LRP", func() {
-				Consistently(bbs.ActualLRPs).Should(BeEmpty())
-			})
-
-			It("does not request an auction", func() {
-				Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(BeZero())
-			})
-
-			It("returns an error", func() {
-				Ω(errCreate).Should(ContainElement(models.ErrInvalidField{"domain"}))
-			})
-		})
-	})
-
 	Describe("ClaimActualLRP", func() {
 		var claimErr error
 		var lrpKey models.ActualLRPKey
@@ -256,10 +49,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
+					Stack:       "some-stack",
 					Instances:   index + 1,
+					Action: &models.RunAction{
+						Path: "true",
+					},
 				}
 
-				err := bbs.CreateActualLRP(logger, desiredLRP, index)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -545,10 +342,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
+					Stack:       "some-stack",
 					Instances:   index + 1,
+					Action: &models.RunAction{
+						Path: "true",
+					},
 				}
 
-				err := bbs.CreateActualLRP(logger, desiredLRP, index)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				createdLRP, err = bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
@@ -863,10 +664,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
+					Stack:       "some-stack",
 					Instances:   2,
+					Action: &models.RunAction{
+						Path: "true",
+					},
 				}
 
-				err := bbs.CreateActualLRP(logger, desiredLRP, index)
+				err := bbs.DesireLRP(logger, desiredLRP)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -922,12 +727,21 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
+					Stack:       "some-stack",
 					Instances:   2,
+					Action: &models.RunAction{
+						Path: "true",
+					},
 				}
+
 				lrpContainerKey1 := models.NewActualLRPContainerKey("some-instance-guid-1", cellID)
 				lrpContainerKey2 := models.NewActualLRPContainerKey("some-instance-guid-2", cellID)
-				createAndClaim(desiredLRP, 0, lrpContainerKey1, logger)
-				createAndClaim(desiredLRP, 1, lrpContainerKey2, logger)
+
+				errDesire := bbs.DesireLRP(logger, desiredLRP)
+				Ω(errDesire).ShouldNot(HaveOccurred())
+
+				claimDesireLRPByIndex(desiredLRP, 0, lrpContainerKey1, logger)
+				claimDesireLRPByIndex(desiredLRP, 1, lrpContainerKey2, logger)
 
 				blockStopInstanceChan = make(chan struct{})
 
@@ -1030,11 +844,15 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "the-domain",
+					Stack:       "some-stack",
 					Instances:   3,
+					Action: &models.RunAction{
+						Path: "true",
+					},
 				}
 
-				errCreate := bbs.CreateActualLRP(logger, desiredLRP, index)
-				Ω(errCreate).ShouldNot(HaveOccurred())
+				errDesire := bbs.DesireLRP(logger, desiredLRP)
+				Ω(errDesire).ShouldNot(HaveOccurred())
 
 				lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
