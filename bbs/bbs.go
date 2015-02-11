@@ -152,7 +152,7 @@ type VeritasBBS interface {
 
 	//lrp
 	DesiredLRPs() ([]models.DesiredLRP, error)
-	ActualLRPGroups() ([]models.ActualLRP, error)
+	ActualLRPGroups() ([]models.ActualLRPGroup, error)
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 
