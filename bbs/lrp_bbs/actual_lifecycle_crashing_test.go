@@ -248,6 +248,25 @@ func (t crashTest) Test() {
 				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
 			})
 		}
+
+		Context("when crashing a different container key", func() {
+			var beforeActual models.ActualLRP
+
+			BeforeEach(func() {
+				var err error
+				beforeActual, err = bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				Ω(err).ShouldNot(HaveOccurred())
+				containerKey.InstanceGuid = "another-guid"
+			})
+
+			It("does not crash", func() {
+				Ω(crashErr).Should(Equal(bbserrors.ErrActualLRPCannotBeCrashed))
+
+				afterActual, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(afterActual).Should(Equal(beforeActual))
+			})
+		})
 	})
 }
 
