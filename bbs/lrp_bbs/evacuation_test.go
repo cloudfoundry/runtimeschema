@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -136,10 +137,27 @@ var _ = Describe("Evacuation", func() {
 				Result:      newTestResult(anUnchangedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
 			}),
 			runningTest(evacuationTest{
+				Name:        "when the instance is UNCLAIMED with a placement error and there is no evacuating LRP",
+				InstanceLRP: unclaimedLRPWithPlacementError(),
+				Result: instanceNoEvacuating(
+					anUnchangedUnclaimedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeEvacuated,
+				),
+			}),
+			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED and an evacuating LRP is RUNNING on alpha",
 				InstanceLRP:   unclaimedLRP(),
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
 				Result:        newTestResult(anUnchangedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), nil),
+			}),
+			runningTest(evacuationTest{
+				Name:          "when the instance is UNCLAIMED with a placement error and an evacuating LRP is RUNNING on alpha",
+				InstanceLRP:   unclaimedLRPWithPlacementError(),
+				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
+				Result: instanceNoEvacuating(
+					anUnchangedUnclaimedInstanceLRP(),
+					bbserrors.ErrActualLRPCannotBeEvacuated,
+				),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED and an evacuating LRP is RUNNING on alpha with out-of-date net info",
@@ -566,7 +584,7 @@ type evacuationTest struct {
 	Result        testResult
 }
 
-func lrp(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) lrpSetupFunc {
+func lrp(state models.ActualLRPState, containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo, placementError string) lrpSetupFunc {
 	return func() models.ActualLRP {
 		return models.ActualLRP{
 			ActualLRPKey:          lrpKey,
@@ -574,24 +592,29 @@ func lrp(state models.ActualLRPState, containerKey models.ActualLRPContainerKey,
 			ActualLRPNetInfo:      netInfo,
 			State:                 state,
 			Since:                 clock.Now().UnixNano(),
+			PlacementError:        placementError,
 		}
 	}
 }
 
 func unclaimedLRP() lrpSetupFunc {
-	return lrp(models.ActualLRPStateUnclaimed, emptyContainerKey, emptyNetInfo)
+	return lrp(models.ActualLRPStateUnclaimed, emptyContainerKey, emptyNetInfo, "")
+}
+
+func unclaimedLRPWithPlacementError() lrpSetupFunc {
+	return lrp(models.ActualLRPStateUnclaimed, emptyContainerKey, emptyNetInfo, diego_errors.INSUFFICIENT_RESOURCES_MESSAGE)
 }
 
 func claimedLRP(containerKey models.ActualLRPContainerKey) lrpSetupFunc {
-	return lrp(models.ActualLRPStateClaimed, containerKey, emptyNetInfo)
+	return lrp(models.ActualLRPStateClaimed, containerKey, emptyNetInfo, "")
 }
 
 func runningLRP(containerKey models.ActualLRPContainerKey, netInfo models.ActualLRPNetInfo) lrpSetupFunc {
-	return lrp(models.ActualLRPStateRunning, containerKey, netInfo)
+	return lrp(models.ActualLRPStateRunning, containerKey, netInfo, "")
 }
 
 func crashedLRP() lrpSetupFunc {
-	return lrp(models.ActualLRPStateCrashed, emptyContainerKey, emptyNetInfo)
+	return lrp(models.ActualLRPStateCrashed, emptyContainerKey, emptyNetInfo, "")
 }
 
 type lrpStatus struct {

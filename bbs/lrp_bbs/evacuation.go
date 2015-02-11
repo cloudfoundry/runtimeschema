@@ -74,7 +74,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		return err
 	}
 
-	if instanceLRP.State == models.ActualLRPStateUnclaimed ||
+	if (instanceLRP.State == models.ActualLRPStateUnclaimed && instanceLRP.PlacementError == "") ||
 		(instanceLRP.State == models.ActualLRPStateClaimed && instanceLRP.ActualLRPContainerKey != actualLRPContainerKey) {
 		err = bbs.conditionallyEvacuateActualLRP(logger, actualLRPKey, actualLRPContainerKey, actualLRPNetInfo, evacuationTTLInSeconds)
 		if err == bbserrors.ErrStoreResourceExists {
@@ -119,7 +119,8 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		return nil
 	}
 
-	if (instanceLRP.State == models.ActualLRPStateRunning && instanceLRP.ActualLRPContainerKey != actualLRPContainerKey) ||
+	if (instanceLRP.State == models.ActualLRPStateUnclaimed && instanceLRP.PlacementError != "") ||
+		(instanceLRP.State == models.ActualLRPStateRunning && instanceLRP.ActualLRPContainerKey != actualLRPContainerKey) ||
 		instanceLRP.State == models.ActualLRPStateCrashed {
 		err := bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {
