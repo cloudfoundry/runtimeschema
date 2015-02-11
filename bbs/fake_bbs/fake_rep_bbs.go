@@ -74,13 +74,13 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	ActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
-	actualLRPsByCellIDMutex       sync.RWMutex
-	actualLRPsByCellIDArgsForCall []struct {
+	ActualLRPGroupsByCellIDStub        func(cellID string) ([]models.ActualLRPGroup, error)
+	actualLRPGroupsByCellIDMutex       sync.RWMutex
+	actualLRPGroupsByCellIDArgsForCall []struct {
 		cellID string
 	}
-	actualLRPsByCellIDReturns struct {
-		result1 []models.ActualLRP
+	actualLRPGroupsByCellIDReturns struct {
+		result1 []models.ActualLRPGroup
 		result2 error
 	}
 	ClaimActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
@@ -123,15 +123,6 @@ type FakeRepBBS struct {
 	}
 	removeActualLRPReturns struct {
 		result1 error
-	}
-	EvacuatingActualLRPsByCellIDStub        func(cellID string) ([]models.ActualLRP, error)
-	evacuatingActualLRPsByCellIDMutex       sync.RWMutex
-	evacuatingActualLRPsByCellIDArgsForCall []struct {
-		cellID string
-	}
-	evacuatingActualLRPsByCellIDReturns struct {
-		result1 []models.ActualLRP
-		result2 error
 	}
 	EvacuateClaimedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	evacuateClaimedActualLRPMutex       sync.RWMutex
@@ -393,35 +384,35 @@ func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
-	fake.actualLRPsByCellIDMutex.Lock()
-	fake.actualLRPsByCellIDArgsForCall = append(fake.actualLRPsByCellIDArgsForCall, struct {
+func (fake *FakeRepBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error) {
+	fake.actualLRPGroupsByCellIDMutex.Lock()
+	fake.actualLRPGroupsByCellIDArgsForCall = append(fake.actualLRPGroupsByCellIDArgsForCall, struct {
 		cellID string
 	}{cellID})
-	fake.actualLRPsByCellIDMutex.Unlock()
-	if fake.ActualLRPsByCellIDStub != nil {
-		return fake.ActualLRPsByCellIDStub(cellID)
+	fake.actualLRPGroupsByCellIDMutex.Unlock()
+	if fake.ActualLRPGroupsByCellIDStub != nil {
+		return fake.ActualLRPGroupsByCellIDStub(cellID)
 	} else {
-		return fake.actualLRPsByCellIDReturns.result1, fake.actualLRPsByCellIDReturns.result2
+		return fake.actualLRPGroupsByCellIDReturns.result1, fake.actualLRPGroupsByCellIDReturns.result2
 	}
 }
 
-func (fake *FakeRepBBS) ActualLRPsByCellIDCallCount() int {
-	fake.actualLRPsByCellIDMutex.RLock()
-	defer fake.actualLRPsByCellIDMutex.RUnlock()
-	return len(fake.actualLRPsByCellIDArgsForCall)
+func (fake *FakeRepBBS) ActualLRPGroupsByCellIDCallCount() int {
+	fake.actualLRPGroupsByCellIDMutex.RLock()
+	defer fake.actualLRPGroupsByCellIDMutex.RUnlock()
+	return len(fake.actualLRPGroupsByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) ActualLRPsByCellIDArgsForCall(i int) string {
-	fake.actualLRPsByCellIDMutex.RLock()
-	defer fake.actualLRPsByCellIDMutex.RUnlock()
-	return fake.actualLRPsByCellIDArgsForCall[i].cellID
+func (fake *FakeRepBBS) ActualLRPGroupsByCellIDArgsForCall(i int) string {
+	fake.actualLRPGroupsByCellIDMutex.RLock()
+	defer fake.actualLRPGroupsByCellIDMutex.RUnlock()
+	return fake.actualLRPGroupsByCellIDArgsForCall[i].cellID
 }
 
-func (fake *FakeRepBBS) ActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
-	fake.ActualLRPsByCellIDStub = nil
-	fake.actualLRPsByCellIDReturns = struct {
-		result1 []models.ActualLRP
+func (fake *FakeRepBBS) ActualLRPGroupsByCellIDReturns(result1 []models.ActualLRPGroup, result2 error) {
+	fake.ActualLRPGroupsByCellIDStub = nil
+	fake.actualLRPGroupsByCellIDReturns = struct {
+		result1 []models.ActualLRPGroup
 		result2 error
 	}{result1, result2}
 }
@@ -561,39 +552,6 @@ func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	fake.removeActualLRPReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeRepBBS) EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
-	fake.evacuatingActualLRPsByCellIDMutex.Lock()
-	fake.evacuatingActualLRPsByCellIDArgsForCall = append(fake.evacuatingActualLRPsByCellIDArgsForCall, struct {
-		cellID string
-	}{cellID})
-	fake.evacuatingActualLRPsByCellIDMutex.Unlock()
-	if fake.EvacuatingActualLRPsByCellIDStub != nil {
-		return fake.EvacuatingActualLRPsByCellIDStub(cellID)
-	} else {
-		return fake.evacuatingActualLRPsByCellIDReturns.result1, fake.evacuatingActualLRPsByCellIDReturns.result2
-	}
-}
-
-func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDCallCount() int {
-	fake.evacuatingActualLRPsByCellIDMutex.RLock()
-	defer fake.evacuatingActualLRPsByCellIDMutex.RUnlock()
-	return len(fake.evacuatingActualLRPsByCellIDArgsForCall)
-}
-
-func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDArgsForCall(i int) string {
-	fake.evacuatingActualLRPsByCellIDMutex.RLock()
-	defer fake.evacuatingActualLRPsByCellIDMutex.RUnlock()
-	return fake.evacuatingActualLRPsByCellIDArgsForCall[i].cellID
-}
-
-func (fake *FakeRepBBS) EvacuatingActualLRPsByCellIDReturns(result1 []models.ActualLRP, result2 error) {
-	fake.EvacuatingActualLRPsByCellIDStub = nil
-	fake.evacuatingActualLRPsByCellIDReturns = struct {
-		result1 []models.ActualLRP
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) EvacuateClaimedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {

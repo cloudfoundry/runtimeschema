@@ -73,14 +73,13 @@ type RepBBS interface {
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
-	ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
+	ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error)
 	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) error
 	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	// LRP evacuation
-	EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error)
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
 	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error

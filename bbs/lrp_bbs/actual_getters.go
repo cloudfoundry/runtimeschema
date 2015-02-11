@@ -183,35 +183,45 @@ func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(processGuid string) (models.Actu
 	return groups, nil
 }
 
-func (bbs *LRPBBS) ActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
+func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error) {
+	groups := []models.ActualLRPGroup{}
 
 	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return groups, nil
 	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
+		return groups, shared.ConvertStoreError(err)
 	}
 
-	for _, processNode := range node.ChildNodes {
-		for _, indexNode := range processNode.ChildNodes {
+	for _, node := range node.ChildNodes {
+		for _, indexNode := range node.ChildNodes {
+			group := models.ActualLRPGroup{}
 			for _, instanceNode := range indexNode.ChildNodes {
-				if !isInstanceActualLRPNode(instanceNode) {
-					continue
-				}
-
 				var lrp models.ActualLRP
 				err = models.FromJSON(instanceNode.Value, &lrp)
 				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.CellID == cellID {
-					lrps = append(lrps, lrp)
+					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
 				}
+				if lrp.CellID != cellID {
+					continue
+				}
+
+				if isInstanceActualLRPNode(instanceNode) {
+					group.Instance = &lrp
+				}
+
+				if isEvacuatingActualLRPNode(instanceNode) {
+					group.Evacuating = &lrp
+				}
+			}
+
+			if group.Instance != nil || group.Evacuating != nil {
+				groups = append(groups, group)
 			}
 		}
 	}
 
-	return lrps, nil
+	return groups, nil
 }
 
 func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
@@ -268,37 +278,6 @@ func (bbs *LRPBBS) EvacuatingActualLRPByProcessGuidAndIndex(processGuid string, 
 	}
 
 	return lrp, err
-}
-
-func (bbs *LRPBBS) EvacuatingActualLRPsByCellID(cellID string) ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
-
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
-	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
-	}
-
-	for _, processNode := range node.ChildNodes {
-		for _, indexNode := range processNode.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				if !isEvacuatingActualLRPNode(instanceNode) {
-					continue
-				}
-
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else if lrp.CellID == cellID {
-					lrps = append(lrps, lrp)
-				}
-			}
-		}
-	}
-
-	return lrps, nil
 }
 
 func isInstanceActualLRPNode(node storeadapter.StoreNode) bool {
