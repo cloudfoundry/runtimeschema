@@ -1,15 +1,12 @@
 package lrp_bbs
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 )
-
-var ErrNoDomain = errors.New("no domain given")
 
 func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	lrps := []models.DesiredLRP{}
@@ -36,7 +33,7 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 
 func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
 	if len(domain) == 0 {
-		return nil, ErrNoDomain
+		return nil, bbserrors.ErrNoDomain
 	}
 
 	lrps := []models.DesiredLRP{}

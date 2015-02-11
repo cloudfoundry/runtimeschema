@@ -2,7 +2,6 @@ package lrp_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -91,9 +90,9 @@ var _ = Describe("Desired LRP Getters", func() {
 			Ω(byDomain).Should(ConsistOf([]models.DesiredLRP{desiredLrp3}))
 		})
 
-		It("blows up with an empty string domain", func() {
+		It("returns an error when the domain is empty", func() {
 			_, err := bbs.DesiredLRPsByDomain("")
-			Ω(err).Should(Equal(lrp_bbs.ErrNoDomain))
+			Ω(err).Should(Equal(bbserrors.ErrNoDomain))
 		})
 	})
 

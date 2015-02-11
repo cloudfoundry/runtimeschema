@@ -24,6 +24,8 @@ var (
 	ErrStoreResourceExists               = errors.New("the requested store resource already exists")
 	ErrStoreComparisonFailed             = errors.New("store resource comparison failed")
 
+	ErrNoDomain = errors.New("no domain given")
+
 	ErrServiceUnavailable = errors.New("service unavailable")
 
 	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")
