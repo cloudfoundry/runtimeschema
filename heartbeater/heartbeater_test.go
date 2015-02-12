@@ -329,11 +329,11 @@ var _ = Describe("Heartbeater", func() {
 				// we have to start etcd to ensure the blocked heartbeat does not pollute other tests
 				etcdProxy = ifrit.Invoke(proxyRunner)
 				var heartBeat ifrit.Process
-				Eventually(heartbeatChan).Should(Receive(&heartBeat))
+				Eventually(heartbeatChan, 5).Should(Receive(&heartBeat))
 				heartBeat.Signal(os.Kill)
 			})
 
-			It("blocks on envoke forever", func() {
+			It("blocks on invoke forever", func() {
 				Consistently(heartbeatChan, 2*heartbeatInterval).ShouldNot(Receive())
 			})
 		})
