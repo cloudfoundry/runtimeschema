@@ -837,20 +837,22 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 	})
 
 	Describe("FailActualLRP", func() {
+		var (
+			placementError string
+			instanceGuid   string
+			processGuid    string
+			index          int
+		)
+
+		BeforeEach(func() {
+			index = 1
+			placementError = "insufficient resources"
+			processGuid = "process-guid"
+			instanceGuid = "instance-guid"
+		})
+
 		Context("when lrp exists", func() {
-			var (
-				placementError string
-				instanceGuid   string
-				processGuid    string
-				index          int
-			)
-
 			BeforeEach(func() {
-				index = 1
-				placementError = "insufficient resources"
-				processGuid = "process-guid"
-				instanceGuid = "instance-guid"
-
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "the-domain",
@@ -882,7 +884,6 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(lrp.PlacementError).Should(Equal(placementError))
 				})
-
 			})
 
 			Context("not in unclaimed state", func() {
@@ -891,7 +892,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Ω(claimErr).ShouldNot(HaveOccurred())
 				})
 
-				It("error", func() {
+				It("returns an error", func() {
 					err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
 					Ω(err).Should(HaveOccurred())
 				})
@@ -899,10 +900,9 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		})
 
 		Context("when lrp does not exist", func() {
-			It("error", func() {
-				err := bbs.FailActualLRP(logger, models.NewActualLRPKey("non-existent-process-guid", index, "tests"),
-					"non existent resources")
-				Ω(err).Should(HaveOccurred())
+			It("returns an error", func() {
+				actualLRPKey := models.NewActualLRPKey("non-existent-process-guid", index, "tests")
+				err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
 				Ω(err).Should(Equal(bbserrors.ErrActualLRPCannotBeFailed))
 			})
 		})
