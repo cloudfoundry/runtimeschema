@@ -48,6 +48,28 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				Ω(node.Value).Should(Equal(expected))
 			})
 
+			It("creates one ActualLRP per index", func() {
+				err := bbs.DesireLRP(logger, lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+				actualLRPs, err := bbs.ActualLRPsByProcessGuid("some-process-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(actualLRPs).Should(HaveLen(5))
+			})
+
+			It("sets a ModificationTag on each ActualLRP with a unique epoch", func() {
+				err := bbs.DesireLRP(logger, lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+				actualLRPs, err := bbs.ActualLRPsByProcessGuid("some-process-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				epochs := map[string]models.ActualLRP{}
+				for _, actualLRP := range actualLRPs {
+					epochs[actualLRP.ModificationTag.Epoch] = actualLRP
+				}
+
+				Ω(epochs).Should(HaveLen(5))
+			})
+
 			Context("when an auctioneer is present", func() {
 				BeforeEach(func() {
 					auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")

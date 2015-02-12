@@ -229,7 +229,11 @@ func (bbs *LRPBBS) unconditionallyEvacuateActualLRP(
 ) error {
 	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		lrp := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
+		lrp, err := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
+		if err != nil {
+			return err
+		}
+
 		return bbs.createRawEvacuatingActualLRP(logger, &lrp, evacuationTTLInSeconds)
 	} else if err != nil {
 		return err
@@ -264,7 +268,11 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 ) error {
 	existingLRP, storeIndex, err := bbs.evacuatingActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		lrp := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
+		lrp, err := bbs.newRunningActualLRP(actualLRPKey, actualLRPContainerKey, actualLRPNetInfo)
+		if err != nil {
+			return err
+		}
+
 		return bbs.createRawEvacuatingActualLRP(logger, &lrp, evacuationTTLInSeconds)
 	} else if err != nil {
 		return err

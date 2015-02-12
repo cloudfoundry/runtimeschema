@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -85,7 +86,11 @@ func (bbs *LRPBBS) StartActualLRP(
 	logger.Info("starting")
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		newLRP := bbs.newRunningActualLRP(key, containerKey, netInfo)
+		newLRP, err := bbs.newRunningActualLRP(key, containerKey, netInfo)
+		if err != nil {
+			return err
+		}
+
 		return bbs.createRawActualLRP(logger, &newLRP)
 	} else if err != nil {
 		logger.Error("failed-to-get-actual-lrp", err)
@@ -303,6 +308,11 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 		return err
 	}
 
+	guid, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	actualLRP := models.ActualLRP{
 		ActualLRPKey: models.NewActualLRPKey(
 			desiredLRP.ProcessGuid,
@@ -311,6 +321,10 @@ func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logg
 		),
 		State: models.ActualLRPStateUnclaimed,
 		Since: bbs.clock.Now().UnixNano(),
+		ModificationTag: models.ModificationTag{
+			Epoch: guid.String(),
+			Index: 0,
+		},
 	}
 
 	err = bbs.createRawActualLRP(logger, &actualLRP)
@@ -428,14 +442,25 @@ func (bbs *LRPBBS) newRunningActualLRP(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
 	netInfo models.ActualLRPNetInfo,
-) models.ActualLRP {
-	return models.ActualLRP{
+) (models.ActualLRP, error) {
+	guid, err := uuid.NewV4()
+	if err != nil {
+		return models.ActualLRP{}, err
+	}
+
+	actualLRP := models.ActualLRP{
 		ActualLRPKey:          key,
 		ActualLRPContainerKey: containerKey,
 		ActualLRPNetInfo:      netInfo,
 		Since:                 bbs.clock.Now().UnixNano(),
 		State:                 models.ActualLRPStateRunning,
+		ModificationTag: models.ModificationTag{
+			Epoch: guid.String(),
+			Index: 0,
+		},
 	}
+
+	return actualLRP, nil
 }
 
 func (bbs *LRPBBS) requestLRPAuctions(lrpStarts []models.LRPStartRequest) error {
