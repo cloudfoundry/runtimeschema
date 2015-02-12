@@ -538,7 +538,7 @@ func (bbs *LRPBBS) compareAndSwapRawActualLRP(
 		Value: value,
 	})
 	if err != nil {
-		logger.Error("failed-to-compare-and-swap-evacuating-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
 		return shared.ConvertStoreError(err)
 	}
 
