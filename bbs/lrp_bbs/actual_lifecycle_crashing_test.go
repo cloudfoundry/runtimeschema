@@ -153,6 +153,7 @@ func (t crashTest) Test() {
 		var containerKey models.ActualLRPContainerKey
 		var auctioneerPresence models.AuctioneerPresence
 		var initialTimestamp int64
+		var initialModificationIndex uint
 
 		BeforeEach(func() {
 			actualLRP := t.LRP()
@@ -161,6 +162,7 @@ func (t crashTest) Test() {
 
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
 			initialTimestamp = actualLRP.Since
+			initialModificationIndex = actualLRP.ModificationTag.Index
 
 			desiredLRP := models.DesiredLRP{
 				ProcessGuid: actualLRPKey.ProcessGuid,
@@ -197,16 +199,28 @@ func (t crashTest) Test() {
 		})
 
 		if t.Result.ShouldUpdate {
-			It("updates the LRP", func() {
+			It("updates the Since", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
 			})
+
+			It("updates the ModificationIndex", func() {
+				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(actualLRP.ModificationTag.Index).Should(Equal(initialModificationIndex + 1))
+			})
 		} else {
-			It("does not update the LRP", func() {
+			It("does not update the Since", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(actualLRP.Since).Should(Equal(initialTimestamp))
+			})
+
+			It("does not update the ModificationIndex", func() {
+				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(actualLRP.ModificationTag.Index).Should(Equal(initialModificationIndex))
 			})
 		}
 

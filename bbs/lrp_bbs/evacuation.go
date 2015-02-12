@@ -250,6 +250,7 @@ func (bbs *LRPBBS) unconditionallyEvacuateActualLRP(
 	lrp.ActualLRPContainerKey = actualLRPContainerKey
 	lrp.ActualLRPNetInfo = actualLRPNetInfo
 	lrp.PlacementError = ""
+	lrp.ModificationTag.Increment()
 
 	return bbs.compareAndSwapRawEvacuatingActualLRP(logger, &lrp, storeIndex, evacuationTTLInSeconds)
 }
@@ -289,6 +290,7 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 	lrp.ActualLRPContainerKey = actualLRPContainerKey
 	lrp.ActualLRPNetInfo = actualLRPNetInfo
 	lrp.PlacementError = ""
+	lrp.ModificationTag.Increment()
 
 	return bbs.compareAndSwapRawEvacuatingActualLRP(logger, &lrp, storeIndex, evacuationTTLInSeconds)
 }
@@ -322,20 +324,23 @@ func (bbs *LRPBBS) createRawEvacuatingActualLRP(
 	lrp *models.ActualLRP,
 	evacuationTTLInSeconds uint64,
 ) error {
-	value, err := models.ToJSON(lrp)
+	lrpForUpdate := lrp
+	lrpForUpdate.ModificationTag.Increment()
+
+	value, err := models.ToJSON(lrpForUpdate)
 	if err != nil {
-		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrpForUpdate})
 		return err
 	}
 
 	err = bbs.store.Create(storeadapter.StoreNode{
-		Key:   shared.EvacuatingActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Key:   shared.EvacuatingActualLRPSchemaPath(lrpForUpdate.ProcessGuid, lrpForUpdate.Index),
 		Value: value,
 		TTL:   evacuationTTLInSeconds,
 	})
 
 	if err != nil {
-		logger.Error("failed-to-create-evacuating-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-create-evacuating-actual-lrp", err, lager.Data{"actual-lrp": lrpForUpdate})
 		return shared.ConvertStoreError(err)
 	}
 

@@ -744,6 +744,8 @@ func (t evacuationTest) Test() {
 		var evacuateErr error
 		var auctioneerPresence models.AuctioneerPresence
 		var initialTimestamp int64
+		var initialInstanceModificationIndex uint
+		var initialEvacuatingModificationIndex uint
 
 		BeforeEach(func() {
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
@@ -752,10 +754,14 @@ func (t evacuationTest) Test() {
 			registerAuctioneer(auctioneerPresence)
 			setRawDesiredLRP(desiredLRP)
 			if t.InstanceLRP != nil {
-				setRawActualLRP(t.InstanceLRP())
+				actualLRP := t.InstanceLRP()
+				initialInstanceModificationIndex = actualLRP.ModificationTag.Index
+				setRawActualLRP(actualLRP)
 			}
 			if t.EvacuatingLRP != nil {
-				setRawEvacuatingActualLRP(t.EvacuatingLRP(), omegaEvacuationTTL)
+				evacuatingLRP := t.EvacuatingLRP()
+				initialEvacuatingModificationIndex = evacuatingLRP.ModificationTag.Index
+				setRawEvacuatingActualLRP(evacuatingLRP, omegaEvacuationTTL)
 			}
 		})
 
@@ -830,6 +836,13 @@ func (t evacuationTest) Test() {
 
 					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
 				})
+
+				It("updates the /instance ModificationTag", func() {
+					lrpInBBS, err := getInstanceActualLRP(lrpKey)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.ModificationTag.Index).Should(Equal(initialInstanceModificationIndex + 1))
+				})
 			} else {
 				It("does not update the /instance Since", func() {
 					lrpInBBS, err := getInstanceActualLRP(lrpKey)
@@ -887,6 +900,13 @@ func (t evacuationTest) Test() {
 					Ω(err).ShouldNot(HaveOccurred())
 
 					Ω(ttl).Should(BeNumerically("~", t.Result.Evacuating.TTL, allowedTTLDecay))
+				})
+
+				It("updates the /evacuating ModificationTag", func() {
+					lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.ModificationTag.Index).Should(Equal(initialEvacuatingModificationIndex + 1))
 				})
 			} else {
 				It("does not update the /evacuating Since", func() {

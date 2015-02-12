@@ -527,18 +527,21 @@ func (bbs *LRPBBS) compareAndSwapRawActualLRP(
 	lrp *models.ActualLRP,
 	storeIndex uint64,
 ) error {
-	value, err := models.ToJSON(lrp)
+	lrpForUpdate := lrp
+	lrpForUpdate.ModificationTag.Increment()
+
+	value, err := models.ToJSON(lrpForUpdate)
 	if err != nil {
-		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-marshal-actual-lrp", err, lager.Data{"actual-lrp": lrpForUpdate})
 		return err
 	}
 
 	err = bbs.store.CompareAndSwapByIndex(storeIndex, storeadapter.StoreNode{
-		Key:   shared.ActualLRPSchemaPath(lrp.ProcessGuid, lrp.Index),
+		Key:   shared.ActualLRPSchemaPath(lrpForUpdate.ProcessGuid, lrpForUpdate.Index),
 		Value: value,
 	})
 	if err != nil {
-		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrp})
+		logger.Error("failed-to-compare-and-swap-actual-lrp", err, lager.Data{"actual-lrp": lrpForUpdate})
 		return shared.ConvertStoreError(err)
 	}
 

@@ -127,6 +127,13 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 					Ω(lrpInBBS.State).Should(Equal(models.ActualLRPStateClaimed))
 				})
+
+				It("updates the ModificationIndex", func() {
+					lrpInBBS, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					Ω(lrpInBBS.ModificationTag.Index).Should(Equal(createdLRP.ModificationTag.Index + 1))
+				})
 			})
 
 			Context("when the existing ActualLRP is Claimed", func() {
@@ -618,11 +625,19 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Ω(startErr).ShouldNot(HaveOccurred())
 			})
 
-			It("creates an actual LRP", func() {
+			It("sets the State", func() {
 				lrp, err := bbs.ActualLRPByProcessGuidAndIndex("process-guid", 1)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrp.State).Should(Equal(models.ActualLRPStateRunning))
+			})
+
+			It("sets the ModificationTag", func() {
+				lrp, err := bbs.ActualLRPByProcessGuidAndIndex("process-guid", 1)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrp.ModificationTag.Epoch).ShouldNot(BeEmpty())
+				Ω(lrp.ModificationTag.Index).Should(BeEquivalentTo(0))
 			})
 		})
 	})
@@ -842,6 +857,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			instanceGuid   string
 			processGuid    string
 			index          int
+			createdLRP     models.ActualLRP
 		)
 
 		BeforeEach(func() {
@@ -866,10 +882,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				errDesire := bbs.DesireLRP(logger, desiredLRP)
 				Ω(errDesire).ShouldNot(HaveOccurred())
 
-				lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+				createdLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				actualLRPKey = lrp.ActualLRPKey
+				actualLRPKey = createdLRP.ActualLRPKey
 				containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
 			})
 
@@ -880,9 +896,15 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("sets the placement error", func() {
-					lrp, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					failedActualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
-					Ω(lrp.PlacementError).Should(Equal(placementError))
+					Ω(failedActualLRP.PlacementError).Should(Equal(placementError))
+				})
+
+				It("updates the ModificationIndex", func() {
+					failedActualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(failedActualLRP.ModificationTag.Index).Should(Equal(createdLRP.ModificationTag.Index + 1))
 				})
 			})
 

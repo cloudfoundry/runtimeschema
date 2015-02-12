@@ -275,10 +275,20 @@ type ActualLRP struct {
 	ActualLRPKey
 	ActualLRPContainerKey
 	ActualLRPNetInfo
-	CrashCount     int            `json:"crash_count"`
-	State          ActualLRPState `json:"state"`
-	PlacementError string         `json:"placement_error,omitempty"`
-	Since          int64          `json:"since"`
+	CrashCount      int             `json:"crash_count"`
+	State           ActualLRPState  `json:"state"`
+	PlacementError  string          `json:"placement_error,omitempty"`
+	Since           int64           `json:"since"`
+	ModificationTag ModificationTag `json:"modification_tag"`
+}
+
+type ModificationTag struct {
+	Epoch string `json:"epoch"`
+	Index uint   `json:"index"`
+}
+
+func (t *ModificationTag) Increment() {
+	t.Index++
 }
 
 type ActualLRPChange struct {
