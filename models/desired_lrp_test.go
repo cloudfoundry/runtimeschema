@@ -64,6 +64,10 @@ var _ = Describe("DesiredLRP", func() {
 	  "log_guid": "log-guid",
 	  "log_source": "the cloud",
 		"metrics_guid": "metrics-guid",
+		"modification_tag": {
+			"epoch": "some-epoch",
+			"index": 50
+		},
 	  "egress_rules": [
 		  {
 				"protocol": "tcp",
@@ -106,6 +110,10 @@ var _ = Describe("DesiredLRP", func() {
 			LogGuid:     "log-guid",
 			LogSource:   "the cloud",
 			MetricsGuid: "metrics-guid",
+			ModificationTag: ModificationTag{
+				Epoch: "some-epoch",
+				Index: 50,
+			},
 			EnvironmentVariables: []EnvironmentVariable{
 				{
 					Name:  "ENV_VAR_NAME",

@@ -682,6 +682,9 @@ var _ = Describe("LrpConvergence", func() {
 			err := bbs.DesireLRP(logger, desiredLRP)
 			Ω(err).ShouldNot(HaveOccurred())
 
+			desiredLRP, err = bbs.DesiredLRPByProcessGuid("process-guid-for-unclaimed")
+			Ω(err).ShouldNot(HaveOccurred())
+
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
 			registerAuctioneer(auctioneerPresence)
 

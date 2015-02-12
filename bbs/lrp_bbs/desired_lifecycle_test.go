@@ -43,9 +43,14 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 				node, err := etcdClient.Get("/v1/desired/some-process-guid")
 				Ω(err).ShouldNot(HaveOccurred())
-				expected, err := models.ToJSON(lrp)
+
+				actual := models.DesiredLRP{}
+				err = models.FromJSON(node.Value, &actual)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(node.Value).Should(Equal(expected))
+
+				actual.ModificationTag = models.ModificationTag{}
+
+				Ω(actual).Should(Equal(lrp))
 			})
 
 			It("creates one ActualLRP per index", func() {
@@ -70,6 +75,17 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				Ω(epochs).Should(HaveLen(5))
 			})
 
+			It("sets the ModificationTag on the DesiredLRP", func() {
+				err := bbs.DesireLRP(logger, lrp)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				lrp, err := bbs.DesiredLRPByProcessGuid("some-process-guid")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrp.ModificationTag.Epoch).ShouldNot(BeEmpty())
+				Ω(lrp.ModificationTag.Index).Should(BeEquivalentTo(0))
+			})
+
 			Context("when an auctioneer is present", func() {
 				BeforeEach(func() {
 					auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
@@ -82,11 +98,14 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					err := bbs.DesireLRP(logger, lrp)
 					Ω(err).ShouldNot(HaveOccurred())
 
+					desired, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+					Ω(err).ShouldNot(HaveOccurred())
+
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 					Ω(startAuctions).Should(HaveLen(1))
-					Ω(startAuctions[0].DesiredLRP).Should(Equal(lrp))
+					Ω(startAuctions[0].DesiredLRP).Should(Equal(desired))
 					Ω(startAuctions[0].Indices).Should(HaveLen(5))
 					for i := uint(0); i < 5; i++ {
 						Ω(startAuctions[0].Indices).Should(ContainElement(i))
@@ -189,9 +208,13 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 	Describe("Updating DesireLRP", func() {
 		var update models.DesiredLRPUpdate
+		var desiredLRP models.DesiredLRP
 
 		BeforeEach(func() {
 			err := bbs.DesireLRP(logger, lrp)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			desiredLRP, err = bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			update = models.DesiredLRPUpdate{}
@@ -225,6 +248,8 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				Ω(updatedJson).Should(MatchJSON(string(json)))
 				Ω(updated.Annotation).Should(Equal(*update.Annotation))
 				Ω(updated.Instances).Should(Equal(*update.Instances))
+				Ω(updated.ModificationTag.Epoch).Should(Equal(desiredLRP.ModificationTag.Epoch))
+				Ω(updated.ModificationTag.Index).Should(Equal(desiredLRP.ModificationTag.Index + 1))
 			})
 
 			Context("when the instances are increased", func() {
@@ -311,13 +336,17 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					Instances: &instances,
 				}
 
-				err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
+				desiredBeforeUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				err = bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 				Ω(err).Should(HaveOccurred())
 				Ω(err.Error()).Should(ContainSubstring("instances"))
 
-				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+				desiredAfterUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(updated).Should(Equal(lrp))
+
+				Ω(desiredAfterUpdate).Should(Equal(desiredBeforeUpdate))
 			})
 		})
 

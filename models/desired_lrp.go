@@ -58,6 +58,7 @@ type DesiredLRP struct {
 	MetricsGuid          string                      `json:"metrics_guid"`
 	Annotation           string                      `json:"annotation,omitempty"`
 	EgressRules          []SecurityGroupRule         `json:"egress_rules,omitempty"`
+	ModificationTag      ModificationTag             `json:"modification_tag"`
 }
 
 type InnerDesiredLRP DesiredLRP

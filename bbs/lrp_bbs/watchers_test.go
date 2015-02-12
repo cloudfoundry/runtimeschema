@@ -62,7 +62,10 @@ var _ = Describe("Watchers", func() {
 			err := bbs.DesireLRP(logger, lrp)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(creates).Should(Receive(Equal(lrp)))
+			desiredLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(creates).Should(Receive(Equal(desiredLRP)))
 		})
 
 		It("sends an event down the pipe for updates", func() {
@@ -71,17 +74,21 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			changedLRP := newLRP()
-			changedLRP.Instances++
+			desiredBeforeUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			Ω(err).ShouldNot(HaveOccurred())
 
+			lrp.Instances++
 			err = bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, models.DesiredLRPUpdate{
-				Instances: &changedLRP.Instances,
+				Instances: &lrp.Instances,
 			})
 			Ω(err).ShouldNot(HaveOccurred())
 
+			desiredAfterUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			Ω(err).ShouldNot(HaveOccurred())
+
 			Eventually(changes).Should(Receive(Equal(models.DesiredLRPChange{
-				Before: lrp,
-				After:  changedLRP,
+				Before: desiredBeforeUpdate,
+				After:  desiredAfterUpdate,
 			})))
 		})
 
@@ -91,10 +98,13 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(lrp))
+			desired, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Eventually(deletes).Should(Receive(Equal(lrp)))
+			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(desired))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Eventually(deletes).Should(Receive(Equal(desired)))
 		})
 
 		Context("when the caller closes the stop channel", func() {

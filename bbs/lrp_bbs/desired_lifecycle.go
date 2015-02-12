@@ -4,6 +4,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/nu7hatch/gouuid"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -12,13 +13,24 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 	logger.Info("starting")
 	defer logger.Info("complete")
 
-	value, err := models.ToJSON(lrp)
+	guid, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
+	lrpForCreate := lrp
+	lrpForCreate.ModificationTag = models.ModificationTag{
+		Epoch: guid.String(),
+		Index: 0,
+	}
+
+	value, err := models.ToJSON(lrpForCreate)
 	if err != nil {
 		return err
 	}
 
 	err = bbs.store.Create(storeadapter.StoreNode{
-		Key:   shared.DesiredLRPSchemaPath(lrp),
+		Key:   shared.DesiredLRPSchemaPath(lrpForCreate),
 		Value: value,
 	})
 	if err != nil {
@@ -26,7 +38,7 @@ func (bbs *LRPBBS) DesireLRP(logger lager.Logger, lrp models.DesiredLRP) error {
 		return shared.ConvertStoreError(err)
 	}
 
-	bbs.startInstanceRange(logger, 0, lrp.Instances, lrp)
+	bbs.startInstanceRange(logger, 0, lrp.Instances, lrpForCreate)
 	return nil
 }
 
@@ -61,6 +73,8 @@ func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, des
 	}
 
 	updated := existing.ApplyUpdate(desiredUpdate)
+
+	updated.ModificationTag.Increment()
 
 	value, err := models.ToJSON(updated)
 	if err != nil {

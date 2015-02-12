@@ -31,7 +31,7 @@ var _ = Describe("LRPStartRequest", func() {
       "disk_mb": 512,
       "memory_mb": 1024,
       "cpu_weight": 42,
-			"privileged": false,
+      "privileged": false,
       "ports": [
         5678
       ],
@@ -40,7 +40,11 @@ var _ = Describe("LRPStartRequest", func() {
       },
       "log_guid": "log-guid",
       "log_source": "the cloud",
-      "metrics_guid": "metrics-guid"
+      "metrics_guid": "metrics-guid",
+      "modification_tag": {
+        "epoch": "some-epoch",
+        "index": 50
+      }
     },
     "indices": [2]
   }`
@@ -71,6 +75,10 @@ var _ = Describe("LRPStartRequest", func() {
 				Action: &DownloadAction{
 					From: "http://example.com",
 					To:   "/tmp/internet",
+				},
+				ModificationTag: ModificationTag{
+					Epoch: "some-epoch",
+					Index: 50,
 				},
 			},
 		}
