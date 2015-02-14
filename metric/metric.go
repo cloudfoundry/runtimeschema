@@ -33,3 +33,21 @@ type Metric string
 func (name Metric) Send(value int) {
 	metrics.SendValue(string(name), float64(value), "Metric")
 }
+
+type Requests string
+
+func (name Requests) Send(value int) {
+	metrics.SendValue(string(name), float64(value), "Req")
+}
+
+type BytesPerSecond string
+
+func (name BytesPerSecond) Send(value float64) {
+	metrics.SendValue(string(name), value, "B/s")
+}
+
+type RequestsPerSecond string
+
+func (name RequestsPerSecond) Send(value float64) {
+	metrics.SendValue(string(name), value, "Req/s")
+}
