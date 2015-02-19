@@ -36,6 +36,10 @@ type compareAndSwappableTask struct {
 // 6. Mark as failed any tasks that have been in the pending state for > expirePendingTaskDuration
 // 7. Mark as failed any running tasks whose cell has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration) {
+	logger = logger.Session("converge-tasks")
+	logger.Info("starting-convergence")
+	defer logger.Info("finished-convergence")
+
 	convergeTaskRunsCounter.Increment()
 
 	convergeStart := bbs.clock.Now()
