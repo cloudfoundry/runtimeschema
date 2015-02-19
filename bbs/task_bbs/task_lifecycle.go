@@ -12,6 +12,9 @@ import (
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
 func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
+	logger.Debug("desiring-task", lager.Data{"task-guid": task.TaskGuid})
+	defer logger.Debug("finished-desiring-task", lager.Data{"task-guid": task.TaskGuid})
+
 	err := task.Validate()
 	if err != nil {
 		return err
@@ -29,18 +32,24 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 		return err
 	}
 
+	logger.Debug("persisting-task", lager.Data{"task-guid": task.TaskGuid})
 	err = bbs.store.Create(storeadapter.StoreNode{
 		Key:   shared.TaskSchemaPath(task.TaskGuid),
 		Value: value,
 	})
 	if err != nil {
+		logger.Error("failed-persisting-task", err, lager.Data{"task-guid": task.TaskGuid})
 		return shared.ConvertStoreError(err)
 	}
+	logger.Debug("succeeded-persisting-task", lager.Data{"task-guid": task.TaskGuid})
 
+	logger.Debug("requesting-task-auction", lager.Data{"task-guid": task.TaskGuid})
 	err = bbs.requestTaskAuctions([]models.Task{task})
 	if err != nil {
-		logger.Error("failed-sending-task-auction", err, lager.Data{"task": task})
+		logger.Error("failed-requesting-task-auction", err, lager.Data{"task-guid": task.TaskGuid})
 		// The creation succeeded, the auction request error can be dropped
+	} else {
+		logger.Debug("succeeded-requesting-task-auction", lager.Data{"task-guid": task.TaskGuid})
 	}
 
 	return nil
