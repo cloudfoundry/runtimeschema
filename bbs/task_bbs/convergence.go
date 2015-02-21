@@ -149,7 +149,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 	}
 
 	if len(tasksToAuction) > 0 {
-		if err := bbs.requestTaskAuctions(tasksToAuction); err != nil {
+		if err := bbs.requestTaskAuctions(taskLog, tasksToAuction); err != nil {
 			taskLog.Error("failed-to-request-auctions-for-pending-tasks", err,
 				lager.Data{"tasks": tasksToAuction})
 		}

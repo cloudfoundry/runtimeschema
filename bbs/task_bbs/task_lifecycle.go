@@ -12,8 +12,10 @@ import (
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
 func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
-	logger.Debug("desiring-task", lager.Data{"task-guid": task.TaskGuid})
-	defer logger.Debug("finished-desiring-task", lager.Data{"task-guid": task.TaskGuid})
+	taskLogger := logger.WithData(lager.Data{"task-guid": task.TaskGuid})
+
+	taskLogger.Debug("desiring-task")
+	defer taskLogger.Debug("finished-desiring-task")
 
 	err := task.Validate()
 	if err != nil {
@@ -32,24 +34,24 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 		return err
 	}
 
-	logger.Debug("persisting-task", lager.Data{"task-guid": task.TaskGuid})
+	taskLogger.Debug("persisting-task")
 	err = bbs.store.Create(storeadapter.StoreNode{
 		Key:   shared.TaskSchemaPath(task.TaskGuid),
 		Value: value,
 	})
 	if err != nil {
-		logger.Error("failed-persisting-task", err, lager.Data{"task-guid": task.TaskGuid})
+		taskLogger.Error("failed-persisting-task", err)
 		return shared.ConvertStoreError(err)
 	}
-	logger.Debug("succeeded-persisting-task", lager.Data{"task-guid": task.TaskGuid})
+	taskLogger.Debug("succeeded-persisting-task")
 
-	logger.Debug("requesting-task-auction", lager.Data{"task-guid": task.TaskGuid})
-	err = bbs.requestTaskAuctions([]models.Task{task})
+	taskLogger.Debug("requesting-task-auction")
+	err = bbs.requestTaskAuctions(taskLogger, []models.Task{task})
 	if err != nil {
-		logger.Error("failed-requesting-task-auction", err, lager.Data{"task-guid": task.TaskGuid})
+		taskLogger.Error("failed-requesting-task-auction", err)
 		// The creation succeeded, the auction request error can be dropped
 	} else {
-		logger.Debug("succeeded-requesting-task-auction", lager.Data{"task-guid": task.TaskGuid})
+		taskLogger.Debug("succeeded-requesting-task-auction")
 	}
 
 	return nil
@@ -266,16 +268,18 @@ func validateCanDelete(from models.TaskState) error {
 	}
 }
 
-func (bbs *TaskBBS) requestTaskAuctions(tasks []models.Task) error {
+func (bbs *TaskBBS) requestTaskAuctions(logger lager.Logger, tasks []models.Task) error {
 	auctioneerAddress, err := bbs.services.AuctioneerAddress()
 	if err != nil {
 		return err
 	}
+	logger.Debug("did-fetch-auctioneer-address")
 
 	err = bbs.auctioneerClient.RequestTaskAuctions(auctioneerAddress, tasks)
 	if err != nil {
 		return err
 	}
+	logger.Debug("did-request-task-auctions")
 
 	return nil
 }
