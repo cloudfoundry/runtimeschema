@@ -342,8 +342,6 @@ var _ = Describe("Actual LRP Getters", func() {
 
 	Describe("ActualLRPGroupsByDomain", func() {
 		var err error
-		JustBeforeEach(func() {
-		})
 
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
 			BeforeEach(func() {
