@@ -2,6 +2,7 @@ package lrp_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -498,6 +499,18 @@ var _ = Describe("Actual LRP Getters", func() {
 			It("returns an error", func() {
 				_, returnedErr = bbs.ActualLRPGroupByProcessGuidAndIndex("", baseIndex)
 				Ω(returnedErr).Should(Equal(bbserrors.ErrNoProcessGuid))
+			})
+		})
+
+		Context("when there is an index entry without /instance or /evacuating", func() {
+			BeforeEach(func() {
+				setRawActualLRP(baseLRP)
+				err := etcdClient.Delete(shared.ActualLRPSchemaPath(baseLRP.ProcessGuid, baseLRP.Index))
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("returns an ErrStoreResourceNotFound", func() {
+				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})

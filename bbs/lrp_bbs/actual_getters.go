@@ -287,6 +287,10 @@ func (bbs *LRPBBS) ActualLRPGroupByProcessGuidAndIndex(processGuid string, index
 		}
 	}
 
+	if group.Evacuating == nil && group.Instance == nil {
+		return models.ActualLRPGroup{}, bbserrors.ErrStoreResourceNotFound
+	}
+
 	return group, err
 }
 
