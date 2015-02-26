@@ -100,7 +100,7 @@ func (bbs *LRPBBS) gatherAndPruneActualLRPs(logger lager.Logger) (map[string]mod
 	}
 
 	pruner := newActualPruner(logger, cellRoot)
-	err = prune.Prune(bbs.store, shared.ActualLRPSchemaRoot, pruner.gatherAndPrune)
+	err = prune.Prune(logger, bbs.store, shared.ActualLRPSchemaRoot, pruner.gatherAndPrune)
 	if err != nil {
 		logger.Error("failed-to-prune-actual-lrps", err)
 		return nil, err
@@ -145,7 +145,7 @@ func (p *actualPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 func (bbs *LRPBBS) gatherAndPruneDesiredLRPs(logger lager.Logger, domains map[string]struct{}) (map[string]models.DesiredLRP, error) {
 	pruner := newDesiredPruner(logger, domains)
 
-	err := prune.Prune(bbs.store, shared.DesiredLRPSchemaRoot, pruner.gatherAndPrune)
+	err := prune.Prune(logger, bbs.store, shared.DesiredLRPSchemaRoot, pruner.gatherAndPrune)
 	if err != nil {
 		logger.Error("failed-to-prune-desired-lrps", err)
 		return nil, err

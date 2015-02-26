@@ -1,13 +1,20 @@
 package prune
 
-import db "github.com/cloudfoundry/storeadapter"
+import (
+	db "github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager"
+)
 
 var token = struct{}{}
 
-func Prune(store db.StoreAdapter, rootKey string, predicate func(db.StoreNode) bool) error {
+func Prune(logger lager.Logger, store db.StoreAdapter, rootKey string, predicate func(db.StoreNode) bool) error {
 	rootNode, err := store.ListRecursively(rootKey)
 	if err != nil && err != db.ErrorKeyNotFound {
 		return err
+	}
+	if err == db.ErrorKeyNotFound {
+		logger.Info("no-key-found", lager.Data{"root-key": rootKey})
+		return nil
 	}
 
 	p := NewPruner(rootNode, predicate)
