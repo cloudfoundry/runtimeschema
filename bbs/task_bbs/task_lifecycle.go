@@ -14,8 +14,8 @@ import (
 func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 	taskLogger := logger.WithData(lager.Data{"task-guid": task.TaskGuid})
 
-	taskLogger.Debug("desiring-task")
-	defer taskLogger.Debug("finished-desiring-task")
+	taskLogger.Info("desiring-task")
+	defer taskLogger.Info("finished-desiring-task")
 
 	err := task.Validate()
 	if err != nil {
@@ -61,6 +61,11 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the cell should assume that someone else will run it and should clean up and bail
 func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error) {
+	logger = logger.Session("start-task")
+
+	logger.Info("starting-task")
+	defer logger.Info("finished-starting-task")
+
 	task, index, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -68,11 +73,13 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 	}
 
 	if task.State == models.TaskStateRunning && task.CellID == cellID {
+		logger.Info("task-already-running", lager.Data{"task-guid": taskGuid})
 		return false, nil
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateRunning)
 	if err != nil {
+		logger.Info("invalid-state-transition-to-running", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return false, err
 	}
 
@@ -82,6 +89,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 
 	value, err := models.ToJSON(task)
 	if err != nil {
+		logger.Info("error-converting-to-json")
 		return false, err
 	}
 
@@ -90,6 +98,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 		Value: value,
 	})
 	if err != nil {
+		logger.Error("failed-persisting-task", err)
 		return false, shared.ConvertStoreError(err)
 	}
 
@@ -101,13 +110,17 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 // Will fail if the task has already been cancelled or completed normally
 func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 	logger = logger.Session("cancel-task")
+	logger.Info("canceling-task")
+	defer logger.Info("finished-canceling-task")
 
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
+		logger.Info("failed-to-get-task", lager.Data{"task-guid": taskGuid})
 		return err
 	}
 
 	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
+		logger.Info("invalid-state-transition-to-completed", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
 	}
 
@@ -136,12 +149,18 @@ func (bbs *TaskBBS) CancelTask(logger lager.Logger, taskGuid string) error {
 }
 
 func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason string) error {
+	logger = logger.Session("fail-task")
+	logger.Info("failing-task")
+	defer logger.Info("finished-failing-task")
+
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
+		logger.Info("failed-to-get-task", lager.Data{"task-guid": taskGuid})
 		return err
 	}
 
 	if task.State == models.TaskStateResolving || task.State == models.TaskStateCompleted {
+		logger.Info("invalid-state-transition-to-completed", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return bbserrors.NewTaskStateTransitionError(task.State, models.TaskStateCompleted)
 	}
 
@@ -153,17 +172,24 @@ func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
 func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
+	logger = logger.Session("complete-task")
+	logger.Info("completing-task")
+	defer logger.Info("finished-completing-task")
+
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
+		logger.Info("failed-to-get-task", lager.Data{"task-guid": taskGuid})
 		return err
 	}
 
 	if task.State == models.TaskStateRunning && task.CellID != cellID {
+		logger.Info("invalid-cell-id", lager.Data{"task-guid": taskGuid, "task-cell-id": task.CellID, "cell-id": cellID})
 		return bbserrors.ErrTaskRunningOnDifferentCell
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateCompleted)
 	if err != nil {
+		logger.Info("invalid-state-transition-to-completed", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return err
 	}
 
@@ -183,6 +209,7 @@ func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index ui
 		Value: value,
 	})
 	if err != nil {
+		logger.Error("failed-persisting-task", err)
 		return shared.ConvertStoreError(err)
 	}
 
@@ -208,13 +235,19 @@ func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index ui
 // The stager calls this when it wants to claim a completed task.  This ensures that only one
 // stager ever attempts to handle a completed task
 func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
+	logger = logger.Session("resolving-task")
+	logger.Info("resolving-task")
+	defer logger.Info("finished-resolving-task")
+
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
+		logger.Info("failed-to-get-task", lager.Data{"task-guid": taskGuid})
 		return err
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateResolving)
 	if err != nil {
+		logger.Info("invalid-state-transition-to-resolving", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return err
 	}
 
@@ -236,6 +269,10 @@ func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should assume that someone else is handling the completion and should bail
 func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
+	logger = logger.Session("resolve-task")
+	logger.Info("resolve-task")
+	defer logger.Info("finished-resolve-task")
+
 	task, _, err := bbs.getTask(taskGuid)
 
 	if err != nil {
@@ -244,6 +281,7 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 
 	err = validateCanDelete(task.State)
 	if err != nil {
+		logger.Info("invalid-state-transition-to-delete", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
 		return err
 	}
 
