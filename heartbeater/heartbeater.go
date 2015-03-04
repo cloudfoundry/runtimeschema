@@ -118,6 +118,7 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 	for {
 		select {
 		case sig := <-signals:
+			logger.Info("received-shutdown-signal")
 			switch sig {
 			case os.Kill:
 				return nil
