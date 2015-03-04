@@ -37,7 +37,7 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
 ) error {
-	logger = logger.Session("claim-actual-lrp")
+	logger = logger.Session("claim-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -82,7 +82,7 @@ func (bbs *LRPBBS) StartActualLRP(
 	containerKey models.ActualLRPContainerKey,
 	netInfo models.ActualLRPNetInfo,
 ) error {
-	logger = logger.Session("start-actual-lrp")
+	logger = logger.Session("start-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
 	logger.Info("starting")
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
@@ -131,7 +131,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
 ) error {
-	logger = logger.Session("crash-actual-lrp", lager.Data{"process-guid": key.ProcessGuid})
+	logger = logger.Session("crash-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -195,7 +195,7 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	key models.ActualLRPKey,
 	containerKey models.ActualLRPContainerKey,
 ) error {
-	logger = logger.Session("remove-actual-lrp")
+	logger = logger.Session("remove-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -252,7 +252,7 @@ func (bbs *LRPBBS) FailActualLRP(
 	key models.ActualLRPKey,
 	errorMessage string,
 ) error {
-	logger = logger.Session("set-placement-error-actual-lrp")
+	logger = logger.Session("set-placement-error-actual-lrp", lager.Data{"lrp-key": key})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPWithIndex(logger, key.ProcessGuid, key.Index)
