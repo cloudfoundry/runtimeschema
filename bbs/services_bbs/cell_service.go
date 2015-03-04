@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
@@ -79,6 +80,7 @@ func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
 					return nil, err
 				}
 
+				bbs.logger.Info("cell-appeared", lager.Data{"cell-id": e.CellID()})
 				return e, nil
 
 			case event.Node == nil && event.PrevNode != nil:
@@ -89,6 +91,7 @@ func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
 					return nil, err
 				}
 
+				bbs.logger.Info("cell-disappeared", lager.Data{"cell-id": e.CellID()})
 				return e, nil
 			}
 		}
@@ -99,6 +102,7 @@ func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
 
 type CellEvent interface {
 	EventType() CellEventType
+	CellID() string
 }
 
 type CellEventType int
@@ -117,10 +121,18 @@ func (CellAppearedEvent) EventType() CellEventType {
 	return CellAppeared
 }
 
+func (e CellAppearedEvent) CellID() string {
+	return e.Presence.CellID
+}
+
 type CellDisappearedEvent struct {
 	Presence models.CellPresence
 }
 
 func (CellDisappearedEvent) EventType() CellEventType {
 	return CellDisappeared
+}
+
+func (e CellDisappearedEvent) CellID() string {
+	return e.Presence.CellID
 }
