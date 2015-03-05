@@ -16,7 +16,7 @@ import (
 )
 
 const CrashResetTimeout = 5 * time.Minute
-const RetireActualPoolSize = 20
+const retireActualPoolSize = 20
 const RetireActualLRPRetryAttempts = 5
 
 type actualLRPIndexTooLargeError struct {
@@ -223,7 +223,7 @@ func (bbs *LRPBBS) RetireActualLRPs(
 ) {
 	logger = logger.Session("retire-actual-lrps")
 
-	pool := workpool.NewWorkPool(RetireActualPoolSize)
+	pool := workpool.NewWorkPool(retireActualPoolSize)
 
 	wg := new(sync.WaitGroup)
 	wg.Add(len(lrps))
