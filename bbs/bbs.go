@@ -200,13 +200,12 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger la
 func NewBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(store, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
-	retryPolicy := storeadapter.ExponentialRetryPolicy{}
 
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, clock, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewCellClient(), auctioneerClient, services),
+		LRPBBS:      lrp_bbs.New(store, clock, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
+		TaskBBS:     task_bbs.New(store, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }
