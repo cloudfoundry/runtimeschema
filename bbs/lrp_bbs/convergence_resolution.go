@@ -14,7 +14,7 @@ var (
 	lrpStopInstanceCounter  = metric.Counter("LRPInstanceStopRequests")
 )
 
-const ConvergencePoolSize = 20
+const workPoolSize = 100
 
 func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.DesiredLRPsByProcessGuid, changes *ConvergenceChanges) {
 	bbs.RetireActualLRPs(logger, changes.ActualLRPsForExtraIndices)
@@ -22,7 +22,7 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 
 	startRequests := newStartRequests(desiredLRPs)
 
-	pool := workpool.NewWorkPool(ConvergencePoolSize)
+	pool := workpool.NewWorkPool(workPoolSize)
 	defer pool.Stop()
 
 	wg := new(sync.WaitGroup)
