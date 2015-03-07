@@ -57,9 +57,10 @@ type StagingRequestFromCC struct {
 const CUSTOM_BUILDPACK = "custom"
 
 type Buildpack struct {
-	Name string `json:"name"`
-	Key  string `json:"key"`
-	Url  string `json:"url"`
+	Name       string `json:"name"`
+	Key        string `json:"key"`
+	Url        string `json:"url"`
+	SkipDetect bool   `json:"skip_detect"`
 }
 
 type StagingResponseForCC struct {

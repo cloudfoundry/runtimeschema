@@ -13,7 +13,8 @@ import (
 
 var _ = Describe("StagingMessages", func() {
 	Describe("StagingRequestFromCC", func() {
-		ccJSON := `{
+		Context("auto-detect w/multiple buildpacks", func() {
+			ccJSON := `{
            "app_id" : "fake-app_id",
            "task_id" : "fake-task_id",
            "memory_mb" : 1024,
@@ -29,34 +30,84 @@ var _ = Describe("StagingMessages", func() {
            "timeout" : 900
         }`
 
-		It("should be mapped to the CC's staging request JSON", func() {
-			var stagingRequest StagingRequestFromCC
-			err := json.Unmarshal([]byte(ccJSON), &stagingRequest)
-			Ω(err).ShouldNot(HaveOccurred())
+			It("should be mapped to the CC's staging request JSON", func() {
+				var stagingRequest StagingRequestFromCC
+				err := json.Unmarshal([]byte(ccJSON), &stagingRequest)
+				Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(stagingRequest).Should(Equal(StagingRequestFromCC{
-				AppId:                          "fake-app_id",
-				TaskId:                         "fake-task_id",
-				Stack:                          "fake-stack",
-				AppBitsDownloadUri:             "http://fake-download_uri",
-				BuildArtifactsCacheDownloadUri: "http://a-nice-place-to-get-valuable-artifacts.com",
-				BuildArtifactsCacheUploadUri:   "http://a-nice-place-to-upload-valuable-artifacts.com",
-				MemoryMB:                       1024,
-				FileDescriptors:                3,
-				DiskMB:                         10000,
-				Buildpacks: []Buildpack{
-					{
-						Name: "fake-buildpack-name",
-						Key:  "fake-buildpack-key",
-						Url:  "fake-buildpack-url",
+				Ω(stagingRequest).Should(Equal(StagingRequestFromCC{
+					AppId:                          "fake-app_id",
+					TaskId:                         "fake-task_id",
+					Stack:                          "fake-stack",
+					AppBitsDownloadUri:             "http://fake-download_uri",
+					BuildArtifactsCacheDownloadUri: "http://a-nice-place-to-get-valuable-artifacts.com",
+					BuildArtifactsCacheUploadUri:   "http://a-nice-place-to-upload-valuable-artifacts.com",
+					MemoryMB:                       1024,
+					FileDescriptors:                3,
+					DiskMB:                         10000,
+					Buildpacks: []Buildpack{
+						{
+							Name: "fake-buildpack-name",
+							Key:  "fake-buildpack-key",
+							Url:  "fake-buildpack-url",
+						},
 					},
-				},
-				Environment: Environment{
-					{Name: "FOO", Value: "BAR"},
-				},
-				DropletUploadUri: "http://droplet-upload-uri",
-				Timeout:          900,
-			}))
+					Environment: Environment{
+						{Name: "FOO", Value: "BAR"},
+					},
+					DropletUploadUri: "http://droplet-upload-uri",
+					Timeout:          900,
+				}))
+			})
+		})
+
+		Context("specified buildpack", func() {
+			ccJSON := `{
+           "app_id" : "fake-app_id",
+           "task_id" : "fake-task_id",
+           "memory_mb" : 1024,
+           "disk_mb" : 10000,
+           "file_descriptors" : 3,
+           "environment" : [{"name": "FOO", "value":"BAR"}],
+           "stack" : "fake-stack",
+           "app_bits_download_uri" : "http://fake-download_uri",
+           "build_artifacts_cache_download_uri" : "http://a-nice-place-to-get-valuable-artifacts.com",
+           "build_artifacts_cache_upload_uri" : "http://a-nice-place-to-upload-valuable-artifacts.com",
+           "buildpacks" : [{"name":"fake-buildpack-name", "key":"fake-buildpack-key" ,"url":"fake-buildpack-url", "skip_detect":true}],
+           "droplet_upload_uri" : "http://droplet-upload-uri",
+           "timeout" : 900
+        }`
+
+			It("should be mapped to the CC's staging request JSON", func() {
+				var stagingRequest StagingRequestFromCC
+				err := json.Unmarshal([]byte(ccJSON), &stagingRequest)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(stagingRequest).Should(Equal(StagingRequestFromCC{
+					AppId:                          "fake-app_id",
+					TaskId:                         "fake-task_id",
+					Stack:                          "fake-stack",
+					AppBitsDownloadUri:             "http://fake-download_uri",
+					BuildArtifactsCacheDownloadUri: "http://a-nice-place-to-get-valuable-artifacts.com",
+					BuildArtifactsCacheUploadUri:   "http://a-nice-place-to-upload-valuable-artifacts.com",
+					MemoryMB:                       1024,
+					FileDescriptors:                3,
+					DiskMB:                         10000,
+					Buildpacks: []Buildpack{
+						{
+							Name:       "fake-buildpack-name",
+							Key:        "fake-buildpack-key",
+							Url:        "fake-buildpack-url",
+							SkipDetect: true,
+						},
+					},
+					Environment: Environment{
+						{Name: "FOO", Value: "BAR"},
+					},
+					DropletUploadUri: "http://droplet-upload-uri",
+					Timeout:          900,
+				}))
+			})
 		})
 	})
 
