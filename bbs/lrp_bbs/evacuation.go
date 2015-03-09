@@ -14,7 +14,7 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
-) error {
+) (shared.ContainerRetainment, error) {
 	logger = logger.Session("evacuating-claimed-actual-lrp", lager.Data{
 		"lrp-key":           actualLRPKey,
 		"lrp-container-key": actualLRPContainerKey,
@@ -24,26 +24,26 @@ func (bbs *LRPBBS) EvacuateClaimedActualLRP(
 	bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	changed, err := bbs.unclaimActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		return nil
+		return shared.DeleteContainer, nil
 	}
 	if err != nil {
-		return err
+		return shared.DeleteContainer, err
 	}
 
 	if !changed {
-		return nil
+		return shared.DeleteContainer, nil
 	}
 
 	logger.Info("requesting-start-lrp-auction")
 	err = bbs.requestLRPAuctionForLRPKey(logger, actualLRPKey)
 	if err != nil {
 		logger.Error("failed-requesting-start-lrp-auction", err)
-		return err
+		return shared.DeleteContainer, err
 	}
 	logger.Info("succeeded-requesting-start-lrp-auction")
 
 	logger.Info("succeeded")
-	return nil
+	return shared.DeleteContainer, nil
 }
 
 func (bbs *LRPBBS) EvacuateRunningActualLRP(
@@ -52,7 +52,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 	actualLRPContainerKey models.ActualLRPContainerKey,
 	actualLRPNetInfo models.ActualLRPNetInfo,
 	evacuationTTLInSeconds uint64,
-) error {
+) (shared.ContainerRetainment, error) {
 	logger = logger.Session("evacuating-running-actual-lrp", lager.Data{
 		"lrp-key":           actualLRPKey,
 		"lrp-container-key": actualLRPContainerKey,
@@ -63,60 +63,56 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 	if err == bbserrors.ErrStoreResourceNotFound {
 		err := bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {
-			return bbserrors.ErrActualLRPCannotBeEvacuated
+			return shared.DeleteContainer, nil
 		} else if err != nil {
-			return err
+			return shared.KeepContainer, err
 		}
 
-		return bbserrors.ErrActualLRPCannotBeEvacuated
+		return shared.DeleteContainer, nil
 
 	} else if err != nil {
-		return err
+		return shared.KeepContainer, err
 	}
 
 	if (instanceLRP.State == models.ActualLRPStateUnclaimed && instanceLRP.PlacementError == "") ||
 		(instanceLRP.State == models.ActualLRPStateClaimed && instanceLRP.ActualLRPContainerKey != actualLRPContainerKey) {
 		err = bbs.conditionallyEvacuateActualLRP(logger, actualLRPKey, actualLRPContainerKey, actualLRPNetInfo, evacuationTTLInSeconds)
-		if err == bbserrors.ErrStoreResourceExists {
-			return bbserrors.ErrActualLRPCannotBeEvacuated
+		if err == bbserrors.ErrStoreResourceExists || err == bbserrors.ErrActualLRPCannotBeEvacuated {
+			return shared.DeleteContainer, nil
 		}
 		if err != nil {
-			return err
+			return shared.KeepContainer, err
 		}
 		logger.Info("succeeded")
-		return nil
+		return shared.KeepContainer, nil
 	}
 
 	if (instanceLRP.State == models.ActualLRPStateClaimed || instanceLRP.State == models.ActualLRPStateRunning) &&
 		instanceLRP.ActualLRPContainerKey == actualLRPContainerKey {
 		err := bbs.unconditionallyEvacuateActualLRP(logger, actualLRPKey, actualLRPContainerKey, actualLRPNetInfo, evacuationTTLInSeconds)
 		if err != nil {
-			return err
+			return shared.KeepContainer, err
 		}
 
 		changed, err := bbs.unclaimActualLRPWithIndex(logger, instanceLRP, storeIndex, actualLRPKey, actualLRPContainerKey)
-		if err == bbserrors.ErrStoreResourceNotFound {
-			return nil
-		}
 		if err != nil {
-			return err
+			return shared.KeepContainer, err
 		}
 
 		if !changed {
 			logger.Info("succeeded")
-			return nil
+			return shared.KeepContainer, nil
 		}
 
 		logger.Info("requesting-start-lrp-auction")
 		err = bbs.requestLRPAuctionForLRPKey(logger, actualLRPKey)
 		if err != nil {
 			logger.Error("failed-requesting-start-lrp-auction", err)
-			return err
+		} else {
+			logger.Info("succeeded-requesting-start-lrp-auction")
+			logger.Info("succeeded")
 		}
-		logger.Info("succeeded-requesting-start-lrp-auction")
-
-		logger.Info("succeeded")
-		return nil
+		return shared.KeepContainer, err
 	}
 
 	if (instanceLRP.State == models.ActualLRPStateUnclaimed && instanceLRP.PlacementError != "") ||
@@ -124,24 +120,24 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 		instanceLRP.State == models.ActualLRPStateCrashed {
 		err := bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {
-			return bbserrors.ErrActualLRPCannotBeEvacuated
+			return shared.DeleteContainer, nil
 		}
 		if err != nil {
-			return err
+			return shared.KeepContainer, err
 		}
 
-		return bbserrors.ErrActualLRPCannotBeEvacuated
+		return shared.DeleteContainer, nil
 	}
 
 	logger.Info("succeeded")
-	return nil
+	return shared.KeepContainer, nil
 }
 
 func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
-) error {
+) (shared.ContainerRetainment, error) {
 	logger = logger.Session("evacuating-stopped-actual-lrp", lager.Data{
 		"lrp-key":           actualLRPKey,
 		"lrp-container-key": actualLRPContainerKey,
@@ -151,23 +147,23 @@ func (bbs *LRPBBS) EvacuateStoppedActualLRP(
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	err := bbs.RemoveActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		return nil
+		return shared.DeleteContainer, nil
 	} else if err == bbserrors.ErrStoreComparisonFailed {
-		return bbserrors.ErrActualLRPCannotBeRemoved
+		return shared.DeleteContainer, bbserrors.ErrActualLRPCannotBeRemoved
 	}
 	if err != nil {
-		return err
+		return shared.DeleteContainer, err
 	}
 
 	logger.Info("succeeded")
-	return nil
+	return shared.DeleteContainer, nil
 }
 
 func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPContainerKey models.ActualLRPContainerKey,
-) error {
+) (shared.ContainerRetainment, error) {
 	logger = logger.Session("evacuating-crashed-actual-lrp", lager.Data{
 		"lrp-key":           actualLRPKey,
 		"lrp-container-key": actualLRPContainerKey,
@@ -178,13 +174,13 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 
 	if err == bbserrors.ErrStoreResourceNotFound {
-		return nil
+		return shared.DeleteContainer, nil
 	} else if err != nil {
-		return err
+		return shared.DeleteContainer, err
 	}
 
 	logger.Info("succeeded")
-	return nil
+	return shared.DeleteContainer, nil
 }
 
 func (bbs *LRPBBS) RemoveEvacuatingActualLRP(

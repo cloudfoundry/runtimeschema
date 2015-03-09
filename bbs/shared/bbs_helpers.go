@@ -5,6 +5,13 @@ import (
 	"github.com/cloudfoundry/storeadapter"
 )
 
+type ContainerRetainment bool
+
+const (
+	KeepContainer   ContainerRetainment = true
+	DeleteContainer ContainerRetainment = false
+)
+
 func ConvertStoreError(originalErr error) error {
 	switch originalErr {
 	case storeadapter.ErrorKeyNotFound:

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -17,7 +18,7 @@ var _ = Describe("Evacuation", func() {
 		claimedTest := func(base evacuationTest) evacuationTest {
 			return evacuationTest{
 				Name: base.Name,
-				Subject: func() error {
+				Subject: func() (shared.ContainerRetainment, error) {
 					return bbs.EvacuateClaimedActualLRP(logger, lrpKey, alphaContainerKey)
 				},
 				InstanceLRP:   base.InstanceLRP,
@@ -29,7 +30,7 @@ var _ = Describe("Evacuation", func() {
 		runningTest := func(base evacuationTest) evacuationTest {
 			return evacuationTest{
 				Name: base.Name,
-				Subject: func() error {
+				Subject: func() (shared.ContainerRetainment, error) {
 					return bbs.EvacuateRunningActualLRP(logger, lrpKey, alphaContainerKey, alphaNetInfo, alphaEvacuationTTL)
 				},
 				InstanceLRP:   base.InstanceLRP,
@@ -41,7 +42,7 @@ var _ = Describe("Evacuation", func() {
 		stoppedTest := func(base evacuationTest) evacuationTest {
 			return evacuationTest{
 				Name: base.Name,
-				Subject: func() error {
+				Subject: func() (shared.ContainerRetainment, error) {
 					return bbs.EvacuateStoppedActualLRP(logger, lrpKey, alphaContainerKey)
 				},
 				InstanceLRP:   base.InstanceLRP,
@@ -53,7 +54,7 @@ var _ = Describe("Evacuation", func() {
 		crashedTest := func(base evacuationTest) evacuationTest {
 			return evacuationTest{
 				Name: base.Name,
-				Subject: func() error {
+				Subject: func() (shared.ContainerRetainment, error) {
 					return bbs.EvacuateCrashedActualLRP(logger, lrpKey, alphaContainerKey)
 				},
 				InstanceLRP:   base.InstanceLRP,
@@ -65,8 +66,9 @@ var _ = Describe("Evacuation", func() {
 		removalTest := func(base evacuationTest) evacuationTest {
 			return evacuationTest{
 				Name: base.Name,
-				Subject: func() error {
-					return bbs.RemoveEvacuatingActualLRP(logger, lrpKey, alphaContainerKey)
+				Subject: func() (shared.ContainerRetainment, error) {
+					err := bbs.RemoveEvacuatingActualLRP(logger, lrpKey, alphaContainerKey)
+					return shared.DeleteContainer, err
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -77,36 +79,38 @@ var _ = Describe("Evacuation", func() {
 		claimedTests := []testable{
 			claimedTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
-				Result: noInstanceNoEvacuating(nil),
+				Result: noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			claimedTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED",
 				InstanceLRP: unclaimedLRP(),
-				Result:      instanceNoEvacuating(anUnchangedUnclaimedInstanceLRP(), nil),
+				Result:      instanceNoEvacuating(anUnchangedUnclaimedInstanceLRP(), shared.DeleteContainer, nil),
 			}),
 			claimedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on alpha",
 				InstanceLRP: claimedLRP(alphaContainerKey),
-				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRP(), nil),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRP(), shared.DeleteContainer, nil),
 			}),
 			claimedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on omega",
 				InstanceLRP: claimedLRP(omegaContainerKey),
 				Result: instanceNoEvacuating(
 					anUnchangedClaimedInstanceLRP(omegaContainerKey),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeUnclaimed,
 				),
 			}),
 			claimedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on alpha",
 				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRP(), nil),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRP(), shared.DeleteContainer, nil),
 			}),
 			claimedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on omega",
 				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeUnclaimed,
 				),
 			}),
@@ -115,18 +119,19 @@ var _ = Describe("Evacuation", func() {
 				InstanceLRP: crashedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedCrashedInstanceLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeUnclaimed,
 				),
 			}),
 			claimedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on alpha",
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        noInstanceNoEvacuating(nil),
+				Result:        noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			claimedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on beta",
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
-				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), nil),
+				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), shared.DeleteContainer, nil),
 			}),
 		}
 
@@ -134,21 +139,22 @@ var _ = Describe("Evacuation", func() {
 			runningTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED and there is no evacuating LRP",
 				InstanceLRP: unclaimedLRP(),
-				Result:      newTestResult(anUnchangedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:      newTestResult(anUnchangedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED with a placement error and there is no evacuating LRP",
 				InstanceLRP: unclaimedLRPWithPlacementError(),
 				Result: instanceNoEvacuating(
 					anUnchangedUnclaimedInstanceLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED and an evacuating LRP is RUNNING on alpha",
 				InstanceLRP:   unclaimedLRP(),
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        newTestResult(anUnchangedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUnchangedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED with a placement error and an evacuating LRP is RUNNING on alpha",
@@ -156,14 +162,15 @@ var _ = Describe("Evacuation", func() {
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedUnclaimedInstanceLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED and an evacuating LRP is RUNNING on alpha with out-of-date net info",
 				InstanceLRP:   unclaimedLRP(),
 				EvacuatingLRP: runningLRP(alphaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUnchangedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUnchangedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is UNCLAIMED and an evacuating LRP is RUNNING on beta",
@@ -172,48 +179,49 @@ var _ = Describe("Evacuation", func() {
 				Result: newTestResult(
 					anUnchangedUnclaimedInstanceLRP(),
 					anUnchangedBetaEvacuatingLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on alpha and there is no evacuating LRP",
 				InstanceLRP: claimedLRP(alphaContainerKey),
-				Result:      newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:      newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED on alpha and an evacuating LRP is RUNNING on alpha",
 				InstanceLRP:   claimedLRP(alphaContainerKey),
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED on alpha and an evacuating LRP is RUNNING on alpha with out-of-date net info",
 				InstanceLRP:   claimedLRP(alphaContainerKey),
 				EvacuatingLRP: runningLRP(alphaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED on alpha and an evacuating LRP is RUNNING on beta",
 				InstanceLRP:   claimedLRP(alphaContainerKey),
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:        "when the instance is CLAIMED remotely and there is no evacuating LRP",
 				InstanceLRP: claimedLRP(omegaContainerKey),
-				Result:      newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:      newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED remotely and an evacuating LRP is RUNNING on alpha",
 				InstanceLRP:   claimedLRP(omegaContainerKey),
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUnchangedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUnchangedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED remotely and an evacuating LRP is RUNNING on alpha with out-of-date net info",
 				InstanceLRP:   claimedLRP(omegaContainerKey),
 				EvacuatingLRP: runningLRP(alphaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUnchangedClaimedInstanceLRP(omegaContainerKey), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is CLAIMED remotely and an evacuating LRP is RUNNING on beta",
@@ -222,38 +230,40 @@ var _ = Describe("Evacuation", func() {
 				Result: newTestResult(
 					anUnchangedClaimedInstanceLRP(omegaContainerKey),
 					anUnchangedBetaEvacuatingLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name:        "when the instance is RUNNING on alpha and there is no evacuating LRP",
 				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:      newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:      newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is RUNNING on alpha and an evacuating LRP is RUNNING on alpha",
 				InstanceLRP:   runningLRP(alphaContainerKey, alphaNetInfo),
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUnchangedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is RUNNING on alpha and an evacuating LRP is RUNNING on alpha with out-of-date net info",
 				InstanceLRP:   runningLRP(alphaContainerKey, alphaNetInfo),
 				EvacuatingLRP: runningLRP(alphaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is RUNNING on alpha and an evacuating LRP is RUNNING on beta",
 				InstanceLRP:   runningLRP(alphaContainerKey, alphaNetInfo),
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
-				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), nil),
+				Result:        newTestResult(anUpdatedUnclaimedInstanceLRP(), anUpdatedAlphaEvacuatingLRP(), shared.KeepContainer, nil),
 			}),
 			runningTest(evacuationTest{
 				Name:        "when the instance is RUNNING on omega and there is no evacuating LRP",
 				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -262,7 +272,8 @@ var _ = Describe("Evacuation", func() {
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -272,7 +283,8 @@ var _ = Describe("Evacuation", func() {
 				Result: newTestResult(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
 					anUnchangedBetaEvacuatingLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -280,7 +292,8 @@ var _ = Describe("Evacuation", func() {
 				InstanceLRP: crashedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedCrashedInstanceLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -289,7 +302,8 @@ var _ = Describe("Evacuation", func() {
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedCrashedInstanceLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -299,20 +313,23 @@ var _ = Describe("Evacuation", func() {
 				Result: newTestResult(
 					anUnchangedCrashedInstanceLRP(),
 					anUnchangedBetaEvacuatingLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name: "when the instance is MISSING and there is no evacuating LRP",
 				Result: noInstanceNoEvacuating(
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
 				Name:          "when the instance is MISSING and an evacuating LRP is RUNNING on alpha",
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
 				Result: noInstanceNoEvacuating(
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 			runningTest(evacuationTest{
@@ -320,7 +337,8 @@ var _ = Describe("Evacuation", func() {
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
 				Result: evacuatingNoInstance(
 					anUnchangedBetaEvacuatingLRP(),
-					bbserrors.ErrActualLRPCannotBeEvacuated,
+					shared.DeleteContainer,
+					nil,
 				),
 			}),
 		}
@@ -328,39 +346,42 @@ var _ = Describe("Evacuation", func() {
 		stoppedTests := []testable{
 			stoppedTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
-				Result: noInstanceNoEvacuating(nil),
+				Result: noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			stoppedTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED",
 				InstanceLRP: unclaimedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedUnclaimedInstanceLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeRemoved,
 				),
 			}),
 			stoppedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on alpha",
 				InstanceLRP: claimedLRP(alphaContainerKey),
-				Result:      noInstanceNoEvacuating(nil),
+				Result:      noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			stoppedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on omega",
 				InstanceLRP: claimedLRP(omegaContainerKey),
 				Result: instanceNoEvacuating(
 					anUnchangedClaimedInstanceLRP(omegaContainerKey),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeRemoved,
 				),
 			}),
 			stoppedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on alpha",
 				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:      noInstanceNoEvacuating(nil),
+				Result:      noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			stoppedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on omega",
 				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeRemoved,
 				),
 			}),
@@ -369,57 +390,61 @@ var _ = Describe("Evacuation", func() {
 				InstanceLRP: crashedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedCrashedInstanceLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeRemoved,
 				),
 			}),
 			stoppedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on alpha",
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        noInstanceNoEvacuating(nil),
+				Result:        noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			stoppedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on beta",
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
-				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), nil),
+				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), shared.DeleteContainer, nil),
 			}),
 		}
 
 		crashedTests := []testable{
 			crashedTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
-				Result: noInstanceNoEvacuating(nil),
+				Result: noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			crashedTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED",
 				InstanceLRP: unclaimedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedUnclaimedInstanceLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeCrashed,
 				),
 			}),
 			crashedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on alpha",
 				InstanceLRP: claimedLRP(alphaContainerKey),
-				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), nil),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), shared.DeleteContainer, nil),
 			}),
 			crashedTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on omega",
 				InstanceLRP: claimedLRP(omegaContainerKey),
 				Result: instanceNoEvacuating(
 					anUnchangedClaimedInstanceLRP(omegaContainerKey),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeCrashed,
 				),
 			}),
 			crashedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on alpha",
 				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), nil),
+				Result:      instanceNoEvacuating(anUpdatedUnclaimedInstanceLRPWithCrashCount(1), shared.DeleteContainer, nil),
 			}),
 			crashedTest(evacuationTest{
 				Name:        "when the instance is RUNNING on omega",
 				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
 				Result: instanceNoEvacuating(
 					anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeCrashed,
 				),
 			}),
@@ -428,66 +453,68 @@ var _ = Describe("Evacuation", func() {
 				InstanceLRP: crashedLRP(),
 				Result: instanceNoEvacuating(
 					anUnchangedCrashedInstanceLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeCrashed,
 				),
 			}),
 			crashedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on alpha",
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        noInstanceNoEvacuating(nil),
+				Result:        noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			crashedTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on beta",
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
-				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), nil),
+				Result:        evacuatingNoInstance(anUnchangedBetaEvacuatingLRP(), shared.DeleteContainer, nil),
 			}),
 		}
 
 		removalTests := []testable{
 			removalTest(evacuationTest{
 				Name:   "when there is no instance or evacuating LRP",
-				Result: noInstanceNoEvacuating(nil),
+				Result: noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is UNCLAIMED",
 				InstanceLRP: unclaimedLRP(),
-				Result:      instanceNoEvacuating(anUnchangedUnclaimedInstanceLRP(), nil),
+				Result:      instanceNoEvacuating(anUnchangedUnclaimedInstanceLRP(), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on alpha",
 				InstanceLRP: claimedLRP(alphaContainerKey),
-				Result:      instanceNoEvacuating(anUnchangedClaimedInstanceLRP(alphaContainerKey), nil),
+				Result:      instanceNoEvacuating(anUnchangedClaimedInstanceLRP(alphaContainerKey), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is CLAIMED on omega",
 				InstanceLRP: claimedLRP(omegaContainerKey),
-				Result:      instanceNoEvacuating(anUnchangedClaimedInstanceLRP(omegaContainerKey), nil),
+				Result:      instanceNoEvacuating(anUnchangedClaimedInstanceLRP(omegaContainerKey), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is RUNNING on alpha",
 				InstanceLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:      instanceNoEvacuating(anUnchangedRunningInstanceLRP(alphaContainerKey, alphaNetInfo), nil),
+				Result:      instanceNoEvacuating(anUnchangedRunningInstanceLRP(alphaContainerKey, alphaNetInfo), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is RUNNING on omega",
 				InstanceLRP: runningLRP(omegaContainerKey, omegaNetInfo),
-				Result:      instanceNoEvacuating(anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo), nil),
+				Result:      instanceNoEvacuating(anUnchangedRunningInstanceLRP(omegaContainerKey, omegaNetInfo), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:        "when the instance is CRASHED",
 				InstanceLRP: crashedLRP(),
-				Result:      instanceNoEvacuating(anUnchangedCrashedInstanceLRP(), nil),
+				Result:      instanceNoEvacuating(anUnchangedCrashedInstanceLRP(), shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on alpha",
 				EvacuatingLRP: runningLRP(alphaContainerKey, alphaNetInfo),
-				Result:        noInstanceNoEvacuating(nil),
+				Result:        noInstanceNoEvacuating(shared.DeleteContainer, nil),
 			}),
 			removalTest(evacuationTest{
 				Name:          "when the evacuating LRP is RUNNING on beta",
 				EvacuatingLRP: runningLRP(betaContainerKey, betaNetInfo),
 				Result: evacuatingNoInstance(
 					anUnchangedBetaEvacuatingLRP(),
+					shared.DeleteContainer,
 					bbserrors.ErrActualLRPCannotBeRemoved,
 				),
 			}),
@@ -578,7 +605,7 @@ type testable interface {
 
 type evacuationTest struct {
 	Name          string
-	Subject       func() error
+	Subject       func() (shared.ContainerRetainment, error)
 	InstanceLRP   lrpSetupFunc
 	EvacuatingLRP lrpSetupFunc
 	Result        testResult
@@ -639,6 +666,7 @@ type testResult struct {
 	Evacuating       *evacuatingLRPStatus
 	AuctionRequested bool
 	ReturnedError    error
+	RetainContainer  shared.ContainerRetainment
 }
 
 func anUpdatedAlphaEvacuatingLRP() *evacuatingLRPStatus {
@@ -713,11 +741,12 @@ func anUnchangedCrashedInstanceLRP() *instanceLRPStatus {
 	return anUnchangedInstanceLRP(models.ActualLRPStateCrashed, emptyContainerKey, emptyNetInfo)
 }
 
-func newTestResult(instanceStatus *instanceLRPStatus, evacuatingStatus *evacuatingLRPStatus, err error) testResult {
+func newTestResult(instanceStatus *instanceLRPStatus, evacuatingStatus *evacuatingLRPStatus, retainContainer shared.ContainerRetainment, err error) testResult {
 	result := testResult{
-		Instance:      instanceStatus,
-		Evacuating:    evacuatingStatus,
-		ReturnedError: err,
+		Instance:        instanceStatus,
+		Evacuating:      evacuatingStatus,
+		ReturnedError:   err,
+		RetainContainer: retainContainer,
 	}
 
 	if instanceStatus != nil && instanceStatus.ShouldUpdate {
@@ -727,16 +756,16 @@ func newTestResult(instanceStatus *instanceLRPStatus, evacuatingStatus *evacuati
 	return result
 }
 
-func instanceNoEvacuating(instanceStatus *instanceLRPStatus, err error) testResult {
-	return newTestResult(instanceStatus, nil, err)
+func instanceNoEvacuating(instanceStatus *instanceLRPStatus, retainContainer shared.ContainerRetainment, err error) testResult {
+	return newTestResult(instanceStatus, nil, retainContainer, err)
 }
 
-func evacuatingNoInstance(evacuatingStatus *evacuatingLRPStatus, err error) testResult {
-	return newTestResult(nil, evacuatingStatus, err)
+func evacuatingNoInstance(evacuatingStatus *evacuatingLRPStatus, retainContainer shared.ContainerRetainment, err error) testResult {
+	return newTestResult(nil, evacuatingStatus, retainContainer, err)
 }
 
-func noInstanceNoEvacuating(err error) testResult {
-	return newTestResult(nil, nil, err)
+func noInstanceNoEvacuating(retainContainer shared.ContainerRetainment, err error) testResult {
+	return newTestResult(nil, nil, retainContainer, err)
 }
 
 func (t evacuationTest) Test() {
@@ -746,6 +775,7 @@ func (t evacuationTest) Test() {
 		var initialTimestamp int64
 		var initialInstanceModificationIndex uint
 		var initialEvacuatingModificationIndex uint
+		var retainContainer shared.ContainerRetainment
 
 		BeforeEach(func() {
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
@@ -767,7 +797,7 @@ func (t evacuationTest) Test() {
 
 		JustBeforeEach(func() {
 			clock.Increment(timeIncrement)
-			evacuateErr = t.Subject()
+			retainContainer, evacuateErr = t.Subject()
 		})
 
 		if t.Result.ReturnedError == nil {
@@ -778,6 +808,18 @@ func (t evacuationTest) Test() {
 			It(fmt.Sprintf("returned error should be '%s'", t.Result.ReturnedError.Error()), func() {
 				Ω(evacuateErr).Should(Equal(t.Result.ReturnedError))
 			})
+		}
+
+		if t.Result.RetainContainer == shared.KeepContainer {
+			It("returns KeepContainer", func() {
+				Ω(retainContainer).Should(Equal(shared.KeepContainer))
+			})
+
+		} else {
+			It("returns DeleteContainer", func() {
+				Ω(retainContainer).Should(Equal(shared.DeleteContainer))
+			})
+
 		}
 
 		if t.Result.AuctionRequested {

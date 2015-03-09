@@ -7,6 +7,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -77,10 +78,10 @@ type RepBBS interface {
 	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 
 	// LRP evacuation
-	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
-	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
-	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
-	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
+	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) (shared.ContainerRetainment, error)
+	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
+	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
 	RemoveEvacuatingActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 }
 

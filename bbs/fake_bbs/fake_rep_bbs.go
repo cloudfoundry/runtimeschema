@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
@@ -124,7 +125,7 @@ type FakeRepBBS struct {
 	removeActualLRPReturns struct {
 		result1 error
 	}
-	EvacuateClaimedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateClaimedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
 	evacuateClaimedActualLRPMutex       sync.RWMutex
 	evacuateClaimedActualLRPArgsForCall []struct {
 		arg1 lager.Logger
@@ -132,9 +133,10 @@ type FakeRepBBS struct {
 		arg3 models.ActualLRPContainerKey
 	}
 	evacuateClaimedActualLRPReturns struct {
-		result1 error
+		result1 shared.ContainerRetainment
+		result2 error
 	}
-	EvacuateRunningActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) error
+	EvacuateRunningActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) (shared.ContainerRetainment, error)
 	evacuateRunningActualLRPMutex       sync.RWMutex
 	evacuateRunningActualLRPArgsForCall []struct {
 		arg1 lager.Logger
@@ -144,9 +146,10 @@ type FakeRepBBS struct {
 		arg5 uint64
 	}
 	evacuateRunningActualLRPReturns struct {
-		result1 error
+		result1 shared.ContainerRetainment
+		result2 error
 	}
-	EvacuateStoppedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateStoppedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
 	evacuateStoppedActualLRPMutex       sync.RWMutex
 	evacuateStoppedActualLRPArgsForCall []struct {
 		arg1 lager.Logger
@@ -154,9 +157,10 @@ type FakeRepBBS struct {
 		arg3 models.ActualLRPContainerKey
 	}
 	evacuateStoppedActualLRPReturns struct {
-		result1 error
+		result1 shared.ContainerRetainment
+		result2 error
 	}
-	EvacuateCrashedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateCrashedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
 	evacuateCrashedActualLRPMutex       sync.RWMutex
 	evacuateCrashedActualLRPArgsForCall []struct {
 		arg1 lager.Logger
@@ -164,7 +168,8 @@ type FakeRepBBS struct {
 		arg3 models.ActualLRPContainerKey
 	}
 	evacuateCrashedActualLRPReturns struct {
-		result1 error
+		result1 shared.ContainerRetainment
+		result2 error
 	}
 	RemoveEvacuatingActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
 	removeEvacuatingActualLRPMutex       sync.RWMutex
@@ -554,7 +559,7 @@ func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) EvacuateClaimedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
+func (fake *FakeRepBBS) EvacuateClaimedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) (shared.ContainerRetainment, error) {
 	fake.evacuateClaimedActualLRPMutex.Lock()
 	fake.evacuateClaimedActualLRPArgsForCall = append(fake.evacuateClaimedActualLRPArgsForCall, struct {
 		arg1 lager.Logger
@@ -565,7 +570,7 @@ func (fake *FakeRepBBS) EvacuateClaimedActualLRP(arg1 lager.Logger, arg2 models.
 	if fake.EvacuateClaimedActualLRPStub != nil {
 		return fake.EvacuateClaimedActualLRPStub(arg1, arg2, arg3)
 	} else {
-		return fake.evacuateClaimedActualLRPReturns.result1
+		return fake.evacuateClaimedActualLRPReturns.result1, fake.evacuateClaimedActualLRPReturns.result2
 	}
 }
 
@@ -581,14 +586,15 @@ func (fake *FakeRepBBS) EvacuateClaimedActualLRPArgsForCall(i int) (lager.Logger
 	return fake.evacuateClaimedActualLRPArgsForCall[i].arg1, fake.evacuateClaimedActualLRPArgsForCall[i].arg2, fake.evacuateClaimedActualLRPArgsForCall[i].arg3
 }
 
-func (fake *FakeRepBBS) EvacuateClaimedActualLRPReturns(result1 error) {
+func (fake *FakeRepBBS) EvacuateClaimedActualLRPReturns(result1 shared.ContainerRetainment, result2 error) {
 	fake.EvacuateClaimedActualLRPStub = nil
 	fake.evacuateClaimedActualLRPReturns = struct {
-		result1 error
-	}{result1}
+		result1 shared.ContainerRetainment
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) EvacuateRunningActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey, arg4 models.ActualLRPNetInfo, arg5 uint64) error {
+func (fake *FakeRepBBS) EvacuateRunningActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey, arg4 models.ActualLRPNetInfo, arg5 uint64) (shared.ContainerRetainment, error) {
 	fake.evacuateRunningActualLRPMutex.Lock()
 	fake.evacuateRunningActualLRPArgsForCall = append(fake.evacuateRunningActualLRPArgsForCall, struct {
 		arg1 lager.Logger
@@ -601,7 +607,7 @@ func (fake *FakeRepBBS) EvacuateRunningActualLRP(arg1 lager.Logger, arg2 models.
 	if fake.EvacuateRunningActualLRPStub != nil {
 		return fake.EvacuateRunningActualLRPStub(arg1, arg2, arg3, arg4, arg5)
 	} else {
-		return fake.evacuateRunningActualLRPReturns.result1
+		return fake.evacuateRunningActualLRPReturns.result1, fake.evacuateRunningActualLRPReturns.result2
 	}
 }
 
@@ -617,14 +623,15 @@ func (fake *FakeRepBBS) EvacuateRunningActualLRPArgsForCall(i int) (lager.Logger
 	return fake.evacuateRunningActualLRPArgsForCall[i].arg1, fake.evacuateRunningActualLRPArgsForCall[i].arg2, fake.evacuateRunningActualLRPArgsForCall[i].arg3, fake.evacuateRunningActualLRPArgsForCall[i].arg4, fake.evacuateRunningActualLRPArgsForCall[i].arg5
 }
 
-func (fake *FakeRepBBS) EvacuateRunningActualLRPReturns(result1 error) {
+func (fake *FakeRepBBS) EvacuateRunningActualLRPReturns(result1 shared.ContainerRetainment, result2 error) {
 	fake.EvacuateRunningActualLRPStub = nil
 	fake.evacuateRunningActualLRPReturns = struct {
-		result1 error
-	}{result1}
+		result1 shared.ContainerRetainment
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) EvacuateStoppedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
+func (fake *FakeRepBBS) EvacuateStoppedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) (shared.ContainerRetainment, error) {
 	fake.evacuateStoppedActualLRPMutex.Lock()
 	fake.evacuateStoppedActualLRPArgsForCall = append(fake.evacuateStoppedActualLRPArgsForCall, struct {
 		arg1 lager.Logger
@@ -635,7 +642,7 @@ func (fake *FakeRepBBS) EvacuateStoppedActualLRP(arg1 lager.Logger, arg2 models.
 	if fake.EvacuateStoppedActualLRPStub != nil {
 		return fake.EvacuateStoppedActualLRPStub(arg1, arg2, arg3)
 	} else {
-		return fake.evacuateStoppedActualLRPReturns.result1
+		return fake.evacuateStoppedActualLRPReturns.result1, fake.evacuateStoppedActualLRPReturns.result2
 	}
 }
 
@@ -651,14 +658,15 @@ func (fake *FakeRepBBS) EvacuateStoppedActualLRPArgsForCall(i int) (lager.Logger
 	return fake.evacuateStoppedActualLRPArgsForCall[i].arg1, fake.evacuateStoppedActualLRPArgsForCall[i].arg2, fake.evacuateStoppedActualLRPArgsForCall[i].arg3
 }
 
-func (fake *FakeRepBBS) EvacuateStoppedActualLRPReturns(result1 error) {
+func (fake *FakeRepBBS) EvacuateStoppedActualLRPReturns(result1 shared.ContainerRetainment, result2 error) {
 	fake.EvacuateStoppedActualLRPStub = nil
 	fake.evacuateStoppedActualLRPReturns = struct {
-		result1 error
-	}{result1}
+		result1 shared.ContainerRetainment
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeRepBBS) EvacuateCrashedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
+func (fake *FakeRepBBS) EvacuateCrashedActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) (shared.ContainerRetainment, error) {
 	fake.evacuateCrashedActualLRPMutex.Lock()
 	fake.evacuateCrashedActualLRPArgsForCall = append(fake.evacuateCrashedActualLRPArgsForCall, struct {
 		arg1 lager.Logger
@@ -669,7 +677,7 @@ func (fake *FakeRepBBS) EvacuateCrashedActualLRP(arg1 lager.Logger, arg2 models.
 	if fake.EvacuateCrashedActualLRPStub != nil {
 		return fake.EvacuateCrashedActualLRPStub(arg1, arg2, arg3)
 	} else {
-		return fake.evacuateCrashedActualLRPReturns.result1
+		return fake.evacuateCrashedActualLRPReturns.result1, fake.evacuateCrashedActualLRPReturns.result2
 	}
 }
 
@@ -685,11 +693,12 @@ func (fake *FakeRepBBS) EvacuateCrashedActualLRPArgsForCall(i int) (lager.Logger
 	return fake.evacuateCrashedActualLRPArgsForCall[i].arg1, fake.evacuateCrashedActualLRPArgsForCall[i].arg2, fake.evacuateCrashedActualLRPArgsForCall[i].arg3
 }
 
-func (fake *FakeRepBBS) EvacuateCrashedActualLRPReturns(result1 error) {
+func (fake *FakeRepBBS) EvacuateCrashedActualLRPReturns(result1 shared.ContainerRetainment, result2 error) {
 	fake.EvacuateCrashedActualLRPStub = nil
 	fake.evacuateCrashedActualLRPReturns = struct {
-		result1 error
-	}{result1}
+		result1 shared.ContainerRetainment
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) RemoveEvacuatingActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPContainerKey) error {
