@@ -17,13 +17,16 @@ var (
 )
 
 type Heartbeater struct {
-	client   storeadapter.StoreAdapter
-	key      string
-	value    string
-	interval time.Duration
-	logger   lager.Logger
+	client storeadapter.StoreAdapter
+	key    string
+	value  string
 
-	clock clock.Clock
+	keyCreateRetryInterval time.Duration
+	keyHeartbeatInterval   time.Duration
+	keyTTL                 uint64
+	clock                  clock.Clock
+
+	logger lager.Logger
 }
 
 func New(
@@ -35,36 +38,38 @@ func New(
 	logger lager.Logger,
 ) Heartbeater {
 	return Heartbeater{
-		client:   etcdClient,
-		clock:    clock,
-		key:      heartbeatKey,
-		value:    heartbeatValue,
-		interval: heartbeatInterval,
-		logger:   logger,
+		client: etcdClient,
+		key:    heartbeatKey,
+		value:  heartbeatValue,
+
+		keyCreateRetryInterval: heartbeatInterval,
+		keyHeartbeatInterval:   heartbeatInterval,
+		keyTTL:                 uint64(math.Ceil((heartbeatInterval * 2).Seconds())),
+		clock:                  clock,
+
+		logger: logger,
 	}
 }
 
 func (h Heartbeater) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 	logger := h.logger.Session("heartbeat", lager.Data{"key": h.key, "value": h.value})
 
-	ttl := uint64(math.Ceil((h.interval * 2).Seconds()))
-
 	node := storeadapter.StoreNode{
 		Key:   h.key,
 		Value: []byte(h.value),
-		TTL:   ttl,
+		TTL:   h.keyTTL,
 	}
 
-	if h.acquireHeartbeat(logger, node, ttl, signals) {
+	if h.acquireHeartbeat(logger, node, signals) {
 		close(ready)
 
-		return h.maintainHeartbeat(logger, node, ttl, signals)
+		return h.maintainHeartbeat(logger, node, signals)
 	}
 
 	return nil
 }
 
-func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) bool {
+func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.StoreNode, signals <-chan os.Signal) bool {
 	logger.Info("starting")
 
 	err := h.client.CompareAndSwap(node, node)
@@ -100,7 +105,7 @@ func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.Sto
 				break
 			}
 
-			intervalTimer.Reset(h.interval)
+			intervalTimer.Reset(h.keyCreateRetryInterval)
 		}
 	}
 
@@ -108,11 +113,11 @@ func (h Heartbeater) acquireHeartbeat(logger lager.Logger, node storeadapter.Sto
 	return true
 }
 
-func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.StoreNode, ttl uint64, signals <-chan os.Signal) error {
+func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.StoreNode, signals <-chan os.Signal) error {
 	var connectionTimer clock.Timer
 	var connectionTimeout <-chan time.Time
 
-	intervalTimer := h.clock.NewTimer(h.interval)
+	intervalTimer := h.clock.NewTimer(h.keyHeartbeatInterval)
 	defer intervalTimer.Stop()
 
 	for {
@@ -132,18 +137,29 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 			return ErrStoreUnavailable
 
 		case <-intervalTimer.C():
+			logger.Debug("compare-and-swapping")
 			err := h.client.CompareAndSwap(node, node)
+			if err != nil {
+				logger.Error("failed-compare-and-swapping", err)
+			} else {
+				logger.Debug("succeeded-compare-and-swapping")
+			}
 			switch err {
 			case storeadapter.ErrorTimeout:
-				logger.Error("store-timeout", err)
 				if connectionTimeout == nil {
-					connectionTimer = h.clock.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimer = h.clock.NewTimer(time.Duration(h.keyTTL) * time.Second)
 					connectionTimeout = connectionTimer.C()
 				}
 			case storeadapter.ErrorKeyNotFound:
+				logger.Debug("re-creating-node")
 				err = h.client.Create(node)
+				if err != nil {
+					logger.Error("failed-re-creating-node", err)
+				} else {
+					logger.Debug("succeeded-re-creating-node")
+				}
 				if err != nil && connectionTimeout == nil {
-					connectionTimer = h.clock.NewTimer(time.Duration(ttl) * time.Second)
+					connectionTimer = h.clock.NewTimer(time.Duration(h.keyTTL) * time.Second)
 					connectionTimeout = connectionTimer.C()
 				}
 			case nil:
@@ -152,10 +168,9 @@ func (h Heartbeater) maintainHeartbeat(logger lager.Logger, node storeadapter.St
 					connectionTimeout = nil
 				}
 			default:
-				logger.Error("compare-and-swap-failed", err)
 				return ErrLockFailed
 			}
-			intervalTimer.Reset(h.interval)
+			intervalTimer.Reset(h.keyHeartbeatInterval)
 		}
 	}
 }
