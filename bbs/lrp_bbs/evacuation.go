@@ -238,14 +238,12 @@ func (bbs *LRPBBS) unconditionallyEvacuateActualLRP(
 	if existingLRP.ActualLRPKey == actualLRPKey &&
 		existingLRP.ActualLRPContainerKey == actualLRPContainerKey &&
 		existingLRP.Address == actualLRPNetInfo.Address &&
-		reflect.DeepEqual(existingLRP.Ports, actualLRPNetInfo.Ports) &&
-		existingLRP.State == models.ActualLRPStateRunning {
+		reflect.DeepEqual(existingLRP.Ports, actualLRPNetInfo.Ports) {
 		return nil
 	}
 
 	lrp := *existingLRP
 
-	lrp.State = models.ActualLRPStateRunning
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.ActualLRPContainerKey = actualLRPContainerKey
 	lrp.ActualLRPNetInfo = actualLRPNetInfo
@@ -277,8 +275,7 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 	if existingLRP.ActualLRPKey == actualLRPKey &&
 		existingLRP.ActualLRPContainerKey == actualLRPContainerKey &&
 		existingLRP.Address == actualLRPNetInfo.Address &&
-		reflect.DeepEqual(existingLRP.Ports, actualLRPNetInfo.Ports) &&
-		existingLRP.State == models.ActualLRPStateRunning {
+		reflect.DeepEqual(existingLRP.Ports, actualLRPNetInfo.Ports) {
 		return nil
 	}
 
@@ -289,7 +286,6 @@ func (bbs *LRPBBS) conditionallyEvacuateActualLRP(
 
 	lrp := *existingLRP
 
-	lrp.State = models.ActualLRPStateRunning
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.ActualLRPContainerKey = actualLRPContainerKey
 	lrp.ActualLRPNetInfo = actualLRPNetInfo
