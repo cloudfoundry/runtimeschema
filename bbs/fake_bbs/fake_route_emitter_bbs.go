@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/tedsuo/ifrit"
 )
 

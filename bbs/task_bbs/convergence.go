@@ -23,7 +23,7 @@ const (
 )
 
 type compareAndSwappableTask struct {
-	OldIndex uint64
+	OldIndex int64
 	NewTask  models.Task
 }
 
@@ -49,7 +49,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 		convergeTaskDuration.Send(time.Since(convergeStart))
 	}()
 
-	taskState, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
+	tasksWithIndex, err := bbs.repository.GetAllWithIndex(bbs.dbmap)
 	if err != nil {
 		return
 	}
@@ -75,10 +75,10 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 		tasksToComplete = append(tasksToComplete, task)
 	}
 
-	keysToDelete := []string{}
+	guidsToDelete := []string{}
 
 	tasksToCAS := []compareAndSwappableTask{}
-	scheduleForCASByIndex := func(index uint64, newTask models.Task) {
+	scheduleForCASByIndex := func(index int64, newTask models.Task) {
 		tasksToCAS = append(tasksToCAS, compareAndSwappableTask{
 			OldIndex: index,
 			NewTask:  newTask,
@@ -89,18 +89,9 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 
 	var tasksKicked uint64 = 0
 
-	for _, node := range taskState.ChildNodes {
-		var task models.Task
-		err = models.FromJSON(node.Value, &task)
-		if err != nil {
-			taskLog.Error("failed-to-unmarshal-task-json", err, lager.Data{
-				"key":   node.Key,
-				"value": node.Value,
-			})
-
-			keysToDelete = append(keysToDelete, node.Key)
-			continue
-		}
+	for _, taskWithIndex := range tasksWithIndex {
+		task := taskWithIndex.Task
+		index := taskWithIndex.Index
 
 		shouldKickTask := bbs.durationSinceTaskUpdated(task) >= convergenceInterval
 
@@ -109,7 +100,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 			shouldMarkAsFailed := bbs.durationSinceTaskCreated(task) >= expirePendingTaskDuration
 			if shouldMarkAsFailed {
 				logError(task, "failed-to-start-in-time")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
+				scheduleForCASByIndex(index, bbs.markTaskFailed(task, "not started within time limit"))
 				tasksKicked++
 			} else if shouldKickTask {
 				taskLog.Info("requesting-auction-for-pending-task", lager.Data{"task": task})
@@ -120,14 +111,14 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 			_, cellIsAlive := cellState.Lookup(task.CellID)
 			if !cellIsAlive {
 				logError(task, "cell-disappeared")
-				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))
+				scheduleForCASByIndex(index, bbs.markTaskFailed(task, "cell disappeared before completion"))
 				tasksKicked++
 			}
 		case models.TaskStateCompleted:
 			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
 			if shouldDeleteTask {
 				logError(task, "failed-to-start-resolving-in-time")
-				keysToDelete = append(keysToDelete, node.Key)
+				guidsToDelete = append(guidsToDelete, task.TaskGuid)
 			} else if shouldKickTask {
 				taskLog.Info("kicking-completed-task", lager.Data{"task": task})
 				scheduleForCompletion(task)
@@ -137,11 +128,11 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
 			if shouldDeleteTask {
 				logError(task, "failed-to-resolve-in-time")
-				keysToDelete = append(keysToDelete, node.Key)
+				guidsToDelete = append(guidsToDelete, task.TaskGuid)
 			} else if shouldKickTask {
 				taskLog.Info("demoting-resolving-to-completed", lager.Data{"task": task})
 				demoted := demoteToCompleted(task)
-				scheduleForCASByIndex(node.Index, demoted)
+				scheduleForCASByIndex(index, demoted)
 				scheduleForCompletion(demoted)
 				tasksKicked++
 			}
@@ -162,9 +153,15 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 
 	bbs.completeTasks(tasksToComplete, taskLog)
 
-	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
-	bbs.store.Delete(keysToDelete...)
-
+	tasksPrunedCounter.Add(uint64(len(guidsToDelete)))
+	for _, guid := range guidsToDelete {
+		err := bbs.repository.DeleteByTaskGuid(bbs.dbmap, guid)
+		if err != nil {
+			taskLog.Error("failed-to-delete-task", err, lager.Data{
+				"guid": guid,
+			})
+		}
+	}
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {
@@ -212,22 +209,11 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 	for _, taskToCAS := range tasksToCAS {
 		task := taskToCAS.NewTask
 		task.UpdatedAt = bbs.clock.Now().UnixNano()
-		value, err := models.ToJSON(task)
-		if err != nil {
-			taskLog.Error("failed-to-marshal", err, lager.Data{
-				"task": task,
-			})
-			continue
-		}
-
-		newStoreNode := storeadapter.StoreNode{
-			Key:   shared.TaskSchemaPath(task.TaskGuid),
-			Value: value,
-		}
 		index := taskToCAS.OldIndex
+
 		pool.Submit(func() {
 			defer waitGroup.Done()
-			err := bbs.store.CompareAndSwapByIndex(index, newStoreNode)
+			_, err := bbs.repository.CompareAndSwapByIndex(bbs.dbmap, task, index)
 			if err != nil {
 				taskLog.Error("failed-to-compare-and-swap", err, lager.Data{
 					"task": task,

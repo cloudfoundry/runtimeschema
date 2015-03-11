@@ -4,7 +4,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -26,19 +25,10 @@ func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
 	if task.CreatedAt == 0 {
 		task.CreatedAt = bbs.clock.Now().UnixNano()
 	}
-
 	task.UpdatedAt = bbs.clock.Now().UnixNano()
 
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
 	taskLogger.Debug("persisting-task")
-	err = bbs.store.Create(storeadapter.StoreNode{
-		Key:   shared.TaskSchemaPath(task.TaskGuid),
-		Value: value,
-	})
+	task, err = bbs.repository.Create(bbs.dbmap, task)
 	if err != nil {
 		taskLogger.Error("failed-persisting-task", err)
 		return shared.ConvertStoreError(err)
@@ -87,16 +77,7 @@ func (bbs *TaskBBS) StartTask(logger lager.Logger, taskGuid string, cellID strin
 	task.State = models.TaskStateRunning
 	task.CellID = cellID
 
-	value, err := models.ToJSON(task)
-	if err != nil {
-		logger.Info("error-converting-to-json")
-		return false, err
-	}
-
-	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-		Key:   shared.TaskSchemaPath(taskGuid),
-		Value: value,
-	})
+	task, err = bbs.repository.CompareAndSwapByIndex(bbs.dbmap, task, index)
 	if err != nil {
 		logger.Error("failed-persisting-task", err)
 		return false, shared.ConvertStoreError(err)
@@ -196,18 +177,11 @@ func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID st
 	return bbs.completeTask(logger, task, index, failed, failureReason, result)
 }
 
-func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index uint64, failed bool, failureReason string, result string) error {
+func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index int64, failed bool, failureReason string, result string) error {
 	task = bbs.markTaskCompleted(task, failed, failureReason, result)
 
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
-	err = bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-		Key:   shared.TaskSchemaPath(task.TaskGuid),
-		Value: value,
-	})
+	var err error
+	task, err = bbs.repository.CompareAndSwapByIndex(bbs.dbmap, task, index)
 	if err != nil {
 		logger.Error("failed-persisting-task", err)
 		return shared.ConvertStoreError(err)
@@ -254,15 +228,8 @@ func (bbs *TaskBBS) ResolvingTask(logger lager.Logger, taskGuid string) error {
 	task.UpdatedAt = bbs.clock.Now().UnixNano()
 	task.State = models.TaskStateResolving
 
-	value, err := models.ToJSON(task)
-	if err != nil {
-		return err
-	}
-
-	return shared.ConvertStoreError(bbs.store.CompareAndSwapByIndex(index, storeadapter.StoreNode{
-		Key:   shared.TaskSchemaPath(taskGuid),
-		Value: value,
-	}))
+	_, err = bbs.repository.CompareAndSwapByIndex(bbs.dbmap, task, index)
+	return err
 }
 
 // The stager calls this when it wants to signal that it has received a completion and is handling it
@@ -285,7 +252,7 @@ func (bbs *TaskBBS) ResolveTask(logger lager.Logger, taskGuid string) error {
 		return err
 	}
 
-	return shared.ConvertStoreError(bbs.store.Delete(shared.TaskSchemaPath(taskGuid)))
+	return bbs.repository.DeleteByTaskGuid(bbs.dbmap, taskGuid)
 }
 
 func validateStateTransition(from, to models.TaskState) error {
@@ -311,13 +278,13 @@ func (bbs *TaskBBS) requestTaskAuctions(logger lager.Logger, tasks []models.Task
 	if err != nil {
 		return err
 	}
-	logger.Debug("did-fetch-auctioneer-address")
+	logger.Info("did-fetch-auctioneer-address")
 
 	err = bbs.auctioneerClient.RequestTaskAuctions(auctioneerAddress, tasks)
 	if err != nil {
 		return err
 	}
-	logger.Debug("did-request-task-auctions")
+	logger.Info("did-request-task-auctions")
 
 	return nil
 }

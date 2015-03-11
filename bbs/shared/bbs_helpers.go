@@ -1,8 +1,11 @@
 package shared
 
 import (
+	"database/sql"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/go-sql-driver/mysql"
 )
 
 type ContainerRetainment bool
@@ -30,7 +33,19 @@ func ConvertStoreError(originalErr error) error {
 		return bbserrors.ErrStoreResourceExists
 	case storeadapter.ErrorKeyComparisonFailed:
 		return bbserrors.ErrStoreComparisonFailed
+	case sql.ErrNoRows:
+		return bbserrors.ErrStoreResourceNotFound
 	default:
+		err, ok := originalErr.(*mysql.MySQLError)
+		if ok {
+			switch err.Number {
+			case 1062:
+				return bbserrors.ErrStoreResourceExists
+			default:
+				return originalErr
+			}
+		}
+
 		return originalErr
 	}
 }

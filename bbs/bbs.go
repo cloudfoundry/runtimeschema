@@ -1,17 +1,21 @@
 package bbs
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/repositories"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+	"github.com/go-gorp/gorp"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
@@ -202,11 +206,26 @@ func NewBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Log
 	services := services_bbs.New(store, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 
+	db, err := sql.Open("mysql", "root:password@tcp(127.0.0.1:3306)/bbs")
+	if err != nil {
+		panic(err)
+	}
+
+	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{
+		Engine:   "InnoDB",
+		Encoding: "UTF8",
+	}}
+
+	taskRepository, err := repositories.NewTaskRepository(dbmap)
+	if err != nil {
+		panic(err)
+	}
+
 	return &BBS{
 		LockBBS:     lock_bbs.New(store, clock, logger.Session("lock-bbs")),
 		LRPBBS:      lrp_bbs.New(store, clock, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
+		TaskBBS:     task_bbs.New(store, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services, dbmap, taskRepository),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }

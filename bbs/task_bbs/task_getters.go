@@ -3,33 +3,11 @@ package task_bbs
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
 
 func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
-	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return []models.Task{}, nil
-	} else if err != nil {
-		return []models.Task{}, shared.ConvertStoreError(err)
-	}
-
-	tasks := []models.Task{}
-	for _, node := range node.ChildNodes {
-		var task models.Task
-		err := models.FromJSON(node.Value, &task)
-		if err != nil {
-			logger.Error("failed-to-unmarshal-task", err, lager.Data{
-				"key":   node.Key,
-				"value": node.Value,
-			})
-		} else {
-			tasks = append(tasks, task)
-		}
-	}
-
-	return tasks, nil
+	return bbs.repository.GetAll(bbs.dbmap)
 }
 
 func (bbs *TaskBBS) TaskByGuid(guid string) (models.Task, error) {
@@ -87,14 +65,7 @@ func filterTasksByState(tasks []models.Task, state models.TaskState) []models.Ta
 	})
 }
 
-func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
-	node, err := bbs.store.Get(shared.TaskSchemaPath(taskGuid))
-	if err != nil {
-		return models.Task{}, 0, shared.ConvertStoreError(err)
-	}
-
-	var task models.Task
-	err = models.FromJSON(node.Value, &task)
-
-	return task, node.Index, err
+func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, int64, error) {
+	task, index, err := bbs.repository.GetByTaskGuid(bbs.dbmap, taskGuid)
+	return task, index, shared.ConvertStoreError(err)
 }

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/repositories/fake_repositories"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -467,10 +467,10 @@ var _ = Describe("Task BBS", func() {
 				var storeError = errors.New("store error")
 
 				BeforeEach(func() {
-					fakeStoreAdapter := fakestoreadapter.New()
-					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
+					fakeTaskRepository := &fake_repositories.FakeTaskRepository{}
+					fakeTaskRepository.GetByTaskGuidReturns(models.Task{}, 0, storeError)
 
-					bbs = New(fakeStoreAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
+					bbs = New(etcdClient, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS, dbmap, fakeTaskRepository)
 				})
 
 				It("returns an error", func() {

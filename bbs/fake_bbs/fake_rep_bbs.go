@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )

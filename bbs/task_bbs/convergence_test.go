@@ -4,15 +4,12 @@ import (
 	"errors"
 	"net/url"
 	"os"
-	"path"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
-	"github.com/cloudfoundry/storeadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -61,32 +58,6 @@ var _ = Describe("Convergence of Tasks", func() {
 			reportedDuration := sender.GetValue("ConvergenceTaskDuration")
 			Ω(reportedDuration.Unit).Should(Equal("nanos"))
 			Ω(reportedDuration.Value).ShouldNot(BeZero())
-		})
-
-		Context("when a Task is malformed", func() {
-			var nodeKey string
-
-			BeforeEach(func() {
-				nodeKey = path.Join(shared.TaskSchemaRoot, "some-guid")
-
-				err := etcdClient.Create(storeadapter.StoreNode{
-					Key:   nodeKey,
-					Value: []byte("ß"),
-				})
-				Ω(err).ShouldNot(HaveOccurred())
-
-				_, err = etcdClient.Get(nodeKey)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("should delete it", func() {
-				_, err := etcdClient.Get(nodeKey)
-				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
-			})
-
-			It("bumps the pruned counter", func() {
-				Ω(sender.GetCounter("ConvergenceTasksPruned")).Should(Equal(uint64(1)))
-			})
 		})
 
 		Context("when Tasks are pending", func() {
@@ -216,7 +187,6 @@ var _ = Describe("Convergence of Tasks", func() {
 				BeforeEach(func() {
 					cellPresence := models.NewCellPresence("cell-id", "stack", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					heartbeater = ifrit.Envoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute))
-
 				})
 
 				AfterEach(func() {
@@ -470,8 +440,8 @@ var _ = Describe("Convergence of Tasks", func() {
 				It("should do nothing", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateResolving))
 					Ω(returnedTask.UpdatedAt).Should(Equal(previousTime))
+					Ω(returnedTask.State).Should(Equal(models.TaskStateResolving))
 				})
 			})
 

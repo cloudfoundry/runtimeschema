@@ -7,6 +7,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
