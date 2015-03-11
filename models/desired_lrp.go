@@ -41,6 +41,7 @@ type DesiredLRP struct {
 	Domain               string                      `json:"domain"`
 	RootFSPath           string                      `json:"rootfs"`
 	Instances            int                         `json:"instances"`
+	VolumeMount          *VolumeSetAttachment        `json:"volume_mount,omitempty"`
 	Stack                string                      `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable       `json:"env,omitempty"`
 	Setup                Action                      `json:"-"`
@@ -129,6 +130,13 @@ func (desired DesiredLRP) Validate() error {
 
 	if desired.Monitor != nil {
 		err := desired.Monitor.Validate()
+		if err != nil {
+			validationError = validationError.Append(err)
+		}
+	}
+
+	if desired.VolumeMount != nil {
+		err := desired.VolumeMount.Validate()
 		if err != nil {
 			validationError = validationError.Append(err)
 		}

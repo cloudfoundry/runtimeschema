@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/volume_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -20,6 +21,10 @@ import (
 
 //go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
 type ReceptorBBS interface {
+	//volumes
+	DesireVolumeSet(logger lager.Logger, vol models.VolumeSet) error
+	VolumesByVolumeSetGuid(logger lager.Logger, volSetGuid string) ([]models.Volume, error)
+
 	//task
 	DesireTask(lager.Logger, models.Task) error
 	Tasks(logger lager.Logger) ([]models.Task, error)
@@ -59,6 +64,9 @@ type ReceptorBBS interface {
 
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
 type RepBBS interface {
+	//volumes
+	RunVolume(logger lager.Logger, volSetGuid string, index int, volGuid, cellID string) error
+
 	//services
 	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
 
@@ -108,6 +116,9 @@ type NsyncBBS interface {
 
 //go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
 type AuctioneerBBS interface {
+	//volumes
+	FailVolume(logger lager.Logger, volumeSetGuid string, index int, placementError string) error
+
 	//services
 	Cells() ([]models.CellPresence, error)
 
@@ -208,6 +219,7 @@ func NewBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Log
 		ServicesBBS: services,
 		TaskBBS:     task_bbs.New(storeadapter.NewRetryable(store, clock, retryPolicy), clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
 		DomainBBS:   domain_bbs.New(store, logger),
+		VolumeBBS:   volume_bbs.New(store, clock, auctioneerClient, services),
 	}
 }
 
@@ -217,4 +229,5 @@ type BBS struct {
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
 	*domain_bbs.DomainBBS
+	*volume_bbs.VolumeBBS
 }

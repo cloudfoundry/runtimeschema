@@ -275,6 +275,7 @@ type ActualLRP struct {
 	ActualLRPKey
 	ActualLRPContainerKey
 	ActualLRPNetInfo
+	VolumeGuid      string          `json:"volume_guid"`
 	CrashCount      int             `json:"crash_count"`
 	State           ActualLRPState  `json:"state"`
 	PlacementError  string          `json:"placement_error,omitempty"`

@@ -12,6 +12,8 @@ const CellSchemaRoot = SchemaRoot + "cell"
 const ReceptorSchemaRoot = SchemaRoot + "receptor"
 const ActualLRPSchemaRoot = SchemaRoot + "actual"
 const DesiredLRPSchemaRoot = SchemaRoot + "desired"
+const VolumeSetSchemaRoot = SchemaRoot + "volume_set"
+const VolumeSchemaRoot = SchemaRoot + "volume"
 const TaskSchemaRoot = SchemaRoot + "task"
 const LockSchemaRoot = SchemaRoot + "locks"
 const DomainSchemaRoot = SchemaRoot + "domain"
@@ -49,6 +51,18 @@ func DesiredLRPSchemaPath(lrp models.DesiredLRP) string {
 
 func DesiredLRPSchemaPathByProcessGuid(processGuid string) string {
 	return path.Join(DesiredLRPSchemaRoot, processGuid)
+}
+
+func VolumeSetSchemaPath(volumeSetGuid string) string {
+	return path.Join(VolumeSetSchemaRoot, volumeSetGuid)
+}
+
+func VolumeDir(volumeSetGuid string) string {
+	return path.Join(VolumeSchemaRoot, volumeSetGuid)
+}
+
+func VolumeSchemaPath(volumeSetGuid string, index int) string {
+	return path.Join(VolumeDir(volumeSetGuid), strconv.Itoa(index))
 }
 
 func TaskSchemaPath(taskGuid string) string {

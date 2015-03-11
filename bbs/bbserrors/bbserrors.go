@@ -28,6 +28,8 @@ var (
 	ErrNoProcessGuid = errors.New("no process guid given")
 	ErrNoCellID      = errors.New("no cell id given")
 
+	ErrNoVolumeSetGuid = errors.New("no volume set guid given")
+
 	ErrServiceUnavailable = errors.New("service unavailable")
 
 	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")

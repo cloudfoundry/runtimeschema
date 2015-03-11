@@ -16,6 +16,7 @@ import (
 type AuctioneerClient interface {
 	RequestLRPAuctions(auctioneerURL string, lrpStart []models.LRPStartRequest) error
 	RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error
+	RequestVolumeAuctions(auctioneerURL string, volStarts []models.VolumeStartRequest) error
 }
 
 type auctioneerClient struct {
@@ -26,6 +27,34 @@ func NewAuctioneerClient() AuctioneerClient {
 	return &auctioneerClient{
 		httpClient: cf_http.NewClient(),
 	}
+}
+
+func (c *auctioneerClient) RequestVolumeAuctions(auctioneerURL string, volStarts []models.VolumeStartRequest) error {
+	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
+
+	payload, err := json.Marshal(volStarts)
+	if err != nil {
+		return err
+	}
+
+	req, err := reqGen.CreateRequest(auctioneer.CreateVolumeAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("http error: status code %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	return nil
 }
 
 func (c *auctioneerClient) RequestLRPAuctions(auctioneerURL string, lrpStarts []models.LRPStartRequest) error {
