@@ -118,10 +118,7 @@ func (bbs *LRPBBS) startInstanceRange(logger lager.Logger, lower, upper int, des
 		i++
 	}
 
-	err := bbs.createAndStartActualLRPsForDesired(logger, desired, indices)
-	if err != nil {
-		logger.Error("failed-to-create-and-start-actual-lrps", err)
-	}
+	bbs.createAndStartActualLRPsForDesired(logger, desired, indices)
 }
 
 func (bbs *LRPBBS) stopInstanceRange(logger lager.Logger, lower, upper int, desired models.DesiredLRP) {

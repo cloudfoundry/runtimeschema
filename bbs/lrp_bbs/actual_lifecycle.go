@@ -281,22 +281,23 @@ func (bbs *LRPBBS) FailActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) createAndStartActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) error {
-	start := models.NewLRPStartRequest(lrp, indices...)
+func (bbs *LRPBBS) createAndStartActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) {
+	createdIndices := make([]uint, 0, len(indices))
 
 	for _, actualIndex := range indices {
 		err := bbs.createActualLRP(lrp, int(actualIndex), logger)
 		if err != nil {
-			return err
+			logger.Info("failed-creating-actual-lrp", lager.Data{"index": actualIndex, "err-message": err.Error()})
+		} else {
+			createdIndices = append(createdIndices, actualIndex)
 		}
 	}
+	start := models.NewLRPStartRequest(lrp, createdIndices...)
 
 	err := bbs.requestLRPAuctions([]models.LRPStartRequest{start})
 	if err != nil {
 		logger.Error("failed-to-request-start-auctions", err, lager.Data{"lrp-start": start})
-		// The creation succeeded, the start request error can be dropped
 	}
-	return nil
 }
 
 func (bbs *LRPBBS) createActualLRP(desiredLRP models.DesiredLRP, index int, logger lager.Logger) error {
