@@ -20,9 +20,9 @@ const RetireActualLRPRetryAttempts = 5
 func (bbs *LRPBBS) ClaimActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	logger = logger.Session("claim-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
+	logger = logger.Session("claim-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -35,20 +35,20 @@ func (bbs *LRPBBS) ClaimActualLRP(
 	}
 
 	if lrp.ActualLRPKey == key &&
-		lrp.ActualLRPContainerKey == containerKey &&
+		lrp.ActualLRPInstanceKey == instanceKey &&
 		lrp.State == models.ActualLRPStateClaimed {
 		logger.Info("succeeded")
 		return nil
 	}
 
-	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateClaimed) {
+	if !lrp.AllowsTransitionTo(key, instanceKey, models.ActualLRPStateClaimed) {
 		logger.Error("failed-to-transition-actual-lrp-to-claimed", nil)
 		return bbserrors.ErrActualLRPCannotBeClaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.State = models.ActualLRPStateClaimed
-	lrp.ActualLRPContainerKey = containerKey
+	lrp.ActualLRPInstanceKey = instanceKey
 	lrp.ActualLRPNetInfo = models.ActualLRPNetInfo{}
 	lrp.PlacementError = ""
 
@@ -64,14 +64,14 @@ func (bbs *LRPBBS) ClaimActualLRP(
 func (bbs *LRPBBS) StartActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 	netInfo models.ActualLRPNetInfo,
 ) error {
-	logger = logger.Session("start-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
+	logger = logger.Session("start-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
 	logger.Info("starting")
 	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
-		newLRP, err := bbs.newRunningActualLRP(key, containerKey, netInfo)
+		newLRP, err := bbs.newRunningActualLRP(key, instanceKey, netInfo)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (bbs *LRPBBS) StartActualLRP(
 	}
 
 	if lrp.ActualLRPKey == key &&
-		lrp.ActualLRPContainerKey == containerKey &&
+		lrp.ActualLRPInstanceKey == instanceKey &&
 		lrp.Address == netInfo.Address &&
 		reflect.DeepEqual(lrp.Ports, netInfo.Ports) &&
 		lrp.State == models.ActualLRPStateRunning {
@@ -91,14 +91,14 @@ func (bbs *LRPBBS) StartActualLRP(
 		return nil
 	}
 
-	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateRunning) {
+	if !lrp.AllowsTransitionTo(key, instanceKey, models.ActualLRPStateRunning) {
 		logger.Error("failed-to-transition-actual-lrp-to-started", nil)
 		return bbserrors.ErrActualLRPCannotBeStarted
 	}
 
 	lrp.State = models.ActualLRPStateRunning
 	lrp.Since = bbs.clock.Now().UnixNano()
-	lrp.ActualLRPContainerKey = containerKey
+	lrp.ActualLRPInstanceKey = instanceKey
 	lrp.ActualLRPNetInfo = netInfo
 	lrp.PlacementError = ""
 
@@ -114,9 +114,9 @@ func (bbs *LRPBBS) StartActualLRP(
 func (bbs *LRPBBS) CrashActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	logger = logger.Session("crash-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
+	logger = logger.Session("crash-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -135,21 +135,21 @@ func (bbs *LRPBBS) CrashActualLRP(
 	}
 
 	logger.Debug("retrieved-lrp", lager.Data{"lrp": lrp})
-	if !lrp.AllowsTransitionTo(key, containerKey, models.ActualLRPStateCrashed) {
+	if !lrp.AllowsTransitionTo(key, instanceKey, models.ActualLRPStateCrashed) {
 		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, models.ActualLRPStateCrashed)
 		logger.Error("failed-to-transition-actual", err)
 		return bbserrors.ErrActualLRPCannotBeCrashed
 	}
 
 	if lrp.State == models.ActualLRPStateUnclaimed || lrp.State == models.ActualLRPStateCrashed ||
-		((lrp.State == models.ActualLRPStateClaimed || lrp.State == models.ActualLRPStateRunning) && lrp.ActualLRPContainerKey != containerKey) {
+		((lrp.State == models.ActualLRPStateClaimed || lrp.State == models.ActualLRPStateRunning) && lrp.ActualLRPInstanceKey != instanceKey) {
 		return bbserrors.ErrActualLRPCannotBeCrashed
 	}
 
 	lrp.State = models.ActualLRPStateCrashed
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.CrashCount = newCrashCount
-	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+	lrp.ActualLRPInstanceKey = models.ActualLRPInstanceKey{}
 	lrp.ActualLRPNetInfo = models.EmptyActualLRPNetInfo()
 
 	var immediateRestart bool
@@ -178,9 +178,9 @@ func (bbs *LRPBBS) CrashActualLRP(
 func (bbs *LRPBBS) RemoveActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	logger = logger.Session("remove-actual-lrp", lager.Data{"lrp-key": key, "container-key": containerKey})
+	logger = logger.Session("remove-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
 	logger.Info("starting")
 
 	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
@@ -188,7 +188,7 @@ func (bbs *LRPBBS) RemoveActualLRP(
 		return err
 	}
 
-	if lrp.ActualLRPKey != key || lrp.ActualLRPContainerKey != containerKey {
+	if lrp.ActualLRPKey != key || lrp.ActualLRPInstanceKey != instanceKey {
 		logger.Error("failed-to-match-existing-actual-lrp", err, lager.Data{"existing-actual-lrp": lrp})
 		return bbserrors.ErrStoreComparisonFailed
 	}
@@ -286,7 +286,7 @@ const (
 func (bbs *LRPBBS) unclaimActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
-	actualLRPContainerKey models.ActualLRPContainerKey,
+	actualLRPInstanceKey models.ActualLRPInstanceKey,
 ) (stateChange, error) {
 	logger = logger.Session("unclaim-actual-lrp")
 	logger.Info("starting")
@@ -297,7 +297,7 @@ func (bbs *LRPBBS) unclaimActualLRP(
 		return stateDidNotChange, err
 	}
 
-	changed, err := bbs.unclaimActualLRPWithIndex(logger, lrp, storeIndex, actualLRPKey, actualLRPContainerKey)
+	changed, err := bbs.unclaimActualLRPWithIndex(logger, lrp, storeIndex, actualLRPKey, actualLRPInstanceKey)
 	if err != nil {
 		return changed, err
 	}
@@ -311,7 +311,7 @@ func (bbs *LRPBBS) unclaimActualLRPWithIndex(
 	lrp *models.ActualLRP,
 	storeIndex uint64,
 	actualLRPKey models.ActualLRPKey,
-	actualLRPContainerKey models.ActualLRPContainerKey,
+	actualLRPInstanceKey models.ActualLRPInstanceKey,
 ) (stateChange, error) {
 	if lrp.ActualLRPKey != actualLRPKey {
 		logger.Error("failed-actual-lrp-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
@@ -323,14 +323,14 @@ func (bbs *LRPBBS) unclaimActualLRPWithIndex(
 		return stateDidNotChange, nil
 	}
 
-	if lrp.ActualLRPContainerKey != actualLRPContainerKey {
-		logger.Error("failed-actual-lrp-container-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
+	if lrp.ActualLRPInstanceKey != actualLRPInstanceKey {
+		logger.Error("failed-actual-lrp-instance-key-differs", bbserrors.ErrActualLRPCannotBeUnclaimed)
 		return stateDidNotChange, bbserrors.ErrActualLRPCannotBeUnclaimed
 	}
 
 	lrp.Since = bbs.clock.Now().UnixNano()
 	lrp.State = models.ActualLRPStateUnclaimed
-	lrp.ActualLRPContainerKey = models.ActualLRPContainerKey{}
+	lrp.ActualLRPInstanceKey = models.ActualLRPInstanceKey{}
 	lrp.ActualLRPNetInfo = models.EmptyActualLRPNetInfo()
 
 	err := bbs.actualLRPRepo.CompareAndSwapRawActualLRP(logger, lrp, storeIndex)
@@ -358,10 +358,10 @@ func (bbs *LRPBBS) retireActualLRP(actualLRPKey models.ActualLRPKey, logger lage
 		switch lrp.State {
 		case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
 			logger.Info("removing-actual")
-			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPInstanceKey)
 		default:
 			logger.Info("stopping-actual")
-			err = bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPContainerKey)
+			err = bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPInstanceKey)
 		}
 
 		if err == nil {
@@ -381,7 +381,7 @@ func (bbs *LRPBBS) retireActualLRP(actualLRPKey models.ActualLRPKey, logger lage
 
 func (bbs *LRPBBS) newRunningActualLRP(
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 	netInfo models.ActualLRPNetInfo,
 ) (models.ActualLRP, error) {
 	guid, err := uuid.NewV4()
@@ -390,11 +390,11 @@ func (bbs *LRPBBS) newRunningActualLRP(
 	}
 
 	actualLRP := models.ActualLRP{
-		ActualLRPKey:          key,
-		ActualLRPContainerKey: containerKey,
-		ActualLRPNetInfo:      netInfo,
-		Since:                 bbs.clock.Now().UnixNano(),
-		State:                 models.ActualLRPStateRunning,
+		ActualLRPKey:         key,
+		ActualLRPInstanceKey: instanceKey,
+		ActualLRPNetInfo:     netInfo,
+		Since:                bbs.clock.Now().UnixNano(),
+		State:                models.ActualLRPStateRunning,
 		ModificationTag: models.ModificationTag{
 			Epoch: guid.String(),
 			Index: 0,
@@ -429,14 +429,14 @@ func (bbs *LRPBBS) requestLRPAuctionForLRPKey(logger lager.Logger, key models.Ac
 
 func (bbs *LRPBBS) requestStopLRPInstance(
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	cell, err := bbs.services.CellById(containerKey.CellID)
+	cell, err := bbs.services.CellById(instanceKey.CellID)
 	if err != nil {
 		return err
 	}
 
-	err = bbs.cellClient.StopLRPInstance(cell.RepAddress, key, containerKey)
+	err = bbs.cellClient.StopLRPInstance(cell.RepAddress, key, instanceKey)
 	if err != nil {
 		return err
 	}

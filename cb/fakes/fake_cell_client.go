@@ -9,12 +9,12 @@ import (
 )
 
 type FakeCellClient struct {
-	StopLRPInstanceStub        func(cellURL string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
+	StopLRPInstanceStub        func(cellURL string, key models.ActualLRPKey, instanceKey models.ActualLRPInstanceKey) error
 	stopLRPInstanceMutex       sync.RWMutex
 	stopLRPInstanceArgsForCall []struct {
-		cellURL      string
-		key          models.ActualLRPKey
-		containerKey models.ActualLRPContainerKey
+		cellURL     string
+		key         models.ActualLRPKey
+		instanceKey models.ActualLRPInstanceKey
 	}
 	stopLRPInstanceReturns struct {
 		result1 error
@@ -30,16 +30,16 @@ type FakeCellClient struct {
 	}
 }
 
-func (fake *FakeCellClient) StopLRPInstance(cellURL string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error {
+func (fake *FakeCellClient) StopLRPInstance(cellURL string, key models.ActualLRPKey, instanceKey models.ActualLRPInstanceKey) error {
 	fake.stopLRPInstanceMutex.Lock()
 	fake.stopLRPInstanceArgsForCall = append(fake.stopLRPInstanceArgsForCall, struct {
-		cellURL      string
-		key          models.ActualLRPKey
-		containerKey models.ActualLRPContainerKey
-	}{cellURL, key, containerKey})
+		cellURL     string
+		key         models.ActualLRPKey
+		instanceKey models.ActualLRPInstanceKey
+	}{cellURL, key, instanceKey})
 	fake.stopLRPInstanceMutex.Unlock()
 	if fake.StopLRPInstanceStub != nil {
-		return fake.StopLRPInstanceStub(cellURL, key, containerKey)
+		return fake.StopLRPInstanceStub(cellURL, key, instanceKey)
 	} else {
 		return fake.stopLRPInstanceReturns.result1
 	}
@@ -51,10 +51,10 @@ func (fake *FakeCellClient) StopLRPInstanceCallCount() int {
 	return len(fake.stopLRPInstanceArgsForCall)
 }
 
-func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRPKey, models.ActualLRPContainerKey) {
+func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.ActualLRPKey, models.ActualLRPInstanceKey) {
 	fake.stopLRPInstanceMutex.RLock()
 	defer fake.stopLRPInstanceMutex.RUnlock()
-	return fake.stopLRPInstanceArgsForCall[i].cellURL, fake.stopLRPInstanceArgsForCall[i].key, fake.stopLRPInstanceArgsForCall[i].containerKey
+	return fake.stopLRPInstanceArgsForCall[i].cellURL, fake.stopLRPInstanceArgsForCall[i].key, fake.stopLRPInstanceArgsForCall[i].instanceKey
 }
 
 func (fake *FakeCellClient) StopLRPInstanceReturns(result1 error) {

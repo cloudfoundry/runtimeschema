@@ -215,20 +215,20 @@ func newUnclaimedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
 
 func newClaimedActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:          models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", cellID),
-		State: models.ActualLRPStateClaimed,
-		Since: 1138,
+		ActualLRPKey:         models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
+		State:                models.ActualLRPStateClaimed,
+		Since:                1138,
 	}
 }
 
 func newRunningActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:          models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", cellID),
-		ActualLRPNetInfo:      models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
-		State:                 models.ActualLRPStateRunning,
-		Since:                 1138,
+		ActualLRPKey:         models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
+		ActualLRPNetInfo:     models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
+		State:                models.ActualLRPStateRunning,
+		Since:                1138,
 	}
 }
 

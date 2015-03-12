@@ -72,17 +72,17 @@ type RepBBS interface {
 
 	//lrp
 	ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error)
-	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
-	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo) error
-	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
-	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
+	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
+	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
+	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 
 	// LRP evacuation
-	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
-	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey, models.ActualLRPNetInfo, uint64) (shared.ContainerRetainment, error)
-	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
-	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) (shared.ContainerRetainment, error)
-	RemoveEvacuatingActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPContainerKey) error
+	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
+	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo, uint64) (shared.ContainerRetainment, error)
+	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
+	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
+	RemoveEvacuatingActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS

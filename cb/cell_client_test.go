@@ -29,12 +29,12 @@ var _ = Describe("CellClient", func() {
 		const cellAddr = "cell.example.com"
 		var stopErr error
 		var actualLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey("some-process-guid", 2, "test-domain"),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", "some-cell-id"),
+			ActualLRPKey:         models.NewActualLRPKey("some-process-guid", 2, "test-domain"),
+			ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-instance-guid", "some-cell-id"),
 		}
 
 		JustBeforeEach(func() {
-			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP.ActualLRPKey, actualLRP.ActualLRPContainerKey)
+			stopErr = cellClient.StopLRPInstance(fakeServer.URL(), actualLRP.ActualLRPKey, actualLRP.ActualLRPInstanceKey)
 		})
 
 		Context("when the request is successful", func() {

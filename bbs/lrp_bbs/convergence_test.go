@@ -104,11 +104,11 @@ var _ = Describe("LrpConvergence", func() {
 		Context("when there are fewer actuals for desired LRP", func() {
 			BeforeEach(func() {
 				actualLRP := models.ActualLRP{
-					ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
-					ActualLRPContainerKey: models.NewActualLRPContainerKey("some-instance-guid", cellId),
-					ActualLRPNetInfo:      defaultNetInfo(),
-					State:                 models.ActualLRPStateRunning,
-					Since:                 clock.Now().Add(-time.Minute).UnixNano(),
+					ActualLRPKey:         models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
+					ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-instance-guid", cellId),
+					ActualLRPNetInfo:     defaultNetInfo(),
+					State:                models.ActualLRPStateRunning,
+					Since:                clock.Now().Add(-time.Minute).UnixNano(),
 				}
 				setRawActualLRP(actualLRP)
 			})
@@ -227,7 +227,7 @@ var _ = Describe("LrpConvergence", func() {
 			err = bbs.ClaimActualLRP(
 				logger,
 				actualLRPGroup.Instance.ActualLRPKey,
-				models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+				models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 			)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -345,7 +345,7 @@ var _ = Describe("LrpConvergence", func() {
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -355,11 +355,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
 					Ω(key.ProcessGuid).Should(Equal(processGuid))
 					Ω(key.Index).Should(Equal(index))
-					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
+					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -401,14 +401,14 @@ var _ = Describe("LrpConvergence", func() {
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -419,11 +419,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
 					Ω(key.ProcessGuid).Should(Equal(processGuid))
 					Ω(key.Index).Should(Equal(index))
-					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
+					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -534,10 +534,10 @@ var _ = Describe("LrpConvergence", func() {
 					index = numInstances
 
 					higherIndexActualLRP := models.ActualLRP{
-						ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
-						ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", "cell-id"),
-						State: models.ActualLRPStateClaimed,
-						Since: clock.Now().UnixNano(),
+						ActualLRPKey:         models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
+						ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", "cell-id"),
+						State:                models.ActualLRPStateClaimed,
+						Since:                clock.Now().UnixNano(),
 					}
 
 					setRawActualLRP(higherIndexActualLRP)
@@ -548,7 +548,7 @@ var _ = Describe("LrpConvergence", func() {
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -558,11 +558,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
 					Ω(key.ProcessGuid).Should(Equal(processGuid))
 					Ω(key.Index).Should(Equal(index))
-					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
+					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
@@ -600,11 +600,11 @@ var _ = Describe("LrpConvergence", func() {
 					index = numInstances
 
 					higherIndexActualLRP := models.ActualLRP{
-						ActualLRPKey:          models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
-						ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", "cell-id"),
-						ActualLRPNetInfo:      models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}}),
-						State:                 models.ActualLRPStateRunning,
-						Since:                 clock.Now().UnixNano(),
+						ActualLRPKey:         models.NewActualLRPKey(desiredLRP.ProcessGuid, index, desiredLRP.Domain),
+						ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", "cell-id"),
+						ActualLRPNetInfo:     models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}}),
+						State:                models.ActualLRPStateRunning,
+						Since:                clock.Now().UnixNano(),
 					}
 
 					setRawActualLRP(higherIndexActualLRP)
@@ -615,14 +615,14 @@ var _ = Describe("LrpConvergence", func() {
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
-						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
+						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -633,11 +633,11 @@ var _ = Describe("LrpConvergence", func() {
 
 					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
 
-					addr, key, containerKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
+					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Ω(addr).Should(Equal(cellPresence.RepAddress))
 					Ω(key.ProcessGuid).Should(Equal(processGuid))
 					Ω(key.Index).Should(Equal(index))
-					Ω(containerKey.InstanceGuid).Should(Equal("instance-guid"))
+					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
 				})
 
 				It("logs", func() {

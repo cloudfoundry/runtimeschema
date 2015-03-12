@@ -18,24 +18,24 @@ import (
 var _ = Describe("Actual LRP Lifecycle", func() {
 	const cellID = "some-cell-id"
 	var actualLRPKey models.ActualLRPKey
-	var containerKey models.ActualLRPContainerKey
+	var instanceKey models.ActualLRPInstanceKey
 	var netInfo models.ActualLRPNetInfo
 	var index int
 
 	BeforeEach(func() {
 		index = 2
 		actualLRPKey = models.NewActualLRPKey("some-process-guid", index, "tests")
-		containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+		instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 		netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 	})
 
 	Describe("ClaimActualLRP", func() {
 		var claimErr error
 		var lrpKey models.ActualLRPKey
-		var containerKey models.ActualLRPContainerKey
+		var instanceKey models.ActualLRPInstanceKey
 
 		JustBeforeEach(func() {
-			claimErr = bbs.ClaimActualLRP(logger, lrpKey, containerKey)
+			claimErr = bbs.ClaimActualLRP(logger, lrpKey, instanceKey)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -65,10 +65,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				createdLRP = *lrpGroup.Instance
 			})
 
-			Context("when the container key is invalid", func() {
+			Context("when the instance key is invalid", func() {
 				BeforeEach(func() {
 					lrpKey = createdLRP.ActualLRPKey
-					containerKey = models.NewActualLRPContainerKey(
+					instanceKey = models.NewActualLRPInstanceKey(
 						"", // invalid InstanceGuid
 						cellID,
 					)
@@ -97,7 +97,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						createdLRP.Index,
 						"some-other-domain",
 					)
-					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 				})
 
 				It("returns an error", func() {
@@ -115,7 +115,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			Context("when the existing ActualLRP is Unclaimed", func() {
 				BeforeEach(func() {
 					lrpKey = createdLRP.ActualLRPKey
-					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 				})
 
 				It("does not error", func() {
@@ -145,7 +145,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					err := bbs.ClaimActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
-						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						models.NewActualLRPInstanceKey(instanceGuid, cellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -155,7 +155,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 
 						previousTime = clock.Now().UnixNano()
 						clock.IncrementBySeconds(1)
@@ -183,7 +183,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with a different cell", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, "another-cell-id")
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
 					})
 
 					It("returns an error", func() {
@@ -201,7 +201,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("when the instance guid differs", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey("another-instance-guid", cellID)
+						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
 					})
 
 					It("returns an error", func() {
@@ -225,7 +225,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					err := bbs.StartActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
-						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						models.NewActualLRPInstanceKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -234,7 +234,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with the same cell and instance guid", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 					})
 
 					It("does not return an error", func() {
@@ -260,7 +260,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with a different cell", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, "another-cell-id")
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
 					})
 
 					It("returns an error", func() {
@@ -278,7 +278,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("when the instance guid differs", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey("another-instance-guid", cellID)
+						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
 					})
 
 					It("returns an error", func() {
@@ -297,7 +297,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			Context("when there is a placement error", func() {
 				BeforeEach(func() {
 					lrpKey = createdLRP.ActualLRPKey
-					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 
 					err := bbs.FailActualLRP(logger, lrpKey, "insufficient resources")
 					Ω(err).ShouldNot(HaveOccurred())
@@ -314,7 +314,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		Context("when the actual LRP does not exist", func() {
 			BeforeEach(func() {
 				lrpKey = models.NewActualLRPKey("process-guid", 1, "domain")
-				containerKey = models.NewActualLRPContainerKey("instance-guid", cellID)
+				instanceKey = models.NewActualLRPInstanceKey("instance-guid", cellID)
 			})
 
 			It("cannot claim the LRP", func() {
@@ -332,11 +332,11 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 	Describe("StartActualLRP", func() {
 		var startErr error
 		var lrpKey models.ActualLRPKey
-		var containerKey models.ActualLRPContainerKey
+		var instanceKey models.ActualLRPInstanceKey
 		var netInfo models.ActualLRPNetInfo
 
 		JustBeforeEach(func() {
-			startErr = bbs.StartActualLRP(logger, lrpKey, containerKey, netInfo)
+			startErr = bbs.StartActualLRP(logger, lrpKey, instanceKey, netInfo)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -366,10 +366,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				createdLRP = *lrpGroup.Instance
 			})
 
-			Context("when the container key is invalid", func() {
+			Context("when the instance key is invalid", func() {
 				BeforeEach(func() {
 					lrpKey = createdLRP.ActualLRPKey
-					containerKey = models.NewActualLRPContainerKey(
+					instanceKey = models.NewActualLRPInstanceKey(
 						"", // invalid InstanceGuid
 						cellID,
 					)
@@ -399,7 +399,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						createdLRP.Index,
 						"some-other-domain",
 					)
-					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 					netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 				})
 
@@ -418,7 +418,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			Context("when the existing ActualLRP is Unclaimed", func() {
 				BeforeEach(func() {
 					lrpKey = createdLRP.ActualLRPKey
-					containerKey = models.NewActualLRPContainerKey("some-instance-guid", cellID)
+					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 					netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 				})
 
@@ -455,7 +455,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					err := bbs.ClaimActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
-						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						models.NewActualLRPInstanceKey(instanceGuid, cellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
@@ -463,7 +463,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with the same cell and instance guid", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 						netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 					})
 
@@ -482,7 +482,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with a different cell", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, "another-cell-id")
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
 						netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 					})
 
@@ -501,7 +501,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("when the instance guid differs", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey("another-instance-guid", cellID)
+						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
 						netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 					})
 
@@ -527,7 +527,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					err := bbs.StartActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
-						models.NewActualLRPContainerKey(instanceGuid, cellID),
+						models.NewActualLRPInstanceKey(instanceGuid, cellID),
 						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -536,7 +536,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with the same cell and instance guid", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 						netInfo = models.NewActualLRPNetInfo("5.6.7.8", []models.PortMapping{{ContainerPort: 4567, HostPort: 4321}})
 					})
 
@@ -562,7 +562,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						var previousTime int64
 						BeforeEach(func() {
 							lrpKey = createdLRP.ActualLRPKey
-							containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+							instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 							netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 
 							previousTime = clock.Now().UnixNano()
@@ -581,7 +581,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("with a different cell", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey(instanceGuid, "another-cell-id")
+						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
 					})
 
 					It("returns an error", func() {
@@ -599,7 +599,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Context("when the instance guid differs", func() {
 					BeforeEach(func() {
 						lrpKey = createdLRP.ActualLRPKey
-						containerKey = models.NewActualLRPContainerKey("another-instance-guid", cellID)
+						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
 					})
 
 					It("returns an error", func() {
@@ -619,7 +619,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		Context("when the actual LRP does not exist", func() {
 			BeforeEach(func() {
 				lrpKey = models.NewActualLRPKey("process-guid", 1, "domain")
-				containerKey = models.NewActualLRPContainerKey("instance-guid", cellID)
+				instanceKey = models.NewActualLRPInstanceKey("instance-guid", cellID)
 				netInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 			})
 
@@ -647,13 +647,13 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 	Describe("RemoveActualLRP", func() {
 		BeforeEach(func() {
 			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
-			err := bbs.StartActualLRP(logger, actualLRPKey, containerKey, netInfo)
+			err := bbs.StartActualLRP(logger, actualLRPKey, instanceKey, netInfo)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(logger, actualLRPKey, containerKey)
+				err := bbs.RemoveActualLRP(logger, actualLRPKey, instanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
@@ -663,8 +663,8 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
-				containerKey.InstanceGuid = "another-instance-guid"
-				err := bbs.RemoveActualLRP(logger, actualLRPKey, containerKey)
+				instanceKey.InstanceGuid = "another-instance-guid"
+				err := bbs.RemoveActualLRP(logger, actualLRPKey, instanceKey)
 				Ω(err).Should(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
@@ -752,18 +752,18 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				lrpContainerKey1 := models.NewActualLRPContainerKey("some-instance-guid-1", cellID)
-				lrpContainerKey2 := models.NewActualLRPContainerKey("some-instance-guid-2", cellID)
+				lrpInstanceKey1 := models.NewActualLRPInstanceKey("some-instance-guid-1", cellID)
+				lrpInstanceKey2 := models.NewActualLRPInstanceKey("some-instance-guid-2", cellID)
 
 				errDesire := bbs.DesireLRP(logger, desiredLRP)
 				Ω(errDesire).ShouldNot(HaveOccurred())
 
-				claimDesireLRPByIndex(desiredLRP, 0, lrpContainerKey1, logger)
-				claimDesireLRPByIndex(desiredLRP, 1, lrpContainerKey2, logger)
+				claimDesireLRPByIndex(desiredLRP, 0, lrpInstanceKey1, logger)
+				claimDesireLRPByIndex(desiredLRP, 1, lrpInstanceKey2, logger)
 
 				blockStopInstanceChan = make(chan struct{})
 
-				fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRPKey, models.ActualLRPContainerKey) error {
+				fakeCellClient.StopLRPInstanceStub = func(string, models.ActualLRPKey, models.ActualLRPInstanceKey) error {
 					<-blockStopInstanceChan
 					return nil
 				}
@@ -806,9 +806,9 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						claimedLRP2.ActualLRPKey,
 					))
 
-					Ω([]models.ActualLRPContainerKey{cnrKey1, cnrKey2}).Should(ConsistOf(
-						claimedLRP1.ActualLRPContainerKey,
-						claimedLRP2.ActualLRPContainerKey,
+					Ω([]models.ActualLRPInstanceKey{cnrKey1, cnrKey2}).Should(ConsistOf(
+						claimedLRP1.ActualLRPInstanceKey,
+						claimedLRP2.ActualLRPInstanceKey,
 					))
 
 					Consistently(doneRetiring).ShouldNot(BeClosed())
@@ -820,7 +820,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				Context("when stopping any of the LRPs fails", func() {
 					BeforeEach(func() {
-						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, key models.ActualLRPKey, _ models.ActualLRPContainerKey) error {
+						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, key models.ActualLRPKey, _ models.ActualLRPInstanceKey) error {
 							return fmt.Errorf("failed to stop %d", key.Index)
 						}
 					})
@@ -889,7 +889,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				actualLRPKey = createdLRPGroup.Instance.ActualLRPKey
-				containerKey = models.NewActualLRPContainerKey(instanceGuid, cellID)
+				instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
 			})
 
 			Context("in unclaimed state", func() {
@@ -913,7 +913,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("not in unclaimed state", func() {
 				BeforeEach(func() {
-					claimErr := bbs.ClaimActualLRP(logger, actualLRPKey, containerKey)
+					claimErr := bbs.ClaimActualLRP(logger, actualLRPKey, instanceKey)
 					Ω(claimErr).ShouldNot(HaveOccurred())
 				})
 

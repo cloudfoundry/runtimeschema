@@ -42,8 +42,8 @@ var _ = Describe("Actual LRP Getters", func() {
 		otherDomainLRP      models.ActualLRP
 		otherProcessGuidLRP models.ActualLRP
 
-		baseLRPKey          models.ActualLRPKey
-		baseLRPContainerKey models.ActualLRPContainerKey
+		baseLRPKey         models.ActualLRPKey
+		baseLRPInstanceKey models.ActualLRPInstanceKey
 
 		netInfo models.ActualLRPNetInfo
 
@@ -53,60 +53,60 @@ var _ = Describe("Actual LRP Getters", func() {
 
 	BeforeEach(func() {
 		baseLRPKey = models.NewActualLRPKey(baseProcessGuid, baseIndex, baseDomain)
-		baseLRPContainerKey = models.NewActualLRPContainerKey(baseInstanceGuid, cellID)
+		baseLRPInstanceKey = models.NewActualLRPInstanceKey(baseInstanceGuid, cellID)
 		netInfo = models.NewActualLRPNetInfo("127.0.0.1", []models.PortMapping{{8080, 80}})
 
 		baseLRP = models.ActualLRP{
-			ActualLRPKey:          baseLRPKey,
-			ActualLRPContainerKey: baseLRPContainerKey,
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano(),
+			ActualLRPKey:         baseLRPKey,
+			ActualLRPInstanceKey: baseLRPInstanceKey,
+			ActualLRPNetInfo:     netInfo,
+			State:                models.ActualLRPStateRunning,
+			Since:                clock.Now().UnixNano(),
 		}
 		evacuatingLRP = models.ActualLRP{
-			ActualLRPKey:          baseLRPKey,
-			ActualLRPContainerKey: models.NewActualLRPContainerKey(evacuatingInstanceGuid, cellID),
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano() - 1000,
+			ActualLRPKey:         baseLRPKey,
+			ActualLRPInstanceKey: models.NewActualLRPInstanceKey(evacuatingInstanceGuid, cellID),
+			ActualLRPNetInfo:     netInfo,
+			State:                models.ActualLRPStateRunning,
+			Since:                clock.Now().UnixNano() - 1000,
 		}
 
 		otherIndexLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey(baseProcessGuid, otherIndex, baseDomain),
-			ActualLRPContainerKey: baseLRPContainerKey,
-			State: models.ActualLRPStateClaimed,
-			Since: clock.Now().UnixNano(),
+			ActualLRPKey:         models.NewActualLRPKey(baseProcessGuid, otherIndex, baseDomain),
+			ActualLRPInstanceKey: baseLRPInstanceKey,
+			State:                models.ActualLRPStateClaimed,
+			Since:                clock.Now().UnixNano(),
 		}
 
 		yetAnotherIndexLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey(baseProcessGuid, yetAnotherIndex, baseDomain),
-			ActualLRPContainerKey: baseLRPContainerKey,
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano(),
+			ActualLRPKey:         models.NewActualLRPKey(baseProcessGuid, yetAnotherIndex, baseDomain),
+			ActualLRPInstanceKey: baseLRPInstanceKey,
+			ActualLRPNetInfo:     netInfo,
+			State:                models.ActualLRPStateRunning,
+			Since:                clock.Now().UnixNano(),
 		}
 
 		otherCellIDLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey(otherCellIDProcessGuid, baseIndex, baseDomain),
-			ActualLRPContainerKey: models.NewActualLRPContainerKey(baseInstanceGuid, otherCellID),
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano(),
+			ActualLRPKey:         models.NewActualLRPKey(otherCellIDProcessGuid, baseIndex, baseDomain),
+			ActualLRPInstanceKey: models.NewActualLRPInstanceKey(baseInstanceGuid, otherCellID),
+			ActualLRPNetInfo:     netInfo,
+			State:                models.ActualLRPStateRunning,
+			Since:                clock.Now().UnixNano(),
 		}
 
 		otherDomainLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey(otherDomainProcessGuid, baseIndex, otherDomain),
-			ActualLRPContainerKey: baseLRPContainerKey,
-			ActualLRPNetInfo:      netInfo,
-			State:                 models.ActualLRPStateRunning,
-			Since:                 clock.Now().UnixNano(),
+			ActualLRPKey:         models.NewActualLRPKey(otherDomainProcessGuid, baseIndex, otherDomain),
+			ActualLRPInstanceKey: baseLRPInstanceKey,
+			ActualLRPNetInfo:     netInfo,
+			State:                models.ActualLRPStateRunning,
+			Since:                clock.Now().UnixNano(),
 		}
 
 		otherProcessGuidLRP = models.ActualLRP{
-			ActualLRPKey:          models.NewActualLRPKey(otherProcessGuid, baseIndex, baseDomain),
-			ActualLRPContainerKey: baseLRPContainerKey,
-			State: models.ActualLRPStateUnclaimed,
-			Since: clock.Now().UnixNano(),
+			ActualLRPKey:         models.NewActualLRPKey(otherProcessGuid, baseIndex, baseDomain),
+			ActualLRPInstanceKey: baseLRPInstanceKey,
+			State:                models.ActualLRPStateUnclaimed,
+			Since:                clock.Now().UnixNano(),
 		}
 	})
 
@@ -134,7 +134,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -173,7 +173,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -214,7 +214,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -263,7 +263,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
 				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
@@ -309,7 +309,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no actual LRPs in the requested domain", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
+				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

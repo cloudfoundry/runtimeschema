@@ -187,7 +187,7 @@ var _ = Describe("Watchers", func() {
 			Eventually(createsEvacuating).Should(Receive())
 
 			updatedLRP := actualLRP
-			updatedLRP.ActualLRPContainerKey = models.NewActualLRPContainerKey("instance-guid", lrpCellId)
+			updatedLRP.ActualLRPInstanceKey = models.NewActualLRPInstanceKey("instance-guid", lrpCellId)
 			updatedLRP.State = models.ActualLRPStateClaimed
 			setRawActualLRP(updatedLRP)
 
@@ -233,14 +233,14 @@ var _ = Describe("Watchers", func() {
 					ProcessGuid: lrpProcessGuid,
 					Index:       lrpIndex,
 				}
-				containerKey := models.NewActualLRPContainerKey("instance-guid", "cell-id")
+				instanceKey := models.NewActualLRPInstanceKey("instance-guid", "cell-id")
 				netInfo := models.ActualLRPNetInfo{Address: "1.1.1.1"}
 				evacuatedLRP := models.ActualLRP{
-					ActualLRPKey:          key,
-					ActualLRPContainerKey: containerKey,
-					ActualLRPNetInfo:      netInfo,
-					State:                 models.ActualLRPStateRunning,
-					Since:                 clock.Now().UnixNano(),
+					ActualLRPKey:         key,
+					ActualLRPInstanceKey: instanceKey,
+					ActualLRPNetInfo:     netInfo,
+					State:                models.ActualLRPStateRunning,
+					Since:                clock.Now().UnixNano(),
 				}
 
 				setRawEvacuatingActualLRP(evacuatedLRP, 0)

@@ -150,7 +150,7 @@ func (t crashTest) Test() {
 	Context(t.Name, func() {
 		var crashErr error
 		var actualLRPKey models.ActualLRPKey
-		var containerKey models.ActualLRPContainerKey
+		var instanceKey models.ActualLRPInstanceKey
 		var auctioneerPresence models.AuctioneerPresence
 		var initialTimestamp int64
 		var initialModificationIndex uint
@@ -158,7 +158,7 @@ func (t crashTest) Test() {
 		BeforeEach(func() {
 			actualLRP := t.LRP()
 			actualLRPKey = actualLRP.ActualLRPKey
-			containerKey = actualLRP.ActualLRPContainerKey
+			instanceKey = actualLRP.ActualLRPInstanceKey
 
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
 			initialTimestamp = actualLRP.Since
@@ -179,7 +179,7 @@ func (t crashTest) Test() {
 
 		JustBeforeEach(func() {
 			clock.Increment(600)
-			crashErr = bbs.CrashActualLRP(logger, actualLRPKey, containerKey)
+			crashErr = bbs.CrashActualLRP(logger, actualLRPKey, instanceKey)
 		})
 
 		if t.Result.ReturnedErr == nil {
@@ -263,14 +263,14 @@ func (t crashTest) Test() {
 			})
 		}
 
-		Context("when crashing a different container key", func() {
+		Context("when crashing a different instance key", func() {
 			var beforeActualGroup models.ActualLRPGroup
 
 			BeforeEach(func() {
 				var err error
 				beforeActualGroup, err = bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 				Ω(err).ShouldNot(HaveOccurred())
-				containerKey.InstanceGuid = "another-guid"
+				instanceKey.InstanceGuid = "another-guid"
 			})
 
 			It("does not crash", func() {
@@ -286,7 +286,7 @@ func (t crashTest) Test() {
 
 func lrpForState(state models.ActualLRPState, timeInState time.Duration) models.ActualLRP {
 	var actualLRPKey = models.NewActualLRPKey("some-process-guid", 1, "tests")
-	var containerKey = models.NewActualLRPContainerKey("some-instance-guid", "some-cell")
+	var instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", "some-cell")
 
 	lrp := models.ActualLRP{
 		ActualLRPKey: actualLRPKey,
@@ -297,9 +297,9 @@ func lrpForState(state models.ActualLRPState, timeInState time.Duration) models.
 	switch state {
 	case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
 	case models.ActualLRPStateClaimed:
-		lrp.ActualLRPContainerKey = containerKey
+		lrp.ActualLRPInstanceKey = instanceKey
 	case models.ActualLRPStateRunning:
-		lrp.ActualLRPContainerKey = containerKey
+		lrp.ActualLRPInstanceKey = instanceKey
 		lrp.ActualLRPNetInfo = models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}})
 	}
 

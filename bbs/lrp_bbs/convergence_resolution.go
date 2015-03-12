@@ -58,7 +58,7 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.
 			"index":        actual.Index,
 		})
 
-		err := bbs.RemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPContainerKey)
+		err := bbs.RemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPInstanceKey)
 		if err != nil {
 			logger.Error("failed-to-remove-actual-lrp", err)
 			return
@@ -113,7 +113,7 @@ func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *
 			return
 		}
 
-		_, err := bbs.unclaimActualLRP(logger, actualLRP.ActualLRPKey, actualLRP.ActualLRPContainerKey)
+		_, err := bbs.unclaimActualLRP(logger, actualLRP.ActualLRPKey, actualLRP.ActualLRPInstanceKey)
 		if err != nil {
 			logger.Error("failed-to-unclaim-crash", err)
 			return

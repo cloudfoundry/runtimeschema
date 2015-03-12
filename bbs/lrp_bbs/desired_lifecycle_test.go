@@ -208,7 +208,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						err := bbs.ClaimActualLRP(
 							logger,
 							models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
-							models.NewActualLRPContainerKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
+							models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
 						)
 						Ω(err).ShouldNot(HaveOccurred())
 					}
@@ -337,7 +337,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 							err := bbs.ClaimActualLRP(
 								logger,
 								models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
-								models.NewActualLRPContainerKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
+								models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
 							)
 							Ω(err).ShouldNot(HaveOccurred())
 						}

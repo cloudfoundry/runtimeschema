@@ -14,7 +14,7 @@ import (
 //go:generate counterfeiter . CellClient
 
 type CellClient interface {
-	StopLRPInstance(cellURL string, key models.ActualLRPKey, containerKey models.ActualLRPContainerKey) error
+	StopLRPInstance(cellURL string, key models.ActualLRPKey, instanceKey models.ActualLRPInstanceKey) error
 	CancelTask(cellURL string, taskGuid string) error
 }
 
@@ -31,11 +31,11 @@ func NewCellClient() CellClient {
 func (c *cellClient) StopLRPInstance(
 	cellURL string,
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) error {
 	reqGen := rata.NewRequestGenerator(cellURL, routes.StopLRPRoutes)
 
-	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(key, containerKey), nil)
+	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(key, instanceKey), nil)
 	if err != nil {
 		return err
 	}
@@ -79,11 +79,11 @@ func (c *cellClient) CancelTask(cellURL string, taskGuid string) error {
 
 func stopParamsFromLRP(
 	key models.ActualLRPKey,
-	containerKey models.ActualLRPContainerKey,
+	instanceKey models.ActualLRPInstanceKey,
 ) rata.Params {
 	return rata.Params{
 		"process_guid":  key.ProcessGuid,
-		"instance_guid": containerKey.InstanceGuid,
+		"instance_guid": instanceKey.InstanceGuid,
 		"index":         strconv.Itoa(key.Index),
 	}
 }

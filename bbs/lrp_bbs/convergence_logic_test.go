@@ -318,10 +318,10 @@ func newStaleUnclaimedActualLRP(lrp models.DesiredLRP, index int) models.ActualL
 
 func newStableRunningActualLRP(lrp models.DesiredLRP, cellID string, index int) models.ActualLRP {
 	return models.ActualLRP{
-		ActualLRPKey:          actualLRPKey(lrp, index),
-		ActualLRPContainerKey: models.NewActualLRPContainerKey("instance-guid", cellID),
-		ActualLRPNetInfo:      models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
-		State:                 models.ActualLRPStateRunning,
-		Since:                 1138 - (30 * time.Minute).Nanoseconds(),
+		ActualLRPKey:         actualLRPKey(lrp, index),
+		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
+		ActualLRPNetInfo:     models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
+		State:                models.ActualLRPStateRunning,
+		Since:                1138 - (30 * time.Minute).Nanoseconds(),
 	}
 }
