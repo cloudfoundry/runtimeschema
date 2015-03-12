@@ -855,8 +855,8 @@ func (t evacuationTest) Test() {
 				It("the actual LRP is also deleted", func() {
 					Ω(evacuateErr).ShouldNot(HaveOccurred())
 
-					_, err := bbs.ActualLRPByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					lrpGroup, _ := bbs.ActualLRPGroupByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
+					Ω(lrpGroup.Instance).Should(BeNil())
 				})
 			})
 		} else {

@@ -253,7 +253,7 @@ func (t crashTest) Test() {
 				It("the actual LRP is also deleted", func() {
 					Ω(crashErr).ShouldNot(HaveOccurred())
 
-					_, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
@@ -264,11 +264,11 @@ func (t crashTest) Test() {
 		}
 
 		Context("when crashing a different container key", func() {
-			var beforeActual models.ActualLRP
+			var beforeActualGroup models.ActualLRPGroup
 
 			BeforeEach(func() {
 				var err error
-				beforeActual, err = bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				beforeActualGroup, err = bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 				Ω(err).ShouldNot(HaveOccurred())
 				containerKey.InstanceGuid = "another-guid"
 			})
@@ -276,9 +276,9 @@ func (t crashTest) Test() {
 			It("does not crash", func() {
 				Ω(crashErr).Should(Equal(bbserrors.ErrActualLRPCannotBeCrashed))
 
-				afterActual, err := bbs.ActualLRPByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				afterActualGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(afterActual).Should(Equal(beforeActual))
+				Ω(afterActualGroup).Should(Equal(beforeActualGroup))
 			})
 		})
 	})

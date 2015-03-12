@@ -1,6 +1,7 @@
 package lrp_bbs
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs/internal/actuallrprepository"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry/storeadapter"
@@ -13,6 +14,7 @@ type LRPBBS struct {
 	cellClient       cb.CellClient
 	auctioneerClient cb.AuctioneerClient
 	services         *services_bbs.ServicesBBS
+	actualLRPRepo    actuallrprepository.ActualLRPRepository
 }
 
 func New(
@@ -28,5 +30,6 @@ func New(
 		cellClient:       cellClient,
 		auctioneerClient: auctioneerClient,
 		services:         services,
+		actualLRPRepo:    actuallrprepository.NewActualLRPRepository(store, clock),
 	}
 }

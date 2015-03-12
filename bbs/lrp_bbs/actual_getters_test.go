@@ -184,64 +184,6 @@ var _ = Describe("Actual LRP Getters", func() {
 		})
 	})
 
-	Describe("ActualLRPsByProcessGuid", func() {
-		var (
-			actualLRPsByIndex models.ActualLRPsByIndex
-			err               error
-		)
-
-		Context("when there are both /instance and /evacuating LRPs", func() {
-			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawActualLRP(otherIndexLRP)
-				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				setRawActualLRP(otherProcessGuidLRP)
-			})
-
-			It("returns only the /instance LRPs for the requested process guid", func() {
-				actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(actualLRPsByIndex).Should(Equal(models.ActualLRPsByIndex{
-					baseIndex:  baseLRP,
-					otherIndex: otherIndexLRP,
-				}))
-
-				Ω(actualLRPsByIndex).Should(HaveLen(2))
-				Ω(actualLRPsByIndex[baseIndex]).Should(Equal(baseLRP))
-				Ω(actualLRPsByIndex[otherIndex]).Should(Equal(otherIndexLRP))
-
-				actualLRPs = actualLRPsByIndex.Slice()
-				Ω(actualLRPs).ShouldNot(ContainElement(yetAnotherIndexLRP))
-				Ω(actualLRPs).ShouldNot(ContainElement(otherProcessGuidLRP))
-			})
-		})
-
-		Context("when there are no LRPs", func() {
-			BeforeEach(func() {
-				// leave some intermediate directories in the store
-				setRawActualLRP(baseLRP)
-				err := bbs.RemoveActualLRP(logger, baseLRPKey, baseLRPContainerKey)
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-
-			It("returns an empty map", func() {
-				actualLRPsByIndex, err = bbs.ActualLRPsByProcessGuid(baseProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-
-				Ω(actualLRPsByIndex).ShouldNot(BeNil())
-				Ω(actualLRPsByIndex).Should(BeEmpty())
-			})
-		})
-
-		Context("when given an empty process guid", func() {
-			It("returns an error", func() {
-				_, err = bbs.ActualLRPsByProcessGuid("")
-				Ω(err).Should(Equal(bbserrors.ErrNoProcessGuid))
-			})
-		})
-	})
-
 	Describe("ActualLRPGroupsByProcessGuid", func() {
 		var (
 			actualLRPGroupsByIndex models.ActualLRPGroupsByIndex
@@ -383,55 +325,6 @@ var _ = Describe("Actual LRP Getters", func() {
 			It("returns an error", func() {
 				_, err = bbs.ActualLRPGroupsByDomain("")
 				Ω(err).Should(Equal(bbserrors.ErrNoDomain))
-			})
-		})
-	})
-
-	Describe("ActualLRPByProcessGuidAndIndex", func() {
-		var (
-			returnedLRP models.ActualLRP
-			returnedErr error
-		)
-
-		Context("when there is an /instance entry", func() {
-			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-			})
-
-			It("returns the /instance entry", func() {
-				returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-				Ω(returnedErr).ShouldNot(HaveOccurred())
-				Ω(returnedLRP).Should(Equal(baseLRP))
-			})
-
-			Context("when there is also an /evacuating entry", func() {
-				BeforeEach(func() {
-					setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				})
-
-				It("returns the /instance entry", func() {
-					returnedLRP, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-					Ω(returnedErr).ShouldNot(HaveOccurred())
-					Ω(returnedLRP).Should(Equal(baseLRP))
-				})
-			})
-		})
-
-		Context("when there is only an /evacuating entry", func() {
-			BeforeEach(func() {
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-			})
-
-			It("returns an ErrStoreResourceNotFound", func() {
-				_, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
-			})
-		})
-
-		Context("when there are no entries", func() {
-			It("returns an ErrStoreResourceNotFound", func() {
-				_, returnedErr = bbs.ActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-				Ω(returnedErr).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})

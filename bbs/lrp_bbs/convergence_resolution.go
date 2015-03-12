@@ -64,7 +64,7 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.
 			return
 		}
 
-		err = bbs.createActualLRP(desired, actual.Index, logger)
+		err = bbs.actualLRPRepo.CreateActualLRP(logger, desired, actual.Index)
 		if err != nil {
 			logger.Error("failed-to-create-actual-lrp", err)
 			return
@@ -85,7 +85,7 @@ func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, wg *syn
 			"index":        actualKey.Index,
 		})
 
-		err := bbs.createActualLRP(desired, actualKey.Index, logger)
+		err := bbs.actualLRPRepo.CreateActualLRP(logger, desired, actualKey.Index)
 		if err != nil {
 			logger.Error("failed-to-create-actual-lrp", err)
 			return

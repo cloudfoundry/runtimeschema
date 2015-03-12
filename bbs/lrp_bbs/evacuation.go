@@ -59,7 +59,7 @@ func (bbs *LRPBBS) EvacuateRunningActualLRP(
 	})
 	logger.Info("started")
 
-	instanceLRP, storeIndex, err := bbs.actualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
+	instanceLRP, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		err := bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPContainerKey)
 		if err == bbserrors.ErrActualLRPCannotBeRemoved {

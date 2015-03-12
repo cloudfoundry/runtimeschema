@@ -124,39 +124,6 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 	return groups, nil
 }
 
-func (bbs *LRPBBS) ActualLRPsByProcessGuid(processGuid string) (models.ActualLRPsByIndex, error) {
-	if len(processGuid) == 0 {
-		return models.ActualLRPsByIndex{}, bbserrors.ErrNoProcessGuid
-	}
-
-	lrps := models.ActualLRPsByIndex{}
-
-	node, err := bbs.store.ListRecursively(shared.ActualLRPProcessDir(processGuid))
-	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
-	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
-	}
-
-	for _, indexNode := range node.ChildNodes {
-		for _, instanceNode := range indexNode.ChildNodes {
-			if !isInstanceActualLRPNode(instanceNode) {
-				continue
-			}
-
-			var lrp models.ActualLRP
-			err = models.FromJSON(instanceNode.Value, &lrp)
-			if err != nil {
-				return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-			} else {
-				lrps[lrp.Index] = lrp
-			}
-		}
-	}
-
-	return lrps, nil
-}
-
 func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(processGuid string) (models.ActualLRPGroupsByIndex, error) {
 	if len(processGuid) == 0 {
 		return models.ActualLRPGroupsByIndex{}, bbserrors.ErrNoProcessGuid
@@ -239,25 +206,6 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 	}
 
 	return groups, nil
-}
-
-func (bbs *LRPBBS) ActualLRPByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRP, error) {
-	if len(processGuid) == 0 {
-		return models.ActualLRP{}, bbserrors.ErrNoProcessGuid
-	}
-
-	node, err := bbs.store.Get(shared.ActualLRPSchemaPath(processGuid, index))
-	if err != nil {
-		return models.ActualLRP{}, shared.ConvertStoreError(err)
-	}
-
-	var lrp models.ActualLRP
-	err = models.FromJSON(node.Value, &lrp)
-	if err != nil {
-		return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
-	}
-
-	return lrp, err
 }
 
 func (bbs *LRPBBS) ActualLRPGroupByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRPGroup, error) {

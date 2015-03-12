@@ -125,7 +125,7 @@ var _ = Describe("Convergence", func() {
 
 		It("prunes the correct actualLRPs", func() {
 			gatherTest.actualsToPrune.Each(func(expected models.ActualLRP) {
-				_, err := bbs.ActualLRPByProcessGuidAndIndex(expected.ProcessGuid, expected.Index)
+				_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(expected.ProcessGuid, expected.Index)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})

@@ -56,20 +56,20 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			It("creates one ActualLRP per index", func() {
 				err := bbs.DesireLRP(logger, lrp)
 				Ω(err).ShouldNot(HaveOccurred())
-				actualLRPs, err := bbs.ActualLRPsByProcessGuid("some-process-guid")
+				actualLRPGroups, err := bbs.ActualLRPGroupsByProcessGuid("some-process-guid")
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRPs).Should(HaveLen(5))
+				Ω(actualLRPGroups).Should(HaveLen(5))
 			})
 
 			It("sets a ModificationTag on each ActualLRP with a unique epoch", func() {
 				err := bbs.DesireLRP(logger, lrp)
 				Ω(err).ShouldNot(HaveOccurred())
-				actualLRPs, err := bbs.ActualLRPsByProcessGuid("some-process-guid")
+				actualLRPGroups, err := bbs.ActualLRPGroupsByProcessGuid("some-process-guid")
 				Ω(err).ShouldNot(HaveOccurred())
 
 				epochs := map[string]models.ActualLRP{}
-				for _, actualLRP := range actualLRPs {
-					epochs[actualLRP.ModificationTag.Epoch] = actualLRP
+				for _, actualLRPGroup := range actualLRPGroups {
+					epochs[actualLRPGroup.Instance.ModificationTag.Epoch] = *actualLRPGroup.Instance
 				}
 
 				Ω(epochs).Should(HaveLen(5))

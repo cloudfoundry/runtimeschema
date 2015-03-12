@@ -126,7 +126,7 @@ func (bbs *LRPBBS) stopInstanceRange(logger lager.Logger, lower, upper int, desi
 	logger.Info("starting")
 	defer logger.Info("complete")
 
-	actualsMap, err := bbs.ActualLRPsByProcessGuid(desired.ProcessGuid)
+	actualsMap, err := bbs.actualLRPRepo.ActualLRPsByProcessGuid(logger, desired.ProcessGuid)
 	if err != nil {
 		logger.Error("failed-to-get-actual-lrps", err)
 		return

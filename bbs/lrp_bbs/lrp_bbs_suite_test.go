@@ -95,10 +95,10 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 }
 
 func claimDesireLRPByIndex(d models.DesiredLRP, index int, containerKey models.ActualLRPContainerKey, logger lager.Logger) {
-	unclaimed, err := bbs.ActualLRPByProcessGuidAndIndex(d.ProcessGuid, index)
+	unclaimedLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(d.ProcessGuid, index)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	err = bbs.ClaimActualLRP(logger, unclaimed.ActualLRPKey, containerKey)
+	err = bbs.ClaimActualLRP(logger, unclaimedLRPGroup.Instance.ActualLRPKey, containerKey)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 

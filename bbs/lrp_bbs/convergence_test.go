@@ -221,12 +221,12 @@ var _ = Describe("LrpConvergence", func() {
 			cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
 			registerCell(cellPresence)
 
-			actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+			actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			err = bbs.ClaimActualLRP(
 				logger,
-				actualLRP.ActualLRPKey,
+				actualLRPGroup.Instance.ActualLRPKey,
 				models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 			)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -299,7 +299,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("removes the actual LRP", func() {
 					bbs.ConvergeLRPs(logger)
 
-					_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
@@ -323,7 +323,7 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not delete the actual LRP", func() {
 						bbs.ConvergeLRPs(logger)
 
-						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -339,12 +339,12 @@ var _ = Describe("LrpConvergence", func() {
 					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					registerCell(cellPresence)
 
-					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -395,19 +395,19 @@ var _ = Describe("LrpConvergence", func() {
 					cellPresence = models.NewCellPresence("cell-id", "the-stack", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					registerCell(cellPresence)
 
-					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
@@ -492,7 +492,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("removes the actual LRP", func() {
 					bbs.ConvergeLRPs(logger)
 
-					_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
@@ -516,7 +516,7 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not delete the actual LRP", func() {
 						bbs.ConvergeLRPs(logger)
 
-						_, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
@@ -542,12 +542,12 @@ var _ = Describe("LrpConvergence", func() {
 
 					setRawActualLRP(higherIndexActualLRP)
 
-					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
@@ -609,19 +609,19 @@ var _ = Describe("LrpConvergence", func() {
 
 					setRawActualLRP(higherIndexActualLRP)
 
-					actualLRP, err := bbs.ActualLRPByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 					)
 					Ω(err).ShouldNot(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
-						actualLRP.ActualLRPKey,
+						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPContainerKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
