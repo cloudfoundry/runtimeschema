@@ -15,8 +15,9 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
+//go:generate counterfeiter -o fakes/fake_actuallrprepository.go . ActualLRPRepository
 type ActualLRPRepository interface {
-	ActualLRPsByProcessGuid(_ lager.Logger, processGuid string) (models.ActualLRPsByIndex, error)
+	ActualLRPsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPsByIndex, error)
 	ActualLRPWithIndex(logger lager.Logger, processGuid string, index int) (*models.ActualLRP, uint64, error)
 	CreateRawActualLRP(logger lager.Logger, lrp *models.ActualLRP) error
 	CompareAndSwapRawActualLRP(logger lager.Logger, lrp *models.ActualLRP, storeIndex uint64) error

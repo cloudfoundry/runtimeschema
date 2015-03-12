@@ -5,8 +5,12 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs/internal/actuallrprepository/fakes"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -106,10 +110,43 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
 					Ω(startAuctions).Should(HaveLen(1))
 					Ω(startAuctions[0].DesiredLRP).Should(Equal(desired))
-					Ω(startAuctions[0].Indices).Should(HaveLen(5))
-					for i := uint(0); i < 5; i++ {
-						Ω(startAuctions[0].Indices).Should(ContainElement(i))
-					}
+					Ω(startAuctions[0].Indices).Should(ConsistOf([]uint{0, 1, 2, 3, 4}))
+				})
+
+				Context("when it fails to create some but not all of the ActualLRPs", func() {
+					var bbsWithFakeRepo *lrp_bbs.LRPBBS
+					var fakeRepo *fakes.FakeActualLRPRepository
+
+					BeforeEach(func() {
+						fakeRepo = new(fakes.FakeActualLRPRepository)
+						fakeRepo.CreateActualLRPsForDesiredReturns([]uint{0, 1, 3, 4})
+
+						bbsWithFakeRepo = lrp_bbs.NewWithRepo(
+							etcdClient,
+							clock,
+							fakeCellClient,
+							fakeAuctioneerClient,
+							services_bbs.New(etcdClient, clock, logger),
+							fakeRepo,
+						)
+					})
+
+					It("should submit auctions for the successfully created LRPs", func() {
+						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
+
+						err := bbsWithFakeRepo.DesireLRP(logger, lrp)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						desired, err := bbsWithFakeRepo.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
+
+						_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
+						Ω(startAuctions).Should(HaveLen(1))
+						Ω(startAuctions[0].DesiredLRP).Should(Equal(desired))
+						Ω(startAuctions[0].Indices).Should(ConsistOf([]uint{0, 1, 3, 4}))
+					})
 				})
 			})
 		})

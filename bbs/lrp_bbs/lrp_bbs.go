@@ -24,12 +24,30 @@ func New(
 	auctioneerClient cb.AuctioneerClient,
 	services *services_bbs.ServicesBBS,
 ) *LRPBBS {
+	return NewWithRepo(
+		store,
+		clock,
+		cellClient,
+		auctioneerClient,
+		services,
+		actuallrprepository.NewActualLRPRepository(store, clock),
+	)
+}
+
+func NewWithRepo(
+	store storeadapter.StoreAdapter,
+	clock clock.Clock,
+	cellClient cb.CellClient,
+	auctioneerClient cb.AuctioneerClient,
+	services *services_bbs.ServicesBBS,
+	actualLRPRepo actuallrprepository.ActualLRPRepository,
+) *LRPBBS {
 	return &LRPBBS{
 		store:            store,
 		clock:            clock,
 		cellClient:       cellClient,
 		auctioneerClient: auctioneerClient,
 		services:         services,
-		actualLRPRepo:    actuallrprepository.NewActualLRPRepository(store, clock),
+		actualLRPRepo:    actualLRPRepo,
 	}
 }
