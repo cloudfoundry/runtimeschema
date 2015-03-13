@@ -176,11 +176,11 @@ type FakeReceptorBBS struct {
 		result1 models.ActualLRPGroup
 		result2 error
 	}
-	RetireActualLRPsStub        func(lager.Logger, []models.ActualLRP)
+	RetireActualLRPsStub        func(lager.Logger, []models.ActualLRPKey)
 	retireActualLRPsMutex       sync.RWMutex
 	retireActualLRPsArgsForCall []struct {
 		arg1 lager.Logger
-		arg2 []models.ActualLRP
+		arg2 []models.ActualLRPKey
 	}
 	WatchForActualLRPChangesStub        func(logger lager.Logger, created func(models.ActualLRP, bool), changed func(models.ActualLRPChange, bool), deleted func(models.ActualLRP, bool)) (stop chan<- bool, errs <-chan error)
 	watchForActualLRPChangesMutex       sync.RWMutex
@@ -812,11 +812,11 @@ func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndexReturns(result1 
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) RetireActualLRPs(arg1 lager.Logger, arg2 []models.ActualLRP) {
+func (fake *FakeReceptorBBS) RetireActualLRPs(arg1 lager.Logger, arg2 []models.ActualLRPKey) {
 	fake.retireActualLRPsMutex.Lock()
 	fake.retireActualLRPsArgsForCall = append(fake.retireActualLRPsArgsForCall, struct {
 		arg1 lager.Logger
-		arg2 []models.ActualLRP
+		arg2 []models.ActualLRPKey
 	}{arg1, arg2})
 	fake.retireActualLRPsMutex.Unlock()
 	if fake.RetireActualLRPsStub != nil {
@@ -830,7 +830,7 @@ func (fake *FakeReceptorBBS) RetireActualLRPsCallCount() int {
 	return len(fake.retireActualLRPsArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) RetireActualLRPsArgsForCall(i int) (lager.Logger, []models.ActualLRP) {
+func (fake *FakeReceptorBBS) RetireActualLRPsArgsForCall(i int) (lager.Logger, []models.ActualLRPKey) {
 	fake.retireActualLRPsMutex.RLock()
 	defer fake.retireActualLRPsMutex.RUnlock()
 	return fake.retireActualLRPsArgsForCall[i].arg1, fake.retireActualLRPsArgsForCall[i].arg2

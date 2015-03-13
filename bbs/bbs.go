@@ -44,7 +44,7 @@ type ReceptorBBS interface {
 	ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error)
 	ActualLRPGroupsByProcessGuid(string) (models.ActualLRPGroupsByIndex, error)
 	ActualLRPGroupByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRPGroup, error)
-	RetireActualLRPs(lager.Logger, []models.ActualLRP)
+	RetireActualLRPs(lager.Logger, []models.ActualLRPKey)
 	WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP, bool), changed func(models.ActualLRPChange, bool), deleted func(models.ActualLRP, bool)) (stop chan<- bool, errs <-chan error)
 
 	// cells

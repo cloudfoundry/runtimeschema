@@ -204,26 +204,26 @@ func (bbs *LRPBBS) RemoveActualLRP(
 
 func (bbs *LRPBBS) RetireActualLRPs(
 	logger lager.Logger,
-	lrps []models.ActualLRP,
+	lrpKeys []models.ActualLRPKey,
 ) {
 	logger = logger.Session("retire-actual-lrps")
 
 	pool := workpool.NewWorkPool(retireActualPoolSize)
 
 	wg := new(sync.WaitGroup)
-	wg.Add(len(lrps))
+	wg.Add(len(lrpKeys))
 
-	for _, lrp := range lrps {
-		lrpKey := lrp.ActualLRPKey
+	for _, lrpKey := range lrpKeys {
+		lrpKey := lrpKey
 		pool.Submit(func() {
-			defer wg.Done()
-
 			err := bbs.retireActualLRP(lrpKey, logger)
 			if err != nil {
 				logger.Error("failed-to-retire", err, lager.Data{
-					"lrp": lrp,
+					"lrp-key": lrpKey,
 				})
 			}
+
+			wg.Done()
 		})
 	}
 

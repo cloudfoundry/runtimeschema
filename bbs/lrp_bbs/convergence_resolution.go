@@ -17,7 +17,12 @@ var (
 const workPoolSize = 100
 
 func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.DesiredLRPsByProcessGuid, changes *ConvergenceChanges) {
-	bbs.RetireActualLRPs(logger, changes.ActualLRPsForExtraIndices)
+	actualKeys := make([]models.ActualLRPKey, len(changes.ActualLRPsForExtraIndices))
+	for _, actualLRP := range changes.ActualLRPsForExtraIndices {
+		actualKeys = append(actualKeys, actualLRP.ActualLRPKey)
+	}
+
+	bbs.RetireActualLRPs(logger, actualKeys)
 	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
 
 	startRequests := newStartRequests(desiredLRPs)

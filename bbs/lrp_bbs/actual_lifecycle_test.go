@@ -697,7 +697,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Ω(err).ShouldNot(HaveOccurred())
 
-				bbs.RetireActualLRPs(logger, []models.ActualLRP{*lrpGroupInBBS.Instance})
+				bbs.RetireActualLRPs(logger, []models.ActualLRPKey{lrpGroupInBBS.Instance.ActualLRPKey})
 
 				_, err = bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
@@ -718,7 +718,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			JustBeforeEach(func() {
-				bbs.RetireActualLRPs(logger, []models.ActualLRP{actual})
+				bbs.RetireActualLRPs(logger, []models.ActualLRPKey{actual.ActualLRPKey})
 			})
 
 			It("should remove the actual", func() {
@@ -781,7 +781,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				doneRetiring = make(chan struct{})
 
 				go func(lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
-					bbs.RetireActualLRPs(logger, []models.ActualLRP{lrp1, lrp2})
+					bbs.RetireActualLRPs(logger, []models.ActualLRPKey{lrp1.ActualLRPKey, lrp2.ActualLRPKey})
 					close(doneRetiring)
 				}(claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})

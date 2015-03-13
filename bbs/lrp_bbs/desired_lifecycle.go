@@ -132,13 +132,13 @@ func (bbs *LRPBBS) stopInstanceRange(logger lager.Logger, lower, upper int, desi
 		return
 	}
 
-	actuals := make([]models.ActualLRP, 0)
+	actualKeys := make([]models.ActualLRPKey, 0)
 	for i := lower; i < upper; i++ {
 		actual, ok := actualsMap[i]
 		if ok {
-			actuals = append(actuals, actual)
+			actualKeys = append(actualKeys, actual.ActualLRPKey)
 		}
 	}
 
-	bbs.RetireActualLRPs(logger, actuals)
+	bbs.RetireActualLRPs(logger, actualKeys)
 }
