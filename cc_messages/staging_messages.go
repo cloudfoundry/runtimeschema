@@ -1,6 +1,10 @@
 package cc_messages
 
-import "github.com/cloudfoundry-incubator/runtime-schema/models"
+import (
+	"encoding/json"
+
+	"github.com/cloudfoundry-incubator/runtime-schema/models"
+)
 import "github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 
 type StagingErrorID string
@@ -16,42 +20,30 @@ type StagingError struct {
 	Message string         `json:"message"`
 }
 
-type DockerStagingRequestFromCC struct {
+type StagingRequestFromCC struct {
 	AppId           string                     `json:"app_id"`
 	TaskId          string                     `json:"task_id"`
 	Stack           string                     `json:"stack"`
-	DockerImageUrl  string                     `json:"docker_image"`
 	FileDescriptors int                        `json:"file_descriptors"`
 	MemoryMB        int                        `json:"memory_mb"`
 	DiskMB          int                        `json:"disk_mb"`
 	Environment     Environment                `json:"environment"`
 	EgressRules     []models.SecurityGroupRule `json:"egress_rules,omitempty"`
 	Timeout         int                        `json:"timeout"`
+	Lifecycle       string                     `json:"lifecycle"`
+	LifecycleData   *json.RawMessage           `json:"lifecycle_data,omitempty"`
 }
 
-type DockerStagingResponseForCC struct {
-	AppId                string            `json:"app_id"`
-	TaskId               string            `json:"task_id"`
-	ExecutionMetadata    string            `json:"execution_metadata"`
-	DetectedStartCommand map[string]string `json:"detected_start_command"`
-	Error                *StagingError     `json:"error,omitempty"`
+type BuildpackStagingData struct {
+	AppBitsDownloadUri             string      `json:"app_bits_download_uri"`
+	BuildArtifactsCacheDownloadUri string      `json:"build_artifacts_cache_download_uri,omitempty"`
+	BuildArtifactsCacheUploadUri   string      `json:"build_artifacts_cache_upload_uri"`
+	Buildpacks                     []Buildpack `json:"buildpacks"`
+	DropletUploadUri               string      `json:"droplet_upload_uri"`
 }
 
-type StagingRequestFromCC struct {
-	AppId                          string                     `json:"app_id"`
-	TaskId                         string                     `json:"task_id"`
-	Stack                          string                     `json:"stack"`
-	AppBitsDownloadUri             string                     `json:"app_bits_download_uri"`
-	BuildArtifactsCacheDownloadUri string                     `json:"build_artifacts_cache_download_uri,omitempty"`
-	BuildArtifactsCacheUploadUri   string                     `json:"build_artifacts_cache_upload_uri"`
-	FileDescriptors                int                        `json:"file_descriptors"`
-	MemoryMB                       int                        `json:"memory_mb"`
-	DiskMB                         int                        `json:"disk_mb"`
-	Buildpacks                     []Buildpack                `json:"buildpacks"`
-	Environment                    Environment                `json:"environment"`
-	DropletUploadUri               string                     `json:"droplet_upload_uri"`
-	EgressRules                    []models.SecurityGroupRule `json:"egress_rules,omitempty"`
-	Timeout                        int                        `json:"timeout"`
+type DockerStagingData struct {
+	DockerImageUrl string `json:"docker_image"`
 }
 
 const CUSTOM_BUILDPACK = "custom"
@@ -66,11 +58,15 @@ type Buildpack struct {
 type StagingResponseForCC struct {
 	AppId                string            `json:"app_id"`
 	TaskId               string            `json:"task_id"`
-	BuildpackKey         string            `json:"buildpack_key"`
-	DetectedBuildpack    string            `json:"detected_buildpack"`
 	ExecutionMetadata    string            `json:"execution_metadata"`
 	DetectedStartCommand map[string]string `json:"detected_start_command"`
 	Error                *StagingError     `json:"error,omitempty"`
+	LifecycleData        *json.RawMessage  `json:"lifecycle_data,omitempty"`
+}
+
+type BuildpackStagingResponse struct {
+	BuildpackKey      string `json:"buildpack_key"`
+	DetectedBuildpack string `json:"detected_buildpack"`
 }
 
 type StopStagingRequestFromCC struct {
