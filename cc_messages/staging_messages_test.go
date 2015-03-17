@@ -261,8 +261,9 @@ var _ = Describe("StagingMessages", func() {
 
 		BeforeEach(func() {
 			stopStagingRequestFromCC = cc_messages.StopStagingRequestFromCC{
-				AppId:  "the-app-id",
-				TaskId: "the-task-id",
+				AppId:     "the-app-id",
+				TaskId:    "the-task-id",
+				Lifecycle: "the-lifecycle",
 			}
 		})
 
@@ -271,7 +272,8 @@ var _ = Describe("StagingMessages", func() {
 
 			err := json.Unmarshal([]byte(`{
 					"app_id": "the-app-id",
-					"task_id": "the-task-id"
+					"task_id": "the-task-id",
+					"lifecycle": "the-lifecycle"
 				}`), &stopStagingRequest)
 			Ω(err).ShouldNot(HaveOccurred())
 

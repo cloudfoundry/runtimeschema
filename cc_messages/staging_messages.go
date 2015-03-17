@@ -70,8 +70,9 @@ type BuildpackStagingResponse struct {
 }
 
 type StopStagingRequestFromCC struct {
-	AppId  string `json:"app_id"`
-	TaskId string `json:"task_id"`
+	AppId     string `json:"app_id"`
+	TaskId    string `json:"task_id"`
+	Lifecycle string `json:"lifecycle"`
 }
 
 func SanitizeErrorMessage(message string) *StagingError {
