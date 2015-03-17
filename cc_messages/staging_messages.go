@@ -3,9 +3,9 @@ package cc_messages
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
-import "github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 
 type StagingErrorID string
 
