@@ -75,6 +75,12 @@ type StopStagingRequestFromCC struct {
 	Lifecycle string `json:"lifecycle"`
 }
 
+type StagingTaskAnnotation struct {
+	Lifecycle string `json:"lifecycle"`
+	AppId     string `json:"app_id"`
+	TaskId    string `json:"task_id"`
+}
+
 func SanitizeErrorMessage(message string) *StagingError {
 	id := STAGING_ERROR
 	switch message {
