@@ -22,7 +22,6 @@ type StagingError struct {
 
 type StagingRequestFromCC struct {
 	AppId           string                     `json:"app_id"`
-	TaskId          string                     `json:"task_id"`
 	Stack           string                     `json:"stack"`
 	FileDescriptors int                        `json:"file_descriptors"`
 	MemoryMB        int                        `json:"memory_mb"`
@@ -30,6 +29,7 @@ type StagingRequestFromCC struct {
 	Environment     Environment                `json:"environment"`
 	EgressRules     []models.SecurityGroupRule `json:"egress_rules,omitempty"`
 	Timeout         int                        `json:"timeout"`
+	LogGuid         string                     `json:"log_guid"`
 	Lifecycle       string                     `json:"lifecycle"`
 	LifecycleData   *json.RawMessage           `json:"lifecycle_data,omitempty"`
 }
@@ -56,8 +56,6 @@ type Buildpack struct {
 }
 
 type StagingResponseForCC struct {
-	AppId                string            `json:"app_id"`
-	TaskId               string            `json:"task_id"`
 	ExecutionMetadata    string            `json:"execution_metadata"`
 	DetectedStartCommand map[string]string `json:"detected_start_command"`
 	Error                *StagingError     `json:"error,omitempty"`
@@ -69,16 +67,8 @@ type BuildpackStagingResponse struct {
 	DetectedBuildpack string `json:"detected_buildpack"`
 }
 
-type StopStagingRequestFromCC struct {
-	AppId     string `json:"app_id"`
-	TaskId    string `json:"task_id"`
-	Lifecycle string `json:"lifecycle"`
-}
-
 type StagingTaskAnnotation struct {
 	Lifecycle string `json:"lifecycle"`
-	AppId     string `json:"app_id"`
-	TaskId    string `json:"task_id"`
 }
 
 func SanitizeErrorMessage(message string) *StagingError {

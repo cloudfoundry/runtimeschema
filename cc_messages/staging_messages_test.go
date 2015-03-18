@@ -15,7 +15,6 @@ var _ = Describe("StagingMessages", func() {
 	Describe("StagingRequestFromCC", func() {
 		ccJSON := `{
            "app_id" : "fake-app_id",
-           "task_id" : "fake-task_id",
            "memory_mb" : 1024,
            "disk_mb" : 10000,
            "file_descriptors" : 3,
@@ -34,7 +33,6 @@ var _ = Describe("StagingMessages", func() {
 			lifecycle_data := json.RawMessage([]byte(`{"foo": "bar"}`))
 			Ω(stagingRequest).Should(Equal(cc_messages.StagingRequestFromCC{
 				AppId:           "fake-app_id",
-				TaskId:          "fake-task_id",
 				MemoryMB:        1024,
 				DiskMB:          10000,
 				FileDescriptors: 3,
@@ -157,8 +155,6 @@ var _ = Describe("StagingMessages", func() {
 
 		BeforeEach(func() {
 			stagingResponseForCC = cc_messages.StagingResponseForCC{
-				AppId:                "the-app-id",
-				TaskId:               "the-task-id",
 				ExecutionMetadata:    "the-execution-metadata",
 				DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
 			}
@@ -167,10 +163,8 @@ var _ = Describe("StagingMessages", func() {
 		Context("without lifecycle data", func() {
 			It("generates valid json without the lifecycle data", func() {
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
-					"app_id": "the-app-id",
 					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"},
-					"task_id": "the-task-id"
+					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
 			})
 		})
@@ -179,8 +173,6 @@ var _ = Describe("StagingMessages", func() {
 			BeforeEach(func() {
 				lifecycleData := json.RawMessage(`{"foo": "bar"}`)
 				stagingResponseForCC = cc_messages.StagingResponseForCC{
-					AppId:                "the-app-id",
-					TaskId:               "the-task-id",
 					ExecutionMetadata:    "the-execution-metadata",
 					DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
 					LifecycleData:        &lifecycleData,
@@ -189,8 +181,6 @@ var _ = Describe("StagingMessages", func() {
 
 			It("generates valid json with lifecycle data", func() {
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
-					"app_id": "the-app-id",
-					"task_id": "the-task-id",
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"},
 					"lifecycle_data": {"foo": "bar"}
@@ -201,8 +191,6 @@ var _ = Describe("StagingMessages", func() {
 		Context("without an error", func() {
 			It("generates valid JSON", func() {
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
-					"app_id": "the-app-id",
-					"task_id": "the-task-id",
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
@@ -218,10 +206,8 @@ var _ = Describe("StagingMessages", func() {
 				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
 					"error": { "id": "StagingError", "message": "FAIL, missing camels!" },
 
-					"app_id": "the-app-id",
 					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"},
-					"task_id": "the-task-id"
+					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
 			})
 		})
@@ -253,31 +239,6 @@ var _ = Describe("StagingMessages", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(response).Should(Equal(buildpackStagingResponse))
-		})
-	})
-
-	Describe("StopStagingRequestForCC", func() {
-		var stopStagingRequestFromCC cc_messages.StopStagingRequestFromCC
-
-		BeforeEach(func() {
-			stopStagingRequestFromCC = cc_messages.StopStagingRequestFromCC{
-				AppId:     "the-app-id",
-				TaskId:    "the-task-id",
-				Lifecycle: "the-lifecycle",
-			}
-		})
-
-		It("unmarshals JSON", func() {
-			stopStagingRequest := cc_messages.StopStagingRequestFromCC{}
-
-			err := json.Unmarshal([]byte(`{
-					"app_id": "the-app-id",
-					"task_id": "the-task-id",
-					"lifecycle": "the-lifecycle"
-				}`), &stopStagingRequest)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			Ω(stopStagingRequest).Should(Equal(stopStagingRequestFromCC))
 		})
 	})
 
