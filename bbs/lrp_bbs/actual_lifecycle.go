@@ -115,6 +115,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,
+	crashReason string,
 ) error {
 	logger = logger.Session("crash-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
 	logger.Info("starting")
@@ -151,6 +152,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	lrp.CrashCount = newCrashCount
 	lrp.ActualLRPInstanceKey = models.ActualLRPInstanceKey{}
 	lrp.ActualLRPNetInfo = models.EmptyActualLRPNetInfo()
+	lrp.CrashReason = crashReason
 
 	var immediateRestart bool
 	if lrp.ShouldRestartImmediately(models.NewDefaultRestartCalculator()) {

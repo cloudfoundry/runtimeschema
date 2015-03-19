@@ -40,7 +40,6 @@ func TestLRPBbs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter()
 
 	etcdRunner.Start()
 })
@@ -50,8 +49,13 @@ var _ = AfterSuite(func() {
 	etcdRunner.Stop()
 })
 
+var _ = AfterEach(func() {
+	etcdClient.Disconnect()
+})
+
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
+	etcdClient = etcdRunner.RetryableAdapter()
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
 	fakeAuctioneerClient = &cbfakes.FakeAuctioneerClient{}

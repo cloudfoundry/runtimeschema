@@ -780,10 +780,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				doneRetiring = make(chan struct{})
 
-				go func(lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
+				go func(bbs *lrp_bbs.LRPBBS, lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
 					bbs.RetireActualLRPs(logger, []models.ActualLRPKey{lrp1.ActualLRPKey, lrp2.ActualLRPKey})
 					close(doneRetiring)
-				}(claimedLRP1, claimedLRP2, doneRetiring, logger)
+				}(bbs, claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})
 
 			Context("when the cell is present", func() {

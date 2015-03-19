@@ -55,7 +55,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					return bbs.EvacuateCrashedActualLRP(logger, lrpKey, alphaInstanceKey)
+					return bbs.EvacuateCrashedActualLRP(logger, lrpKey, alphaInstanceKey, "crashed")
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -641,7 +641,12 @@ func runningLRP(instanceKey models.ActualLRPInstanceKey, netInfo models.ActualLR
 }
 
 func crashedLRP() lrpSetupFunc {
-	return lrp(models.ActualLRPStateCrashed, emptyInstanceKey, emptyNetInfo, "")
+	actualFunc := lrp(models.ActualLRPStateCrashed, emptyInstanceKey, emptyNetInfo, "")
+	return func() models.ActualLRP {
+		actual := actualFunc()
+		actual.CrashReason = "crashed"
+		return actual
+	}
 }
 
 type lrpStatus struct {
@@ -653,7 +658,8 @@ type lrpStatus struct {
 
 type instanceLRPStatus struct {
 	lrpStatus
-	CrashCount int
+	CrashCount  int
+	CrashReason string
 }
 
 type evacuatingLRPStatus struct {
@@ -703,6 +709,10 @@ func anUpdatedUnclaimedInstanceLRP() *instanceLRPStatus {
 }
 
 func anUpdatedUnclaimedInstanceLRPWithCrashCount(crashCount int) *instanceLRPStatus {
+	reason := ""
+	if crashCount > 0 {
+		reason = "crashed"
+	}
 	return &instanceLRPStatus{
 		lrpStatus: lrpStatus{
 			State:                models.ActualLRPStateUnclaimed,
@@ -710,7 +720,8 @@ func anUpdatedUnclaimedInstanceLRPWithCrashCount(crashCount int) *instanceLRPSta
 			ActualLRPNetInfo:     emptyNetInfo,
 			ShouldUpdate:         true,
 		},
-		CrashCount: crashCount,
+		CrashCount:  crashCount,
+		CrashReason: reason,
 	}
 }
 
@@ -738,7 +749,9 @@ func anUnchangedRunningInstanceLRP(instanceKey models.ActualLRPInstanceKey, netI
 }
 
 func anUnchangedCrashedInstanceLRP() *instanceLRPStatus {
-	return anUnchangedInstanceLRP(models.ActualLRPStateCrashed, emptyInstanceKey, emptyNetInfo)
+	instance := anUnchangedInstanceLRP(models.ActualLRPStateCrashed, emptyInstanceKey, emptyNetInfo)
+	instance.CrashReason = "crashed"
+	return instance
 }
 
 func newTestResult(instanceStatus *instanceLRPStatus, evacuatingStatus *evacuatingLRPStatus, retainContainer shared.ContainerRetainment, err error) testResult {
@@ -906,6 +919,13 @@ func (t evacuationTest) Test() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				Ω(lrpInBBS.CrashCount).Should(Equal(t.Result.Instance.CrashCount))
+			})
+
+			It("has the expected /instance crash reason", func() {
+				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(lrpInBBS.CrashReason).Should(Equal(t.Result.Instance.CrashReason))
 			})
 
 			It("has the expected /instance instance key", func() {

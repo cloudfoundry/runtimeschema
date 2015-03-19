@@ -163,6 +163,7 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	logger lager.Logger,
 	actualLRPKey models.ActualLRPKey,
 	actualLRPInstanceKey models.ActualLRPInstanceKey,
+	reason string,
 ) (shared.ContainerRetainment, error) {
 	logger = logger.Session("evacuating-crashed-actual-lrp", lager.Data{
 		"lrp-key":          actualLRPKey,
@@ -171,7 +172,7 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	logger.Info("started")
 
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPInstanceKey)
-	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey)
+	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey, reason)
 
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return shared.DeleteContainer, nil

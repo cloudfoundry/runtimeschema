@@ -74,14 +74,14 @@ type RepBBS interface {
 	ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error)
 	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
-	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
+	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, string) error
 	RemoveActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 
 	// LRP evacuation
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
 	EvacuateRunningActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo, uint64) (shared.ContainerRetainment, error)
 	EvacuateStoppedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
-	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
+	EvacuateCrashedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, string) (shared.ContainerRetainment, error)
 	RemoveEvacuatingActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 }
 

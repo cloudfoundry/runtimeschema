@@ -101,6 +101,7 @@ type crashTest struct {
 type crashTestResult struct {
 	State        models.ActualLRPState
 	CrashCount   int
+	CrashReason  string
 	ShouldUpdate bool
 	Auction      bool
 	ReturnedErr  error
@@ -109,6 +110,7 @@ type crashTestResult struct {
 func itUnclaimsTheLRP() crashTestResult {
 	return crashTestResult{
 		CrashCount:   1,
+		CrashReason:  "crashed",
 		State:        models.ActualLRPStateUnclaimed,
 		ShouldUpdate: true,
 		Auction:      true,
@@ -119,6 +121,7 @@ func itUnclaimsTheLRP() crashTestResult {
 func itCrashesTheLRP() crashTestResult {
 	return crashTestResult{
 		CrashCount:   5,
+		CrashReason:  "crashed",
 		State:        models.ActualLRPStateCrashed,
 		ShouldUpdate: true,
 		Auction:      false,
@@ -139,6 +142,7 @@ func itDoesNotChangeTheUnclaimedLRP() crashTestResult {
 func itDoesNotChangeTheCrashedLRP() crashTestResult {
 	return crashTestResult{
 		CrashCount:   4,
+		CrashReason:  "crashed",
 		State:        models.ActualLRPStateCrashed,
 		ShouldUpdate: false,
 		Auction:      false,
@@ -179,7 +183,7 @@ func (t crashTest) Test() {
 
 		JustBeforeEach(func() {
 			clock.Increment(600)
-			crashErr = bbs.CrashActualLRP(logger, actualLRPKey, instanceKey)
+			crashErr = bbs.CrashActualLRP(logger, actualLRPKey, instanceKey, "crashed")
 		})
 
 		if t.Result.ReturnedErr == nil {
@@ -196,6 +200,12 @@ func (t crashTest) Test() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
+		})
+
+		It(fmt.Sprintf("has crash reason %s", t.Result.CrashReason), func() {
+			actualLRP, err := getInstanceActualLRP(actualLRPKey)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(actualLRP.CrashReason).Should(Equal(t.Result.CrashReason))
 		})
 
 		if t.Result.ShouldUpdate {
@@ -295,7 +305,9 @@ func lrpForState(state models.ActualLRPState, timeInState time.Duration) models.
 	}
 
 	switch state {
-	case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
+	case models.ActualLRPStateUnclaimed:
+	case models.ActualLRPStateCrashed:
+		lrp.CrashReason = "crashed"
 	case models.ActualLRPStateClaimed:
 		lrp.ActualLRPInstanceKey = instanceKey
 	case models.ActualLRPStateRunning:
