@@ -104,7 +104,6 @@ type ConvergerBBS interface {
 type NsyncBBS interface {
 	//lock
 	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
-	NewNsyncListenerLock(listenerID string, interval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
