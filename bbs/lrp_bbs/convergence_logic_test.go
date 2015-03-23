@@ -21,14 +21,12 @@ var _ = Describe("CalculateConvergence", func() {
 		CellID:     "cell-a",
 		RepAddress: "some-rep-address",
 		Zone:       "some-zone",
-		Stack:      "some-stack",
 	}
 
 	var cellB = models.CellPresence{
 		CellID:     "cell-b",
 		RepAddress: "some-rep-address",
 		Zone:       "some-zone",
-		Stack:      "some-stack",
 	}
 
 	var lrpA = models.DesiredLRP{
