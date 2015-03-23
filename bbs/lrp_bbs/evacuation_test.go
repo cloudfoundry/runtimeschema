@@ -578,7 +578,7 @@ var (
 		ProcessGuid: processGuid,
 		Domain:      "domain",
 		Instances:   1,
-		Stack:       "some-stack",
+		RootFS:      "some-rootfs",
 		Action:      &models.RunAction{Path: "/bin/true"},
 	}
 

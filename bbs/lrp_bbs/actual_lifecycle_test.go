@@ -50,7 +50,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
-					Stack:       "some-stack",
+					RootFS:      "some-rootfs",
 					Instances:   index + 1,
 					Action: &models.RunAction{
 						Path: "true",
@@ -351,7 +351,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP = models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
-					Stack:       "some-stack",
+					RootFS:      "some-rootfs",
 					Instances:   index + 1,
 					Action: &models.RunAction{
 						Path: "true",
@@ -682,7 +682,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
-					Stack:       "some-stack",
+					RootFS:      "some-rootfs",
 					Instances:   2,
 					Action: &models.RunAction{
 						Path: "true",
@@ -745,7 +745,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "some-domain",
-					Stack:       "some-stack",
+					RootFS:      "some-rootfs",
 					Instances:   2,
 					Action: &models.RunAction{
 						Path: "true",
@@ -875,7 +875,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				desiredLRP := models.DesiredLRP{
 					ProcessGuid: processGuid,
 					Domain:      "the-domain",
-					Stack:       "some-stack",
+					RootFS:      "some-rootfs",
 					Instances:   3,
 					Action: &models.RunAction{
 						Path: "true",

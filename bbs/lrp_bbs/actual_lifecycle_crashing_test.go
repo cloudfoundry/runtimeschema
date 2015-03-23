@@ -172,7 +172,7 @@ func (t crashTest) Test() {
 				ProcessGuid: actualLRPKey.ProcessGuid,
 				Domain:      actualLRPKey.Domain,
 				Instances:   actualLRPKey.Index + 1,
-				Stack:       "foo",
+				RootFS:      "foo",
 				Action:      &models.RunAction{Path: "true"},
 			}
 

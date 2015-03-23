@@ -39,9 +39,8 @@ func (set DesiredLRPsByProcessGuid) Each(predicate func(desired DesiredLRP)) {
 type DesiredLRP struct {
 	ProcessGuid          string                      `json:"process_guid"`
 	Domain               string                      `json:"domain"`
-	RootFSPath           string                      `json:"rootfs"`
+	RootFS               string                      `json:"rootfs"`
 	Instances            int                         `json:"instances"`
-	Stack                string                      `json:"stack"`
 	EnvironmentVariables []EnvironmentVariable       `json:"env,omitempty"`
 	Setup                Action                      `json:"-"`
 	Action               Action                      `json:"-"`
@@ -107,8 +106,8 @@ func (desired DesiredLRP) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"process_guid"})
 	}
 
-	if desired.Stack == "" {
-		validationError = validationError.Append(ErrInvalidField{"stack"})
+	if desired.RootFS == "" {
+		validationError = validationError.Append(ErrInvalidField{"rootfs"})
 	}
 
 	if desired.Setup != nil {

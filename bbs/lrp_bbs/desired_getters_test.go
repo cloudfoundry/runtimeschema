@@ -20,7 +20,7 @@ var _ = Describe("Desired LRP Getters", func() {
 		desiredLrp1 = models.DesiredLRP{
 			Domain:      "tests",
 			ProcessGuid: "guidA",
-			Stack:       "stack",
+			RootFS:      "some-rootfs",
 			Instances:   1,
 			Action: &models.DownloadAction{
 				From: "http://example.com",
@@ -31,7 +31,7 @@ var _ = Describe("Desired LRP Getters", func() {
 		desiredLrp2 = models.DesiredLRP{
 			Domain:      "tests",
 			ProcessGuid: "guidB",
-			Stack:       "stack",
+			RootFS:      "some-rootfs",
 			Instances:   1,
 			Action: &models.DownloadAction{
 				From: "http://example.com",
@@ -42,7 +42,7 @@ var _ = Describe("Desired LRP Getters", func() {
 		desiredLrp3 = models.DesiredLRP{
 			Domain:      "tests",
 			ProcessGuid: "guidC",
-			Stack:       "stack",
+			RootFS:      "some-rootfs",
 			Instances:   1,
 			Action: &models.DownloadAction{
 				From: "http://example.com",

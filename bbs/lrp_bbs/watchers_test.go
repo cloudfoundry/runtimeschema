@@ -28,7 +28,7 @@ var _ = Describe("Watchers", func() {
 				Domain:      "tests",
 				ProcessGuid: "some-process-guid",
 				Instances:   5,
-				Stack:       "some-stack",
+				RootFS:      "some-rootfs",
 				MemoryMB:    1024,
 				DiskMB:      512,
 				Routes: map[string]*json.RawMessage{
