@@ -197,7 +197,7 @@ func newDesiredLRP(guid, domain string, instances int) models.DesiredLRP {
 		Domain:      domain,
 		ProcessGuid: guid,
 		Instances:   instances,
-		RootFS:      "some-rootfs",
+		RootFS:      "some:rootfs",
 		MemoryMB:    1024,
 		DiskMB:      512,
 		CPUWeight:   42,

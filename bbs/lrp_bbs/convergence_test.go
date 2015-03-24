@@ -63,7 +63,7 @@ var _ = Describe("LrpConvergence", func() {
 				ProcessGuid: processGuid,
 				Instances:   2,
 				Domain:      freshDomain,
-				RootFS:      "some-rootfs",
+				RootFS:      "some:rootfs",
 				Action:      dummyAction,
 			}
 
@@ -211,7 +211,7 @@ var _ = Describe("LrpConvergence", func() {
 				ProcessGuid: processGuid,
 				Instances:   2,
 				Domain:      freshDomain,
-				RootFS:      "some-rootfs",
+				RootFS:      "some:rootfs",
 				Action:      dummyAction,
 			}
 
@@ -468,7 +468,7 @@ var _ = Describe("LrpConvergence", func() {
 					ProcessGuid: processGuid,
 					Instances:   numInstances,
 					Domain:      domain,
-					RootFS:      "some-rootfs",
+					RootFS:      "some:rootfs",
 					Action:      dummyAction,
 				}
 
@@ -675,7 +675,7 @@ var _ = Describe("LrpConvergence", func() {
 				ProcessGuid: "process-guid-for-unclaimed",
 				Domain:      freshDomain,
 				Instances:   1,
-				RootFS:      "some-rootfs",
+				RootFS:      "some:rootfs",
 				Action:      dummyAction,
 			}
 

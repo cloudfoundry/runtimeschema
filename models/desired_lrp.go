@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"net/url"
 	"regexp"
 )
 
@@ -107,6 +108,11 @@ func (desired DesiredLRP) Validate() error {
 	}
 
 	if desired.RootFS == "" {
+		validationError = validationError.Append(ErrInvalidField{"rootfs"})
+	}
+
+	rootFSURL, err := url.Parse(desired.RootFS)
+	if err != nil || rootFSURL.Scheme == "" {
 		validationError = validationError.Append(ErrInvalidField{"rootfs"})
 	}
 

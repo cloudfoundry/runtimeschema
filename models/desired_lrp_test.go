@@ -276,6 +276,16 @@ var _ = Describe("DesiredLRP", func() {
 			assertDesiredLRPValidationFailsWithMessage(lrp, "rootfs")
 		})
 
+		It("requires a valid URL with a non-empty scheme for the rootfs", func() {
+			lrp.RootFS = ":not-a-url"
+			assertDesiredLRPValidationFailsWithMessage(lrp, "rootfs")
+		})
+
+		It("requires a valid absolute URL for the rootfs", func() {
+			lrp.RootFS = "not-an-absolute-url"
+			assertDesiredLRPValidationFailsWithMessage(lrp, "rootfs")
+		})
+
 		It("requires an action", func() {
 			lrp.Action = nil
 			assertDesiredLRPValidationFailsWithMessage(lrp, "action")
