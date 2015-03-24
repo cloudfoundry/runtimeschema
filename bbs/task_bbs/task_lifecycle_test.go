@@ -30,19 +30,19 @@ var _ = Describe("Task BBS", func() {
 				Context("when given a task with a CreatedAt time", func() {
 					var taskGuid string
 					var domain string
-					var stack string
+					var rootfs string
 					var createdAtTime int64
 
 					BeforeEach(func() {
 						taskGuid = "some-guid"
 						domain = "tests"
-						stack = "pancakes"
+						rootfs = "some:rootfs"
 						createdAtTime = 1234812
 
 						task = models.Task{
 							Domain:    domain,
 							TaskGuid:  taskGuid,
-							Stack:     stack,
+							RootFS:    rootfs,
 							Action:    dummyAction,
 							CreatedAt: createdAtTime,
 						}
@@ -57,7 +57,7 @@ var _ = Describe("Task BBS", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(persistedTask.Domain).Should(Equal(domain))
-						Ω(persistedTask.Stack).Should(Equal(stack))
+						Ω(persistedTask.RootFS).Should(Equal(rootfs))
 						Ω(persistedTask.Action).Should(Equal(dummyAction))
 					})
 
@@ -131,16 +131,16 @@ var _ = Describe("Task BBS", func() {
 				Context("when given a task without a CreatedAt time", func() {
 					var taskGuid string
 					var domain string
-					var stack string
+					var rootfs string
 
 					BeforeEach(func() {
 						taskGuid = "some-guid"
 						domain = "tests"
-						stack = "pancakes"
+						rootfs = "some:rootfs"
 						task = models.Task{
 							Domain:   domain,
 							TaskGuid: taskGuid,
-							Stack:    stack,
+							RootFS:   rootfs,
 							Action:   dummyAction,
 						}
 					})
@@ -154,7 +154,7 @@ var _ = Describe("Task BBS", func() {
 						Ω(err).ShouldNot(HaveOccurred())
 
 						Ω(persistedTask.Domain).Should(Equal(domain))
-						Ω(persistedTask.Stack).Should(Equal(stack))
+						Ω(persistedTask.RootFS).Should(Equal(rootfs))
 						Ω(persistedTask.Action).Should(Equal(dummyAction))
 					})
 
@@ -177,7 +177,7 @@ var _ = Describe("Task BBS", func() {
 					task = models.Task{
 						Domain:   "tests",
 						TaskGuid: "some-guid",
-						Stack:    "pancakes",
+						RootFS:   "some:rootfs",
 						Action:   dummyAction,
 					}
 
@@ -206,7 +206,7 @@ var _ = Describe("Task BBS", func() {
 			BeforeEach(func() {
 				task = models.Task{
 					TaskGuid: "some-guid",
-					Stack:    "pancakes",
+					RootFS:   "some:rootfs",
 					Action:   dummyAction,
 					// missing Domain
 				}
@@ -233,7 +233,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}
@@ -324,7 +324,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}
@@ -486,7 +486,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}
@@ -698,7 +698,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}
@@ -869,7 +869,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}
@@ -942,7 +942,7 @@ var _ = Describe("Task BBS", func() {
 			task = models.Task{
 				TaskGuid:  "some-guid",
 				Domain:    "tests",
-				Stack:     "pancakes",
+				RootFS:    "some:rootfs",
 				Action:    dummyAction,
 				CreatedAt: 1234812,
 			}

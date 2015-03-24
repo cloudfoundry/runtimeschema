@@ -43,7 +43,7 @@ var _ = Describe("Convergence of Tasks", func() {
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
-			Stack:    "pancakes",
+			RootFS:   "some:rootfs",
 			Action:   dummyAction,
 		}
 	})
@@ -99,7 +99,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				secondTask = models.Task{
 					Domain:                "tests",
 					TaskGuid:              "some-other-guid",
-					Stack:                 "pancakes",
+					RootFS:                "some:rootfs",
 					Action:                dummyAction,
 					CompletionCallbackURL: &url.URL{Host: "blah"},
 				}
@@ -269,7 +269,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					secondTask := models.Task{
 						Domain:                "tests",
 						TaskGuid:              "some-other-guid",
-						Stack:                 "pancakes",
+						RootFS:                "some:rootfs",
 						Action:                dummyAction,
 						CompletionCallbackURL: &url.URL{Host: "blah"},
 					}

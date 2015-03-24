@@ -13,7 +13,7 @@ var _ = Describe("Task BBS", func() {
 		task = models.Task{
 			Domain:   "tests",
 			TaskGuid: "some-guid",
-			Stack:    "pancakes",
+			RootFS:   "some:rootfs",
 			Action:   dummyAction,
 		}
 	})
@@ -82,7 +82,7 @@ var _ = Describe("Task BBS", func() {
 				TaskGuid: "some-guid-1",
 				CellID:   "cell-id",
 				Domain:   "tests",
-				Stack:    "pancakes",
+				RootFS:   "some:rootfs",
 				Action:   dummyAction,
 			}
 			var task1 models.Task
@@ -90,7 +90,7 @@ var _ = Describe("Task BBS", func() {
 				TaskGuid: "some-guid-2",
 				CellID:   "cell-id",
 				Domain:   "tests",
-				Stack:    "pancakes",
+				RootFS:   "some:rootfs",
 				Action:   dummyAction,
 			}
 			var task2 models.Task
