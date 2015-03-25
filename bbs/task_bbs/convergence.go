@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -54,11 +55,14 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 		return
 	}
 
-	cellState, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		cellState = storeadapter.StoreNode{}
-	} else if err != nil {
-		return
+	cells, err := bbs.consulAdapter.ListPairsExtending(shared.CellSchemaRoot)
+	if err != nil {
+		switch err.(type) {
+		case consuladapter.PrefixNotFoundError:
+			cells = make(map[string][]byte)
+		default:
+			return
+		}
 	}
 
 	logError := func(task models.Task, message string) {
@@ -117,7 +121,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 				tasksKicked++
 			}
 		case models.TaskStateRunning:
-			_, cellIsAlive := cellState.Lookup(task.CellID)
+			_, cellIsAlive := cells[shared.CellSchemaPath(task.CellID)]
 			if !cellIsAlive {
 				logError(task, "cell-disappeared")
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))

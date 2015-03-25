@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry/storeadapter"
 )
@@ -30,6 +31,17 @@ func ConvertStoreError(originalErr error) error {
 		return bbserrors.ErrStoreResourceExists
 	case storeadapter.ErrorKeyComparisonFailed:
 		return bbserrors.ErrStoreComparisonFailed
+	default:
+		return originalErr
+	}
+}
+
+func ConvertConsulError(originalErr error) error {
+	switch originalErr.(type) {
+	case consuladapter.KeyNotFoundError:
+		return bbserrors.ErrStoreResourceNotFound
+	case consuladapter.PrefixNotFoundError:
+		return bbserrors.ErrStoreResourceNotFound
 	default:
 		return originalErr
 	}

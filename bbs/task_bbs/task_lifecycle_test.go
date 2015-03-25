@@ -9,6 +9,7 @@ import (
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
+	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -470,7 +471,7 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
+					bbs = New(fakeStoreAdapter, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
 				})
 
 				It("returns an error", func() {
@@ -565,7 +566,7 @@ var _ = Describe("Task BBS", func() {
 							ReceptorURL: "some-receptor-url",
 						}
 
-						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
 
 						receptorPresence = ifrit.Invoke(heartbeat)
 					})
@@ -755,7 +756,7 @@ var _ = Describe("Task BBS", func() {
 							ReceptorURL: "some-receptor-url",
 						}
 
-						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, 1*time.Second)
+						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
 
 						receptorPresence = ifrit.Invoke(heartbeat)
 					})

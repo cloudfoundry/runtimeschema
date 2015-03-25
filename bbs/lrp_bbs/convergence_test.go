@@ -240,7 +240,8 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the cell goes away", func() {
 			BeforeEach(func() {
-				etcdClient.Delete(shared.CellSchemaPath(cellPresence.CellID))
+				err := consulAdapter.ReleaseAndDeleteLock(shared.CellSchemaPath(cellPresence.CellID))
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 
 			It("should delete LRPs associated with said cell but not the unclaimed LRP", func() {

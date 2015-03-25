@@ -1,36 +1,37 @@
 package services_bbs
 
 import (
+	"errors"
+	"path"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
-const CELL_HEARTBEAT_INTERVAL = 5 * time.Second
+const CellPresenceTTL = 10 * time.Second
 
-func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
+func (bbs *ServicesBBS) NewCellHeartbeat(cellPresence models.CellPresence, ttl, retryInterval time.Duration) ifrit.Runner {
 	payload, err := models.ToJSON(cellPresence)
 	if err != nil {
 		panic(err)
 	}
 
-	return heartbeater.New(bbs.store, bbs.clock, shared.CellSchemaPath(cellPresence.CellID), string(payload), interval, bbs.logger)
+	return heartbeater.New(bbs.consul, shared.CellSchemaPath(cellPresence.CellID), payload, ttl, bbs.clock, retryInterval, bbs.logger)
 }
 
 func (bbs *ServicesBBS) CellById(cellId string) (models.CellPresence, error) {
 	cellPresence := models.CellPresence{}
 
-	node, err := bbs.store.Get(shared.CellSchemaPath(cellId))
+	value, err := bbs.consul.GetValue(shared.CellSchemaPath(cellId))
 	if err != nil {
-		return cellPresence, shared.ConvertStoreError(err)
+		return cellPresence, shared.ConvertConsulError(err)
 	}
 
-	err = models.FromJSON(node.Value, &cellPresence)
+	err = models.FromJSON(value, &cellPresence)
 	if err != nil {
 		return cellPresence, err
 	}
@@ -39,17 +40,15 @@ func (bbs *ServicesBBS) CellById(cellId string) (models.CellPresence, error) {
 }
 
 func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
-	node, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		return []models.CellPresence{}, nil
-	} else if err != nil {
-		return nil, shared.ConvertStoreError(err)
+	cells, err := bbs.consul.ListPairsExtending(shared.CellSchemaRoot)
+	if err != nil {
+		return nil, shared.ConvertConsulError(err)
 	}
 
 	cellPresences := []models.CellPresence{}
-	for _, node := range node.ChildNodes {
+	for _, cell := range cells {
 		cellPresence := models.CellPresence{}
-		err := models.FromJSON(node.Value, &cellPresence)
+		err := models.FromJSON(cell, &cellPresence)
 		if err != nil {
 			bbs.logger.Error("failed-to-unmarshal-cells-json", err)
 			continue
@@ -62,38 +61,31 @@ func (bbs *ServicesBBS) Cells() ([]models.CellPresence, error) {
 }
 
 func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
-	events, stop, errChan := bbs.store.Watch(shared.CellSchemaRoot)
+	disappeared, stop, errChan := bbs.consul.WatchForDisappearancesUnder(shared.CellSchemaRoot)
 	defer close(stop)
 
 	for {
 		select {
-		case err := <-errChan:
-			return nil, shared.ConvertStoreError(err)
-
-		case event := <-events:
-			switch {
-			case event.Node != nil && event.PrevNode == nil:
-				e := CellAppearedEvent{}
-
-				err := models.FromJSON(event.Node.Value, &e.Presence)
-				if err != nil {
-					return nil, err
-				}
-
-				bbs.logger.Info("cell-appeared", lager.Data{"cell-id": e.CellID()})
-				return e, nil
-
-			case event.Node == nil && event.PrevNode != nil:
-				e := CellDisappearedEvent{}
-
-				err := models.FromJSON(event.PrevNode.Value, &e.Presence)
-				if err != nil {
-					return nil, err
-				}
-
-				bbs.logger.Info("cell-disappeared", lager.Data{"cell-id": e.CellID()})
-				return e, nil
+		case err, ok := <-errChan:
+			if !ok {
+				return nil, errors.New("wait-for-cell-event-err-chan-closed")
 			}
+
+			return nil, shared.ConvertConsulError(err)
+
+		case keys, ok := <-disappeared:
+			if !ok {
+				return nil, errors.New("wait-for-cell-event-disappearance-chan-closed")
+			}
+
+			cellIDs := make([]string, len(keys))
+			for i, key := range keys {
+				cellIDs[i] = path.Base(key)
+			}
+			e := CellDisappearedEvent{cellIDs}
+
+			bbs.logger.Info("cell-disappeared", lager.Data{"cell-ids": e.CellIDs()})
+			return e, nil
 		}
 	}
 
@@ -102,37 +94,24 @@ func (bbs *ServicesBBS) WaitForCellEvent() (CellEvent, error) {
 
 type CellEvent interface {
 	EventType() CellEventType
-	CellID() string
+	CellIDs() []string
 }
 
 type CellEventType int
 
 const (
 	CellEventTypeInvalid CellEventType = iota
-	CellAppeared
 	CellDisappeared
 )
 
-type CellAppearedEvent struct {
-	Presence models.CellPresence
-}
-
-func (CellAppearedEvent) EventType() CellEventType {
-	return CellAppeared
-}
-
-func (e CellAppearedEvent) CellID() string {
-	return e.Presence.CellID
-}
-
 type CellDisappearedEvent struct {
-	Presence models.CellPresence
+	IDs []string
 }
 
 func (CellDisappearedEvent) EventType() CellEventType {
 	return CellDisappeared
 }
 
-func (e CellDisappearedEvent) CellID() string {
-	return e.Presence.CellID
+func (e CellDisappearedEvent) CellIDs() []string {
+	return e.IDs
 }

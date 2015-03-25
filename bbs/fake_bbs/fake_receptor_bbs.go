@@ -107,7 +107,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -144,7 +144,7 @@ type FakeReceptorBBS struct {
 	ActualLRPGroupsStub        func() ([]models.ActualLRPGroup, error)
 	actualLRPGroupsMutex       sync.RWMutex
 	actualLRPGroupsArgsForCall []struct{}
-	actualLRPGroupsReturns     struct {
+	actualLRPGroupsReturns struct {
 		result1 []models.ActualLRPGroup
 		result2 error
 	}
@@ -197,7 +197,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -213,15 +213,16 @@ type FakeReceptorBBS struct {
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns     struct {
+	domainsReturns struct {
 		result1 []string
 		result2 error
 	}
-	NewReceptorHeartbeatStub        func(models.ReceptorPresence, time.Duration) ifrit.Runner
+	NewReceptorHeartbeatStub        func(models.ReceptorPresence, time.Duration, time.Duration) ifrit.Runner
 	newReceptorHeartbeatMutex       sync.RWMutex
 	newReceptorHeartbeatArgsForCall []struct {
 		arg1 models.ReceptorPresence
 		arg2 time.Duration
+		arg3 time.Duration
 	}
 	newReceptorHeartbeatReturns struct {
 		result1 ifrit.Runner
@@ -955,15 +956,16 @@ func (fake *FakeReceptorBBS) DomainsReturns(result1 []string, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) NewReceptorHeartbeat(arg1 models.ReceptorPresence, arg2 time.Duration) ifrit.Runner {
+func (fake *FakeReceptorBBS) NewReceptorHeartbeat(arg1 models.ReceptorPresence, arg2 time.Duration, arg3 time.Duration) ifrit.Runner {
 	fake.newReceptorHeartbeatMutex.Lock()
 	fake.newReceptorHeartbeatArgsForCall = append(fake.newReceptorHeartbeatArgsForCall, struct {
 		arg1 models.ReceptorPresence
 		arg2 time.Duration
-	}{arg1, arg2})
+		arg3 time.Duration
+	}{arg1, arg2, arg3})
 	fake.newReceptorHeartbeatMutex.Unlock()
 	if fake.NewReceptorHeartbeatStub != nil {
-		return fake.NewReceptorHeartbeatStub(arg1, arg2)
+		return fake.NewReceptorHeartbeatStub(arg1, arg2, arg3)
 	} else {
 		return fake.newReceptorHeartbeatReturns.result1
 	}
@@ -975,10 +977,10 @@ func (fake *FakeReceptorBBS) NewReceptorHeartbeatCallCount() int {
 	return len(fake.newReceptorHeartbeatArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) NewReceptorHeartbeatArgsForCall(i int) (models.ReceptorPresence, time.Duration) {
+func (fake *FakeReceptorBBS) NewReceptorHeartbeatArgsForCall(i int) (models.ReceptorPresence, time.Duration, time.Duration) {
 	fake.newReceptorHeartbeatMutex.RLock()
 	defer fake.newReceptorHeartbeatMutex.RUnlock()
-	return fake.newReceptorHeartbeatArgsForCall[i].arg1, fake.newReceptorHeartbeatArgsForCall[i].arg2
+	return fake.newReceptorHeartbeatArgsForCall[i].arg1, fake.newReceptorHeartbeatArgsForCall[i].arg2, fake.newReceptorHeartbeatArgsForCall[i].arg3
 }
 
 func (fake *FakeReceptorBBS) NewReceptorHeartbeatReturns(result1 ifrit.Runner) {

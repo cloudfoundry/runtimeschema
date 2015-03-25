@@ -3,6 +3,7 @@ package bbs
 import (
 	"time"
 
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
@@ -55,13 +56,13 @@ type ReceptorBBS interface {
 	Domains() ([]string, error)
 
 	//services
-	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration) ifrit.Runner
+	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration, time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
 type RepBBS interface {
 	//services
-	NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
+	NewCellHeartbeat(cellPresence models.CellPresence, ttl, retryInterval time.Duration) ifrit.Runner
 
 	//task
 	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
@@ -88,7 +89,7 @@ type RepBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
 type ConvergerBBS interface {
 	//lock
-	NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner
+	NewConvergeLock(convergerID string, ttl, retryInterval time.Duration) ifrit.Runner
 
 	//lrp
 	ConvergeLRPs(lager.Logger)
@@ -103,7 +104,7 @@ type ConvergerBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
 type NsyncBBS interface {
 	//lock
-	NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner
+	NewNsyncBulkerLock(bulkerID string, ttl, retryInterval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
@@ -115,7 +116,7 @@ type AuctioneerBBS interface {
 	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 
 	//lock
-	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, interval time.Duration) (ifrit.Runner, error)
+	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, ttl, retryInterval time.Duration) (ifrit.Runner, error)
 
 	//lrp
 	FailActualLRP(lager.Logger, models.ActualLRPKey, string) error
@@ -126,9 +127,6 @@ type MetricsBBS interface {
 	//task
 	Tasks(logger lager.Logger) ([]models.Task, error)
 
-	//services
-	ServiceRegistrations() (models.ServiceRegistrations, error)
-
 	// domains
 	Domains() ([]string, error)
 
@@ -137,13 +135,13 @@ type MetricsBBS interface {
 	ActualLRPs() ([]models.ActualLRP, error)
 
 	//lock
-	NewRuntimeMetricsLock(runtimeMetricsID string, interval time.Duration) ifrit.Runner
+	NewRuntimeMetricsLock(runtimeMetricsID string, ttl, retryInterval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 type RouteEmitterBBS interface {
 	//lock
-	NewRouteEmitterLock(emitterID string, interval time.Duration) ifrit.Runner
+	NewRouteEmitterLock(emitterID string, ttl, retryInterval time.Duration) ifrit.Runner
 }
 
 type VeritasBBS interface {
@@ -165,47 +163,47 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
-func NewReceptorBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
-	return NewBBS(store, clock, logger)
+func NewReceptorBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewRepBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) RepBBS {
-	return NewBBS(store, clock, logger)
+func NewRepBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RepBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewConvergerBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) ConvergerBBS {
-	return NewBBS(store, clock, logger)
+func NewConvergerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ConvergerBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewNsyncBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
-	return NewBBS(store, clock, logger)
+func NewNsyncBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
+	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewAuctioneerBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
-	return NewBBS(store, clock, logger)
+func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewMetricsBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
-	return NewBBS(store, clock, logger)
+func NewMetricsBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewRouteEmitterBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
-	return NewBBS(store, clock, logger)
+func NewRouteEmitterBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
+	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
 func NewVeritasBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) VeritasBBS {
-	return NewBBS(store, clock, logger)
+	return NewBBS(store, nil, clock, logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) *BBS {
-	services := services_bbs.New(store, clock, logger.Session("services-bbs"))
+func NewBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *BBS {
+	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 
 	return &BBS{
-		LockBBS:     lock_bbs.New(store, clock, logger.Session("lock-bbs")),
+		LockBBS:     lock_bbs.New(consul, clock, logger.Session("lock-bbs")),
 		LRPBBS:      lrp_bbs.New(store, clock, cb.NewCellClient(), auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
+		TaskBBS:     task_bbs.New(store, consul, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }

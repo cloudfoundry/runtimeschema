@@ -1,20 +1,20 @@
 package services_bbs
 
 import (
-	"github.com/cloudfoundry/storeadapter"
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
 )
 
 type ServicesBBS struct {
-	store  storeadapter.StoreAdapter
+	consul consuladapter.Adapter
 	logger lager.Logger
 	clock  clock.Clock
 }
 
-func New(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) *ServicesBBS {
+func New(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *ServicesBBS {
 	return &ServicesBBS{
-		store:  store,
+		consul: consul,
 		logger: logger,
 		clock:  clock,
 	}

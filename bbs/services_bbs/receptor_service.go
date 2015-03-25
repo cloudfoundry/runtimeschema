@@ -11,35 +11,40 @@ import (
 	"github.com/tedsuo/ifrit"
 )
 
-func (bbs *ServicesBBS) NewReceptorHeartbeat(receptorPresence models.ReceptorPresence, interval time.Duration) ifrit.Runner {
+func (bbs *ServicesBBS) NewReceptorHeartbeat(receptorPresence models.ReceptorPresence, ttl, retryInterval time.Duration) ifrit.Runner {
 	payload, err := models.ToJSON(receptorPresence)
 	if err != nil {
 		panic(err)
 	}
 
-	return heartbeater.New(bbs.store, bbs.clock, shared.ReceptorSchemaPath(receptorPresence.ReceptorID), string(payload), interval, bbs.logger)
+	return heartbeater.New(bbs.consul, shared.ReceptorSchemaPath(receptorPresence.ReceptorID), payload, ttl, bbs.clock, retryInterval, bbs.logger)
 }
 
 func (bbs *ServicesBBS) Receptor() (models.ReceptorPresence, error) {
 	receptorPresence := models.ReceptorPresence{}
 
-	node, err := bbs.store.ListRecursively(shared.ReceptorSchemaRoot)
+	receptors, err := bbs.consul.ListPairsExtending(shared.ReceptorSchemaRoot)
 	if err != nil {
-		return receptorPresence, shared.ConvertStoreError(err)
+		return receptorPresence, shared.ConvertConsulError(err)
 	}
-
-	receptors := node.ChildNodes
 
 	if len(receptors) == 0 {
 		return receptorPresence, bbserrors.ErrServiceUnavailable
 	}
 
-	receptorNode := receptors[rand.Intn(len(receptors))]
+	randomIndex := rand.Intn(len(receptors))
+	for _, value := range receptors {
+		if randomIndex == 0 {
+			err = models.FromJSON(value, &receptorPresence)
+			if err != nil {
+				return receptorPresence, err
+			}
 
-	err = models.FromJSON(receptorNode.Value, &receptorPresence)
-	if err != nil {
-		return receptorPresence, err
+			return receptorPresence, nil
+		}
+
+		randomIndex--
 	}
 
-	return receptorPresence, nil
+	panic("should not reach")
 }

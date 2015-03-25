@@ -10,26 +10,28 @@ import (
 )
 
 type FakeNsyncBBS struct {
-	NewNsyncBulkerLockStub        func(bulkerID string, interval time.Duration) ifrit.Runner
+	NewNsyncBulkerLockStub        func(bulkerID string, ttl, retryInterval time.Duration) ifrit.Runner
 	newNsyncBulkerLockMutex       sync.RWMutex
 	newNsyncBulkerLockArgsForCall []struct {
-		bulkerID string
-		interval time.Duration
+		bulkerID      string
+		ttl           time.Duration
+		retryInterval time.Duration
 	}
 	newNsyncBulkerLockReturns struct {
 		result1 ifrit.Runner
 	}
 }
 
-func (fake *FakeNsyncBBS) NewNsyncBulkerLock(bulkerID string, interval time.Duration) ifrit.Runner {
+func (fake *FakeNsyncBBS) NewNsyncBulkerLock(bulkerID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
 	fake.newNsyncBulkerLockMutex.Lock()
 	fake.newNsyncBulkerLockArgsForCall = append(fake.newNsyncBulkerLockArgsForCall, struct {
-		bulkerID string
-		interval time.Duration
-	}{bulkerID, interval})
+		bulkerID      string
+		ttl           time.Duration
+		retryInterval time.Duration
+	}{bulkerID, ttl, retryInterval})
 	fake.newNsyncBulkerLockMutex.Unlock()
 	if fake.NewNsyncBulkerLockStub != nil {
-		return fake.NewNsyncBulkerLockStub(bulkerID, interval)
+		return fake.NewNsyncBulkerLockStub(bulkerID, ttl, retryInterval)
 	} else {
 		return fake.newNsyncBulkerLockReturns.result1
 	}
@@ -41,10 +43,10 @@ func (fake *FakeNsyncBBS) NewNsyncBulkerLockCallCount() int {
 	return len(fake.newNsyncBulkerLockArgsForCall)
 }
 
-func (fake *FakeNsyncBBS) NewNsyncBulkerLockArgsForCall(i int) (string, time.Duration) {
+func (fake *FakeNsyncBBS) NewNsyncBulkerLockArgsForCall(i int) (string, time.Duration, time.Duration) {
 	fake.newNsyncBulkerLockMutex.RLock()
 	defer fake.newNsyncBulkerLockMutex.RUnlock()
-	return fake.newNsyncBulkerLockArgsForCall[i].bulkerID, fake.newNsyncBulkerLockArgsForCall[i].interval
+	return fake.newNsyncBulkerLockArgsForCall[i].bulkerID, fake.newNsyncBulkerLockArgsForCall[i].ttl, fake.newNsyncBulkerLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeNsyncBBS) NewNsyncBulkerLockReturns(result1 ifrit.Runner) {

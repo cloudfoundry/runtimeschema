@@ -12,11 +12,12 @@ import (
 )
 
 type FakeConvergerBBS struct {
-	NewConvergeLockStub        func(convergerID string, interval time.Duration) ifrit.Runner
+	NewConvergeLockStub        func(convergerID string, ttl, retryInterval time.Duration) ifrit.Runner
 	newConvergeLockMutex       sync.RWMutex
 	newConvergeLockArgsForCall []struct {
-		convergerID string
-		interval    time.Duration
+		convergerID   string
+		ttl           time.Duration
+		retryInterval time.Duration
 	}
 	newConvergeLockReturns struct {
 		result1 ifrit.Runner
@@ -37,21 +38,22 @@ type FakeConvergerBBS struct {
 	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
 	waitForCellEventMutex       sync.RWMutex
 	waitForCellEventArgsForCall []struct{}
-	waitForCellEventReturns     struct {
+	waitForCellEventReturns struct {
 		result1 services_bbs.CellEvent
 		result2 error
 	}
 }
 
-func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, interval time.Duration) ifrit.Runner {
+func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
 	fake.newConvergeLockMutex.Lock()
 	fake.newConvergeLockArgsForCall = append(fake.newConvergeLockArgsForCall, struct {
-		convergerID string
-		interval    time.Duration
-	}{convergerID, interval})
+		convergerID   string
+		ttl           time.Duration
+		retryInterval time.Duration
+	}{convergerID, ttl, retryInterval})
 	fake.newConvergeLockMutex.Unlock()
 	if fake.NewConvergeLockStub != nil {
-		return fake.NewConvergeLockStub(convergerID, interval)
+		return fake.NewConvergeLockStub(convergerID, ttl, retryInterval)
 	} else {
 		return fake.newConvergeLockReturns.result1
 	}
@@ -63,10 +65,10 @@ func (fake *FakeConvergerBBS) NewConvergeLockCallCount() int {
 	return len(fake.newConvergeLockArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) NewConvergeLockArgsForCall(i int) (string, time.Duration) {
+func (fake *FakeConvergerBBS) NewConvergeLockArgsForCall(i int) (string, time.Duration, time.Duration) {
 	fake.newConvergeLockMutex.RLock()
 	defer fake.newConvergeLockMutex.RUnlock()
-	return fake.newConvergeLockArgsForCall[i].convergerID, fake.newConvergeLockArgsForCall[i].interval
+	return fake.newConvergeLockArgsForCall[i].convergerID, fake.newConvergeLockArgsForCall[i].ttl, fake.newConvergeLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {

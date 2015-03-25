@@ -1,8 +1,7 @@
 package services_bbs_test
 
 import (
-	"github.com/cloudfoundry/storeadapter"
-	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
+	"github.com/cloudfoundry-incubator/consuladapter"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -10,8 +9,8 @@ import (
 	"testing"
 )
 
-var etcdRunner *etcdstorerunner.ETCDClusterRunner
-var etcdClient storeadapter.StoreAdapter
+var consulRunner consuladapter.ClusterRunner
+var consulAdapter consuladapter.Adapter
 
 func TestServicesBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -19,17 +18,20 @@ func TestServicesBbs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter()
+	consulRunner = consuladapter.NewClusterRunner(
+		5001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength,
+		1,
+		"http",
+	)
 
-	etcdRunner.Start()
+	consulRunner.Start()
 })
 
 var _ = AfterSuite(func() {
-	etcdClient.Disconnect()
-	etcdRunner.Stop()
+	consulRunner.Stop()
 })
 
 var _ = BeforeEach(func() {
-	etcdRunner.Reset()
+	consulRunner.Reset()
+	consulAdapter = consulRunner.NewAdapter()
 })

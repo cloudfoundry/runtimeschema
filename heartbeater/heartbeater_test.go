@@ -1,17 +1,15 @@
 package heartbeater_test
 
 import (
-	"fmt"
 	"os"
 	"time"
 
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/heartbeater"
-	"github.com/cloudfoundry/gunk/workpool"
-	"github.com/cloudfoundry/storeadapter"
-	"github.com/cloudfoundry/storeadapter/etcdstoreadapter"
-	"github.com/pivotal-golang/clock"
-	"github.com/pivotal-golang/clock/fakeclock"
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/consul/structs"
 
+	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager"
 	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
@@ -20,380 +18,295 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	heartbeatKey   = "/some-key"
-	heartbeatValue = "some-value"
+var (
+	heartbeatKey   = "some-key"
+	heartbeatValue = []byte("some-value")
+	ttl            = structs.SessionTTLMin
 )
+var consulAdapter consuladapter.Adapter
 
-var etcdClient storeadapter.StoreAdapter
+var newConsulAdapter = func() consuladapter.Adapter {
+	adapter, err := consuladapter.NewAdapter([]string{proxyAddress}, defaultScheme)
+	Ω(err).ShouldNot(HaveOccurred())
+	return adapter
+}
 
 var _ = Describe("Heartbeater", func() {
+
+	var getValueForHeartbeatKey = func() ([]byte, error) {
+		return consulAdapter.GetValue(heartbeatKey)
+	}
+
 	var (
-		etcdProxy ifrit.Process
-		heart     ifrit.Runner
-		logger    lager.Logger
-
-		heartbeatClock    clock.Clock
-		heartbeatInterval time.Duration
-
-		expectedHeartbeatNode storeadapter.StoreNode
+		consulProxy   ifrit.Process
+		heart         ifrit.Runner
+		retryInterval time.Duration
+		clock         *fakeclock.FakeClock
+		logger        lager.Logger
 	)
 
 	BeforeEach(func() {
-		heartbeatClock = clock.NewClock()
+		consulProxy = ifrit.Invoke(proxyRunner)
 
-		etcdProxy = ifrit.Invoke(proxyRunner)
+		consulAdapter = newConsulAdapter()
 
-		etcdClient = etcdstoreadapter.NewETCDStoreAdapter([]string{proxyUrl}, workpool.NewWorkPool(10))
-		etcdClient.Connect()
+		retryInterval = 100 * time.Millisecond
+		clock = fakeclock.NewFakeClock(time.Now())
+		logger = lagertest.NewTestLogger("heartbeater")
 
-		logger = lagertest.NewTestLogger("test")
-		heartbeatInterval = 100 * time.Millisecond
-
-		expectedHeartbeatNode = storeadapter.StoreNode{
-			Key:   heartbeatKey,
-			Value: []byte(heartbeatValue),
-			TTL:   1,
-		}
-
-		heart = heartbeater.New(etcdClient, heartbeatClock, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
+		heart = heartbeater.New(consulAdapter, heartbeatKey, heartbeatValue, ttl, clock, retryInterval, logger)
 	})
 
 	AfterEach(func() {
-		etcdProxy.Signal(os.Kill)
-		Eventually(etcdProxy.Wait(), 3*time.Second).Should(Receive(BeNil()))
+		consulProxy.Signal(os.Kill)
+		Eventually(consulProxy.Wait()).Should(Receive(BeNil()))
 	})
 
-	Context("when the node does not exist", func() {
-		var heartBeat ifrit.Process
+	Describe("Maintaining Locks", func() {
+		Context("when the node does not exist", func() {
+			var heartBeat ifrit.Process
 
-		BeforeEach(func() {
-			heartBeat = ifrit.Invoke(heart)
-		})
-
-		AfterEach(func() {
-			heartBeat.Signal(os.Kill)
-			Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
-		})
-
-		It("continuously writes the given node to the store", func() {
-			Consistently(matchHeartbeatNode(expectedHeartbeatNode), heartbeatInterval*4).ShouldNot(HaveOccurred())
-		})
-
-		Context("and it is sent a signal", func() {
 			BeforeEach(func() {
-				heartBeat.Signal(os.Interrupt)
+				heartBeat = ifrit.Invoke(heart)
 			})
 
-			It("exits and deletes the node from the store", func() {
-				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
-				_, err := etcdClient.Get(expectedHeartbeatNode.Key)
-				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
-			})
-		})
-
-		Context("and it is sent the kill signal", func() {
-			BeforeEach(func() {
+			AfterEach(func() {
 				heartBeat.Signal(os.Kill)
+				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
 			})
 
-			It("exits and does not delete the node from the store", func() {
-				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
-				Ω(matchHeartbeatNode(expectedHeartbeatNode)()).ShouldNot(HaveOccurred())
+			It("continuously writes the given node to the store", func() {
+				Consistently(getValueForHeartbeatKey, ttl+time.Second).Should(Equal(heartbeatValue))
+			})
+		})
+
+		Context("when the node is deleted after we have aquired a lock", func() {
+			var heartBeat ifrit.Process
+
+			BeforeEach(func() {
+				heartBeat = ifrit.Invoke(heart)
+				Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
+
+				Eventually(func() error {
+					err := consulAdapter.ReleaseAndDeleteLock(heartbeatKey)
+					Ω(err).ShouldNot(HaveOccurred())
+					_, err = getValueForHeartbeatKey()
+					return err
+				}).Should(Equal(consuladapter.NewKeyNotFoundError(heartbeatKey)))
+			})
+
+			It("exits", func() {
+				Eventually(heartBeat.Wait()).Should(Receive(Equal(heartbeater.ErrLockLost)))
 			})
 		})
 	})
 
-	Context("when the node is deleted after we have aquired a lock", func() {
+	Describe("Shut Down", func() {
 		var heartBeat ifrit.Process
 
-		BeforeEach(func() {
-			heartBeat = ifrit.Invoke(heart)
-			err := etcdClient.Delete(heartbeatKey)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			heartBeat.Signal(os.Kill)
-			Eventually(heartBeat.Wait()).Should(Receive())
-		})
-
-		It("re-creates the node", func() {
-			Eventually(matchHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
-		})
-
-		Describe("when there is a connection error", func() {
+		Context("when we are holding a lock in the store", func() {
 			BeforeEach(func() {
-				etcdProxy.Signal(os.Kill)
-				Eventually(etcdProxy.Wait(), 3*time.Second).Should(Receive(BeNil()))
+				heartBeat = ifrit.Invoke(heart)
+				Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
 			})
 
-			It("retries until it succeeds", func() {
-				restarted := make(chan struct{})
-				go func() {
-					time.Sleep(500 * time.Millisecond)
-					etcdProxy = ifrit.Invoke(proxyRunner)
-					close(restarted)
-				}()
-
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
-				<-restarted
+			AfterEach(func() {
+				heartBeat.Signal(os.Kill)
+				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
 			})
 
-			Describe("when the TTL expires", func() {
-				It("exits with an error", func() {
-					Eventually(heartBeat.Wait(), 5*time.Second).Should(Receive(Equal(heartbeater.ErrStoreUnavailable)))
-				})
+			It("deletes the node from the store", func() {
+				heartBeat.Signal(os.Interrupt)
+				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+
+				_, err := getValueForHeartbeatKey()
+				Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(heartbeatKey)))
 			})
 		})
 
-		Describe("when someone else acquires the lock after us", func() {
-			var doppelNode storeadapter.StoreNode
+		Context("when another maintainer is holding the lock we are trying to hold", func() {
+			var cancelChan chan struct{}
+			var otherAdapter consuladapter.Adapter
 
 			BeforeEach(func() {
-				doppelNode = storeadapter.StoreNode{
-					Key:   heartbeatKey,
-					Value: []byte("doppel-value"),
-				}
+				otherAdapter = newConsulAdapter()
 
-				err := etcdClient.Create(doppelNode)
+				cancelChan = make(chan struct{})
+				_, err := otherAdapter.AcquireAndMaintainLock(heartbeatKey, []byte("doppel-value"), ttl, cancelChan)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("does not write to the node", func() {
-				Consistently(matchHeartbeatNode(doppelNode), heartbeatInterval*2).Should(BeNil())
+			JustBeforeEach(func() {
+				heartBeat = ifrit.Background(heart)
 			})
 
-			It("exits with an error", func() {
-				Eventually(heartBeat.Wait(), 5*time.Second).Should(Receive(Equal(heartbeater.ErrLockFailed)))
-			})
-		})
-	})
-
-	Context("when we already have the lock", func() {
-		var sigChan chan os.Signal
-		var readyChan chan struct{}
-		var doneChan chan struct{}
-
-		BeforeEach(func() {
-			sigChan = make(chan os.Signal, 1)
-			readyChan = make(chan struct{})
-			doneChan = make(chan struct{})
-
-			heartBeat := ifrit.Invoke(heart)
-			heartBeat.Signal(os.Kill)
-			Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
-
-			go func() {
-				heart.Run(sigChan, readyChan)
-				close(doneChan)
-			}()
-		})
-
-		AfterEach(func() {
-			sigChan <- os.Kill
-			Eventually(doneChan).Should(BeClosed())
-		})
-
-		It("becomes ready immediately", func() {
-			select {
-			case <-readyChan:
-			case <-time.After(1 * time.Second):
-				Fail("TTL expired before heartbeater became ready")
-			}
-		})
-
-		It("continuously writes the given node to the store", func() {
-			<-readyChan
-			Consistently(matchHeartbeatNode(expectedHeartbeatNode), heartbeatInterval*4).ShouldNot(HaveOccurred())
-		})
-	})
-
-	Context("when someone else already has the lock first", func() {
-		var doppelNode storeadapter.StoreNode
-		var heartbeat ifrit.Process
-
-		BeforeEach(func() {
-			doppelNode = storeadapter.StoreNode{
-				Key:   heartbeatKey,
-				Value: []byte("doppel-value"),
-			}
-
-			err := etcdClient.Create(doppelNode)
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
-			heartbeat = ifrit.Background(heart)
-		})
-
-		AfterEach(func() {
-			err := etcdClient.Delete(heartbeatKey)
-			Ω(err).ShouldNot(HaveOccurred())
-
-			heartbeat.Signal(os.Kill)
-			Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
-		})
-
-		Context("and the other maintainer does not go away", func() {
-			It("does not overwrite the existing value", func() {
-				Consistently(matchHeartbeatNode(doppelNode), 2*heartbeatInterval).Should(BeNil())
+			AfterEach(func() {
+				close(cancelChan)
+				heartBeat.Signal(os.Kill)
+				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
 			})
 
-			It("exits when signalled", func() {
-				heartbeat.Signal(os.Kill)
-				Eventually(heartbeat.Wait()).Should(Receive())
+			It("does not delete the original node from the store", func() {
+				heartBeat.Signal(os.Interrupt)
+				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+
+				Consistently(getValueForHeartbeatKey).Should(Equal([]byte("doppel-value")))
 			})
 
 			It("never signals ready", func() {
-				Consistently(heartbeat.Ready()).ShouldNot(Receive())
+				Consistently(heartBeat.Ready()).ShouldNot(Receive())
 			})
 		})
 
-		Context("and the other maintainer goes away", func() {
-			var fakeClock *fakeclock.FakeClock
-			var done chan struct{}
-
+		Context("when we have lost connection to the store", func() {
 			BeforeEach(func() {
-				fakeClock = fakeclock.NewFakeClock(time.Now())
-				heartbeatClock = fakeClock
+				heartBeat = ifrit.Invoke(heart)
+				Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
 
-				heartbeatInterval = time.Minute
-				expectedHeartbeatNode.TTL = 120
-
-				heart = heartbeater.New(etcdClient, heartbeatClock, heartbeatKey, heartbeatValue, heartbeatInterval, logger)
-
-				done = make(chan struct{})
-				go func(etcdClient storeadapter.StoreAdapter) {
-					defer GinkgoRecover()
-					defer close(done)
-
-					time.Sleep(time.Second)
-					err := etcdClient.Delete(heartbeatKey)
-					Ω(err).ShouldNot(HaveOccurred())
-				}(etcdClient)
+				// simulate network partiion
+				consulProxy.Signal(os.Kill)
+				Eventually(consulProxy.Wait()).Should(Receive(BeNil()))
 			})
 
-			It("registers an interval timer as a fallback", func() {
-				<-done
-				Eventually(fakeClock.WatcherCount).Should(Equal(1))
-
-				fakeClock.Increment(heartbeatInterval)
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode)).Should(BeNil())
-			})
-
-			It("starts heartbeating once it disappears", func() {
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode), 2*time.Second).Should(BeNil())
+			It("exits", func() {
+				Eventually(heartBeat.Wait()).Should(Receive(Equal(heartbeater.ErrLockLost)))
 			})
 		})
 	})
 
-	Context("when we cannot connect to etcd", func() {
-		var heartbeatChan chan ifrit.Process
-
-		BeforeEach(func() {
-			etcdProxy.Signal(os.Kill)
-			Eventually(etcdProxy.Wait()).Should(Receive(BeNil()))
-
-			heartbeatChan = make(chan ifrit.Process)
-			go func() {
-				heartbeatChan <- ifrit.Invoke(heart)
-			}()
-		})
-
-		Context("and etcd eventually comes back", func() {
-			var etcdProxyChan chan ifrit.Process
+	Describe("Lock Contention", func() {
+		Context("when someone else tries to acquire the lock after us", func() {
+			var heartBeat ifrit.Process
 
 			BeforeEach(func() {
-				etcdProxyChan = make(chan ifrit.Process)
+				heartBeat = ifrit.Invoke(heart)
+				Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
+			})
+
+			AfterEach(func() {
+				heartBeat.Signal(os.Kill)
+				Eventually(heartBeat.Wait()).Should(Receive())
+			})
+
+			It("retains our original value", func() {
+				errChan := make(chan error)
+				cancelChan := make(chan struct{})
+
 				go func() {
-					time.Sleep(heartbeatInterval)
-					etcdProxyChan <- ifrit.Invoke(proxyRunner)
+					_, err := newConsulAdapter().AcquireAndMaintainLock(heartbeatKey, []byte("doppel-value"), ttl, cancelChan)
+					errChan <- err
 				}()
-			})
 
-			AfterEach(func() {
-				etcdProxy = <-etcdProxyChan
-				heartBeat := <-heartbeatChan
-				heartBeat.Signal(os.Kill)
-				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
-			})
+				time.Sleep(api.DefaultLockWaitTime + time.Second)
+				close(cancelChan)
+				Eventually(errChan, api.DefaultLockWaitTime).Should(Receive(Equal(consuladapter.NewCancelledLockAttemptError(heartbeatKey))))
 
-			It("begins heartbeating", func() {
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode), 2*time.Second).Should(BeNil())
+				value, err := getValueForHeartbeatKey()
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(value).Should(Equal(heartbeatValue))
 			})
 		})
 
-		Context("and etcd never comes back", func() {
-			AfterEach(func() {
-				// we have to start etcd to ensure the blocked heartbeat does not pollute other tests
-				etcdProxy = ifrit.Invoke(proxyRunner)
-				var heartBeat ifrit.Process
-				Eventually(heartbeatChan, 5).Should(Receive(&heartBeat))
-				heartBeat.Signal(os.Kill)
+		Context("when someone else already has the lock first", func() {
+			var heartbeat ifrit.Process
+			var cancelChan chan struct{}
+			var otherAdapter consuladapter.Adapter
+
+			BeforeEach(func() {
+				otherAdapter = newConsulAdapter()
+
+				cancelChan = make(chan struct{})
+				_, err := otherAdapter.AcquireAndMaintainLock(heartbeatKey, []byte("doppel-value"), ttl, cancelChan)
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("blocks on invoke forever", func() {
-				Consistently(heartbeatChan, 2*heartbeatInterval).ShouldNot(Receive())
+			JustBeforeEach(func() {
+				heartbeat = ifrit.Background(heart)
+			})
+
+			AfterEach(func() {
+				_ = otherAdapter.ReleaseAndDeleteLock(heartbeatKey)
+				close(cancelChan)
+
+				heartbeat.Signal(os.Kill)
+				Eventually(heartbeat.Wait()).Should(Receive(BeNil()))
+			})
+
+			Context("and the other maintainer does not go away", func() {
+				It("does not overwrite the existing value", func() {
+					Consistently(getValueForHeartbeatKey).Should(Equal([]byte("doppel-value")))
+				})
+			})
+
+			Context("and the other maintainer goes away", func() {
+				BeforeEach(func() {
+					heart = heartbeater.New(consulAdapter, heartbeatKey, heartbeatValue, ttl, clock, retryInterval, logger)
+
+					go func(adapter consuladapter.Adapter) {
+						defer GinkgoRecover()
+
+						err := adapter.ReleaseAndDeleteLock(heartbeatKey)
+						Ω(err).ShouldNot(HaveOccurred())
+					}(otherAdapter)
+				})
+
+				It("starts heartbeating once it disappears", func() {
+					clock.Increment(2 * retryInterval)
+					Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
+				})
 			})
 		})
 	})
 
-	Context("when we lose our existing connection to etcd", func() {
-		var heartBeat ifrit.Process
+	Describe("Losing connections", func() {
+		Context("when we cannot initially connect to the store", func() {
+			var heartBeat ifrit.Process
 
-		BeforeEach(func() {
-			heartBeat = ifrit.Invoke(heart)
-
-			// simulate network partiion
-			etcdProxy.Signal(os.Kill)
-			Eventually(etcdProxy.Wait()).Should(Receive(BeNil()))
-		})
-
-		Context("and etcd comes back before the ttl expires", func() {
 			BeforeEach(func() {
-				time.Sleep(heartbeatInterval)
-				etcdProxy = ifrit.Invoke(proxyRunner)
+				consulProxy.Signal(os.Kill)
+				Eventually(consulProxy.Wait()).Should(Receive(BeNil()))
+
+				heartBeat = ifrit.Background(heart)
 			})
 
-			AfterEach(func() {
-				heartBeat.Signal(os.Kill)
-				Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+			Context("when we are eventually able to connect to the store", func() {
+				var consulProxyChan chan ifrit.Process
+
+				BeforeEach(func() {
+					consulProxyChan = make(chan ifrit.Process)
+					go func() {
+						consulProxyChan <- ifrit.Invoke(proxyRunner)
+					}()
+
+					clock.Increment(2 * retryInterval)
+				})
+
+				AfterEach(func() {
+					consulProxy = <-consulProxyChan
+					heartBeat.Signal(os.Kill)
+					Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+				})
+
+				It("begins heartbeating", func() {
+					Eventually(getValueForHeartbeatKey).Should(Equal(heartbeatValue))
+				})
 			})
 
-			It("resumes heartbeating", func() {
-				Eventually(matchHeartbeatNode(expectedHeartbeatNode), 2*time.Second).Should(BeNil())
-			})
-		})
+			Context("when we consistently are unable to connect to the store", func() {
+				BeforeEach(func() {
+					clock.Increment(2 * retryInterval)
+				})
 
-		Context("and etcd does not come back before the ttl expires", func() {
-			It("exits with an error", func() {
-				Eventually(heartBeat.Wait(), 4*time.Second).Should(Receive(Equal(heartbeater.ErrStoreUnavailable)))
+				AfterEach(func() {
+					// we have to start the store to ensure the blocked heartbeat does not pollute other tests
+					heartBeat.Signal(os.Kill)
+					Eventually(heartBeat.Wait()).Should(Receive(BeNil()))
+				})
+
+				It("blocks on invoke forever", func() {
+					Consistently(heartBeat.Ready(), ttl+time.Second).ShouldNot(Receive())
+				})
 			})
 		})
 	})
 })
-
-func matchHeartbeatNode(expectedNode storeadapter.StoreNode) func() error {
-	return func() error {
-		node, err := etcdClient.Get(expectedNode.Key)
-
-		if err != nil {
-			return err
-		}
-
-		if node.Key != expectedNode.Key {
-			return fmt.Errorf("Key not matching: %s : %s", node.Key, expectedNode.Key)
-		}
-
-		if string(node.Value) != string(expectedNode.Value) {
-			return fmt.Errorf("Value not matching: %s : %s", node.Value, expectedNode.Value)
-		}
-
-		if node.TTL != expectedNode.TTL {
-			return fmt.Errorf("TTL not matching: %d : %d", node.TTL, expectedNode.TTL)
-		}
-
-		return nil
-	}
-}

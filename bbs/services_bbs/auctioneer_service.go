@@ -7,13 +7,13 @@ import (
 )
 
 func (bbs *ServicesBBS) AuctioneerAddress() (string, error) {
-	node, err := bbs.store.Get(shared.LockSchemaPath("auctioneer_lock"))
+	value, err := bbs.consul.GetValue(shared.LockSchemaPath("auctioneer_lock"))
 	if err != nil {
 		return "", bbserrors.ErrServiceUnavailable
 	}
 
 	auctioneerPresence := models.AuctioneerPresence{}
-	err = models.FromJSON(node.Value, &auctioneerPresence)
+	err = models.FromJSON(value, &auctioneerPresence)
 	if err != nil {
 		return "", err
 	}

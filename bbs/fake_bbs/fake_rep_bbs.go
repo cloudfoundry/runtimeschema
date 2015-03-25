@@ -13,11 +13,12 @@ import (
 )
 
 type FakeRepBBS struct {
-	NewCellHeartbeatStub        func(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner
+	NewCellHeartbeatStub        func(cellPresence models.CellPresence, ttl, retryInterval time.Duration) ifrit.Runner
 	newCellHeartbeatMutex       sync.RWMutex
 	newCellHeartbeatArgsForCall []struct {
-		cellPresence models.CellPresence
-		interval     time.Duration
+		cellPresence  models.CellPresence
+		ttl           time.Duration
+		retryInterval time.Duration
 	}
 	newCellHeartbeatReturns struct {
 		result1 ifrit.Runner
@@ -185,15 +186,16 @@ type FakeRepBBS struct {
 	}
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, interval time.Duration) ifrit.Runner {
+func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
 	fake.newCellHeartbeatMutex.Lock()
 	fake.newCellHeartbeatArgsForCall = append(fake.newCellHeartbeatArgsForCall, struct {
-		cellPresence models.CellPresence
-		interval     time.Duration
-	}{cellPresence, interval})
+		cellPresence  models.CellPresence
+		ttl           time.Duration
+		retryInterval time.Duration
+	}{cellPresence, ttl, retryInterval})
 	fake.newCellHeartbeatMutex.Unlock()
 	if fake.NewCellHeartbeatStub != nil {
-		return fake.NewCellHeartbeatStub(cellPresence, interval)
+		return fake.NewCellHeartbeatStub(cellPresence, ttl, retryInterval)
 	} else {
 		return fake.newCellHeartbeatReturns.result1
 	}
@@ -205,10 +207,10 @@ func (fake *FakeRepBBS) NewCellHeartbeatCallCount() int {
 	return len(fake.newCellHeartbeatArgsForCall)
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeatArgsForCall(i int) (models.CellPresence, time.Duration) {
+func (fake *FakeRepBBS) NewCellHeartbeatArgsForCall(i int) (models.CellPresence, time.Duration, time.Duration) {
 	fake.newCellHeartbeatMutex.RLock()
 	defer fake.newCellHeartbeatMutex.RUnlock()
-	return fake.newCellHeartbeatArgsForCall[i].cellPresence, fake.newCellHeartbeatArgsForCall[i].interval
+	return fake.newCellHeartbeatArgsForCall[i].cellPresence, fake.newCellHeartbeatArgsForCall[i].ttl, fake.newCellHeartbeatArgsForCall[i].retryInterval
 }
 
 func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {

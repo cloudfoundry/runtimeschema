@@ -4,14 +4,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/clock/fakeclock"
 )
@@ -21,7 +24,6 @@ var _ = Describe("Receptor Service Registry", func() {
 		clock *fakeclock.FakeClock
 
 		bbs                    *services_bbs.ServicesBBS
-		interval               = time.Second
 		heartbeat1             ifrit.Process
 		heartbeat2             ifrit.Process
 		firstReceptorPresence  models.ReceptorPresence
@@ -30,15 +32,13 @@ var _ = Describe("Receptor Service Registry", func() {
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
 
 		firstReceptorPresence = models.NewReceptorPresence("first-receptor", "first-receptor-url")
 		secondReceptorPresence = models.NewReceptorPresence("second-receptor", "second-receptor-url")
 
-		interval = 1 * time.Second
-
-		heartbeat1 = ifrit.Invoke(bbs.NewReceptorHeartbeat(firstReceptorPresence, interval))
-		heartbeat2 = ifrit.Invoke(bbs.NewReceptorHeartbeat(secondReceptorPresence, interval))
+		heartbeat1 = ifrit.Invoke(bbs.NewReceptorHeartbeat(firstReceptorPresence, structs.SessionTTLMin, 100*time.Millisecond))
+		heartbeat2 = ifrit.Invoke(bbs.NewReceptorHeartbeat(secondReceptorPresence, structs.SessionTTLMin, 100*time.Millisecond))
 	})
 
 	AfterEach(func() {
@@ -49,15 +49,28 @@ var _ = Describe("Receptor Service Registry", func() {
 	})
 
 	Describe("MaintainReceptorPresence", func() {
-		It("should put /receptor/RECEPTOR_ID in the store with a TTL", func() {
-			node, err := etcdClient.Get("/v1/receptor/" + firstReceptorPresence.ReceptorID)
+		It("should put the receptor's presence in the store", func() {
+			value, err := consulAdapter.GetValue(shared.ReceptorSchemaPath(firstReceptorPresence.ReceptorID))
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(node.TTL).ShouldNot(BeZero())
 
 			expectedJSON, err := models.ToJSON(firstReceptorPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(node.Value).Should(MatchJSON(expectedJSON))
+			Ω(value).Should(MatchJSON(expectedJSON))
+		})
+
+		Context("when heartbeating stops", func() {
+			BeforeEach(func() {
+				ginkgomon.Interrupt(heartbeat1)
+			})
+
+			It("should eventually expire the data from the store", func() {
+				key := shared.ReceptorSchemaPath(firstReceptorPresence.ReceptorID)
+				Eventually(func() error {
+					_, err := consulAdapter.GetValue(key)
+					return err
+				}, structs.SessionTTLMin+time.Second).Should(Equal(consuladapter.NewKeyNotFoundError(key)))
+			})
 		})
 	})
 

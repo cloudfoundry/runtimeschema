@@ -2,11 +2,11 @@ package heartbeater_test
 
 import (
 	"fmt"
+	"log"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 
-	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
+	"github.com/cloudfoundry-incubator/consuladapter"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -16,11 +16,18 @@ import (
 	"testing"
 )
 
-var proxyRunner ifrit.Runner
-var proxyUrl string
+var (
+	proxyRunner  ifrit.Runner
+	proxyAddress string
 
-var etcdRunner *etcdstorerunner.ETCDClusterRunner
-var etcdPort int
+	consulStartingPort int
+	consulRunner       consuladapter.ClusterRunner
+)
+
+const (
+	defaultScheme     = "http"
+	defaultDatacenter = "dc"
+)
 
 func TestHeartbeater(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -28,30 +35,31 @@ func TestHeartbeater(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	etcdPort = 5001 + config.GinkgoConfig.ParallelNode
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(etcdPort, 1)
+	consulStartingPort = 5001 + config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength
+	consulRunner = consuladapter.NewClusterRunner(consulStartingPort, 1, defaultScheme)
 
-	proxyUrl = fmt.Sprintf("http://127.0.0.1:%d", 6001+config.GinkgoConfig.ParallelNode)
-	proxyRunner = newEtcdProxy(proxyUrl, etcdPort)
+	proxyAddress = fmt.Sprintf("127.0.0.1:%d", 6001+config.GinkgoConfig.ParallelNode)
 
-	etcdRunner.Start()
+	consulRunner.Start()
 })
 
 var _ = BeforeEach(func() {
-	etcdRunner.Reset()
+	proxyRunner = newConsulProxy(proxyAddress, consulStartingPort+consuladapter.PortOffsetHTTP)
+	consulRunner.Reset()
 })
 
 var _ = AfterSuite(func() {
-	etcdRunner.Stop()
+	consulRunner.Stop()
 })
 
-func newEtcdProxy(proxyUrl string, etcdPort int) ifrit.Runner {
-	etcdUrl := &url.URL{
+func newConsulProxy(proxyAddress string, consulHTTPPort int) ifrit.Runner {
+	consulURL := &url.URL{
 		Scheme: "http",
-		Host:   fmt.Sprintf("127.0.0.1:%d", etcdPort),
+		Host:   fmt.Sprintf("127.0.0.1:%d", consulHTTPPort),
 	}
 
-	proxyHandler := httputil.NewSingleHostReverseProxy(etcdUrl)
+	proxyHandler := httputil.NewSingleHostReverseProxy(consulURL)
+	proxyHandler.ErrorLog = log.New(GinkgoWriter, "consul-proxy", log.LstdFlags)
 
-	return http_server.New(strings.TrimLeft(proxyUrl, "http://"), proxyHandler)
+	return http_server.New(proxyAddress, proxyHandler)
 }

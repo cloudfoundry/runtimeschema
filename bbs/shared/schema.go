@@ -7,25 +7,14 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
-const SchemaRoot = "/v1/"
-const CellSchemaRoot = SchemaRoot + "cell"
-const ReceptorSchemaRoot = SchemaRoot + "receptor"
-const ActualLRPSchemaRoot = SchemaRoot + "actual"
-const DesiredLRPSchemaRoot = SchemaRoot + "desired"
-const TaskSchemaRoot = SchemaRoot + "task"
-const LockSchemaRoot = SchemaRoot + "locks"
-const DomainSchemaRoot = SchemaRoot + "domain"
+const DataSchemaRoot = "/v1/"
+const ActualLRPSchemaRoot = DataSchemaRoot + "actual"
+const DesiredLRPSchemaRoot = DataSchemaRoot + "desired"
+const TaskSchemaRoot = DataSchemaRoot + "task"
+const DomainSchemaRoot = DataSchemaRoot + "domain"
 
 const ActualLRPInstanceKey = "instance"
 const ActualLRPEvacuatingKey = "evacuating"
-
-func CellSchemaPath(cellID string) string {
-	return path.Join(CellSchemaRoot, cellID)
-}
-
-func ReceptorSchemaPath(receptorID string) string {
-	return path.Join(ReceptorSchemaRoot, receptorID)
-}
 
 func ActualLRPProcessDir(processGuid string) string {
 	return path.Join(ActualLRPSchemaRoot, processGuid)
@@ -55,10 +44,22 @@ func TaskSchemaPath(taskGuid string) string {
 	return path.Join(TaskSchemaRoot, taskGuid)
 }
 
+func DomainSchemaPath(domain string) string {
+	return path.Join(DomainSchemaRoot, domain)
+}
+
+const LockSchemaRoot = "v1/locks"
+const CellSchemaRoot = LockSchemaRoot + "/cell"
+const ReceptorSchemaRoot = LockSchemaRoot + "/receptor"
+
 func LockSchemaPath(lockName string) string {
 	return path.Join(LockSchemaRoot, lockName)
 }
 
-func DomainSchemaPath(domain string) string {
-	return path.Join(DomainSchemaRoot, domain)
+func CellSchemaPath(cellID string) string {
+	return path.Join(CellSchemaRoot, cellID)
+}
+
+func ReceptorSchemaPath(receptorID string) string {
+	return path.Join(ReceptorSchemaRoot, receptorID)
 }

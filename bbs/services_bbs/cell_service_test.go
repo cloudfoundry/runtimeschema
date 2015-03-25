@@ -14,12 +14,12 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/clock/fakeclock"
 )
 
 var _ = Describe("Cell Service Registry", func() {
-	const interval = time.Second
+	const ttl = 10 * time.Second
+	const retryInterval = time.Second
 	var (
 		clock *fakeclock.FakeClock
 
@@ -32,7 +32,7 @@ var _ = Describe("Cell Service Registry", func() {
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
 
 		firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 		secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3))
@@ -55,25 +55,23 @@ var _ = Describe("Cell Service Registry", func() {
 
 	Describe("MaintainCellPresence", func() {
 		BeforeEach(func() {
-			heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+			heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
 		})
 
 		It("should put /cell/CELL_ID in the store with a TTL", func() {
-			node, err := etcdClient.Get("/v1/cell/" + firstCellPresence.CellID)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(node.TTL).ShouldNot(BeZero())
-
 			expectedJSON, err := models.ToJSON(firstCellPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Ω(node.Value).Should(MatchJSON(expectedJSON))
+			Consistently(func() ([]byte, error) {
+				return consulAdapter.GetValue(shared.CellSchemaPath(firstCellPresence.CellID))
+			}, ttl+time.Second).Should(MatchJSON(expectedJSON))
 		})
 	})
 
 	Describe("CellById", func() {
 		Context("when the cell exists", func() {
 			BeforeEach(func() {
-				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
 			})
 
 			It("returns the correct CellPresence", func() {
@@ -94,8 +92,8 @@ var _ = Describe("Cell Service Registry", func() {
 	Describe("Cells", func() {
 		Context("when there are available Cells", func() {
 			BeforeEach(func() {
-				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
-				heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, interval))
+				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
+				heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, ttl, retryInterval))
 			})
 
 			It("should get from /v1/cell/", func() {
@@ -108,10 +106,8 @@ var _ = Describe("Cell Service Registry", func() {
 
 			Context("when there is unparsable JSON in there...", func() {
 				BeforeEach(func() {
-					etcdClient.Create(storeadapter.StoreNode{
-						Key:   shared.CellSchemaPath("blah"),
-						Value: []byte("ß"),
-					})
+					err := consulAdapter.SetValue(shared.CellSchemaPath("blah"), []byte("ß"))
+					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("should ignore the unparsable JSON and move on", func() {
@@ -138,73 +134,62 @@ var _ = Describe("Cell Service Registry", func() {
 			var receivedEvents <-chan services_bbs.CellEvent
 
 			BeforeEach(func() {
-				eventChan := make(chan services_bbs.CellEvent, 1)
+				eventChan := make(chan services_bbs.CellEvent)
 				receivedEvents = eventChan
 
 				go func() {
 					defer GinkgoRecover()
 
-					event, err := bbs.WaitForCellEvent()
-					Ω(err).ShouldNot(HaveOccurred())
+					for {
+						event, err := bbs.WaitForCellEvent()
+						if err == nil {
+							eventChan <- event
+							break
+						}
 
-					eventChan <- event
+						time.Sleep(50 * time.Millisecond)
+					}
 				}()
-
-				time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
 			})
 
-			Context("when a cell presence appears", func() {
+			Context("when cells are present and then one disappears", func() {
 				BeforeEach(func() {
-					heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, interval))
+					expectedPresence1, err := models.ToJSON(firstCellPresence)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
+					Eventually(func() ([]byte, error) {
+						return consulAdapter.GetValue(shared.CellSchemaPath(firstCellPresence.CellID))
+					}).Should(Equal(expectedPresence1))
+
+					expectedPresence2, err := models.ToJSON(secondCellPresence)
+					Ω(err).ShouldNot(HaveOccurred())
+
+					heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, ttl, retryInterval))
+					Eventually(func() ([]byte, error) {
+						return consulAdapter.GetValue(shared.CellSchemaPath(secondCellPresence.CellID))
+					}).Should(Equal(expectedPresence2))
+
+					time.Sleep(200 * time.Millisecond) // give the watcher time to register the cells
+
+					ginkgomon.Interrupt(heartbeat1)
 				})
 
-				It("receives a CellAppeared event", func() {
-					Eventually(receivedEvents).Should(Receive(Equal(services_bbs.CellAppearedEvent{
-						Presence: firstCellPresence,
+				AfterEach(func() {
+					ginkgomon.Interrupt(heartbeat2)
+				})
+
+				It("receives a CellDisappeared event", func() {
+					Eventually(receivedEvents, 20*time.Second).Should(Receive(Equal(services_bbs.CellDisappearedEvent{
+						IDs: []string{firstCellPresence.CellID},
 					})))
-				})
-
-				Describe("watching again", func() {
-					var receivedEvents <-chan services_bbs.CellEvent
-
-					BeforeEach(func() {
-						eventChan := make(chan services_bbs.CellEvent, 1)
-						receivedEvents = eventChan
-
-						go func() {
-							defer GinkgoRecover()
-
-							event, err := bbs.WaitForCellEvent()
-							Ω(err).ShouldNot(HaveOccurred())
-
-							eventChan <- event
-						}()
-
-						time.Sleep(100 * time.Millisecond) //give the watcher a chance to connect
-					})
-
-					Context("when the cell then disappears", func() {
-						BeforeEach(func() {
-							ginkgomon.Interrupt(heartbeat1)
-						})
-
-						It("receives a CellDisappeared event", func() {
-							Eventually(receivedEvents).Should(Receive(Equal(services_bbs.CellDisappearedEvent{
-								Presence: firstCellPresence,
-							})))
-						})
-					})
 				})
 			})
 		})
 
 		Context("when the store is down", func() {
 			BeforeEach(func() {
-				etcdRunner.Stop()
-			})
-
-			AfterEach(func() {
-				etcdRunner.Start()
+				consulRunner.Reset()
 			})
 
 			It("returns an error", func() {
