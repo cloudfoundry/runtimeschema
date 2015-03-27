@@ -10,18 +10,18 @@ import (
 	"github.com/pivotal-golang/clock/fakeclock"
 	"github.com/pivotal-golang/lager/lagertest"
 
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 )
 
 var _ = Context("Getting Generic Services", func() {
 	var (
 		clock *fakeclock.FakeClock
-		bbs   *ServicesBBS
+		bbs   *services_bbs.ServicesBBS
 	)
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = New(etcdClient, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
 	})
 
 	Describe("ServiceRegistrations", func() {

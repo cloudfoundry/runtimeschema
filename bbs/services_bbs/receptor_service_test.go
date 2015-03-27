@@ -11,7 +11,7 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/clock/fakeclock"
 )
@@ -20,7 +20,7 @@ var _ = Describe("Receptor Service Registry", func() {
 	var (
 		clock *fakeclock.FakeClock
 
-		bbs                    *ServicesBBS
+		bbs                    *services_bbs.ServicesBBS
 		interval               = time.Second
 		heartbeat1             ifrit.Process
 		heartbeat2             ifrit.Process
@@ -30,7 +30,7 @@ var _ = Describe("Receptor Service Registry", func() {
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = New(etcdClient, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
 
 		firstReceptorPresence = models.NewReceptorPresence("first-receptor", "first-receptor-url")
 		secondReceptorPresence = models.NewReceptorPresence("second-receptor", "second-receptor-url")

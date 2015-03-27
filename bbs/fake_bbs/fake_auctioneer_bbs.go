@@ -15,7 +15,7 @@ type FakeAuctioneerBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}

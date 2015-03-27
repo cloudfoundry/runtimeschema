@@ -11,7 +11,7 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -23,7 +23,7 @@ var _ = Describe("Cell Service Registry", func() {
 	var (
 		clock *fakeclock.FakeClock
 
-		bbs                *ServicesBBS
+		bbs                *services_bbs.ServicesBBS
 		heartbeat1         ifrit.Process
 		heartbeat2         ifrit.Process
 		firstCellPresence  models.CellPresence
@@ -32,7 +32,7 @@ var _ = Describe("Cell Service Registry", func() {
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = New(etcdClient, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(etcdClient, clock, lagertest.NewTestLogger("test"))
 
 		firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 		secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3))
@@ -135,10 +135,10 @@ var _ = Describe("Cell Service Registry", func() {
 
 	Describe("WaitForCellEvent", func() {
 		Context("when the store is around", func() {
-			var receivedEvents <-chan CellEvent
+			var receivedEvents <-chan services_bbs.CellEvent
 
 			BeforeEach(func() {
-				eventChan := make(chan CellEvent, 1)
+				eventChan := make(chan services_bbs.CellEvent, 1)
 				receivedEvents = eventChan
 
 				go func() {
@@ -159,16 +159,16 @@ var _ = Describe("Cell Service Registry", func() {
 				})
 
 				It("receives a CellAppeared event", func() {
-					Eventually(receivedEvents).Should(Receive(Equal(CellAppearedEvent{
+					Eventually(receivedEvents).Should(Receive(Equal(services_bbs.CellAppearedEvent{
 						Presence: firstCellPresence,
 					})))
 				})
 
 				Describe("watching again", func() {
-					var receivedEvents <-chan CellEvent
+					var receivedEvents <-chan services_bbs.CellEvent
 
 					BeforeEach(func() {
-						eventChan := make(chan CellEvent, 1)
+						eventChan := make(chan services_bbs.CellEvent, 1)
 						receivedEvents = eventChan
 
 						go func() {
@@ -189,7 +189,7 @@ var _ = Describe("Cell Service Registry", func() {
 						})
 
 						It("receives a CellDisappeared event", func() {
-							Eventually(receivedEvents).Should(Receive(Equal(CellDisappearedEvent{
+							Eventually(receivedEvents).Should(Receive(Equal(services_bbs.CellDisappearedEvent{
 								Presence: firstCellPresence,
 							})))
 						})
