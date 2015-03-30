@@ -25,6 +25,12 @@ func New(
 }
 
 func (bbs *DomainBBS) UpsertDomain(domain string, ttlInSeconds int) error {
+	logger := bbs.logger.Session("upsert-domain", lager.Data{
+		"domain": domain,
+		"ttl":    ttlInSeconds,
+	})
+	defer logger.Info("finished")
+
 	var validationError models.ValidationError
 
 	if domain == "" {
@@ -39,6 +45,7 @@ func (bbs *DomainBBS) UpsertDomain(domain string, ttlInSeconds int) error {
 		return validationError
 	}
 
+	logger.Info("starting")
 	return shared.ConvertStoreError(bbs.store.SetMulti([]storeadapter.StoreNode{
 		{
 			Key: shared.DomainSchemaPath(domain),
