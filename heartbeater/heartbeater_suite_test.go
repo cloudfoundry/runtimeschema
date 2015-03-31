@@ -21,7 +21,7 @@ var (
 	proxyAddress string
 
 	consulStartingPort int
-	consulRunner       consuladapter.ClusterRunner
+	consulRunner       *consuladapter.ClusterRunner
 )
 
 const (

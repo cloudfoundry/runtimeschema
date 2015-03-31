@@ -28,7 +28,7 @@ import (
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulAdapter consuladapter.Adapter
-var consulRunner consuladapter.ClusterRunner
+var consulRunner *consuladapter.ClusterRunner
 var bbs *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
 var clock *AdvancingFakeClock

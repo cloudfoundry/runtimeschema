@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-var consulRunner consuladapter.ClusterRunner
+var consulRunner *consuladapter.ClusterRunner
 var consulAdapter consuladapter.Adapter
 
 func TestServicesBbs(t *testing.T) {

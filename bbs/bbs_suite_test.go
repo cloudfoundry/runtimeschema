@@ -17,7 +17,7 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var consulRunner consuladapter.ClusterRunner
+var consulRunner *consuladapter.ClusterRunner
 var consulAdapter consuladapter.Adapter
 var clock *fakeclock.FakeClock
 var logger lager.Logger
