@@ -3,12 +3,10 @@ package fake_bbs
 
 import (
 	"sync"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
-	"github.com/tedsuo/ifrit"
 )
 
 type FakeReceptorBBS struct {
@@ -216,16 +214,6 @@ type FakeReceptorBBS struct {
 	domainsReturns struct {
 		result1 []string
 		result2 error
-	}
-	NewReceptorHeartbeatStub        func(models.ReceptorPresence, time.Duration, time.Duration) ifrit.Runner
-	newReceptorHeartbeatMutex       sync.RWMutex
-	newReceptorHeartbeatArgsForCall []struct {
-		arg1 models.ReceptorPresence
-		arg2 time.Duration
-		arg3 time.Duration
-	}
-	newReceptorHeartbeatReturns struct {
-		result1 ifrit.Runner
 	}
 }
 
@@ -954,40 +942,6 @@ func (fake *FakeReceptorBBS) DomainsReturns(result1 []string, result2 error) {
 		result1 []string
 		result2 error
 	}{result1, result2}
-}
-
-func (fake *FakeReceptorBBS) NewReceptorHeartbeat(arg1 models.ReceptorPresence, arg2 time.Duration, arg3 time.Duration) ifrit.Runner {
-	fake.newReceptorHeartbeatMutex.Lock()
-	fake.newReceptorHeartbeatArgsForCall = append(fake.newReceptorHeartbeatArgsForCall, struct {
-		arg1 models.ReceptorPresence
-		arg2 time.Duration
-		arg3 time.Duration
-	}{arg1, arg2, arg3})
-	fake.newReceptorHeartbeatMutex.Unlock()
-	if fake.NewReceptorHeartbeatStub != nil {
-		return fake.NewReceptorHeartbeatStub(arg1, arg2, arg3)
-	} else {
-		return fake.newReceptorHeartbeatReturns.result1
-	}
-}
-
-func (fake *FakeReceptorBBS) NewReceptorHeartbeatCallCount() int {
-	fake.newReceptorHeartbeatMutex.RLock()
-	defer fake.newReceptorHeartbeatMutex.RUnlock()
-	return len(fake.newReceptorHeartbeatArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) NewReceptorHeartbeatArgsForCall(i int) (models.ReceptorPresence, time.Duration, time.Duration) {
-	fake.newReceptorHeartbeatMutex.RLock()
-	defer fake.newReceptorHeartbeatMutex.RUnlock()
-	return fake.newReceptorHeartbeatArgsForCall[i].arg1, fake.newReceptorHeartbeatArgsForCall[i].arg2, fake.newReceptorHeartbeatArgsForCall[i].arg3
-}
-
-func (fake *FakeReceptorBBS) NewReceptorHeartbeatReturns(result1 ifrit.Runner) {
-	fake.NewReceptorHeartbeatStub = nil
-	fake.newReceptorHeartbeatReturns = struct {
-		result1 ifrit.Runner
-	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)

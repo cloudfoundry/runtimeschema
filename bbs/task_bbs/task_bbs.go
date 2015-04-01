@@ -9,13 +9,14 @@ import (
 )
 
 type TaskBBS struct {
-	store            storeadapter.StoreAdapter
-	consulAdapter    consuladapter.Adapter
-	clock            clock.Clock
-	taskClient       cb.TaskClient
-	auctioneerClient cb.AuctioneerClient
-	cellClient       cb.CellClient
-	services         *services_bbs.ServicesBBS
+	store                  storeadapter.StoreAdapter
+	consulAdapter          consuladapter.Adapter
+	clock                  clock.Clock
+	taskClient             cb.TaskClient
+	auctioneerClient       cb.AuctioneerClient
+	cellClient             cb.CellClient
+	services               *services_bbs.ServicesBBS
+	receptorTaskHandlerURL string
 }
 
 func New(
@@ -26,14 +27,16 @@ func New(
 	auctioneerClient cb.AuctioneerClient,
 	cellClient cb.CellClient,
 	services *services_bbs.ServicesBBS,
+	receptorTaskHandlerURL string,
 ) *TaskBBS {
 	return &TaskBBS{
-		store:            store,
-		consulAdapter:    consulAdapter,
-		clock:            clock,
-		taskClient:       taskClient,
-		auctioneerClient: auctioneerClient,
-		cellClient:       cellClient,
-		services:         services,
+		store:                  store,
+		consulAdapter:          consulAdapter,
+		clock:                  clock,
+		taskClient:             taskClient,
+		auctioneerClient:       auctioneerClient,
+		cellClient:             cellClient,
+		services:               services,
+		receptorTaskHandlerURL: receptorTaskHandlerURL,
 	}
 }

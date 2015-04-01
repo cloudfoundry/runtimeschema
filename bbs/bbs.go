@@ -54,9 +54,6 @@ type ReceptorBBS interface {
 	// domains
 	UpsertDomain(domain string, ttlInSeconds int) error
 	Domains() ([]string, error)
-
-	//services
-	NewReceptorHeartbeat(models.ReceptorPresence, time.Duration, time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
@@ -164,27 +161,27 @@ type VeritasBBS interface {
 }
 
 func NewReceptorBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
-	return NewBBS(store, consul, clock, logger)
+	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewRepBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RepBBS {
-	return NewBBS(store, consul, clock, logger)
+func NewRepBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
+	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewConvergerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ConvergerBBS {
-	return NewBBS(store, consul, clock, logger)
+func NewConvergerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
+	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
 func NewNsyncBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
-	return NewBBS(store, consul, clock, logger)
+func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
+	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
 func NewMetricsBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
-	return NewBBS(store, consul, clock, logger)
+	return NewBBS(store, consul, "", clock, logger)
 }
 
 func NewRouteEmitterBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
@@ -192,18 +189,19 @@ func NewRouteEmitterBBS(consul consuladapter.Adapter, clock clock.Clock, logger 
 }
 
 func NewVeritasBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) VeritasBBS {
-	return NewBBS(store, nil, clock, logger)
+	return NewBBS(store, nil, "", clock, logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *BBS {
+func NewBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
+	cellClient := cb.NewCellClient()
 
 	return &BBS{
 		LockBBS:     lock_bbs.New(consul, clock, logger.Session("lock-bbs")),
-		LRPBBS:      lrp_bbs.New(store, clock, cb.NewCellClient(), auctioneerClient, services),
+		LRPBBS:      lrp_bbs.New(store, clock, cellClient, auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, consul, clock, cb.NewTaskClient(), auctioneerClient, cb.NewCellClient(), services),
+		TaskBBS:     task_bbs.New(store, consul, clock, cb.NewTaskClient(), auctioneerClient, cellClient, services, receptorTaskHandlerURL),
 		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }

@@ -248,13 +248,7 @@ func (bbs *TaskBBS) completeTasks(tasksToComplete []models.Task, taskLog lager.L
 		return
 	}
 
-	receptor, err := bbs.services.Receptor()
-	if err != nil {
-		taskLog.Error("failed-to-find-receptor", err)
-		return
-	}
-
-	err = bbs.taskClient.CompleteTasks(receptor.ReceptorURL, tasksToComplete)
+	err := bbs.taskClient.CompleteTasks(bbs.receptorTaskHandlerURL, tasksToComplete)
 	if err != nil {
 		taskLog.Error("failed-to-complete-tasks", err, lager.Data{
 			"tasks": tasksToComplete,

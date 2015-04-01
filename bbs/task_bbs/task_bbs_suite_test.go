@@ -20,6 +20,8 @@ import (
 	"time"
 )
 
+const receptorURL = "http://some-receptor-url"
+
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulRunner *consuladapter.ClusterRunner
@@ -75,7 +77,8 @@ var _ = BeforeEach(func() {
 	fakeCellClient = new(cbfakes.FakeCellClient)
 	clock = fakeclock.NewFakeClock(time.Unix(1238, 0))
 	servicesBBS = services_bbs.New(consulAdapter, clock, logger)
-	bbs = task_bbs.New(etcdClient, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
+	bbs = task_bbs.New(etcdClient, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient,
+		servicesBBS, receptorURL)
 })
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {

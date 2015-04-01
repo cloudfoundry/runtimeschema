@@ -3,17 +3,13 @@ package task_bbs_test
 import (
 	"errors"
 	"net/url"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	. "github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter/fakestoreadapter"
-	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Task BBS", func() {
@@ -471,7 +467,8 @@ var _ = Describe("Task BBS", func() {
 					fakeStoreAdapter := fakestoreadapter.New()
 					fakeStoreAdapter.GetErrInjector = fakestoreadapter.NewFakeStoreAdapterErrorInjector(``, storeError)
 
-					bbs = New(fakeStoreAdapter, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient, servicesBBS)
+					bbs = New(fakeStoreAdapter, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient,
+						servicesBBS, receptorURL)
 				})
 
 				It("returns an error", func() {
@@ -558,23 +555,6 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				Context("when a receptor is present", func() {
-					var receptorPresence ifrit.Process
-
-					BeforeEach(func() {
-						presence := models.ReceptorPresence{
-							ReceptorID:  "some-receptor",
-							ReceptorURL: "some-receptor-url",
-						}
-
-						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
-
-						receptorPresence = ifrit.Invoke(heartbeat)
-					})
-
-					AfterEach(func() {
-						ginkgomon.Interrupt(receptorPresence)
-					})
-
 					Context("and completing succeeds", func() {
 						BeforeEach(func() {
 							fakeTaskClient.CompleteTasksReturns(nil)
@@ -590,8 +570,8 @@ var _ = Describe("Task BBS", func() {
 								Ω(err).ShouldNot(HaveOccurred())
 
 								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
-								receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-								Ω(receptorURL).Should(Equal("some-receptor-url"))
+								url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
+								Ω(url).Should(Equal(receptorURL))
 								Ω(completedTasks).Should(HaveLen(1))
 								Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 								Ω(completedTasks[0].Failed).Should(BeTrue())
@@ -748,23 +728,6 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				Context("when a receptor is present", func() {
-					var receptorPresence ifrit.Process
-
-					BeforeEach(func() {
-						presence := models.ReceptorPresence{
-							ReceptorID:  "some-receptor",
-							ReceptorURL: "some-receptor-url",
-						}
-
-						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
-
-						receptorPresence = ifrit.Invoke(heartbeat)
-					})
-
-					AfterEach(func() {
-						ginkgomon.Interrupt(receptorPresence)
-					})
-
 					Context("and failing succeeds", func() {
 						BeforeEach(func() {
 							fakeTaskClient.CompleteTasksReturns(nil)
@@ -780,8 +743,8 @@ var _ = Describe("Task BBS", func() {
 								Ω(err).ShouldNot(HaveOccurred())
 
 								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
-								receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-								Ω(receptorURL).Should(Equal("some-receptor-url"))
+								url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
+								Ω(url).Should(Equal(receptorURL))
 								Ω(completedTasks).Should(HaveLen(1))
 								Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
 								Ω(completedTasks[0].Failed).Should(BeTrue())

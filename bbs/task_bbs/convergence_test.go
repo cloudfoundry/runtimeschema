@@ -13,11 +13,9 @@ import (
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
-	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Convergence of Tasks", func() {
@@ -296,25 +294,11 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					Context("when a receptor is present", func() {
-						var receptorPresence ifrit.Process
-
-						BeforeEach(func() {
-							presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
-
-							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
-
-							receptorPresence = ifrit.Invoke(heartbeat)
-						})
-
-						AfterEach(func() {
-							ginkgomon.Interrupt(receptorPresence)
-						})
-
 						It("submits the completed tasks to the receptor in batch", func() {
-							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(3)) // 2 initial completes + convergence
 
-							receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-							Ω(receptorURL).Should(Equal("some-receptor-url"))
+							url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(2)
+							Ω(url).Should(Equal(receptorURL))
 							Ω(completedTasks).Should(HaveLen(2))
 
 							firstCompletedTask := completedTasks[0]
@@ -350,20 +334,6 @@ var _ = Describe("Convergence of Tasks", func() {
 							})
 						})
 					})
-
-					Context("when a receptor is not present", func() {
-						It("does not submit a completed task to anything", func() {
-							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
-						})
-
-						It("bumps the convergence tasks kicked counter anyway", func() {
-							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
-						})
-
-						It("logs that it failed to find a receptor", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-find-receptor"))
-						})
-					})
 				})
 			})
 
@@ -385,20 +355,6 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					Context("when a receptor is present", func() {
-						var receptorPresence ifrit.Process
-
-						BeforeEach(func() {
-							presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
-
-							heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
-
-							receptorPresence = ifrit.Invoke(heartbeat)
-						})
-
-						AfterEach(func() {
-							ginkgomon.Interrupt(receptorPresence)
-						})
-
 						It("does not submit the completed task to the receptor", func() {
 							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
 						})
@@ -468,6 +424,8 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should do nothing", func() {
+					Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(returnedTask.State).Should(Equal(models.TaskStateResolving))
@@ -492,42 +450,13 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				Context("when a receptor is present", func() {
-					var receptorPresence ifrit.Process
-
-					BeforeEach(func() {
-						presence := models.NewReceptorPresence("some-receptor", "some-receptor-url")
-
-						heartbeat := servicesBBS.NewReceptorHeartbeat(presence, structs.SessionTTLMin, 100*time.Millisecond)
-
-						receptorPresence = ifrit.Invoke(heartbeat)
-					})
-
-					AfterEach(func() {
-						ginkgomon.Interrupt(receptorPresence)
-					})
-
 					It("submits the completed task to the receptor", func() {
-						Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+						Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(2))
 
-						receptorURL, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-						Ω(receptorURL).Should(Equal("some-receptor-url"))
+						url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(1)
+						Ω(url).Should(Equal(receptorURL))
 						Ω(completedTasks).Should(HaveLen(1))
 						Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-					})
-
-					Context("Tasks are completed after they are demoted", func() {
-						BeforeEach(func() {
-							fakeTaskClient.CompleteTasksStub = func(string, []models.Task) error {
-								returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-								Ω(err).ShouldNot(HaveOccurred())
-								Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
-								return nil
-							}
-						})
-
-						It("is completed after demoted", func() {
-							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
-						})
 					})
 				})
 

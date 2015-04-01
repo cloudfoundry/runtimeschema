@@ -172,24 +172,24 @@ func (bbs *TaskBBS) FailTask(logger lager.Logger, taskGuid string, failureReason
 // This really really shouldn't fail.  If it does, blog about it and walk away. If it failed in a
 // consistent way (i.e. key already exists), there's probably a flaw in our design.
 func (bbs *TaskBBS) CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error {
-	logger = logger.Session("complete-task")
+	logger = logger.Session("complete-task", lager.Data{"task-guid": taskGuid})
 	logger.Info("completing-task")
 	defer logger.Info("finished-completing-task")
 
 	task, index, err := bbs.getTask(taskGuid)
 	if err != nil {
-		logger.Info("failed-to-get-task", lager.Data{"task-guid": taskGuid})
+		logger.Info("failed-to-get-task")
 		return err
 	}
 
 	if task.State == models.TaskStateRunning && task.CellID != cellID {
-		logger.Info("invalid-cell-id", lager.Data{"task-guid": taskGuid, "task-cell-id": task.CellID, "cell-id": cellID})
+		logger.Info("invalid-cell-id", lager.Data{"task-cell-id": task.CellID, "cell-id": cellID})
 		return bbserrors.ErrTaskRunningOnDifferentCell
 	}
 
 	err = validateStateTransition(task.State, models.TaskStateCompleted)
 	if err != nil {
-		logger.Info("invalid-state-transition-to-completed", lager.Data{"task-guid": taskGuid, "existing-state": task.State})
+		logger.Info("invalid-state-transition-to-completed", lager.Data{"existing-state": task.State})
 		return err
 	}
 
@@ -217,13 +217,7 @@ func (bbs *TaskBBS) completeTask(logger lager.Logger, task models.Task, index ui
 		return nil
 	}
 
-	receptorPresence, err := bbs.services.Receptor()
-	if err != nil {
-		logger.Error("could-not-fetch-receptors", err)
-		return nil
-	}
-
-	err = bbs.taskClient.CompleteTasks(receptorPresence.ReceptorURL, []models.Task{task})
+	err = bbs.taskClient.CompleteTasks(bbs.receptorTaskHandlerURL, []models.Task{task})
 	if err != nil {
 		logger.Error("failed-to-complete-task", err)
 		return nil
