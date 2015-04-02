@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
@@ -49,7 +50,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 	Describe("ConvergeTasks", func() {
 		JustBeforeEach(func() {
-			bbs.ConvergeTasks(logger, timeToStart, convergenceInterval, timeToResolveInterval)
+			bbs.ConvergeTasks(logger, timeToStart, convergenceInterval, timeToResolveInterval, services_bbs.NewCellsLoader(logger, consulAdapter, clock))
 		})
 
 		It("bumps the convergence counter", func() {

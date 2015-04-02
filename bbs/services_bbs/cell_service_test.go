@@ -198,4 +198,5 @@ var _ = Describe("Cell Service Registry", func() {
 			})
 		})
 	})
+
 })

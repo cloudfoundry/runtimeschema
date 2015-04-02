@@ -22,18 +22,20 @@ type FakeConvergerBBS struct {
 	newConvergeLockReturns struct {
 		result1 ifrit.Runner
 	}
-	ConvergeLRPsStub        func(lager.Logger)
+	ConvergeLRPsStub        func(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
 	convergeLRPsMutex       sync.RWMutex
 	convergeLRPsArgsForCall []struct {
-		arg1 lager.Logger
+		logger      lager.Logger
+		cellsLoader *services_bbs.CellsLoader
 	}
-	ConvergeTasksStub        func(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	ConvergeTasksStub        func(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader)
 	convergeTasksMutex       sync.RWMutex
 	convergeTasksArgsForCall []struct {
 		logger              lager.Logger
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
+		cellsLoader         *services_bbs.CellsLoader
 	}
 	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
 	waitForCellEventMutex       sync.RWMutex
@@ -78,14 +80,15 @@ func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
 	}{result1}
 }
 
-func (fake *FakeConvergerBBS) ConvergeLRPs(arg1 lager.Logger) {
+func (fake *FakeConvergerBBS) ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader) {
 	fake.convergeLRPsMutex.Lock()
 	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
-		arg1 lager.Logger
-	}{arg1})
+		logger      lager.Logger
+		cellsLoader *services_bbs.CellsLoader
+	}{logger, cellsLoader})
 	fake.convergeLRPsMutex.Unlock()
 	if fake.ConvergeLRPsStub != nil {
-		fake.ConvergeLRPsStub(arg1)
+		fake.ConvergeLRPsStub(logger, cellsLoader)
 	}
 }
 
@@ -95,23 +98,24 @@ func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
 	return len(fake.convergeLRPsArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) lager.Logger {
+func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) (lager.Logger, *services_bbs.CellsLoader) {
 	fake.convergeLRPsMutex.RLock()
 	defer fake.convergeLRPsMutex.RUnlock()
-	return fake.convergeLRPsArgsForCall[i].arg1
+	return fake.convergeLRPsArgsForCall[i].logger, fake.convergeLRPsArgsForCall[i].cellsLoader
 }
 
-func (fake *FakeConvergerBBS) ConvergeTasks(logger lager.Logger, timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeTasks(logger lager.Logger, timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader) {
 	fake.convergeTasksMutex.Lock()
 	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
 		logger              lager.Logger
 		timeToClaim         time.Duration
 		convergenceInterval time.Duration
 		timeToResolve       time.Duration
-	}{logger, timeToClaim, convergenceInterval, timeToResolve})
+		cellsLoader         *services_bbs.CellsLoader
+	}{logger, timeToClaim, convergenceInterval, timeToResolve, cellsLoader})
 	fake.convergeTasksMutex.Unlock()
 	if fake.ConvergeTasksStub != nil {
-		fake.ConvergeTasksStub(logger, timeToClaim, convergenceInterval, timeToResolve)
+		fake.ConvergeTasksStub(logger, timeToClaim, convergenceInterval, timeToResolve, cellsLoader)
 	}
 }
 
@@ -121,10 +125,10 @@ func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
 	return len(fake.convergeTasksArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, time.Duration, time.Duration, time.Duration) {
+func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, time.Duration, time.Duration, time.Duration, *services_bbs.CellsLoader) {
 	fake.convergeTasksMutex.RLock()
 	defer fake.convergeTasksMutex.RUnlock()
-	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve
+	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve, fake.convergeTasksArgsForCall[i].cellsLoader
 }
 
 func (fake *FakeConvergerBBS) WaitForCellEvent() (services_bbs.CellEvent, error) {

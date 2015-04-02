@@ -27,13 +27,14 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var consulAdapter consuladapter.Adapter
+var consulAdapter *consuladapter.Adapter
 var consulRunner *consuladapter.ClusterRunner
 var bbs *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
 var clock *AdvancingFakeClock
 var fakeCellClient *cbfakes.FakeCellClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
+var servicesBBS *services_bbs.ServicesBBS
 
 var logger *lagertest.TestLogger
 
@@ -75,7 +76,7 @@ var _ = BeforeEach(func() {
 
 	logger = lagertest.NewTestLogger("test")
 
-	servicesBBS := services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
+	servicesBBS = services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
 
 	bbs = lrp_bbs.New(
 		etcdClient,

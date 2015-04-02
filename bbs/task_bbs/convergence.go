@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -36,7 +37,7 @@ type compareAndSwappableTask struct {
 // 5. Demote to completed any resolving tasks that have been resolving for > 30s
 // 6. Mark as failed any tasks that have been in the pending state for > expirePendingTaskDuration
 // 7. Mark as failed any running tasks whose cell has stopped maintaining presence
-func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration) {
+func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader) {
 	taskLog := logger.Session("converge-tasks")
 	taskLog.Info("starting-convergence")
 	defer taskLog.Info("finished-convergence")
@@ -59,11 +60,11 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 	logger.Debug("succeeded-listing-task")
 
 	logger.Debug("listing-cells")
-	cells, err := bbs.consulAdapter.ListPairsExtending(shared.CellSchemaRoot)
+	cellSet, err := cellsLoader.Cells()
 	if err != nil {
 		switch err.(type) {
 		case consuladapter.PrefixNotFoundError:
-			cells = make(map[string][]byte)
+			cellSet = models.CellSet{}
 		default:
 			logger.Debug("failed-listing-cells")
 			return
@@ -128,7 +129,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 				tasksKicked++
 			}
 		case models.TaskStateRunning:
-			_, cellIsAlive := cells[shared.CellSchemaPath(task.CellID)]
+			cellIsAlive := cellSet.HasCellID(task.CellID)
 			if !cellIsAlive {
 				logError(task, "cell-disappeared")
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "cell disappeared before completion"))

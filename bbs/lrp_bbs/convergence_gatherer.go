@@ -4,6 +4,7 @@ import (
 	"path"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -43,7 +44,7 @@ func NewConvergenceInput(
 	}
 }
 
-func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger) (*ConvergenceInput, error) {
+func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger, cellsLoader *services_bbs.CellsLoader) (*ConvergenceInput, error) {
 	// always fetch actualLRPs before desiredLRPs to ensure correctness
 	actuals, err := bbs.gatherAndPruneActualLRPs(logger)
 	if err != nil {
@@ -61,14 +62,9 @@ func (bbs *LRPBBS) GatherAndPruneLRPConvergenceInput(logger lager.Logger) (*Conv
 		return &ConvergenceInput{}, err
 	}
 
-	cells, err := bbs.services.Cells()
+	cellSet, err := cellsLoader.Cells()
 	if err != nil {
 		return &ConvergenceInput{}, err
-	}
-
-	cellSet := models.CellSet{}
-	for _, cell := range cells {
-		cellSet.Add(cell)
 	}
 
 	return NewConvergenceInput(desireds, actuals, domains, cellSet), nil

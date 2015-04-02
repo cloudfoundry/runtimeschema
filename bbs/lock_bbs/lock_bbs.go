@@ -16,12 +16,12 @@ const LockTTL = 60 * time.Second
 const RetryInterval = 5 * time.Second
 
 type LockBBS struct {
-	consul consuladapter.Adapter
+	consul *consuladapter.Adapter
 	logger lager.Logger
 	clock  clock.Clock
 }
 
-func New(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *LockBBS {
+func New(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *LockBBS {
 	return &LockBBS{
 		consul: consul,
 		logger: logger,

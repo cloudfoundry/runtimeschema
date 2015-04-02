@@ -25,7 +25,7 @@ const receptorURL = "http://some-receptor-url"
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulRunner *consuladapter.ClusterRunner
-var consulAdapter consuladapter.Adapter
+var consulAdapter *consuladapter.Adapter
 var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
 var fakeTaskClient *cbfakes.FakeTaskClient

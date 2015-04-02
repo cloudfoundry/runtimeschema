@@ -1,6 +1,7 @@
 package lrp_bbs
 
 import (
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
@@ -13,7 +14,7 @@ const (
 	lrpsDeletedCounter = metric.Counter("ConvergenceLRPsDeleted")
 )
 
-func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
+func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader) {
 	logger = logger.Session("converge-lrps")
 	logger.Info("starting-convergence")
 	defer logger.Info("finished-convergence")
@@ -27,7 +28,7 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 	}()
 
 	logger.Debug("gathering-convergence-input")
-	convergenceInput, err := bbs.GatherAndPruneLRPConvergenceInput(logger)
+	convergenceInput, err := bbs.GatherAndPruneLRPConvergenceInput(logger, cellsLoader)
 	if err != nil {
 		logger.Error("failed-gathering-convergence-input", err)
 		return

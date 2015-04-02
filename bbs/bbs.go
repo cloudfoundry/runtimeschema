@@ -89,10 +89,10 @@ type ConvergerBBS interface {
 	NewConvergeLock(convergerID string, ttl, retryInterval time.Duration) ifrit.Runner
 
 	//lrp
-	ConvergeLRPs(lager.Logger)
+	ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
 
 	//task
-	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration)
+	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader)
 
 	//cells
 	WaitForCellEvent() (services_bbs.CellEvent, error)
@@ -160,31 +160,31 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
-func NewReceptorBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
+func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
 	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewRepBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
+func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewConvergerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
+func NewConvergerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewNsyncBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
+func NewNsyncBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
+func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewMetricsBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
+func NewMetricsBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
 	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewRouteEmitterBBS(consul consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
+func NewRouteEmitterBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
@@ -192,7 +192,7 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger la
 	return NewBBS(store, nil, "", clock, logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, consul consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
+func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 	cellClient := cb.NewCellClient()

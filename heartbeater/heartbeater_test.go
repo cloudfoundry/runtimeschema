@@ -23,9 +23,9 @@ var (
 	heartbeatValue = []byte("some-value")
 	ttl            = structs.SessionTTLMin
 )
-var consulAdapter consuladapter.Adapter
+var consulAdapter *consuladapter.Adapter
 
-var newConsulAdapter = func() consuladapter.Adapter {
+var newConsulAdapter = func() *consuladapter.Adapter {
 	adapter, err := consuladapter.NewAdapter([]string{proxyAddress}, defaultScheme)
 	Ω(err).ShouldNot(HaveOccurred())
 	return adapter
@@ -126,7 +126,7 @@ var _ = Describe("Heartbeater", func() {
 
 		Context("when another maintainer is holding the lock we are trying to hold", func() {
 			var cancelChan chan struct{}
-			var otherAdapter consuladapter.Adapter
+			var otherAdapter *consuladapter.Adapter
 
 			BeforeEach(func() {
 				otherAdapter = newConsulAdapter()
@@ -210,7 +210,7 @@ var _ = Describe("Heartbeater", func() {
 		Context("when someone else already has the lock first", func() {
 			var heartbeat ifrit.Process
 			var cancelChan chan struct{}
-			var otherAdapter consuladapter.Adapter
+			var otherAdapter *consuladapter.Adapter
 
 			BeforeEach(func() {
 				otherAdapter = newConsulAdapter()
@@ -242,7 +242,7 @@ var _ = Describe("Heartbeater", func() {
 				BeforeEach(func() {
 					heart = heartbeater.New(consulAdapter, heartbeatKey, heartbeatValue, ttl, clock, retryInterval, logger)
 
-					go func(adapter consuladapter.Adapter) {
+					go func(adapter *consuladapter.Adapter) {
 						defer GinkgoRecover()
 
 						err := adapter.ReleaseAndDeleteLock(heartbeatKey)

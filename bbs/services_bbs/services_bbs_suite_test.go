@@ -10,7 +10,7 @@ import (
 )
 
 var consulRunner *consuladapter.ClusterRunner
-var consulAdapter consuladapter.Adapter
+var consulAdapter *consuladapter.Adapter
 
 func TestServicesBbs(t *testing.T) {
 	RegisterFailHandler(Fail)

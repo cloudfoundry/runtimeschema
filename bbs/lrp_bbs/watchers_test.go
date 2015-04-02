@@ -3,6 +3,7 @@ package lrp_bbs_test
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -221,7 +222,7 @@ var _ = Describe("Watchers", func() {
 			Eventually(deletes).Should(Receive(Equal(actualLRP)))
 			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
 
-			bbs.ConvergeLRPs(logger)
+			bbs.ConvergeLRPs(logger, services_bbs.NewCellsLoader(logger, consulAdapter, clock))
 
 			Consistently(logger).ShouldNot(Say("failed-to-unmarshal"))
 		})

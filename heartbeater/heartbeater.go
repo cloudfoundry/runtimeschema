@@ -17,7 +17,7 @@ var (
 )
 
 type Heartbeater struct {
-	consul consuladapter.Adapter
+	consul *consuladapter.Adapter
 	key    string
 	value  []byte
 	ttl    time.Duration
@@ -29,7 +29,7 @@ type Heartbeater struct {
 }
 
 func New(
-	consul consuladapter.Adapter,
+	consul *consuladapter.Adapter,
 	heartbeatKey string,
 	heartbeatValue []byte,
 	ttl time.Duration,
