@@ -50,20 +50,26 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 		convergeTaskDuration.Send(time.Since(convergeStart))
 	}()
 
+	logger.Debug("listing-tasks")
 	taskState, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err != nil {
+		logger.Debug("failed-listing-task")
 		return
 	}
+	logger.Debug("succeeded-listing-task")
 
+	logger.Debug("listing-cells")
 	cells, err := bbs.consulAdapter.ListPairsExtending(shared.CellSchemaRoot)
 	if err != nil {
 		switch err.(type) {
 		case consuladapter.PrefixNotFoundError:
 			cells = make(map[string][]byte)
 		default:
+			logger.Debug("failed-listing-cells")
 			return
 		}
 	}
+	logger.Debug("succeeded-listing-cells")
 
 	logError := func(task models.Task, message string) {
 		taskLog.Error(message, nil, lager.Data{
@@ -93,6 +99,7 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 
 	var tasksKicked uint64 = 0
 
+	logger.Debug("determining-convergence-work", lager.Data{"num-tasks": len(taskState.ChildNodes)})
 	for _, node := range taskState.ChildNodes {
 		var task models.Task
 		err = models.FromJSON(node.Value, &task)
@@ -151,24 +158,37 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 			}
 		}
 	}
+	logger.Debug("done-determining-convergence-work", lager.Data{
+		"num-tasks-to-auction":  len(tasksToAuction),
+		"num-tasks-to-cas":      len(tasksToCAS),
+		"num-tasks-to-complete": len(tasksToComplete),
+		"num-keys-to-delete":    len(keysToDelete),
+	})
 
 	if len(tasksToAuction) > 0 {
+		logger.Debug("requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 		if err := bbs.requestTaskAuctions(taskLog, tasksToAuction); err != nil {
 			taskLog.Error("failed-to-request-auctions-for-pending-tasks", err,
 				lager.Data{"tasks": tasksToAuction})
 		}
+		logger.Debug("done-requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 	}
 
 	workPool := workpool.NewWorkPool(workerPoolSize)
 	tasksKickedCounter.Add(tasksKicked)
+	logger.Debug("compare-and-swapping-tasks", lager.Data{"num-tasks-to-cas": len(tasksToCAS)})
 	bbs.batchCompareAndSwapTasks(tasksToCAS, workPool, taskLog)
+	logger.Debug("done-compare-and-swapping-tasks", lager.Data{"num-tasks-to-cas": len(tasksToCAS)})
 	workPool.Stop()
 
+	logger.Debug("marking-tasks-completed", lager.Data{"num-tasks-to-complete": len(tasksToComplete)})
 	bbs.completeTasks(tasksToComplete, taskLog)
+	logger.Debug("done-marking-tasks-completed", lager.Data{"num-tasks-to-complete": len(tasksToComplete)})
 
 	tasksPrunedCounter.Add(uint64(len(keysToDelete)))
+	logger.Debug("deleting-keys", lager.Data{"num-keys-to-delete": len(keysToDelete)})
 	bbs.store.Delete(keysToDelete...)
-
+	logger.Debug("done-deleting-keys", lager.Data{"num-keys-to-delete": len(keysToDelete)})
 }
 
 func (bbs *TaskBBS) durationSinceTaskCreated(task models.Task) time.Duration {

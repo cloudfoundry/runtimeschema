@@ -22,7 +22,9 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 		actualKeys = append(actualKeys, actualLRP.ActualLRPKey)
 	}
 
+	logger.Debug("retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
 	bbs.RetireActualLRPs(logger, actualKeys)
+	logger.Debug("done-retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
 	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
 
 	startRequests := newStartRequests(desiredLRPs)
@@ -36,21 +38,25 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 		startRequests.Add(logger, actual.ActualLRPKey)
 	}
 
+	logger.Debug("submitting-lrp-convergence-work-to-pool")
 	for _, actual := range changes.ActualLRPsWithMissingCells {
 		pool.Submit(bbs.resolveActualsWithMissingCells(logger, wg, desiredLRPs[actual.ProcessGuid], actual, startRequests))
 	}
-
 	for _, actualKey := range changes.ActualLRPKeysForMissingIndices {
 		pool.Submit(bbs.resolveActualsWithMissingIndices(logger, wg, desiredLRPs[actualKey.ProcessGuid], actualKey, startRequests))
 	}
-
 	for _, actual := range changes.RestartableCrashedActualLRPs {
 		pool.Submit(bbs.resolveRestartableCrashedActualLRPS(logger, wg, actual, startRequests))
 	}
+	logger.Debug("done-submitting-lrp-convergence-work-to-pool")
 
+	logger.Debug("waiting-for-lrp-convergence-work-pool")
 	wg.Wait()
+	logger.Debug("done-waiting-for-lrp-convergence-work-pool")
 
+	logger.Debug("requesting-start-auctions", lager.Data{"start-requests-instance-count": startRequests.InstanceCount()})
 	bbs.startActualLRPs(logger, startRequests)
+	logger.Debug("done-requesting-start-auctions", lager.Data{"start-requests-instance-count": startRequests.InstanceCount()})
 }
 
 func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.WaitGroup, desired models.DesiredLRP, actual models.ActualLRP, starts *startRequests) func() {
@@ -63,17 +69,21 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.
 			"index":        actual.Index,
 		})
 
+		logger.Debug("removing-actual-lrp")
 		err := bbs.RemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPInstanceKey)
 		if err != nil {
-			logger.Error("failed-to-remove-actual-lrp", err)
+			logger.Error("failed-removing-actual-lrp", err)
 			return
 		}
+		logger.Debug("succeeded-removing-actual-lrp")
 
+		logger.Debug("creating-actual-lrp")
 		err = bbs.actualLRPRepo.CreateActualLRP(logger, desired, actual.Index)
 		if err != nil {
-			logger.Error("failed-to-create-actual-lrp", err)
+			logger.Error("failed-creating-actual-lrp", err)
 			return
 		}
+		logger.Debug("succeeded-creating-actual-lrp")
 
 		starts.Add(logger, actual.ActualLRPKey)
 	}
@@ -90,11 +100,13 @@ func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, wg *syn
 			"index":        actualKey.Index,
 		})
 
+		logger.Debug("creating-actual-lrp")
 		err := bbs.actualLRPRepo.CreateActualLRP(logger, desired, actualKey.Index)
 		if err != nil {
-			logger.Error("failed-to-create-actual-lrp", err)
+			logger.Error("failed-creating-actual-lrp", err)
 			return
 		}
+		logger.Debug("succeeded-creating-actual-lrp")
 
 		starts.Add(logger, actualKey)
 	}
@@ -118,11 +130,13 @@ func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *
 			return
 		}
 
+		logger.Debug("unclaiming-actual-lrp")
 		_, err := bbs.unclaimActualLRP(logger, actualLRP.ActualLRPKey, actualLRP.ActualLRPInstanceKey)
 		if err != nil {
-			logger.Error("failed-to-unclaim-crash", err)
+			logger.Error("failed-unclaiming-crash", err)
 			return
 		}
+		logger.Debug("succeeded-unclaiming-actual-lrp")
 
 		starts.Add(logger, actualKey)
 	}

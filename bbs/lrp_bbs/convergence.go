@@ -26,11 +26,13 @@ func (bbs *LRPBBS) ConvergeLRPs(logger lager.Logger) {
 		convergeLRPDuration.Send(bbs.clock.Now().Sub(convergeStart))
 	}()
 
+	logger.Debug("gathering-convergence-input")
 	convergenceInput, err := bbs.GatherAndPruneLRPConvergenceInput(logger)
 	if err != nil {
-		logger.Error("failed-to-gather-convergence-input", err)
+		logger.Error("failed-gathering-convergence-input", err)
 		return
 	}
+	logger.Debug("succeeded-gathering-convergence-input")
 
 	changes := CalculateConvergence(logger, bbs.clock, models.NewDefaultRestartCalculator(), convergenceInput)
 
