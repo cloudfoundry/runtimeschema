@@ -36,21 +36,5 @@ var _ = BeforeSuite(func() {
 
 	logger = lagertest.NewTestLogger("test")
 
-	etcdRunner.Start()
-
-	consulRunner.Start()
-})
-
-var _ = AfterSuite(func() {
-	etcdClient.Disconnect()
-	etcdRunner.Stop()
-
-	consulRunner.Stop()
-})
-
-var _ = BeforeEach(func() {
-	etcdRunner.Reset()
-	consulRunner.Reset()
-
 	clock = fakeclock.NewFakeClock(time.Unix(0, 1138))
 })

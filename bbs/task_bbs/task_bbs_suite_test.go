@@ -68,6 +68,7 @@ var _ = AfterSuite(func() {
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
 
+	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
 
 	logger = lagertest.NewTestLogger("test")

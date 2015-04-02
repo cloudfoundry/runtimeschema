@@ -63,6 +63,7 @@ var _ = BeforeEach(func() {
 	etcdRunner.Reset()
 	etcdClient = etcdRunner.RetryableAdapter()
 
+	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
 	consulAdapter = consulRunner.NewAdapter()
 

@@ -45,6 +45,8 @@ var _ = BeforeSuite(func() {
 
 var _ = BeforeEach(func() {
 	proxyRunner = newConsulProxy(proxyAddress, consulStartingPort+consuladapter.PortOffsetHTTP)
+
+	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
 })
 

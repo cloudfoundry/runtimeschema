@@ -32,6 +32,7 @@ var _ = AfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
 	consulAdapter = consulRunner.NewAdapter()
 })
