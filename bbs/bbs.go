@@ -201,8 +201,8 @@ func NewTpsBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Lo
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewVeritasBBS(store storeadapter.StoreAdapter, clock clock.Clock, logger lager.Logger) VeritasBBS {
-	return NewBBS(store, nil, "", clock, logger)
+func NewVeritasBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) VeritasBBS {
+	return NewBBS(store, consul, "", clock, logger)
 }
 
 func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
