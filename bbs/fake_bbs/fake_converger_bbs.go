@@ -37,6 +37,12 @@ type FakeConvergerBBS struct {
 		timeToResolve       time.Duration
 		cellsLoader         *services_bbs.CellsLoader
 	}
+	NewCellsLoaderStub        func() *services_bbs.CellsLoader
+	newCellsLoaderMutex       sync.RWMutex
+	newCellsLoaderArgsForCall []struct{}
+	newCellsLoaderReturns struct {
+		result1 *services_bbs.CellsLoader
+	}
 	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
 	waitForCellEventMutex       sync.RWMutex
 	waitForCellEventArgsForCall []struct{}
@@ -129,6 +135,30 @@ func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, tim
 	fake.convergeTasksMutex.RLock()
 	defer fake.convergeTasksMutex.RUnlock()
 	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve, fake.convergeTasksArgsForCall[i].cellsLoader
+}
+
+func (fake *FakeConvergerBBS) NewCellsLoader() *services_bbs.CellsLoader {
+	fake.newCellsLoaderMutex.Lock()
+	fake.newCellsLoaderArgsForCall = append(fake.newCellsLoaderArgsForCall, struct{}{})
+	fake.newCellsLoaderMutex.Unlock()
+	if fake.NewCellsLoaderStub != nil {
+		return fake.NewCellsLoaderStub()
+	} else {
+		return fake.newCellsLoaderReturns.result1
+	}
+}
+
+func (fake *FakeConvergerBBS) NewCellsLoaderCallCount() int {
+	fake.newCellsLoaderMutex.RLock()
+	defer fake.newCellsLoaderMutex.RUnlock()
+	return len(fake.newCellsLoaderArgsForCall)
+}
+
+func (fake *FakeConvergerBBS) NewCellsLoaderReturns(result1 *services_bbs.CellsLoader) {
+	fake.NewCellsLoaderStub = nil
+	fake.newCellsLoaderReturns = struct {
+		result1 *services_bbs.CellsLoader
+	}{result1}
 }
 
 func (fake *FakeConvergerBBS) WaitForCellEvent() (services_bbs.CellEvent, error) {

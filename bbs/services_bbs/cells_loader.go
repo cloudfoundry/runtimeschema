@@ -3,9 +3,6 @@ package services_bbs
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/consuladapter"
-	"github.com/pivotal-golang/clock"
-
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/lager"
 )
@@ -34,9 +31,9 @@ func (loader *CellsLoader) Cells() (models.CellSet, error) {
 	return loader.cellSet, loader.err
 }
 
-func NewCellsLoader(logger lager.Logger, consul *consuladapter.Adapter, clock clock.Clock) *CellsLoader {
+func (bbs *ServicesBBS) NewCellsLoader() *CellsLoader {
 	return &CellsLoader{
-		logger:   logger,
-		services: New(consul, clock, logger),
+		logger:   bbs.logger,
+		services: bbs,
 	}
 }

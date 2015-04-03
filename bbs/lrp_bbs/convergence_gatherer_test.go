@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -84,7 +83,7 @@ var _ = Describe("Convergence", func() {
 		var gatherError error
 
 		JustBeforeEach(func() {
-			input, gatherError = bbs.GatherAndPruneLRPConvergenceInput(logger, services_bbs.NewCellsLoader(logger, consulAdapter, clock))
+			input, gatherError = bbs.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
 		})
 
 		It("gets all processGuids in the system", func() {

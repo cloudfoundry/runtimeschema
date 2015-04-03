@@ -94,6 +94,9 @@ type ConvergerBBS interface {
 	//task
 	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader)
 
+	//cell loader
+	NewCellsLoader() *services_bbs.CellsLoader
+
 	//cells
 	WaitForCellEvent() (services_bbs.CellEvent, error)
 }

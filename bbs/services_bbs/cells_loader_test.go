@@ -60,7 +60,7 @@ var _ = Describe("CellsLoader", func() {
 			var err error
 
 			BeforeEach(func() {
-				cellsLoader = services_bbs.NewCellsLoader(logger, consulAdapter, clock)
+				cellsLoader = bbs.NewCellsLoader()
 				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
 				cells, err = cellsLoader.Cells()
 			})
@@ -85,7 +85,7 @@ var _ = Describe("CellsLoader", func() {
 
 				Context("when a new loader is created", func() {
 					It("returns two cells", func() {
-						newCellsLoader := services_bbs.NewCellsLoader(logger, consulAdapter, clock)
+						newCellsLoader := bbs.NewCellsLoader()
 						cells, err = newCellsLoader.Cells()
 						Ω(err).ShouldNot(HaveOccurred())
 						Ω(cells).Should(HaveLen(2))
