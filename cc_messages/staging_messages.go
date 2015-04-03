@@ -22,7 +22,6 @@ type StagingError struct {
 
 type StagingRequestFromCC struct {
 	AppId           string                     `json:"app_id"`
-	Stack           string                     `json:"stack"`
 	FileDescriptors int                        `json:"file_descriptors"`
 	MemoryMB        int                        `json:"memory_mb"`
 	DiskMB          int                        `json:"disk_mb"`
@@ -40,6 +39,7 @@ type BuildpackStagingData struct {
 	BuildArtifactsCacheUploadUri   string      `json:"build_artifacts_cache_upload_uri"`
 	Buildpacks                     []Buildpack `json:"buildpacks"`
 	DropletUploadUri               string      `json:"droplet_upload_uri"`
+	Stack                          string      `json:"stack"`
 }
 
 type DockerStagingData struct {

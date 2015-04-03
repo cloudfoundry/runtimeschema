@@ -19,7 +19,6 @@ var _ = Describe("StagingMessages", func() {
            "disk_mb" : 10000,
            "file_descriptors" : 3,
            "environment" : [{"name": "FOO", "value":"BAR"}],
-           "stack" : "fake-stack",
            "timeout" : 900,
            "lifecycle": "buildpack",
            "lifecycle_data": {"foo": "bar"}
@@ -39,7 +38,6 @@ var _ = Describe("StagingMessages", func() {
 				Environment: cc_messages.Environment{
 					{Name: "FOO", Value: "BAR"},
 				},
-				Stack:         "fake-stack",
 				Timeout:       900,
 				Lifecycle:     "buildpack",
 				LifecycleData: &lifecycle_data,
@@ -53,7 +51,8 @@ var _ = Describe("StagingMessages", func() {
 				"build_artifacts_cache_download_uri" : "http://a-nice-place-to-get-valuable-artifacts.com",
 				"build_artifacts_cache_upload_uri" : "http://a-nice-place-to-upload-valuable-artifacts.com",
 				"buildpacks" : [{"name":"fake-buildpack-name", "key":"fake-buildpack-key" ,"url":"fake-buildpack-url", "skip_detect":true}],
-				"droplet_upload_uri" : "http://droplet-upload-uri"
+				"droplet_upload_uri" : "http://droplet-upload-uri",
+				"stack": "pancakes"
 			}`
 
 		It("unmarshals correctly", func() {
@@ -74,6 +73,7 @@ var _ = Describe("StagingMessages", func() {
 					},
 				},
 				DropletUploadUri: "http://droplet-upload-uri",
+				Stack: "pancakes",
 			}))
 		})
 	})
