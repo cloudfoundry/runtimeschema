@@ -12,7 +12,7 @@ import (
 	"github.com/tedsuo/ifrit"
 )
 
-const LockTTL = 60 * time.Second
+const LockTTL = 10 * time.Second
 const RetryInterval = 5 * time.Second
 
 type LockBBS struct {
