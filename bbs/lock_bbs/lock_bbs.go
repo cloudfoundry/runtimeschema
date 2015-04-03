@@ -52,3 +52,7 @@ func (bbs *LockBBS) NewRouteEmitterLock(emitterID string, ttl, retryInterval tim
 func (bbs *LockBBS) NewRuntimeMetricsLock(runtimeMetricsID string, ttl, retryInterval time.Duration) ifrit.Runner {
 	return heartbeater.New(bbs.consul, shared.LockSchemaPath("runtime_metrics_lock"), []byte(runtimeMetricsID), ttl, bbs.clock, retryInterval, bbs.logger)
 }
+
+func (bbs *LockBBS) NewTpsWatcherLock(tpsWatcherID string, ttl, retryInterval time.Duration) ifrit.Runner {
+	return heartbeater.New(bbs.consul, shared.LockSchemaPath("tps_watcher_lock"), []byte(tpsWatcherID), ttl, bbs.clock, retryInterval, bbs.logger)
+}

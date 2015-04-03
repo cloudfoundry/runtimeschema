@@ -144,6 +144,12 @@ type RouteEmitterBBS interface {
 	NewRouteEmitterLock(emitterID string, ttl, retryInterval time.Duration) ifrit.Runner
 }
 
+//go:generate counterfeiter -o fake_bbs/fake_tps_bbs.go . TpsBBS
+type TpsBBS interface {
+	//lock
+	NewTpsWatcherLock(watcherID string, ttl, retryInterval time.Duration) ifrit.Runner
+}
+
 type VeritasBBS interface {
 	//task
 	Tasks(logger lager.Logger) ([]models.Task, error)
@@ -188,6 +194,10 @@ func NewMetricsBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapte
 }
 
 func NewRouteEmitterBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
+	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
+}
+
+func NewTpsBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) TpsBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 

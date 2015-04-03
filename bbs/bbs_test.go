@@ -16,6 +16,7 @@ var _ = Describe("BBS", func() {
 		bbs.NewAuctioneerBBS(etcdClient, consulAdapter, receptorTaskHandlerURL, clock, logger)
 		bbs.NewMetricsBBS(etcdClient, consulAdapter, clock, logger)
 		bbs.NewRouteEmitterBBS(consulAdapter, clock, logger)
+		bbs.NewTpsBBS(consulAdapter, clock, logger)
 		bbs.NewVeritasBBS(etcdClient, clock, logger)
 	})
 })
