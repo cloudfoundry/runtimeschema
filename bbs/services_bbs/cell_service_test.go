@@ -106,7 +106,7 @@ var _ = Describe("Cell Service Registry", func() {
 
 			Context("when there is unparsable JSON in there...", func() {
 				BeforeEach(func() {
-					err := consulAdapter.SetValue(shared.CellSchemaPath("blah"), []byte("ß"))
+					_, err := consulAdapter.AcquireAndMaintainLock(shared.CellSchemaPath("blah"), []byte("ß"), 10*time.Second, nil)
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
