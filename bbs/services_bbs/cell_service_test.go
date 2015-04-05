@@ -189,7 +189,11 @@ var _ = Describe("Cell Service Registry", func() {
 
 		Context("when the store is down", func() {
 			BeforeEach(func() {
-				consulRunner.Reset()
+				consulRunner.Stop()
+			})
+
+			AfterEach(func() {
+				consulRunner.Start()
 			})
 
 			It("returns an error", func() {
