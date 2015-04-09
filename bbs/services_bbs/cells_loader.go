@@ -19,11 +19,13 @@ func (loader *CellsLoader) Cells() (models.CellSet, error) {
 	loader.lock.Lock()
 	if loader.cellSet == nil {
 		cells, err := loader.services.Cells()
-		loader.err = err
-
-		loader.cellSet = models.CellSet{}
-		for _, cell := range cells {
-			loader.cellSet.Add(cell)
+		if err != nil {
+			loader.err = err
+		} else {
+			loader.cellSet = models.CellSet{}
+			for _, cell := range cells {
+				loader.cellSet.Add(cell)
+			}
 		}
 	}
 	loader.lock.Unlock()

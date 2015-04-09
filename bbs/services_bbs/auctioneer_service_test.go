@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-golang/lager/lagertest"
@@ -25,7 +24,7 @@ var _ = Describe("Receptor Service Registry", func() {
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lagertest.NewTestLogger("test")
-		bbs = services_bbs.New(consulAdapter, clock, logger)
+		bbs = services_bbs.New(consulSession, clock, logger)
 	})
 
 	Describe("AuctioneerAddress", func() {
@@ -34,8 +33,8 @@ var _ = Describe("Receptor Service Registry", func() {
 			var auctioneerPresence models.AuctioneerPresence
 
 			JustBeforeEach(func() {
-				lockBbs := lock_bbs.New(consulAdapter, clock, logger)
-				auctioneerLock, err := lockBbs.NewAuctioneerLock(auctioneerPresence, structs.SessionTTLMin, 100*time.Millisecond)
+				lockBbs := lock_bbs.New(consulSession, clock, logger)
+				auctioneerLock, err := lockBbs.NewAuctioneerLock(auctioneerPresence, 100*time.Millisecond)
 				Ω(err).ShouldNot(HaveOccurred())
 				heartbeater = ifrit.Invoke(auctioneerLock)
 			})

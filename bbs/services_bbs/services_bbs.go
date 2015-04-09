@@ -7,12 +7,12 @@ import (
 )
 
 type ServicesBBS struct {
-	consul *consuladapter.Adapter
+	consul *consuladapter.Session
 	logger lager.Logger
 	clock  clock.Clock
 }
 
-func New(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) *ServicesBBS {
+func New(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) *ServicesBBS {
 	return &ServicesBBS{
 		consul: consul,
 		logger: logger,

@@ -214,7 +214,12 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				BeforeEach(func() {
 					cellPresence := models.NewCellPresence("cell-id", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
-					heartbeater = ifrit.Invoke(servicesBBS.NewCellHeartbeat(cellPresence, time.Minute, 100*time.Millisecond))
+					heartbeater = ifrit.Invoke(servicesBBS.NewCellPresence(cellPresence, 100*time.Millisecond))
+
+					Eventually(func() map[string][]byte {
+						cells, _ := consulSession.ListAcquiredValues(shared.CellSchemaRoot)
+						return cells
+					}, 1, 50*time.Millisecond).Should(HaveLen(1))
 				})
 
 				AfterEach(func() {

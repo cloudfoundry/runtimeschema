@@ -9,14 +9,14 @@ import (
 var _ = Describe("BBS", func() {
 	It("should compile and be able to construct and return each BBS", func() {
 		receptorTaskHandlerURL := "http://example.com"
-		bbs.NewBBS(etcdClient, consulAdapter, receptorTaskHandlerURL, clock, logger)
-		bbs.NewRepBBS(etcdClient, consulAdapter, receptorTaskHandlerURL, clock, logger)
-		bbs.NewConvergerBBS(etcdClient, consulAdapter, receptorTaskHandlerURL, clock, logger)
-		bbs.NewNsyncBBS(consulAdapter, clock, logger)
-		bbs.NewAuctioneerBBS(etcdClient, consulAdapter, receptorTaskHandlerURL, clock, logger)
-		bbs.NewMetricsBBS(etcdClient, consulAdapter, clock, logger)
-		bbs.NewRouteEmitterBBS(consulAdapter, clock, logger)
-		bbs.NewTpsBBS(consulAdapter, clock, logger)
-		bbs.NewVeritasBBS(etcdClient, consulAdapter, clock, logger)
+		bbs.NewBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewRepBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewConvergerBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewNsyncBBS(consulSession, clock, logger)
+		bbs.NewAuctioneerBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewMetricsBBS(etcdClient, consulSession, clock, logger)
+		bbs.NewRouteEmitterBBS(consulSession, clock, logger)
+		bbs.NewTpsBBS(consulSession, clock, logger)
+		bbs.NewVeritasBBS(etcdClient, consulSession, clock, logger)
 	})
 })

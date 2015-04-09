@@ -13,14 +13,13 @@ import (
 )
 
 type FakeRepBBS struct {
-	NewCellHeartbeatStub        func(cellPresence models.CellPresence, ttl, retryInterval time.Duration) ifrit.Runner
-	newCellHeartbeatMutex       sync.RWMutex
-	newCellHeartbeatArgsForCall []struct {
+	NewCellPresenceStub        func(cellPresence models.CellPresence, retryInterval time.Duration) ifrit.Runner
+	newCellPresenceMutex       sync.RWMutex
+	newCellPresenceArgsForCall []struct {
 		cellPresence  models.CellPresence
-		ttl           time.Duration
 		retryInterval time.Duration
 	}
-	newCellHeartbeatReturns struct {
+	newCellPresenceReturns struct {
 		result1 ifrit.Runner
 	}
 	StartTaskStub        func(logger lager.Logger, taskGuid string, cellID string) (bool, error)
@@ -186,36 +185,35 @@ type FakeRepBBS struct {
 	}
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeat(cellPresence models.CellPresence, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
-	fake.newCellHeartbeatMutex.Lock()
-	fake.newCellHeartbeatArgsForCall = append(fake.newCellHeartbeatArgsForCall, struct {
+func (fake *FakeRepBBS) NewCellPresence(cellPresence models.CellPresence, retryInterval time.Duration) ifrit.Runner {
+	fake.newCellPresenceMutex.Lock()
+	fake.newCellPresenceArgsForCall = append(fake.newCellPresenceArgsForCall, struct {
 		cellPresence  models.CellPresence
-		ttl           time.Duration
 		retryInterval time.Duration
-	}{cellPresence, ttl, retryInterval})
-	fake.newCellHeartbeatMutex.Unlock()
-	if fake.NewCellHeartbeatStub != nil {
-		return fake.NewCellHeartbeatStub(cellPresence, ttl, retryInterval)
+	}{cellPresence, retryInterval})
+	fake.newCellPresenceMutex.Unlock()
+	if fake.NewCellPresenceStub != nil {
+		return fake.NewCellPresenceStub(cellPresence, retryInterval)
 	} else {
-		return fake.newCellHeartbeatReturns.result1
+		return fake.newCellPresenceReturns.result1
 	}
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeatCallCount() int {
-	fake.newCellHeartbeatMutex.RLock()
-	defer fake.newCellHeartbeatMutex.RUnlock()
-	return len(fake.newCellHeartbeatArgsForCall)
+func (fake *FakeRepBBS) NewCellPresenceCallCount() int {
+	fake.newCellPresenceMutex.RLock()
+	defer fake.newCellPresenceMutex.RUnlock()
+	return len(fake.newCellPresenceArgsForCall)
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeatArgsForCall(i int) (models.CellPresence, time.Duration, time.Duration) {
-	fake.newCellHeartbeatMutex.RLock()
-	defer fake.newCellHeartbeatMutex.RUnlock()
-	return fake.newCellHeartbeatArgsForCall[i].cellPresence, fake.newCellHeartbeatArgsForCall[i].ttl, fake.newCellHeartbeatArgsForCall[i].retryInterval
+func (fake *FakeRepBBS) NewCellPresenceArgsForCall(i int) (models.CellPresence, time.Duration) {
+	fake.newCellPresenceMutex.RLock()
+	defer fake.newCellPresenceMutex.RUnlock()
+	return fake.newCellPresenceArgsForCall[i].cellPresence, fake.newCellPresenceArgsForCall[i].retryInterval
 }
 
-func (fake *FakeRepBBS) NewCellHeartbeatReturns(result1 ifrit.Runner) {
-	fake.NewCellHeartbeatStub = nil
-	fake.newCellHeartbeatReturns = struct {
+func (fake *FakeRepBBS) NewCellPresenceReturns(result1 ifrit.Runner) {
+	fake.NewCellPresenceStub = nil
+	fake.newCellPresenceReturns = struct {
 		result1 ifrit.Runner
 	}{result1}
 }

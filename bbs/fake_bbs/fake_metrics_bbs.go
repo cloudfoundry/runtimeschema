@@ -24,29 +24,28 @@ type FakeMetricsBBS struct {
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns struct {
+	domainsReturns     struct {
 		result1 []string
 		result2 error
 	}
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns struct {
+	desiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
 	ActualLRPsStub        func() ([]models.ActualLRP, error)
 	actualLRPsMutex       sync.RWMutex
 	actualLRPsArgsForCall []struct{}
-	actualLRPsReturns struct {
+	actualLRPsReturns     struct {
 		result1 []models.ActualLRP
 		result2 error
 	}
-	NewRuntimeMetricsLockStub        func(runtimeMetricsID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewRuntimeMetricsLockStub        func(runtimeMetricsID string, retryInterval time.Duration) ifrit.Runner
 	newRuntimeMetricsLockMutex       sync.RWMutex
 	newRuntimeMetricsLockArgsForCall []struct {
 		runtimeMetricsID string
-		ttl              time.Duration
 		retryInterval    time.Duration
 	}
 	newRuntimeMetricsLockReturns struct {
@@ -162,16 +161,15 @@ func (fake *FakeMetricsBBS) ActualLRPsReturns(result1 []models.ActualLRP, result
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsBBS) NewRuntimeMetricsLock(runtimeMetricsID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLock(runtimeMetricsID string, retryInterval time.Duration) ifrit.Runner {
 	fake.newRuntimeMetricsLockMutex.Lock()
 	fake.newRuntimeMetricsLockArgsForCall = append(fake.newRuntimeMetricsLockArgsForCall, struct {
 		runtimeMetricsID string
-		ttl              time.Duration
 		retryInterval    time.Duration
-	}{runtimeMetricsID, ttl, retryInterval})
+	}{runtimeMetricsID, retryInterval})
 	fake.newRuntimeMetricsLockMutex.Unlock()
 	if fake.NewRuntimeMetricsLockStub != nil {
-		return fake.NewRuntimeMetricsLockStub(runtimeMetricsID, ttl, retryInterval)
+		return fake.NewRuntimeMetricsLockStub(runtimeMetricsID, retryInterval)
 	} else {
 		return fake.newRuntimeMetricsLockReturns.result1
 	}
@@ -183,10 +181,10 @@ func (fake *FakeMetricsBBS) NewRuntimeMetricsLockCallCount() int {
 	return len(fake.newRuntimeMetricsLockArgsForCall)
 }
 
-func (fake *FakeMetricsBBS) NewRuntimeMetricsLockArgsForCall(i int) (string, time.Duration, time.Duration) {
+func (fake *FakeMetricsBBS) NewRuntimeMetricsLockArgsForCall(i int) (string, time.Duration) {
 	fake.newRuntimeMetricsLockMutex.RLock()
 	defer fake.newRuntimeMetricsLockMutex.RUnlock()
-	return fake.newRuntimeMetricsLockArgsForCall[i].runtimeMetricsID, fake.newRuntimeMetricsLockArgsForCall[i].ttl, fake.newRuntimeMetricsLockArgsForCall[i].retryInterval
+	return fake.newRuntimeMetricsLockArgsForCall[i].runtimeMetricsID, fake.newRuntimeMetricsLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeMetricsBBS) NewRuntimeMetricsLockReturns(result1 ifrit.Runner) {

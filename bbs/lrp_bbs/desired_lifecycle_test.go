@@ -126,7 +126,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 							clock,
 							fakeCellClient,
 							fakeAuctioneerClient,
-							services_bbs.New(consulAdapter, clock, logger),
+							services_bbs.New(consulSession, clock, logger),
 							fakeRepo,
 						)
 					})

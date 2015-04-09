@@ -10,11 +10,10 @@ import (
 )
 
 type FakeNsyncBBS struct {
-	NewNsyncBulkerLockStub        func(bulkerID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewNsyncBulkerLockStub        func(bulkerID string, retryInterval time.Duration) ifrit.Runner
 	newNsyncBulkerLockMutex       sync.RWMutex
 	newNsyncBulkerLockArgsForCall []struct {
 		bulkerID      string
-		ttl           time.Duration
 		retryInterval time.Duration
 	}
 	newNsyncBulkerLockReturns struct {
@@ -22,16 +21,15 @@ type FakeNsyncBBS struct {
 	}
 }
 
-func (fake *FakeNsyncBBS) NewNsyncBulkerLock(bulkerID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
+func (fake *FakeNsyncBBS) NewNsyncBulkerLock(bulkerID string, retryInterval time.Duration) ifrit.Runner {
 	fake.newNsyncBulkerLockMutex.Lock()
 	fake.newNsyncBulkerLockArgsForCall = append(fake.newNsyncBulkerLockArgsForCall, struct {
 		bulkerID      string
-		ttl           time.Duration
 		retryInterval time.Duration
-	}{bulkerID, ttl, retryInterval})
+	}{bulkerID, retryInterval})
 	fake.newNsyncBulkerLockMutex.Unlock()
 	if fake.NewNsyncBulkerLockStub != nil {
-		return fake.NewNsyncBulkerLockStub(bulkerID, ttl, retryInterval)
+		return fake.NewNsyncBulkerLockStub(bulkerID, retryInterval)
 	} else {
 		return fake.newNsyncBulkerLockReturns.result1
 	}
@@ -43,10 +41,10 @@ func (fake *FakeNsyncBBS) NewNsyncBulkerLockCallCount() int {
 	return len(fake.newNsyncBulkerLockArgsForCall)
 }
 
-func (fake *FakeNsyncBBS) NewNsyncBulkerLockArgsForCall(i int) (string, time.Duration, time.Duration) {
+func (fake *FakeNsyncBBS) NewNsyncBulkerLockArgsForCall(i int) (string, time.Duration) {
 	fake.newNsyncBulkerLockMutex.RLock()
 	defer fake.newNsyncBulkerLockMutex.RUnlock()
-	return fake.newNsyncBulkerLockArgsForCall[i].bulkerID, fake.newNsyncBulkerLockArgsForCall[i].ttl, fake.newNsyncBulkerLockArgsForCall[i].retryInterval
+	return fake.newNsyncBulkerLockArgsForCall[i].bulkerID, fake.newNsyncBulkerLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeNsyncBBS) NewNsyncBulkerLockReturns(result1 ifrit.Runner) {

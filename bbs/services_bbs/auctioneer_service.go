@@ -7,7 +7,7 @@ import (
 )
 
 func (bbs *ServicesBBS) AuctioneerAddress() (string, error) {
-	value, err := bbs.consul.GetValue(shared.LockSchemaPath("auctioneer_lock"))
+	value, err := bbs.consul.GetAcquiredValue(shared.LockSchemaPath("auctioneer_lock"))
 	if err != nil {
 		return "", bbserrors.ErrServiceUnavailable
 	}

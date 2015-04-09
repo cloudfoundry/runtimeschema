@@ -13,7 +13,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
-	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -27,7 +26,7 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var consulAdapter *consuladapter.Adapter
+var consulSession *consuladapter.Session
 var consulRunner *consuladapter.ClusterRunner
 var bbs *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
@@ -49,6 +48,7 @@ var _ = BeforeSuite(func() {
 
 	etcdRunner.Start()
 	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 })
 
 var _ = AfterSuite(func() {
@@ -64,9 +64,8 @@ var _ = BeforeEach(func() {
 	etcdRunner.Reset()
 	etcdClient = etcdRunner.RetryableAdapter()
 
-	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
-	consulAdapter = consulRunner.NewAdapter()
+	consulSession = consulRunner.NewSession("a-session")
 
 	fakeCellClient = &cbfakes.FakeCellClient{}
 	fakeAuctioneerClient = &cbfakes.FakeAuctioneerClient{}
@@ -76,7 +75,7 @@ var _ = BeforeEach(func() {
 
 	logger = lagertest.NewTestLogger("test")
 
-	servicesBBS = services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
+	servicesBBS = services_bbs.New(consulSession, clock, lagertest.NewTestLogger("test"))
 
 	bbs = lrp_bbs.New(
 		etcdClient,
@@ -93,12 +92,7 @@ func registerCell(cell models.CellPresence) {
 	jsonBytes, err := models.ToJSON(cell)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	cancelChan := make(chan struct{})
-	_, err = consulAdapter.AcquireAndMaintainLock(
-		shared.CellSchemaPath(cell.CellID),
-		jsonBytes,
-		structs.SessionTTLMin,
-		cancelChan)
+	err = consulSession.AcquireLock(shared.CellSchemaPath(cell.CellID), jsonBytes)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
@@ -106,12 +100,7 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 	jsonBytes, err := models.ToJSON(auctioneer)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	cancelChan := make(chan struct{})
-	_, err = consulAdapter.AcquireAndMaintainLock(
-		shared.LockSchemaPath("auctioneer_lock"),
-		jsonBytes,
-		structs.SessionTTLMin,
-		cancelChan)
+	err = consulSession.AcquireLock(shared.LockSchemaPath("auctioneer_lock"), jsonBytes)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 

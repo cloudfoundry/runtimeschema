@@ -10,11 +10,10 @@ import (
 )
 
 type FakeRouteEmitterBBS struct {
-	NewRouteEmitterLockStub        func(emitterID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewRouteEmitterLockStub        func(emitterID string, retryInterval time.Duration) ifrit.Runner
 	newRouteEmitterLockMutex       sync.RWMutex
 	newRouteEmitterLockArgsForCall []struct {
 		emitterID     string
-		ttl           time.Duration
 		retryInterval time.Duration
 	}
 	newRouteEmitterLockReturns struct {
@@ -22,16 +21,15 @@ type FakeRouteEmitterBBS struct {
 	}
 }
 
-func (fake *FakeRouteEmitterBBS) NewRouteEmitterLock(emitterID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
+func (fake *FakeRouteEmitterBBS) NewRouteEmitterLock(emitterID string, retryInterval time.Duration) ifrit.Runner {
 	fake.newRouteEmitterLockMutex.Lock()
 	fake.newRouteEmitterLockArgsForCall = append(fake.newRouteEmitterLockArgsForCall, struct {
 		emitterID     string
-		ttl           time.Duration
 		retryInterval time.Duration
-	}{emitterID, ttl, retryInterval})
+	}{emitterID, retryInterval})
 	fake.newRouteEmitterLockMutex.Unlock()
 	if fake.NewRouteEmitterLockStub != nil {
-		return fake.NewRouteEmitterLockStub(emitterID, ttl, retryInterval)
+		return fake.NewRouteEmitterLockStub(emitterID, retryInterval)
 	} else {
 		return fake.newRouteEmitterLockReturns.result1
 	}
@@ -43,10 +41,10 @@ func (fake *FakeRouteEmitterBBS) NewRouteEmitterLockCallCount() int {
 	return len(fake.newRouteEmitterLockArgsForCall)
 }
 
-func (fake *FakeRouteEmitterBBS) NewRouteEmitterLockArgsForCall(i int) (string, time.Duration, time.Duration) {
+func (fake *FakeRouteEmitterBBS) NewRouteEmitterLockArgsForCall(i int) (string, time.Duration) {
 	fake.newRouteEmitterLockMutex.RLock()
 	defer fake.newRouteEmitterLockMutex.RUnlock()
-	return fake.newRouteEmitterLockArgsForCall[i].emitterID, fake.newRouteEmitterLockArgsForCall[i].ttl, fake.newRouteEmitterLockArgsForCall[i].retryInterval
+	return fake.newRouteEmitterLockArgsForCall[i].emitterID, fake.newRouteEmitterLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeRouteEmitterBBS) NewRouteEmitterLockReturns(result1 ifrit.Runner) {

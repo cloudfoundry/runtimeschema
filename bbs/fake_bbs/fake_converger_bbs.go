@@ -12,11 +12,10 @@ import (
 )
 
 type FakeConvergerBBS struct {
-	NewConvergeLockStub        func(convergerID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewConvergeLockStub        func(convergerID string, retryInterval time.Duration) ifrit.Runner
 	newConvergeLockMutex       sync.RWMutex
 	newConvergeLockArgsForCall []struct {
 		convergerID   string
-		ttl           time.Duration
 		retryInterval time.Duration
 	}
 	newConvergeLockReturns struct {
@@ -40,28 +39,26 @@ type FakeConvergerBBS struct {
 	NewCellsLoaderStub        func() *services_bbs.CellsLoader
 	newCellsLoaderMutex       sync.RWMutex
 	newCellsLoaderArgsForCall []struct{}
-	newCellsLoaderReturns struct {
+	newCellsLoaderReturns     struct {
 		result1 *services_bbs.CellsLoader
 	}
-	WaitForCellEventStub        func() (services_bbs.CellEvent, error)
-	waitForCellEventMutex       sync.RWMutex
-	waitForCellEventArgsForCall []struct{}
-	waitForCellEventReturns struct {
-		result1 services_bbs.CellEvent
-		result2 error
+	CellEventsStub        func() <-chan services_bbs.CellEvent
+	cellEventsMutex       sync.RWMutex
+	cellEventsArgsForCall []struct{}
+	cellEventsReturns     struct {
+		result1 <-chan services_bbs.CellEvent
 	}
 }
 
-func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
+func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, retryInterval time.Duration) ifrit.Runner {
 	fake.newConvergeLockMutex.Lock()
 	fake.newConvergeLockArgsForCall = append(fake.newConvergeLockArgsForCall, struct {
 		convergerID   string
-		ttl           time.Duration
 		retryInterval time.Duration
-	}{convergerID, ttl, retryInterval})
+	}{convergerID, retryInterval})
 	fake.newConvergeLockMutex.Unlock()
 	if fake.NewConvergeLockStub != nil {
-		return fake.NewConvergeLockStub(convergerID, ttl, retryInterval)
+		return fake.NewConvergeLockStub(convergerID, retryInterval)
 	} else {
 		return fake.newConvergeLockReturns.result1
 	}
@@ -73,10 +70,10 @@ func (fake *FakeConvergerBBS) NewConvergeLockCallCount() int {
 	return len(fake.newConvergeLockArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) NewConvergeLockArgsForCall(i int) (string, time.Duration, time.Duration) {
+func (fake *FakeConvergerBBS) NewConvergeLockArgsForCall(i int) (string, time.Duration) {
 	fake.newConvergeLockMutex.RLock()
 	defer fake.newConvergeLockMutex.RUnlock()
-	return fake.newConvergeLockArgsForCall[i].convergerID, fake.newConvergeLockArgsForCall[i].ttl, fake.newConvergeLockArgsForCall[i].retryInterval
+	return fake.newConvergeLockArgsForCall[i].convergerID, fake.newConvergeLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
@@ -161,29 +158,28 @@ func (fake *FakeConvergerBBS) NewCellsLoaderReturns(result1 *services_bbs.CellsL
 	}{result1}
 }
 
-func (fake *FakeConvergerBBS) WaitForCellEvent() (services_bbs.CellEvent, error) {
-	fake.waitForCellEventMutex.Lock()
-	fake.waitForCellEventArgsForCall = append(fake.waitForCellEventArgsForCall, struct{}{})
-	fake.waitForCellEventMutex.Unlock()
-	if fake.WaitForCellEventStub != nil {
-		return fake.WaitForCellEventStub()
+func (fake *FakeConvergerBBS) CellEvents() <-chan services_bbs.CellEvent {
+	fake.cellEventsMutex.Lock()
+	fake.cellEventsArgsForCall = append(fake.cellEventsArgsForCall, struct{}{})
+	fake.cellEventsMutex.Unlock()
+	if fake.CellEventsStub != nil {
+		return fake.CellEventsStub()
 	} else {
-		return fake.waitForCellEventReturns.result1, fake.waitForCellEventReturns.result2
+		return fake.cellEventsReturns.result1
 	}
 }
 
-func (fake *FakeConvergerBBS) WaitForCellEventCallCount() int {
-	fake.waitForCellEventMutex.RLock()
-	defer fake.waitForCellEventMutex.RUnlock()
-	return len(fake.waitForCellEventArgsForCall)
+func (fake *FakeConvergerBBS) CellEventsCallCount() int {
+	fake.cellEventsMutex.RLock()
+	defer fake.cellEventsMutex.RUnlock()
+	return len(fake.cellEventsArgsForCall)
 }
 
-func (fake *FakeConvergerBBS) WaitForCellEventReturns(result1 services_bbs.CellEvent, result2 error) {
-	fake.WaitForCellEventStub = nil
-	fake.waitForCellEventReturns = struct {
-		result1 services_bbs.CellEvent
-		result2 error
-	}{result1, result2}
+func (fake *FakeConvergerBBS) CellEventsReturns(result1 <-chan services_bbs.CellEvent) {
+	fake.CellEventsStub = nil
+	fake.cellEventsReturns = struct {
+		result1 <-chan services_bbs.CellEvent
+	}{result1}
 }
 
 var _ bbs.ConvergerBBS = new(FakeConvergerBBS)

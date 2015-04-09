@@ -10,7 +10,7 @@ import (
 )
 
 var consulRunner *consuladapter.ClusterRunner
-var consulAdapter *consuladapter.Adapter
+var consulSession *consuladapter.Session
 
 func TestServicesBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -25,6 +25,7 @@ var _ = BeforeSuite(func() {
 	)
 
 	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 })
 
 var _ = AfterSuite(func() {
@@ -32,7 +33,6 @@ var _ = AfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
-	consulAdapter = consulRunner.NewAdapter()
+	consulSession = consulRunner.NewSession("a-session")
 })

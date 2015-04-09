@@ -59,7 +59,7 @@ type ReceptorBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
 type RepBBS interface {
 	//services
-	NewCellHeartbeat(cellPresence models.CellPresence, ttl, retryInterval time.Duration) ifrit.Runner
+	NewCellPresence(cellPresence models.CellPresence, retryInterval time.Duration) ifrit.Runner
 
 	//task
 	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
@@ -86,7 +86,7 @@ type RepBBS interface {
 //go:generate counterfeiter -o fake_bbs/fake_converger_bbs.go . ConvergerBBS
 type ConvergerBBS interface {
 	//lock
-	NewConvergeLock(convergerID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewConvergeLock(convergerID string, retryInterval time.Duration) ifrit.Runner
 
 	//lrp
 	ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
@@ -98,13 +98,13 @@ type ConvergerBBS interface {
 	NewCellsLoader() *services_bbs.CellsLoader
 
 	//cells
-	WaitForCellEvent() (services_bbs.CellEvent, error)
+	CellEvents() <-chan services_bbs.CellEvent
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
 type NsyncBBS interface {
 	//lock
-	NewNsyncBulkerLock(bulkerID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewNsyncBulkerLock(bulkerID string, retryInterval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_auctioneer_bbs.go . AuctioneerBBS
@@ -116,7 +116,7 @@ type AuctioneerBBS interface {
 	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 
 	//lock
-	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, ttl, retryInterval time.Duration) (ifrit.Runner, error)
+	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, retryInterval time.Duration) (ifrit.Runner, error)
 
 	//lrp
 	FailActualLRP(lager.Logger, models.ActualLRPKey, string) error
@@ -135,19 +135,19 @@ type MetricsBBS interface {
 	ActualLRPs() ([]models.ActualLRP, error)
 
 	//lock
-	NewRuntimeMetricsLock(runtimeMetricsID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewRuntimeMetricsLock(runtimeMetricsID string, retryInterval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_route_emitter_bbs.go . RouteEmitterBBS
 type RouteEmitterBBS interface {
 	//lock
-	NewRouteEmitterLock(emitterID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewRouteEmitterLock(emitterID string, retryInterval time.Duration) ifrit.Runner
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_tps_bbs.go . TpsBBS
 type TpsBBS interface {
 	//lock
-	NewTpsWatcherLock(watcherID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewTpsWatcherLock(watcherID string, retryInterval time.Duration) ifrit.Runner
 }
 
 type VeritasBBS interface {
@@ -169,43 +169,43 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
-func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) ReceptorBBS {
+func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) ReceptorBBS {
 	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
+func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewConvergerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
+func NewConvergerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewNsyncBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) NsyncBBS {
+func NewNsyncBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) NsyncBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
+func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewMetricsBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) MetricsBBS {
+func NewMetricsBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) MetricsBBS {
 	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewRouteEmitterBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
+func NewRouteEmitterBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewTpsBBS(consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) TpsBBS {
+func NewTpsBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) TpsBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewVeritasBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, clock clock.Clock, logger lager.Logger) VeritasBBS {
+func NewVeritasBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) VeritasBBS {
 	return NewBBS(store, consul, "", clock, logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Adapter, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
+func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 	cellClient := cb.NewCellClient()

@@ -73,7 +73,7 @@ var _ = Describe("StagingMessages", func() {
 					},
 				},
 				DropletUploadUri: "http://droplet-upload-uri",
-				Stack: "pancakes",
+				Stack:            "pancakes",
 			}))
 		})
 	})

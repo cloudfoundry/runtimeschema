@@ -240,7 +240,10 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the cell goes away", func() {
 			BeforeEach(func() {
-				err := consulAdapter.ReleaseAndDeleteLock(shared.CellSchemaPath(cellPresence.CellID))
+				kv := consulRunner.NewClient().KV()
+				pair, _, err := kv.Get(shared.CellSchemaPath(cellPresence.CellID), nil)
+				Ω(err).ShouldNot(HaveOccurred())
+				_, _, err = kv.Release(pair, nil)
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 

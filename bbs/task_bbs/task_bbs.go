@@ -10,7 +10,7 @@ import (
 
 type TaskBBS struct {
 	store                  storeadapter.StoreAdapter
-	consulAdapter          *consuladapter.Adapter
+	consulSession          *consuladapter.Session
 	clock                  clock.Clock
 	taskClient             cb.TaskClient
 	auctioneerClient       cb.AuctioneerClient
@@ -21,7 +21,7 @@ type TaskBBS struct {
 
 func New(
 	store storeadapter.StoreAdapter,
-	consulAdapter *consuladapter.Adapter,
+	consulSession *consuladapter.Session,
 	clock clock.Clock,
 	taskClient cb.TaskClient,
 	auctioneerClient cb.AuctioneerClient,
@@ -31,7 +31,7 @@ func New(
 ) *TaskBBS {
 	return &TaskBBS{
 		store:                  store,
-		consulAdapter:          consulAdapter,
+		consulSession:          consulSession,
 		clock:                  clock,
 		taskClient:             taskClient,
 		auctioneerClient:       auctioneerClient,

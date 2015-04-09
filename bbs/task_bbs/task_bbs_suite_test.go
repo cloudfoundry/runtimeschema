@@ -9,7 +9,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
-	"github.com/hashicorp/consul/consul/structs"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -25,7 +24,7 @@ const receptorURL = "http://some-receptor-url"
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulRunner *consuladapter.ClusterRunner
-var consulAdapter *consuladapter.Adapter
+var consulSession *consuladapter.Session
 var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
 var fakeTaskClient *cbfakes.FakeTaskClient
@@ -54,8 +53,9 @@ var _ = BeforeSuite(func() {
 		1,
 		"http",
 	)
-	consulAdapter = consulRunner.NewAdapter()
+
 	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 })
 
 var _ = AfterSuite(func() {
@@ -68,8 +68,8 @@ var _ = AfterSuite(func() {
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
 
-	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
+	consulSession = consulRunner.NewSession("a-session")
 
 	logger = lagertest.NewTestLogger("test")
 
@@ -77,8 +77,8 @@ var _ = BeforeEach(func() {
 	fakeAuctioneerClient = new(cbfakes.FakeAuctioneerClient)
 	fakeCellClient = new(cbfakes.FakeCellClient)
 	clock = fakeclock.NewFakeClock(time.Unix(1238, 0))
-	servicesBBS = services_bbs.New(consulAdapter, clock, logger)
-	bbs = task_bbs.New(etcdClient, consulAdapter, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient,
+	servicesBBS = services_bbs.New(consulSession, clock, logger)
+	bbs = task_bbs.New(etcdClient, consulSession, clock, fakeTaskClient, fakeAuctioneerClient, fakeCellClient,
 		servicesBBS, receptorURL)
 })
 
@@ -86,12 +86,7 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 	jsonBytes, err := models.ToJSON(auctioneer)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	cancelChan := make(chan struct{})
-	_, err = consulAdapter.AcquireAndMaintainLock(
-		shared.LockSchemaPath("auctioneer_lock"),
-		jsonBytes,
-		structs.SessionTTLMin,
-		cancelChan)
+	err = consulSession.AcquireLock(shared.LockSchemaPath("auctioneer_lock"), jsonBytes)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
@@ -99,11 +94,6 @@ func registerCell(cell models.CellPresence) {
 	jsonBytes, err := models.ToJSON(cell)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	cancelChan := make(chan struct{})
-	_, err = consulAdapter.AcquireAndMaintainLock(
-		shared.CellSchemaPath(cell.CellID),
-		jsonBytes,
-		structs.SessionTTLMin,
-		cancelChan)
+	_, err = consulSession.SetPresence(shared.CellSchemaPath(cell.CellID), jsonBytes)
 	Ω(err).ShouldNot(HaveOccurred())
 }

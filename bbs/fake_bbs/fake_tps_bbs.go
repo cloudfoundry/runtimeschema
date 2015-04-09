@@ -10,11 +10,10 @@ import (
 )
 
 type FakeTpsBBS struct {
-	NewTpsWatcherLockStub        func(watcherID string, ttl, retryInterval time.Duration) ifrit.Runner
+	NewTpsWatcherLockStub        func(watcherID string, retryInterval time.Duration) ifrit.Runner
 	newTpsWatcherLockMutex       sync.RWMutex
 	newTpsWatcherLockArgsForCall []struct {
 		watcherID     string
-		ttl           time.Duration
 		retryInterval time.Duration
 	}
 	newTpsWatcherLockReturns struct {
@@ -22,16 +21,15 @@ type FakeTpsBBS struct {
 	}
 }
 
-func (fake *FakeTpsBBS) NewTpsWatcherLock(watcherID string, ttl time.Duration, retryInterval time.Duration) ifrit.Runner {
+func (fake *FakeTpsBBS) NewTpsWatcherLock(watcherID string, retryInterval time.Duration) ifrit.Runner {
 	fake.newTpsWatcherLockMutex.Lock()
 	fake.newTpsWatcherLockArgsForCall = append(fake.newTpsWatcherLockArgsForCall, struct {
 		watcherID     string
-		ttl           time.Duration
 		retryInterval time.Duration
-	}{watcherID, ttl, retryInterval})
+	}{watcherID, retryInterval})
 	fake.newTpsWatcherLockMutex.Unlock()
 	if fake.NewTpsWatcherLockStub != nil {
-		return fake.NewTpsWatcherLockStub(watcherID, ttl, retryInterval)
+		return fake.NewTpsWatcherLockStub(watcherID, retryInterval)
 	} else {
 		return fake.newTpsWatcherLockReturns.result1
 	}
@@ -43,10 +41,10 @@ func (fake *FakeTpsBBS) NewTpsWatcherLockCallCount() int {
 	return len(fake.newTpsWatcherLockArgsForCall)
 }
 
-func (fake *FakeTpsBBS) NewTpsWatcherLockArgsForCall(i int) (string, time.Duration, time.Duration) {
+func (fake *FakeTpsBBS) NewTpsWatcherLockArgsForCall(i int) (string, time.Duration) {
 	fake.newTpsWatcherLockMutex.RLock()
 	defer fake.newTpsWatcherLockMutex.RUnlock()
-	return fake.newTpsWatcherLockArgsForCall[i].watcherID, fake.newTpsWatcherLockArgsForCall[i].ttl, fake.newTpsWatcherLockArgsForCall[i].retryInterval
+	return fake.newTpsWatcherLockArgsForCall[i].watcherID, fake.newTpsWatcherLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeTpsBBS) NewTpsWatcherLockReturns(result1 ifrit.Runner) {

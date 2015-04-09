@@ -10,6 +10,7 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -18,66 +19,65 @@ import (
 )
 
 var _ = Describe("Cell Service Registry", func() {
-	const ttl = 10 * time.Second
 	const retryInterval = time.Second
 	var (
 		clock *fakeclock.FakeClock
 
 		bbs                *services_bbs.ServicesBBS
-		heartbeat1         ifrit.Process
-		heartbeat2         ifrit.Process
+		presence1          ifrit.Process
+		presence2          ifrit.Process
 		firstCellPresence  models.CellPresence
 		secondCellPresence models.CellPresence
 	)
 
 	BeforeEach(func() {
 		clock = fakeclock.NewFakeClock(time.Now())
-		bbs = services_bbs.New(consulAdapter, clock, lagertest.NewTestLogger("test"))
+		bbs = services_bbs.New(consulSession, clock, lagertest.NewTestLogger("test"))
 
 		firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 		secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3))
 
-		heartbeat1 = nil
-		heartbeat2 = nil
+		presence1 = nil
+		presence2 = nil
 	})
 
 	AfterEach(func() {
-		if heartbeat1 != nil {
-			heartbeat1.Signal(os.Interrupt)
-			Eventually(heartbeat1.Wait()).Should(Receive(BeNil()))
+		if presence1 != nil {
+			presence1.Signal(os.Interrupt)
+			Eventually(presence1.Wait()).Should(Receive(BeNil()))
 		}
 
-		if heartbeat2 != nil {
-			heartbeat2.Signal(os.Interrupt)
-			Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
+		if presence2 != nil {
+			presence2.Signal(os.Interrupt)
+			Eventually(presence2.Wait()).Should(Receive(BeNil()))
 		}
 	})
 
 	Describe("MaintainCellPresence", func() {
 		BeforeEach(func() {
-			heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
+			presence1 = ifrit.Invoke(bbs.NewCellPresence(firstCellPresence, retryInterval))
 		})
 
-		It("should put /cell/CELL_ID in the store with a TTL", func() {
+		It("should put /cell/CELL_ID in the store", func() {
 			expectedJSON, err := models.ToJSON(firstCellPresence)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			Consistently(func() ([]byte, error) {
-				return consulAdapter.GetValue(shared.CellSchemaPath(firstCellPresence.CellID))
-			}, ttl+time.Second).Should(MatchJSON(expectedJSON))
+			Eventually(func() ([]byte, error) {
+				return consulSession.GetAcquiredValue(shared.CellSchemaPath(firstCellPresence.CellID))
+			}, time.Second).Should(MatchJSON(expectedJSON))
 		})
 	})
 
 	Describe("CellById", func() {
 		Context("when the cell exists", func() {
 			BeforeEach(func() {
-				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
+				presence1 = ifrit.Invoke(bbs.NewCellPresence(firstCellPresence, retryInterval))
 			})
 
 			It("returns the correct CellPresence", func() {
-				cellPresence, err := bbs.CellById(firstCellPresence.CellID)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(cellPresence).Should(Equal(firstCellPresence))
+				Eventually(func() (models.CellPresence, error) {
+					return bbs.CellById(firstCellPresence.CellID)
+				}).Should(Equal(firstCellPresence))
 			})
 		})
 
@@ -92,22 +92,26 @@ var _ = Describe("Cell Service Registry", func() {
 	Describe("Cells", func() {
 		Context("when there are available Cells", func() {
 			BeforeEach(func() {
-				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
-				heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, ttl, retryInterval))
+				presence1 = ifrit.Invoke(bbs.NewCellPresence(firstCellPresence, retryInterval))
+				presence2 = ifrit.Invoke(bbs.NewCellPresence(secondCellPresence, retryInterval))
 			})
 
 			It("should get from /v1/cell/", func() {
-				cellPresences, err := bbs.Cells()
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(cellPresences).Should(HaveLen(2))
-				Ω(cellPresences).Should(ContainElement(firstCellPresence))
-				Ω(cellPresences).Should(ContainElement(secondCellPresence))
+				Eventually(func() ([]models.CellPresence, error) {
+					return bbs.Cells()
+				}).Should(ConsistOf(firstCellPresence, secondCellPresence))
 			})
 
 			Context("when there is unparsable JSON in there...", func() {
 				BeforeEach(func() {
-					_, err := consulAdapter.AcquireAndMaintainLock(shared.CellSchemaPath("blah"), []byte("ß"), 10*time.Second, nil)
+					err := consulSession.AcquireLock(shared.CellSchemaPath("blah"), []byte("ß"))
 					Ω(err).ShouldNot(HaveOccurred())
+
+					Eventually(func() map[string][]byte {
+						cells, err := consulSession.ListAcquiredValues(shared.CellSchemaRoot)
+						Ω(err).ShouldNot(HaveOccurred())
+						return cells
+					}, 1, 50*time.Millisecond).Should(HaveLen(3))
 				})
 
 				It("should ignore the unparsable JSON and move on", func() {
@@ -129,78 +133,88 @@ var _ = Describe("Cell Service Registry", func() {
 		})
 	})
 
-	Describe("WaitForCellEvent", func() {
-		Context("when the store is around", func() {
-			var receivedEvents <-chan services_bbs.CellEvent
+	Describe("CellEvents", func() {
+		var receivedEvents <-chan services_bbs.CellEvent
+		var otherSession *consuladapter.Session
 
-			BeforeEach(func() {
-				eventChan := make(chan services_bbs.CellEvent)
-				receivedEvents = eventChan
+		setPresences := func() {
+			presence1 = ifrit.Invoke(bbs.NewCellPresence(firstCellPresence, retryInterval))
 
-				go func() {
-					defer GinkgoRecover()
+			Eventually(func() ([]models.CellPresence, error) {
+				return bbs.Cells()
+			}).Should(HaveLen(1))
+		}
 
-					for {
-						event, err := bbs.WaitForCellEvent()
-						if err == nil {
-							eventChan <- event
-							break
-						}
+		BeforeEach(func() {
+			otherSession = consulRunner.NewSession("other-session")
+			otherbbs := services_bbs.New(otherSession, clock, lagertest.NewTestLogger("test"))
+			receivedEvents = otherbbs.CellEvents()
+		})
 
-						time.Sleep(50 * time.Millisecond)
-					}
-				}()
-			})
-
+		Context("when the store is up", func() {
 			Context("when cells are present and then one disappears", func() {
 				BeforeEach(func() {
-					expectedPresence1, err := models.ToJSON(firstCellPresence)
-					Ω(err).ShouldNot(HaveOccurred())
+					otherSession = consulRunner.NewSession("other-session")
+					otherbbs := services_bbs.New(otherSession, clock, lagertest.NewTestLogger("test"))
+					receivedEvents = otherbbs.CellEvents()
 
-					heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
-					Eventually(func() ([]byte, error) {
-						return consulAdapter.GetValue(shared.CellSchemaPath(firstCellPresence.CellID))
-					}).Should(Equal(expectedPresence1))
+					setPresences()
+					ginkgomon.Interrupt(presence1)
 
-					expectedPresence2, err := models.ToJSON(secondCellPresence)
-					Ω(err).ShouldNot(HaveOccurred())
-
-					heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, ttl, retryInterval))
-					Eventually(func() ([]byte, error) {
-						return consulAdapter.GetValue(shared.CellSchemaPath(secondCellPresence.CellID))
-					}).Should(Equal(expectedPresence2))
-
-					time.Sleep(200 * time.Millisecond) // give the watcher time to register the cells
-
-					ginkgomon.Interrupt(heartbeat1)
+					Eventually(func() ([]models.CellPresence, error) {
+						return bbs.Cells()
+					}).Should(HaveLen(0))
 				})
 
 				AfterEach(func() {
-					ginkgomon.Interrupt(heartbeat2)
+					otherSession.Destroy()
 				})
 
 				It("receives a CellDisappeared event", func() {
-					Eventually(receivedEvents, 20*time.Second).Should(Receive(Equal(services_bbs.CellDisappearedEvent{
-						IDs: []string{firstCellPresence.CellID},
-					})))
+					Eventually(receivedEvents).Should(Receive(Equal(
+						services_bbs.CellDisappearedEvent{IDs: []string{firstCellPresence.CellID}},
+					)))
 				})
 			})
 		})
 
 		Context("when the store is down", func() {
 			BeforeEach(func() {
+				otherSession = consulRunner.NewSession("other-session")
+				otherbbs := services_bbs.New(otherSession, clock, lagertest.NewTestLogger("test"))
+				receivedEvents = otherbbs.CellEvents()
+
 				consulRunner.Stop()
 			})
 
-			AfterEach(func() {
+			It("attaches when the store is back", func() {
 				consulRunner.Start()
-			})
+				consulRunner.WaitUntilReady()
 
-			It("returns an error", func() {
-				_, err := bbs.WaitForCellEvent()
-				Ω(err).Should(HaveOccurred())
+				By("setting presences")
+				newSession, err := consulSession.Recreate()
+				Ω(err).ShouldNot(HaveOccurred())
+				bbs = services_bbs.New(newSession, clock, lagertest.NewTestLogger("test"))
+
+				setPresences()
+
+				Eventually(func() ([]models.CellPresence, error) {
+					return bbs.Cells()
+				}).Should(HaveLen(1))
+
+				time.Sleep(2 * time.Second) //wait for a watch fail cycle
+
+				By("stopping the presence")
+				ginkgomon.Interrupt(presence1)
+
+				Eventually(func() ([]models.CellPresence, error) {
+					return bbs.Cells()
+				}).Should(HaveLen(0))
+
+				Eventually(receivedEvents).Should(Receive(Equal(
+					services_bbs.CellDisappearedEvent{IDs: []string{firstCellPresence.CellID}},
+				)))
 			})
 		})
 	})
-
 })

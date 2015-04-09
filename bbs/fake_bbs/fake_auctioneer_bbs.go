@@ -15,7 +15,7 @@ type FakeAuctioneerBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -29,11 +29,10 @@ type FakeAuctioneerBBS struct {
 	failTaskReturns struct {
 		result1 error
 	}
-	NewAuctioneerLockStub        func(auctioneerPresence models.AuctioneerPresence, ttl, retryInterval time.Duration) (ifrit.Runner, error)
+	NewAuctioneerLockStub        func(auctioneerPresence models.AuctioneerPresence, retryInterval time.Duration) (ifrit.Runner, error)
 	newAuctioneerLockMutex       sync.RWMutex
 	newAuctioneerLockArgsForCall []struct {
 		auctioneerPresence models.AuctioneerPresence
-		ttl                time.Duration
 		retryInterval      time.Duration
 	}
 	newAuctioneerLockReturns struct {
@@ -111,16 +110,15 @@ func (fake *FakeAuctioneerBBS) FailTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, ttl time.Duration, retryInterval time.Duration) (ifrit.Runner, error) {
+func (fake *FakeAuctioneerBBS) NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, retryInterval time.Duration) (ifrit.Runner, error) {
 	fake.newAuctioneerLockMutex.Lock()
 	fake.newAuctioneerLockArgsForCall = append(fake.newAuctioneerLockArgsForCall, struct {
 		auctioneerPresence models.AuctioneerPresence
-		ttl                time.Duration
 		retryInterval      time.Duration
-	}{auctioneerPresence, ttl, retryInterval})
+	}{auctioneerPresence, retryInterval})
 	fake.newAuctioneerLockMutex.Unlock()
 	if fake.NewAuctioneerLockStub != nil {
-		return fake.NewAuctioneerLockStub(auctioneerPresence, ttl, retryInterval)
+		return fake.NewAuctioneerLockStub(auctioneerPresence, retryInterval)
 	} else {
 		return fake.newAuctioneerLockReturns.result1, fake.newAuctioneerLockReturns.result2
 	}
@@ -132,10 +130,10 @@ func (fake *FakeAuctioneerBBS) NewAuctioneerLockCallCount() int {
 	return len(fake.newAuctioneerLockArgsForCall)
 }
 
-func (fake *FakeAuctioneerBBS) NewAuctioneerLockArgsForCall(i int) (models.AuctioneerPresence, time.Duration, time.Duration) {
+func (fake *FakeAuctioneerBBS) NewAuctioneerLockArgsForCall(i int) (models.AuctioneerPresence, time.Duration) {
 	fake.newAuctioneerLockMutex.RLock()
 	defer fake.newAuctioneerLockMutex.RUnlock()
-	return fake.newAuctioneerLockArgsForCall[i].auctioneerPresence, fake.newAuctioneerLockArgsForCall[i].ttl, fake.newAuctioneerLockArgsForCall[i].retryInterval
+	return fake.newAuctioneerLockArgsForCall[i].auctioneerPresence, fake.newAuctioneerLockArgsForCall[i].retryInterval
 }
 
 func (fake *FakeAuctioneerBBS) NewAuctioneerLockReturns(result1 ifrit.Runner, result2 error) {

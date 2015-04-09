@@ -105,7 +105,7 @@ type FakeReceptorBBS struct {
 	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
 	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns struct {
+	desiredLRPsReturns     struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
@@ -142,7 +142,7 @@ type FakeReceptorBBS struct {
 	ActualLRPGroupsStub        func() ([]models.ActualLRPGroup, error)
 	actualLRPGroupsMutex       sync.RWMutex
 	actualLRPGroupsArgsForCall []struct{}
-	actualLRPGroupsReturns struct {
+	actualLRPGroupsReturns     struct {
 		result1 []models.ActualLRPGroup
 		result2 error
 	}
@@ -195,7 +195,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -211,7 +211,7 @@ type FakeReceptorBBS struct {
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns struct {
+	domainsReturns     struct {
 		result1 []string
 		result2 error
 	}

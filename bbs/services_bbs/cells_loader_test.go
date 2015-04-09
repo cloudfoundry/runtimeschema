@@ -1,11 +1,11 @@
 package services_bbs_test
 
 import (
-	"os"
 	"time"
 
 	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
@@ -23,8 +23,8 @@ var _ = Describe("CellsLoader", func() {
 			clock *fakeclock.FakeClock
 
 			bbs                *services_bbs.ServicesBBS
-			heartbeat1         ifrit.Process
-			heartbeat2         ifrit.Process
+			presence1          ifrit.Process
+			presence2          ifrit.Process
 			firstCellPresence  models.CellPresence
 			secondCellPresence models.CellPresence
 			logger             *lagertest.TestLogger
@@ -33,25 +33,18 @@ var _ = Describe("CellsLoader", func() {
 		BeforeEach(func() {
 			logger = lagertest.NewTestLogger("test")
 			clock = fakeclock.NewFakeClock(time.Now())
-			bbs = services_bbs.New(consulAdapter, clock, logger)
+			bbs = services_bbs.New(consulSession, clock, logger)
 
 			firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
 			secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3))
 
-			heartbeat1 = nil
-			heartbeat2 = nil
+			presence1 = nil
+			presence2 = nil
 		})
 
 		AfterEach(func() {
-			if heartbeat1 != nil {
-				heartbeat1.Signal(os.Interrupt)
-				Eventually(heartbeat1.Wait()).Should(Receive(BeNil()))
-			}
-
-			if heartbeat2 != nil {
-				heartbeat2.Signal(os.Interrupt)
-				Eventually(heartbeat2.Wait()).Should(Receive(BeNil()))
-			}
+			ginkgomon.Interrupt(presence1)
+			ginkgomon.Interrupt(presence2)
 		})
 
 		Context("when there is a single cell", func() {
@@ -61,7 +54,12 @@ var _ = Describe("CellsLoader", func() {
 
 			BeforeEach(func() {
 				cellsLoader = bbs.NewCellsLoader()
-				heartbeat1 = ifrit.Invoke(bbs.NewCellHeartbeat(firstCellPresence, ttl, retryInterval))
+				presence1 = ifrit.Invoke(bbs.NewCellPresence(firstCellPresence, retryInterval))
+
+				Eventually(func() ([]models.CellPresence, error) {
+					return bbs.Cells()
+				}).Should(HaveLen(1))
+
 				cells, err = cellsLoader.Cells()
 			})
 
@@ -72,21 +70,24 @@ var _ = Describe("CellsLoader", func() {
 			})
 
 			Context("when one more cell is added", func() {
-
 				BeforeEach(func() {
-					heartbeat2 = ifrit.Invoke(bbs.NewCellHeartbeat(secondCellPresence, ttl, retryInterval))
+					presence2 = ifrit.Invoke(bbs.NewCellPresence(secondCellPresence, retryInterval))
+
+					Eventually(func() ([]models.CellPresence, error) {
+						return bbs.Cells()
+					}).Should(HaveLen(2))
 				})
 
 				It("returns only one cell", func() {
-					cells2, err2 := cellsLoader.Cells()
-					Ω(err2).ShouldNot(HaveOccurred())
-					Ω(cells2).Should(Equal(cells))
+					cells, err := cellsLoader.Cells()
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(cells).Should(HaveLen(1))
 				})
 
 				Context("when a new loader is created", func() {
 					It("returns two cells", func() {
 						newCellsLoader := bbs.NewCellsLoader()
-						cells, err = newCellsLoader.Cells()
+						cells, err := newCellsLoader.Cells()
 						Ω(err).ShouldNot(HaveOccurred())
 						Ω(cells).Should(HaveLen(2))
 						Ω(cells).Should(HaveKey("first-rep"))
