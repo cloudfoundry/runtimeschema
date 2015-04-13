@@ -124,16 +124,6 @@ type AuctioneerBBS interface {
 
 //go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS
 type MetricsBBS interface {
-	//task
-	Tasks(logger lager.Logger) ([]models.Task, error)
-
-	// domains
-	Domains() ([]string, error)
-
-	//lrps
-	DesiredLRPs() ([]models.DesiredLRP, error)
-	ActualLRPs() ([]models.ActualLRP, error)
-
 	//lock
 	NewRuntimeMetricsLock(runtimeMetricsID string, retryInterval time.Duration) ifrit.Runner
 }
@@ -169,8 +159,8 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
-func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) ReceptorBBS {
-	return NewBBS(store, consul, "", clock, logger)
+func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ReceptorBBS {
+	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
 func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
@@ -189,8 +179,8 @@ func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Ses
 	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
 }
 
-func NewMetricsBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) MetricsBBS {
-	return NewBBS(store, consul, "", clock, logger)
+func NewMetricsBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) MetricsBBS {
+	return lock_bbs.New(consul, clock, logger.Session("metrics-bbs"))
 }
 
 func NewRouteEmitterBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) RouteEmitterBBS {
