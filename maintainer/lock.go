@@ -54,11 +54,11 @@ func (l Lock) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 		logger.Info("done")
 	}()
 
-	errChan := make(chan error, 1)
+	acquireErr := make(chan error, 1)
 
 	acquire := func(session *consuladapter.Session) {
 		logger.Info("acquiring-lock")
-		errChan <- session.AcquireLock(l.key, l.value)
+		acquireErr <- session.AcquireLock(l.key, l.value)
 	}
 
 	var c <-chan time.Time
@@ -73,27 +73,35 @@ func (l Lock) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			logger.Debug("releasing-lock")
 			return nil
 		case err := <-l.consul.Err():
-			if err == consuladapter.LostLockError(l.key) {
-				logger.Info("lost-lock")
+			var data lager.Data
+			if err != nil {
+				data = lager.Data{"err": err.Error()}
+			}
+
+			if ready == nil {
+				logger.Info("lost-lock", data)
 				return ErrLockLost
 			}
 
-		case err := <-errChan:
-			if err == nil {
-				logger.Info("acquire-lock-succeeded")
-
-				if ready != nil {
-					close(ready)
-					logger.Info("started")
-					ready = nil
-				} else {
-					logger.Info("lost-lock")
-					return ErrLockLost
-				}
-			} else {
-				logger.Error("acquire-lock-failed", err)
-				c = l.clock.NewTimer(l.retryInterval).C()
+			logger.Info("consul-error", data)
+			c = l.clock.NewTimer(l.retryInterval).C()
+		case err := <-acquireErr:
+			if ready == nil {
+				logger.Error("lock acquired twice", err)
+				return errors.New("lock acquired twice")
 			}
+
+			if err != nil {
+				logger.Info("acquire-lock-failed", lager.Data{"err": err.Error()})
+				c = l.clock.NewTimer(l.retryInterval).C()
+				break
+			}
+
+			logger.Info("acquire-lock-succeeded")
+
+			close(ready)
+			logger.Info("started")
+			ready = nil
 		case <-c:
 			logger.Info("retrying-acquiring-lock")
 

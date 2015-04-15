@@ -77,9 +77,12 @@ func (p Presence) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			logger.Debug("removing-presence")
 			return nil
 		case err := <-p.consul.Err():
+			var data lager.Data
 			if err != nil {
-				logger.Info("presence-error", lager.Data{"err": err.Error()})
+				data = lager.Data{"err": err.Error()}
 			}
+			logger.Info("consul-error", data)
+
 			presenceLost = nil
 			c = p.clock.NewTimer(p.retryInterval).C()
 		case result := <-presenceCh:
