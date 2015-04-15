@@ -93,6 +93,7 @@ var _ = Describe("Lock", func() {
 
 					AfterEach(func() {
 						consulRunner.Start()
+						consulRunner.WaitUntilReady()
 					})
 
 					It("loses the lock and exits", func() {
@@ -115,21 +116,24 @@ var _ = Describe("Lock", func() {
 
 		Context("and the lock is unavailable", func() {
 			var (
-				otherSession *consuladapter.Session
+				otherProcess ifrit.Process
 				otherValue   []byte
 			)
 
 			BeforeEach(func() {
 				otherValue = []byte("doppel-value")
-				otherSession = consulRunner.NewSession("other-session")
+				otherSession := consulRunner.NewSession("other-session")
+				clock := clock.NewClock()
 
-				err := otherSession.AcquireLock(lockKey, otherValue)
-				Ω(err).ShouldNot(HaveOccurred())
+				otherRunner := maintainer.NewLock(otherSession, lockKey, otherValue, clock, retryInterval, logger)
+				otherProcess = ifrit.Background(otherRunner)
+
+				Eventually(otherProcess.Ready()).Should(BeClosed())
 				Ω(getLockValue()).Should(Equal(otherValue))
 			})
 
 			AfterEach(func() {
-				otherSession.Destroy()
+				ginkgomon.Interrupt(otherProcess)
 			})
 
 			It("waits for the lock to become available", func() {
@@ -148,6 +152,7 @@ var _ = Describe("Lock", func() {
 
 				AfterEach(func() {
 					consulRunner.Start()
+					consulRunner.WaitUntilReady()
 				})
 
 				It("continues to wait for the lock", func() {
@@ -205,7 +210,7 @@ var _ = Describe("Lock", func() {
 					Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
 					Ω(getLockValue()).Should(Equal(otherValue))
 
-					otherSession.Destroy()
+					ginkgomon.Interrupt(otherProcess)
 
 					Eventually(lockProcess.Ready()).Should(BeClosed())
 					Ω(getLockValue()).Should(Equal(lockValue))
@@ -221,6 +226,7 @@ var _ = Describe("Lock", func() {
 
 		AfterEach(func() {
 			consulRunner.Start()
+			consulRunner.WaitUntilReady()
 		})
 
 		It("continues to retry acquiring the lock", func() {

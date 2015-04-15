@@ -28,10 +28,10 @@ var _ = BeforeSuite(func() {
 	consulRunner = consuladapter.NewClusterRunner(consulStartingPort, 1, defaultScheme)
 
 	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 })
 
 var _ = BeforeEach(func() {
-	consulRunner.WaitUntilReady()
 	consulRunner.Reset()
 })
 

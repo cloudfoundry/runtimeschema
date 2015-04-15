@@ -77,7 +77,7 @@ var _ = Describe("Presence", func() {
 			It("acquires the presence", func() {
 				presenceProcess = ifrit.Background(presenceRunner)
 				Eventually(presenceProcess.Ready()).Should(BeClosed())
-				Ω(getPresenceValue()).Should(Equal(presenceValue))
+				Eventually(getPresenceValue).Should(Equal(presenceValue))
 			})
 
 			Context("and we have acquired the presence", func() {
@@ -93,6 +93,7 @@ var _ = Describe("Presence", func() {
 
 					AfterEach(func() {
 						consulRunner.Start()
+						consulRunner.WaitUntilReady()
 					})
 
 					It("loses the presence and retries", func() {
@@ -147,6 +148,7 @@ var _ = Describe("Presence", func() {
 
 				AfterEach(func() {
 					consulRunner.Start()
+					consulRunner.WaitUntilReady()
 				})
 
 				It("continues to wait for the presence", func() {
@@ -219,6 +221,7 @@ var _ = Describe("Presence", func() {
 
 		AfterEach(func() {
 			consulRunner.Start()
+			consulRunner.WaitUntilReady()
 		})
 
 		It("continues to retry setting the presence", func() {
