@@ -1,12 +1,11 @@
 package maintainer_test
 
 import (
-	"os"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/maintainer"
-	"github.com/hashicorp/consul/consul/structs"
+	"github.com/hashicorp/consul/api"
 
 	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
@@ -16,16 +15,14 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-)
-
-var (
-	lockKey   = "some-key"
-	lockValue = []byte("some-value")
-	ttl       = structs.SessionTTLMin
+	. "github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Lock", func() {
 	var (
+		lockKey   string
+		lockValue []byte
+
 		consulSession *consuladapter.Session
 
 		lockRunner    ifrit.Runner
@@ -41,10 +38,15 @@ var _ = Describe("Lock", func() {
 	BeforeEach(func() {
 		consulSession = consulRunner.NewSession("a-session")
 
-		retryInterval = 500 * time.Millisecond
-		clock := clock.NewClock()
-		logger = lagertest.NewTestLogger("maintainer")
+		lockKey = "some-key"
+		lockValue = []byte("some-value")
 
+		retryInterval = 500 * time.Millisecond
+		logger = lagertest.NewTestLogger("maintainer")
+	})
+
+	JustBeforeEach(func() {
+		clock := clock.NewClock()
 		lockRunner = maintainer.NewLock(consulSession, lockKey, lockValue, clock, retryInterval, logger)
 	})
 
@@ -53,173 +55,199 @@ var _ = Describe("Lock", func() {
 		consulSession.Destroy()
 	})
 
-	Describe("Maintaining Locks", func() {
-		Context("when the node does not exist", func() {
+	Context("When consul is running", func() {
+		Context("an error occurs while acquiring the lock", func() {
 			BeforeEach(func() {
-				lockProcess = ifrit.Invoke(lockRunner)
+				lockKey = ""
 			})
 
-			It("has a value in the store", func() {
-				Consistently(getLockValue).Should(Equal(lockValue))
-			})
-		})
+			It("continues to retry", func() {
+				lockProcess = ifrit.Background(lockRunner)
+				Eventually(consulSession.ID).ShouldNot(Equal(""))
 
-		Context("when the lock is released after we have aquired a lock", func() {
-			BeforeEach(func() {
-				lockProcess = ifrit.Invoke(lockRunner)
+				Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+				Consistently(lockProcess.Wait()).ShouldNot(Receive())
 
-				kv := consulRunner.NewClient().KV()
-				pair, _, err := kv.Get(lockKey, nil)
-				Ω(err).ShouldNot(HaveOccurred())
-				kv.Release(pair, nil)
-			})
-
-			It("exits", func() {
-				Eventually(lockProcess.Wait()).Should(Receive(Equal(maintainer.ErrLockLost)))
+				Eventually(logger).Should(Say("acquire-lock-failed"))
+				Eventually(logger).Should(Say("retrying-acquiring-lock"))
 			})
 		})
 
-		Describe("Shut Down", func() {
-			Context("when we are holding a lock in the store", func() {
-				BeforeEach(func() {
-					lockProcess = ifrit.Invoke(lockRunner)
-					Eventually(getLockValue).Should(Equal(lockValue))
-				})
-
-				It("deletes the node from the store", func() {
-					lockProcess.Signal(os.Interrupt)
-					Eventually(lockProcess.Wait()).Should(Receive(BeNil()))
-
-					_, err := getLockValue()
-					Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(lockKey)))
-				})
+		Context("and the lock is available", func() {
+			It("acquires the lock", func() {
+				lockProcess = ifrit.Background(lockRunner)
+				Eventually(lockProcess.Ready()).Should(BeClosed())
+				Ω(getLockValue()).Should(Equal(lockValue))
 			})
 
-			Context("when another maintainer is holding the lock", func() {
-				var otherSession *consuladapter.Session
-
-				BeforeEach(func() {
-					otherSession = consulRunner.NewSession("otherSession")
-
-					err := otherSession.AcquireLock(lockKey, []byte("doppel-value"))
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				Context("and we stop the waiting maintainer", func() {
-					JustBeforeEach(func() {
-						lockProcess = ifrit.Background(lockRunner)
-					})
-
-					It("does not delete the original node from the store", func() {
-						ginkgomon.Interrupt(lockProcess)
-
-						Consistently(getLockValue).Should(Equal([]byte("doppel-value")))
-					})
-
-					It("never signals ready", func() {
-						Consistently(lockProcess.Ready()).ShouldNot(Receive())
-					})
-				})
-			})
-
-			Context("when we have lost connection to the store", func() {
-				BeforeEach(func() {
-					lockProcess = ifrit.Invoke(lockRunner)
-					Eventually(lockProcess.Ready()).Should(BeClosed())
-
-					consulRunner.Stop()
-				})
-
-				AfterEach(func() {
-					consulRunner.Start()
-				})
-
-				It("exits", func() {
-					Eventually(lockProcess.Wait()).Should(Receive(Equal(maintainer.ErrLockLost)))
-				})
-			})
-		})
-
-		Describe("Lock Contention", func() {
-			Context("when someone else tries to acquire the lock after us", func() {
-				BeforeEach(func() {
-					lockProcess = ifrit.Invoke(lockRunner)
-					Eventually(getLockValue).Should(Equal(lockValue))
-				})
-
-				It("retains our original value", func() {
-					otherSession := consulRunner.NewSession("some-session")
-					go func() {
-						otherSession.AcquireLock(lockKey, []byte("doppel-value"))
-					}()
-
-					Consistently(getLockValue).Should(Equal(lockValue))
-
-					otherSession.Destroy()
-					Eventually(otherSession.Err()).Should(Receive(BeNil()))
-				})
-			})
-
-			Context("when someone else already has the lock first", func() {
-				var otherSession *consuladapter.Session
-
-				BeforeEach(func() {
-					otherSession = consulRunner.NewSession("other-session")
-
-					err := otherSession.AcquireLock(lockKey, []byte("doppel-value"))
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
+			Context("and we have acquired the lock", func() {
 				JustBeforeEach(func() {
 					lockProcess = ifrit.Background(lockRunner)
+					Eventually(lockProcess.Ready()).Should(BeClosed())
 				})
 
-				AfterEach(func() {
-					otherSession.Destroy()
-				})
-
-				Context("and the other maintainer does not go away", func() {
-					It("does not overwrite the existing value", func() {
-						Consistently(getLockValue).Should(Equal([]byte("doppel-value")))
-					})
-				})
-
-				Context("and the other maintainer goes away", func() {
-					BeforeEach(func() {
-						otherSession.Destroy()
+				Context("when consul shuts down", func() {
+					JustBeforeEach(func() {
+						consulRunner.Stop()
 					})
 
-					It("acquires the lock", func() {
-						Eventually(getLockValue).Should(Equal(lockValue))
-					})
-				})
-			})
-		})
-
-		Describe("Losing connections", func() {
-			Context("when we cannot initially connect to the store", func() {
-				BeforeEach(func() {
-					consulRunner.Stop()
-					lockProcess = ifrit.Background(lockRunner)
-				})
-
-				AfterEach(func() {
-					consulRunner.Start()
-				})
-
-				It("does not acquire the lock", func() {
-					Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
-				})
-
-				Context("when we are eventually able to connect to the store", func() {
-					BeforeEach(func() {
+					AfterEach(func() {
 						consulRunner.Start()
 					})
 
-					It("acquires the lock", func() {
-						Eventually(lockProcess.Ready(), 10).Should(BeClosed())
+					It("loses the lock and exits", func() {
+						var err error
+						Eventually(lockProcess.Wait()).Should(Receive(&err))
+						Ω(err).Should(Equal(maintainer.ErrLockLost))
 					})
 				})
+
+				Context("and the process is shutting down", func() {
+					It("releases the lock and exits", func() {
+						ginkgomon.Interrupt(lockProcess)
+						Eventually(lockProcess.Wait()).Should(Receive(BeNil()))
+						_, err := getLockValue()
+						Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(lockKey)))
+					})
+				})
+			})
+		})
+
+		Context("and the lock is unavailable", func() {
+			var (
+				otherSession *consuladapter.Session
+				otherValue   []byte
+			)
+
+			BeforeEach(func() {
+				otherValue = []byte("doppel-value")
+				otherSession = consulRunner.NewSession("other-session")
+
+				err := otherSession.AcquireLock(lockKey, otherValue)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(getLockValue()).Should(Equal(otherValue))
+			})
+
+			AfterEach(func() {
+				otherSession.Destroy()
+			})
+
+			It("waits for the lock to become available", func() {
+				lockProcess = ifrit.Background(lockRunner)
+				Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+				Ω(getLockValue()).Should(Equal(otherValue))
+			})
+
+			Context("when consul shuts down", func() {
+				JustBeforeEach(func() {
+					lockProcess = ifrit.Background(lockRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					consulRunner.Stop()
+				})
+
+				AfterEach(func() {
+					consulRunner.Start()
+				})
+
+				It("continues to wait for the lock", func() {
+					Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+					Consistently(lockProcess.Wait()).ShouldNot(Receive())
+
+					Eventually(logger).Should(Say("acquire-lock-failed"))
+					Eventually(logger).Should(Say("retrying-acquiring-lock"))
+				})
+			})
+
+			Context("and the session is destroyed", func() {
+				It("should recreate the session and continue to retry", func() {
+					lockProcess = ifrit.Background(lockRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					sessionID := consulSession.ID()
+
+					consulSession.Destroy()
+					Eventually(logger).Should(Say("consul-error"))
+					Eventually(logger).Should(Say("retrying-acquiring-lock"))
+
+					client := consulRunner.NewClient()
+
+					var entry *api.SessionEntry
+					Eventually(func() *api.SessionEntry {
+						entries, _, err := client.Session().List(nil)
+						Ω(err).ShouldNot(HaveOccurred())
+						for _, e := range entries {
+							if e.Name == "a-session" {
+								entry = e
+								return e
+							}
+						}
+						return nil
+					}).ShouldNot(BeNil())
+
+					Ω(entry.ID).ShouldNot(Equal(sessionID))
+				})
+			})
+
+			Context("and the process is shutting down", func() {
+				It("exits", func() {
+					lockProcess = ifrit.Background(lockRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					ginkgomon.Interrupt(lockProcess)
+					Eventually(lockProcess.Wait()).Should(Receive(BeNil()))
+				})
+			})
+
+			Context("and the lock is released", func() {
+				It("acquires the lock", func() {
+					lockProcess = ifrit.Background(lockRunner)
+					Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+					Ω(getLockValue()).Should(Equal(otherValue))
+
+					otherSession.Destroy()
+
+					Eventually(lockProcess.Ready()).Should(BeClosed())
+					Ω(getLockValue()).Should(Equal(lockValue))
+				})
+			})
+		})
+	})
+
+	Context("When consul is down", func() {
+		BeforeEach(func() {
+			consulRunner.Stop()
+		})
+
+		AfterEach(func() {
+			consulRunner.Start()
+		})
+
+		It("continues to retry acquiring the lock", func() {
+			lockProcess = ifrit.Background(lockRunner)
+
+			Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+			Consistently(lockProcess.Wait()).ShouldNot(Receive())
+
+			Eventually(logger).Should(Say("acquire-lock-failed"))
+			Eventually(logger).Should(Say("retrying-acquiring-lock"))
+			Eventually(logger).Should(Say("retrying-acquiring-lock"))
+		})
+
+		Context("when consul starts up", func() {
+			It("acquires the lock", func() {
+				lockProcess = ifrit.Background(lockRunner)
+
+				Eventually(logger).Should(Say("acquire-lock-failed"))
+				Eventually(logger).Should(Say("retrying-acquiring-lock"))
+				Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
+				Consistently(lockProcess.Wait()).ShouldNot(Receive())
+
+				consulRunner.Start()
+				consulRunner.WaitUntilReady()
+
+				Eventually(lockProcess.Ready()).Should(BeClosed())
+				Ω(getLockValue()).Should(Equal(lockValue))
 			})
 		})
 	})

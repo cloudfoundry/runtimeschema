@@ -86,11 +86,6 @@ func (l Lock) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			logger.Info("consul-error", data)
 			c = l.clock.NewTimer(l.retryInterval).C()
 		case err := <-acquireErr:
-			if ready == nil {
-				logger.Error("lock acquired twice", err)
-				return errors.New("lock acquired twice")
-			}
-
 			if err != nil {
 				logger.Info("acquire-lock-failed", lager.Data{"err": err.Error()})
 				c = l.clock.NewTimer(l.retryInterval).C()
@@ -100,8 +95,9 @@ func (l Lock) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			logger.Info("acquire-lock-succeeded")
 
 			close(ready)
-			logger.Info("started")
 			ready = nil
+			c = nil
+			logger.Info("started")
 		case <-c:
 			logger.Info("retrying-acquiring-lock")
 
