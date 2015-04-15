@@ -26,9 +26,10 @@ var _ = Describe("Presence", func() {
 	var (
 		consulSession *consuladapter.Session
 
-		presenceRunner ifrit.Runner
-		retryInterval  time.Duration
-		logger         lager.Logger
+		presenceRunner  ifrit.Runner
+		presenceProcess ifrit.Process
+		retryInterval   time.Duration
+		logger          lager.Logger
 	)
 
 	getPresenceValue := func() ([]byte, error) {
@@ -46,19 +47,14 @@ var _ = Describe("Presence", func() {
 	})
 
 	AfterEach(func() {
+		ginkgomon.Kill(presenceProcess)
 		consulSession.Destroy()
 	})
 
 	Describe("Maintaining Presence", func() {
 		Context("when the node does not exist", func() {
-			var presenceProcess ifrit.Process
-
 			BeforeEach(func() {
 				presenceProcess = ifrit.Invoke(presenceRunner)
-			})
-
-			AfterEach(func() {
-				ginkgomon.Kill(presenceProcess)
 			})
 
 			It("has a value in the store", func() {
@@ -67,34 +63,28 @@ var _ = Describe("Presence", func() {
 			})
 		})
 
-		Context("when the node is deleted after we have set presence", func() {
-			var presenceProcess ifrit.Process
-
+		Context("when the presence is removed after we have set presence", func() {
 			BeforeEach(func() {
 				presenceProcess = ifrit.Invoke(presenceRunner)
 
 				kv := consulRunner.NewClient().KV()
+
+				Eventually(getPresenceValue).Should(Equal(presenceValue))
 				pair, _, err := kv.Get(presenceKey, nil)
 				Ω(err).ShouldNot(HaveOccurred())
 				kv.Release(pair, nil)
+			})
 
-				It("exits", func() {
-					Eventually(presenceProcess.Wait()).Should(Receive(Equal(maintainer.ErrLockLost)))
-				})
+			It("re-sets the presence", func() {
+				Eventually(getPresenceValue).Should(Equal(presenceValue))
 			})
 		})
 
 		Describe("Shut Down", func() {
-			var presenceProcess ifrit.Process
-
 			Context("when we have presence in the store", func() {
 				BeforeEach(func() {
 					presenceProcess = ifrit.Invoke(presenceRunner)
 					Eventually(getPresenceValue).Should(Equal(presenceValue))
-				})
-
-				AfterEach(func() {
-					ginkgomon.Kill(presenceProcess)
 				})
 
 				It("deletes the node from the store", func() {
@@ -118,10 +108,6 @@ var _ = Describe("Presence", func() {
 
 				JustBeforeEach(func() {
 					presenceProcess = ifrit.Background(presenceRunner)
-				})
-
-				AfterEach(func() {
-					ginkgomon.Interrupt(presenceProcess)
 				})
 
 				It("does not delete the original node from the store", func() {
@@ -155,15 +141,9 @@ var _ = Describe("Presence", func() {
 
 		Describe("Lock Contention", func() {
 			Context("when someone else tries to gain presence after us", func() {
-				var presenceProcess ifrit.Process
-
 				BeforeEach(func() {
 					presenceProcess = ifrit.Invoke(presenceRunner)
 					Eventually(getPresenceValue).Should(Equal(presenceValue))
-				})
-
-				AfterEach(func() {
-					ginkgomon.Kill(presenceProcess)
 				})
 
 				It("retains our original value", func() {
@@ -180,7 +160,6 @@ var _ = Describe("Presence", func() {
 			})
 
 			Context("when someone else already has presence first", func() {
-				var presenceProcess ifrit.Process
 				var otherSession *consuladapter.Session
 
 				BeforeEach(func() {
@@ -196,7 +175,6 @@ var _ = Describe("Presence", func() {
 
 				AfterEach(func() {
 					otherSession.Destroy()
-					ginkgomon.Kill(presenceProcess)
 				})
 
 				Context("and the other maintainer does not go away", func() {
@@ -219,15 +197,12 @@ var _ = Describe("Presence", func() {
 
 		Describe("Losing connections", func() {
 			Context("when we cannot initially connect to the store", func() {
-				var presenceProcess ifrit.Process
-
 				BeforeEach(func() {
 					consulRunner.Stop()
 					presenceProcess = ifrit.Background(presenceRunner)
 				})
 
 				AfterEach(func() {
-					ginkgomon.Kill(presenceProcess)
 					consulRunner.Start()
 				})
 
@@ -240,10 +215,6 @@ var _ = Describe("Presence", func() {
 					BeforeEach(func() {
 						consulRunner.Start()
 						consulRunner.WaitUntilReady()
-					})
-
-					AfterEach(func() {
-						ginkgomon.Kill(presenceProcess)
 					})
 
 					It("sets presence", func() {
