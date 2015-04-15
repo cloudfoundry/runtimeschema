@@ -1,11 +1,11 @@
 package maintainer_test
 
 import (
-	"os"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/runtime-schema/maintainer"
+	"github.com/hashicorp/consul/api"
 
 	"github.com/pivotal-golang/clock"
 	"github.com/pivotal-golang/lager"
@@ -15,15 +15,14 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-)
-
-var (
-	presenceKey   = "some-presence"
-	presenceValue = []byte("some-value")
+	. "github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Presence", func() {
 	var (
+		presenceKey   string
+		presenceValue []byte
+
 		consulSession *consuladapter.Session
 
 		presenceRunner  ifrit.Runner
@@ -39,10 +38,15 @@ var _ = Describe("Presence", func() {
 	BeforeEach(func() {
 		consulSession = consulRunner.NewSession("a-session")
 
-		retryInterval = 500 * time.Millisecond
-		clock := clock.NewClock()
-		logger = lagertest.NewTestLogger("maintainer")
+		presenceKey = "some-key"
+		presenceValue = []byte("some-value")
 
+		retryInterval = 500 * time.Millisecond
+		logger = lagertest.NewTestLogger("maintainer")
+	})
+
+	JustBeforeEach(func() {
+		clock := clock.NewClock()
 		presenceRunner = maintainer.NewPresence(consulSession, presenceKey, presenceValue, clock, retryInterval, logger)
 	})
 
@@ -51,176 +55,196 @@ var _ = Describe("Presence", func() {
 		consulSession.Destroy()
 	})
 
-	Describe("Maintaining Presence", func() {
-		Context("when the node does not exist", func() {
+	Context("When consul is running", func() {
+		Context("an error occurs while acquiring the presence", func() {
 			BeforeEach(func() {
-				presenceProcess = ifrit.Invoke(presenceRunner)
+				presenceKey = ""
 			})
 
-			It("has a value in the store", func() {
-				Eventually(getPresenceValue).Should(Equal(presenceValue))
-				Consistently(getPresenceValue).Should(Equal(presenceValue))
+			It("continues to retry", func() {
+				presenceProcess = ifrit.Background(presenceRunner)
+				Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+				Consistently(presenceProcess.Ready()).Should(BeClosed())
+				Consistently(presenceProcess.Wait()).ShouldNot(Receive())
+
+				Eventually(logger).Should(Say("set-presence-failed"))
+				Eventually(logger).Should(Say("retrying-set-presence"))
 			})
 		})
 
-		Context("when the presence is removed after we have set presence", func() {
-			BeforeEach(func() {
-				presenceProcess = ifrit.Invoke(presenceRunner)
-
-				kv := consulRunner.NewClient().KV()
-
-				Eventually(getPresenceValue).Should(Equal(presenceValue))
-				pair, _, err := kv.Get(presenceKey, nil)
-				Ω(err).ShouldNot(HaveOccurred())
-				kv.Release(pair, nil)
+		Context("and the presence is available", func() {
+			It("acquires the presence", func() {
+				presenceProcess = ifrit.Background(presenceRunner)
+				Eventually(presenceProcess.Ready()).Should(BeClosed())
+				Ω(getPresenceValue()).Should(Equal(presenceValue))
 			})
 
-			It("re-sets the presence", func() {
-				Eventually(getPresenceValue).Should(Equal(presenceValue))
-			})
-		})
-
-		Describe("Shut Down", func() {
-			Context("when we have presence in the store", func() {
-				BeforeEach(func() {
-					presenceProcess = ifrit.Invoke(presenceRunner)
-					Eventually(getPresenceValue).Should(Equal(presenceValue))
-				})
-
-				It("deletes the node from the store", func() {
-					presenceProcess.Signal(os.Interrupt)
-					Eventually(presenceProcess.Wait()).Should(Receive(BeNil()))
-
-					_, err := getPresenceValue()
-					Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(presenceKey)))
-				})
-			})
-
-			Context("when another maintainer has presence we are trying to set", func() {
-				var otherSession *consuladapter.Session
-
-				BeforeEach(func() {
-					otherSession = consulRunner.NewSession("otherSession")
-
-					_, err := otherSession.SetPresence(presenceKey, []byte("doppel-value"))
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
+			Context("and we have acquired the presence", func() {
 				JustBeforeEach(func() {
 					presenceProcess = ifrit.Background(presenceRunner)
-				})
-
-				It("does not delete the original node from the store", func() {
-					ginkgomon.Interrupt(presenceProcess)
-
-					Consistently(getPresenceValue).Should(Equal([]byte("doppel-value")))
-				})
-
-				It("never signals ready", func() {
-					Consistently(presenceProcess.Ready()).ShouldNot(Receive())
-				})
-			})
-
-			Context("when we have lost connection to the store", func() {
-				BeforeEach(func() {
-					presenceProcess = ifrit.Invoke(presenceRunner)
 					Eventually(presenceProcess.Ready()).Should(BeClosed())
-
-					consulRunner.Stop()
 				})
 
-				AfterEach(func() {
-					consulRunner.Start()
-				})
-
-				It("remains up", func() {
-					Consistently(presenceProcess.Wait()).ShouldNot(Receive())
-				})
-			})
-		})
-
-		Describe("Lock Contention", func() {
-			Context("when someone else tries to gain presence after us", func() {
-				BeforeEach(func() {
-					presenceProcess = ifrit.Invoke(presenceRunner)
-					Eventually(getPresenceValue).Should(Equal(presenceValue))
-				})
-
-				It("retains our original value", func() {
-					otherSession := consulRunner.NewSession("some-session")
-					go func() {
-						otherSession.SetPresence(presenceKey, []byte("doppel-value"))
-					}()
-
-					Consistently(getPresenceValue).Should(Equal(presenceValue))
-
-					otherSession.Destroy()
-					Eventually(otherSession.Err()).Should(Receive(BeNil()))
-				})
-			})
-
-			Context("when someone else already has presence first", func() {
-				var otherSession *consuladapter.Session
-
-				BeforeEach(func() {
-					otherSession = consulRunner.NewSession("other-session")
-
-					_, err := otherSession.SetPresence(presenceKey, []byte("doppel-value"))
-					Ω(err).ShouldNot(HaveOccurred())
-				})
-
-				JustBeforeEach(func() {
-					presenceProcess = ifrit.Background(presenceRunner)
-				})
-
-				AfterEach(func() {
-					otherSession.Destroy()
-				})
-
-				Context("and the other maintainer does not go away", func() {
-					It("does not overwrite the existing value", func() {
-						Consistently(getPresenceValue).Should(Equal([]byte("doppel-value")))
-					})
-				})
-
-				Context("and the other maintainer goes away", func() {
-					BeforeEach(func() {
-						otherSession.Destroy()
+				Context("when consul shuts down", func() {
+					JustBeforeEach(func() {
+						consulRunner.Stop()
 					})
 
-					It("gains presence", func() {
-						Eventually(getPresenceValue).Should(Equal(presenceValue))
-					})
-				})
-			})
-		})
-
-		Describe("Losing connections", func() {
-			Context("when we cannot initially connect to the store", func() {
-				BeforeEach(func() {
-					consulRunner.Stop()
-					presenceProcess = ifrit.Background(presenceRunner)
-				})
-
-				AfterEach(func() {
-					consulRunner.Start()
-				})
-
-				It("is ready but does not exit", func() {
-					Eventually(presenceProcess.Ready()).Should(BeClosed())
-					Consistently(presenceProcess.Wait()).ShouldNot(BeClosed())
-				})
-
-				Context("when we are eventually able to connect to the store", func() {
-					BeforeEach(func() {
+					AfterEach(func() {
 						consulRunner.Start()
-						consulRunner.WaitUntilReady()
 					})
 
-					It("sets presence", func() {
-						Eventually(getPresenceValue).Should(Equal(presenceValue))
+					It("loses the presence and retries", func() {
+						Eventually(presenceProcess.Wait()).ShouldNot(Receive())
+						Eventually(logger).Should(Say("retrying-set-presence"))
 					})
 				})
+
+				Context("and the process is shutting down", func() {
+					It("releases the presence and exits", func() {
+						ginkgomon.Interrupt(presenceProcess)
+						Eventually(presenceProcess.Wait()).Should(Receive(BeNil()))
+						_, err := getPresenceValue()
+						Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(presenceKey)))
+					})
+				})
+			})
+		})
+
+		Context("and the presence is unavailable", func() {
+			var (
+				otherSession *consuladapter.Session
+				otherValue   []byte
+			)
+
+			BeforeEach(func() {
+				otherValue = []byte("doppel-value")
+				otherSession = consulRunner.NewSession("other-session")
+
+				_, err := otherSession.SetPresence(presenceKey, otherValue)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(getPresenceValue()).Should(Equal(otherValue))
+			})
+
+			AfterEach(func() {
+				otherSession.Destroy()
+			})
+
+			It("waits for the presence to become available", func() {
+				presenceProcess = ifrit.Background(presenceRunner)
+				Eventually(presenceProcess.Ready()).Should(BeClosed())
+				Ω(getPresenceValue()).Should(Equal(otherValue))
+			})
+
+			Context("when consul shuts down", func() {
+				JustBeforeEach(func() {
+					presenceProcess = ifrit.Background(presenceRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					consulRunner.Stop()
+				})
+
+				AfterEach(func() {
+					consulRunner.Start()
+				})
+
+				It("continues to wait for the presence", func() {
+					Consistently(presenceProcess.Ready()).Should(BeClosed())
+					Consistently(presenceProcess.Wait()).ShouldNot(Receive())
+
+					Eventually(logger).Should(Say("set-presence-failed"))
+					Eventually(logger).Should(Say("retrying-set-presence"))
+				})
+			})
+
+			Context("and the session is destroyed", func() {
+				It("should recreate the session and continue to retry", func() {
+					presenceProcess = ifrit.Background(presenceRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					sessionID := consulSession.ID()
+
+					consulSession.Destroy()
+					Eventually(logger).Should(Say("consul-error"))
+					Eventually(logger).Should(Say("retrying-set-presence"))
+
+					client := consulRunner.NewClient()
+
+					var entry *api.SessionEntry
+					Eventually(func() *api.SessionEntry {
+						entries, _, err := client.Session().List(nil)
+						Ω(err).ShouldNot(HaveOccurred())
+						for _, e := range entries {
+							if e.Name == "a-session" {
+								entry = e
+								return e
+							}
+						}
+						return nil
+					}).ShouldNot(BeNil())
+
+					Ω(entry.ID).ShouldNot(Equal(sessionID))
+				})
+			})
+
+			Context("and the process is shutting down", func() {
+				It("exits", func() {
+					presenceProcess = ifrit.Background(presenceRunner)
+					Eventually(consulSession.ID).ShouldNot(Equal(""))
+
+					ginkgomon.Interrupt(presenceProcess)
+					Eventually(presenceProcess.Wait()).Should(Receive(BeNil()))
+				})
+			})
+
+			Context("and the presence is released", func() {
+				It("acquires the presence", func() {
+					presenceProcess = ifrit.Background(presenceRunner)
+					Eventually(presenceProcess.Ready()).Should(BeClosed())
+					Ω(getPresenceValue()).Should(Equal(otherValue))
+
+					otherSession.Destroy()
+
+					Eventually(getPresenceValue).Should(Equal(presenceValue))
+				})
+			})
+		})
+	})
+
+	Context("When consul is down", func() {
+		BeforeEach(func() {
+			consulRunner.Stop()
+		})
+
+		AfterEach(func() {
+			consulRunner.Start()
+		})
+
+		It("continues to retry setting the presence", func() {
+			presenceProcess = ifrit.Background(presenceRunner)
+
+			Eventually(presenceProcess.Ready()).Should(BeClosed())
+			Consistently(presenceProcess.Wait()).ShouldNot(Receive())
+
+			Eventually(logger).Should(Say("set-presence-failed"))
+			Eventually(logger).Should(Say("retrying-set-presence"))
+			Eventually(logger).Should(Say("retrying-set-presence"))
+		})
+
+		Context("when consul starts up", func() {
+			It("acquires the presence", func() {
+				presenceProcess = ifrit.Background(presenceRunner)
+				Eventually(presenceProcess.Ready()).Should(BeClosed())
+
+				Eventually(logger).Should(Say("set-presence-failed"))
+				Eventually(logger).Should(Say("retrying-set-presence"))
+				Consistently(presenceProcess.Wait()).ShouldNot(Receive())
+
+				consulRunner.Start()
+				consulRunner.WaitUntilReady()
+
+				Eventually(getPresenceValue).Should(Equal(presenceValue))
 			})
 		})
 	})

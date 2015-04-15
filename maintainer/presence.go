@@ -87,8 +87,9 @@ func (p Presence) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			c = p.clock.NewTimer(p.retryInterval).C()
 		case result := <-presenceCh:
 			if result.err == nil {
-				logger.Info("set-presence-succeeded")
+				c = nil
 				presenceLost = result.presenceLost
+				logger.Info("set-presence-succeeded")
 			} else {
 				logger.Error("set-presence-failed", result.err)
 				c = p.clock.NewTimer(p.retryInterval).C()
