@@ -167,6 +167,42 @@ var _ = Describe("Task BBS", func() {
 		})
 	})
 
+	Describe("FailedTasks", func() {
+		BeforeEach(func() {
+			err := bbs.DesireTask(logger, task)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			otherTask := models.Task{
+				Domain:   "tests",
+				TaskGuid: "some-other-guid",
+				RootFS:   "some:rootfs",
+				Action:   dummyAction,
+			}
+
+			err = bbs.DesireTask(logger, otherTask)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			_, err = bbs.StartTask(logger, otherTask.TaskGuid, "cell-ID")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			err = bbs.CompleteTask(logger, otherTask.TaskGuid, "cell-ID", false, "", "a result")
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("returns all Tasks in 'completed' state that have failed", func() {
+			tasks, err := bbs.FailedTasks(logger)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(tasks).Should(HaveLen(1))
+			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+		})
+	})
+
 	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)

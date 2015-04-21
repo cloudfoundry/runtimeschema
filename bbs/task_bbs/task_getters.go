@@ -52,6 +52,13 @@ func (bbs *TaskBBS) CompletedTasks(logger lager.Logger) ([]models.Task, error) {
 	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
+func (bbs *TaskBBS) FailedTasks(logger lager.Logger) ([]models.Task, error) {
+	all, err := bbs.Tasks(logger)
+	return filterTasks(all, func(task models.Task) bool {
+		return task.State == models.TaskStateCompleted && task.Failed
+	}), err
+}
+
 func (bbs *TaskBBS) ResolvingTasks(logger lager.Logger) ([]models.Task, error) {
 	all, err := bbs.Tasks(logger)
 	return filterTasksByState(all, models.TaskStateResolving), err
