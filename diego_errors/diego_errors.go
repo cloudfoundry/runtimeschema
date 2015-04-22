@@ -8,4 +8,6 @@ const (
 	MISSING_TASK_ID_MESSAGE               = "missing task id"
 	NO_COMPILER_DEFINED_MESSAGE           = "no compiler defined for requested stack"
 	CELL_MISMATCH_MESSAGE                 = "found no compatible cell"
+	MISSING_DOCKER_IMAGE_URL              = "missing docker image download url"
+	MISSING_DOCKER_REGISTRY               = "missing docker registry"
 )

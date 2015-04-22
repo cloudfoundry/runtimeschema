@@ -78,6 +78,8 @@ func SanitizeErrorMessage(message string) *StagingError {
 		id = INSUFFICIENT_RESOURCES
 	case diego_errors.CELL_MISMATCH_MESSAGE:
 		id = NO_COMPATIBLE_CELL
+	case diego_errors.MISSING_DOCKER_IMAGE_URL:
+	case diego_errors.MISSING_DOCKER_REGISTRY:
 	default:
 		message = "staging failed"
 	}

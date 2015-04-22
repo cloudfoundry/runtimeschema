@@ -259,6 +259,22 @@ var _ = Describe("StagingMessages", func() {
 			})
 		})
 
+		Context("when the message is missing docker image URL", func() {
+			It("returns a StagingError", func() {
+				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_IMAGE_URL)
+				Ω(stagingErr.Id).Should(Equal(cc_messages.STAGING_ERROR))
+				Ω(stagingErr.Message).Should(Equal(diego_errors.MISSING_DOCKER_IMAGE_URL))
+			})
+		})
+
+		Context("when the message is missing docker registry", func() {
+			It("returns a StagingError", func() {
+				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_REGISTRY)
+				Ω(stagingErr.Id).Should(Equal(cc_messages.STAGING_ERROR))
+				Ω(stagingErr.Message).Should(Equal(diego_errors.MISSING_DOCKER_REGISTRY))
+			})
+		})
+
 		Context("any other message", func() {
 			It("returns a StagingError", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage("some-error")
