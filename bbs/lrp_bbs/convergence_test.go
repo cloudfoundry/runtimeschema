@@ -433,6 +433,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 					Ω(logger.TestSink).Should(gbytes.Say("no-longer-desired"))
+					Ω(logger.TestSink).Should(gbytes.Say(`test.converge-lrps.retiring-actual-lrps","log_level":0,"data":{"num-actual-lrps":1`))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {

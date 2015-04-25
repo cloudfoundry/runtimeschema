@@ -17,7 +17,7 @@ var (
 const workPoolSize = 100
 
 func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.DesiredLRPsByProcessGuid, changes *ConvergenceChanges) {
-	actualKeys := make([]models.ActualLRPKey, len(changes.ActualLRPsForExtraIndices))
+	actualKeys := make([]models.ActualLRPKey, 0, len(changes.ActualLRPsForExtraIndices))
 	for _, actualLRP := range changes.ActualLRPsForExtraIndices {
 		actualKeys = append(actualKeys, actualLRP.ActualLRPKey)
 	}
