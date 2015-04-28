@@ -815,36 +815,36 @@ func (t evacuationTest) Test() {
 
 		if t.Result.ReturnedError == nil {
 			It("does not return an error", func() {
-				Ω(evacuateErr).ShouldNot(HaveOccurred())
+				Expect(evacuateErr).NotTo(HaveOccurred())
 			})
 		} else {
 			It(fmt.Sprintf("returned error should be '%s'", t.Result.ReturnedError.Error()), func() {
-				Ω(evacuateErr).Should(Equal(t.Result.ReturnedError))
+				Expect(evacuateErr).To(Equal(t.Result.ReturnedError))
 			})
 		}
 
 		if t.Result.RetainContainer == shared.KeepContainer {
 			It("returns KeepContainer", func() {
-				Ω(retainContainer).Should(Equal(shared.KeepContainer))
+				Expect(retainContainer).To(Equal(shared.KeepContainer))
 			})
 
 		} else {
 			It("returns DeleteContainer", func() {
-				Ω(retainContainer).Should(Equal(shared.DeleteContainer))
+				Expect(retainContainer).To(Equal(shared.DeleteContainer))
 			})
 
 		}
 
 		if t.Result.AuctionRequested {
 			It("starts an auction", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(1))
 
 				requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-				Ω(requestedAuctions).Should(HaveLen(1))
+				Expect(requestAddress).To(Equal(auctioneerPresence.AuctioneerAddress))
+				Expect(requestedAuctions).To(HaveLen(1))
 
-				Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(index)))
+				Expect(requestedAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+				Expect(requestedAuctions[0].Indices).To(ConsistOf(uint(index)))
 			})
 
 			Context("when starting the auction fails", func() {
@@ -855,156 +855,156 @@ func (t evacuationTest) Test() {
 				})
 
 				It("returns an error", func() {
-					Ω(evacuateErr).Should(Equal(err))
+					Expect(evacuateErr).To(Equal(err))
 				})
 			})
 
 			Context("when the desired LRP no longer exists", func() {
 				BeforeEach(func() {
 					err := bbs.RemoveDesiredLRPByProcessGuid(logger, desiredLRP.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("the actual LRP is also deleted", func() {
-					Ω(evacuateErr).ShouldNot(HaveOccurred())
+					Expect(evacuateErr).NotTo(HaveOccurred())
 
 					lrpGroup, _ := bbs.ActualLRPGroupByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
-					Ω(lrpGroup.Instance).Should(BeNil())
+					Expect(lrpGroup.Instance).To(BeNil())
 				})
 			})
 		} else {
 			It("does not start an auction", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(0))
 			})
 		}
 
 		if t.Result.Instance == nil {
 			It("removes the /instance actualLRP", func() {
 				_, err := getInstanceActualLRP(lrpKey)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		} else {
 			if t.Result.Instance.ShouldUpdate {
 				It("updates the /instance Since", func() {
 					lrpInBBS, err := getInstanceActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
+					Expect(lrpInBBS.Since).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("updates the /instance ModificationTag", func() {
 					lrpInBBS, err := getInstanceActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.ModificationTag.Index).Should(Equal(initialInstanceModificationIndex + 1))
+					Expect(lrpInBBS.ModificationTag.Index).To(Equal(initialInstanceModificationIndex + 1))
 				})
 			} else {
 				It("does not update the /instance Since", func() {
 					lrpInBBS, err := getInstanceActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.Since).Should(Equal(initialTimestamp))
+					Expect(lrpInBBS.Since).To(Equal(initialTimestamp))
 				})
 			}
 
 			It("has the expected /instance state", func() {
 				lrpInBBS, err := getInstanceActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.State).Should(Equal(t.Result.Instance.State))
+				Expect(lrpInBBS.State).To(Equal(t.Result.Instance.State))
 			})
 
 			It("has the expected /instance crash count", func() {
 				lrpInBBS, err := getInstanceActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.CrashCount).Should(Equal(t.Result.Instance.CrashCount))
+				Expect(lrpInBBS.CrashCount).To(Equal(t.Result.Instance.CrashCount))
 			})
 
 			It("has the expected /instance crash reason", func() {
 				lrpInBBS, err := getInstanceActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.CrashReason).Should(Equal(t.Result.Instance.CrashReason))
+				Expect(lrpInBBS.CrashReason).To(Equal(t.Result.Instance.CrashReason))
 			})
 
 			It("has the expected /instance instance key", func() {
 				lrpInBBS, err := getInstanceActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.ActualLRPInstanceKey).Should(Equal(t.Result.Instance.ActualLRPInstanceKey))
+				Expect(lrpInBBS.ActualLRPInstanceKey).To(Equal(t.Result.Instance.ActualLRPInstanceKey))
 			})
 
 			It("has the expected /instance net info", func() {
 				lrpInBBS, err := getInstanceActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(t.Result.Instance.ActualLRPNetInfo))
+				Expect(lrpInBBS.ActualLRPNetInfo).To(Equal(t.Result.Instance.ActualLRPNetInfo))
 			})
 		}
 
 		if t.Result.Evacuating == nil {
 			It("removes the /evacuating actualLRP", func() {
 				_, _, err := getEvacuatingActualLRP(lrpKey)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		} else {
 			if t.Result.Evacuating.ShouldUpdate {
 				It("updates the /evacuating Since", func() {
 					lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.Since).Should(Equal(clock.Now().UnixNano()))
+					Expect(lrpInBBS.Since).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("updates the /evacuating TTL to the desired value", func() {
 					_, ttl, err := getEvacuatingActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(ttl).Should(BeNumerically("~", t.Result.Evacuating.TTL, allowedTTLDecay))
+					Expect(ttl).To(BeNumerically("~", t.Result.Evacuating.TTL, allowedTTLDecay))
 				})
 
 				It("updates the /evacuating ModificationTag", func() {
 					lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.ModificationTag.Index).Should(Equal(initialEvacuatingModificationIndex + 1))
+					Expect(lrpInBBS.ModificationTag.Index).To(Equal(initialEvacuatingModificationIndex + 1))
 				})
 			} else {
 				It("does not update the /evacuating Since", func() {
 					lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(lrpInBBS.Since).Should(Equal(initialTimestamp))
+					Expect(lrpInBBS.Since).To(Equal(initialTimestamp))
 				})
 
 				It("does not update the /evacuating TTL", func() {
 					_, ttl, err := getEvacuatingActualLRP(lrpKey)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(ttl).Should(BeNumerically("~", omegaEvacuationTTL, allowedTTLDecay))
+					Expect(ttl).To(BeNumerically("~", omegaEvacuationTTL, allowedTTLDecay))
 				})
 			}
 
 			It("has the expected /evacuating state", func() {
 				lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.State).Should(Equal(t.Result.Evacuating.State))
+				Expect(lrpInBBS.State).To(Equal(t.Result.Evacuating.State))
 			})
 
 			It("has the expected /evacuating instance key", func() {
 				lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.ActualLRPInstanceKey).Should(Equal(t.Result.Evacuating.ActualLRPInstanceKey))
+				Expect(lrpInBBS.ActualLRPInstanceKey).To(Equal(t.Result.Evacuating.ActualLRPInstanceKey))
 			})
 
 			It("has the expected /evacuating net info", func() {
 				lrpInBBS, _, err := getEvacuatingActualLRP(lrpKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrpInBBS.ActualLRPNetInfo).Should(Equal(t.Result.Evacuating.ActualLRPNetInfo))
+				Expect(lrpInBBS.ActualLRPNetInfo).To(Equal(t.Result.Evacuating.ActualLRPNetInfo))
 			})
 		}
 	})

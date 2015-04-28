@@ -43,51 +43,51 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 		Context("when the desired LRP does not yet exist", func() {
 			It("creates /v1/desired/<process-guid>", func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				node, err := etcdClient.Get("/v1/desired/some-process-guid")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				actual := models.DesiredLRP{}
 				err = models.FromJSON(node.Value, &actual)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				actual.ModificationTag = models.ModificationTag{}
 
-				Ω(actual).Should(Equal(lrp))
+				Expect(actual).To(Equal(lrp))
 			})
 
 			It("creates one ActualLRP per index", func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				actualLRPGroups, err := bbs.ActualLRPGroupsByProcessGuid("some-process-guid")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRPGroups).Should(HaveLen(5))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRPGroups).To(HaveLen(5))
 			})
 
 			It("sets a ModificationTag on each ActualLRP with a unique epoch", func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				actualLRPGroups, err := bbs.ActualLRPGroupsByProcessGuid("some-process-guid")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				epochs := map[string]models.ActualLRP{}
 				for _, actualLRPGroup := range actualLRPGroups {
 					epochs[actualLRPGroup.Instance.ModificationTag.Epoch] = *actualLRPGroup.Instance
 				}
 
-				Ω(epochs).Should(HaveLen(5))
+				Expect(epochs).To(HaveLen(5))
 			})
 
 			It("sets the ModificationTag on the DesiredLRP", func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				lrp, err := bbs.DesiredLRPByProcessGuid("some-process-guid")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(lrp.ModificationTag.Epoch).ShouldNot(BeEmpty())
-				Ω(lrp.ModificationTag.Index).Should(BeEquivalentTo(0))
+				Expect(lrp.ModificationTag.Epoch).NotTo(BeEmpty())
+				Expect(lrp.ModificationTag.Index).To(BeEquivalentTo(0))
 			})
 
 			Context("when an auctioneer is present", func() {
@@ -100,17 +100,17 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 					err := bbs.DesireLRP(logger, lrp)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					desired, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 					_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-					Ω(startAuctions).Should(HaveLen(1))
-					Ω(startAuctions[0].DesiredLRP).Should(Equal(desired))
-					Ω(startAuctions[0].Indices).Should(ConsistOf([]uint{0, 1, 2, 3, 4}))
+					Expect(startAuctions).To(HaveLen(1))
+					Expect(startAuctions[0].DesiredLRP).To(Equal(desired))
+					Expect(startAuctions[0].Indices).To(ConsistOf([]uint{0, 1, 2, 3, 4}))
 				})
 
 				Context("when it fails to create some but not all of the ActualLRPs", func() {
@@ -135,17 +135,17 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 						err := bbsWithFakeRepo.DesireLRP(logger, lrp)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
 						desired, err := bbsWithFakeRepo.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
 						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 						_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-						Ω(startAuctions).Should(HaveLen(1))
-						Ω(startAuctions[0].DesiredLRP).Should(Equal(desired))
-						Ω(startAuctions[0].Indices).Should(ConsistOf([]uint{0, 1, 3, 4}))
+						Expect(startAuctions).To(HaveLen(1))
+						Expect(startAuctions[0].DesiredLRP).To(Equal(desired))
+						Expect(startAuctions[0].Indices).To(ConsistOf([]uint{0, 1, 3, 4}))
 					})
 				})
 			})
@@ -156,7 +156,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 			BeforeEach(func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				newLRP = lrp
 				newLRP.Instances = 3
@@ -164,7 +164,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 			It("rejects the request with ErrStoreResourceExists", func() {
 				err := bbs.DesireLRP(logger, newLRP)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceExists))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceExists))
 			})
 		})
 
@@ -177,8 +177,8 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(desireError).Should(HaveOccurred())
-				Ω(desireError).Should(BeAssignableToTypeOf(*new(models.ValidationError)))
+				Expect(desireError).To(HaveOccurred())
+				Expect(desireError).To(BeAssignableToTypeOf(*new(models.ValidationError)))
 			})
 		})
 	})
@@ -187,15 +187,15 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 		Context("when the desired LRP exists", func() {
 			BeforeEach(func() {
 				err := bbs.DesireLRP(logger, lrp)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should delete it", func() {
 				err := bbs.RemoveDesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = etcdClient.Get("/v1/desired/some-process-guid")
-				Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+				Expect(err).To(MatchError(storeadapter.ErrorKeyNotFound))
 			})
 
 			Context("when there are running instances on a present cell", func() {
@@ -210,7 +210,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 							models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
 							models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
 						)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 					}
 				})
 
@@ -218,19 +218,19 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
 
 					err := bbs.RemoveDesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances)))
+					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(originalStopCallCount + (lrp.Instances)))
 
 					stoppedActuals := make([]int, lrp.Instances)
 					for i := 0; i < lrp.Instances; i++ {
 						addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
-						Ω(addr).Should(Equal(cellPresence.RepAddress))
+						Expect(addr).To(Equal(cellPresence.RepAddress))
 
 						stoppedActuals[i] = key.Index
 					}
 
-					Ω(stoppedActuals).Should(ConsistOf([]int{0, 1, 2, 3, 4}))
+					Expect(stoppedActuals).To(ConsistOf([]int{0, 1, 2, 3, 4}))
 				})
 			})
 		})
@@ -238,7 +238,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 		Context("when the desired LRP does not exist", func() {
 			It("returns an ErrorKeyNotFound", func() {
 				err := bbs.RemoveDesiredLRPByProcessGuid(logger, "monkey")
-				Ω(err).Should(MatchError(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(MatchError(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})
@@ -249,10 +249,10 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 		BeforeEach(func() {
 			err := bbs.DesireLRP(logger, lrp)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			desiredLRP, err = bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			update = models.DesiredLRPUpdate{}
 		})
@@ -272,21 +272,21 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 			It("updates an existing DesireLRP", func() {
 				err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(updated.Routes).Should(HaveKey("router"))
+				Expect(updated.Routes).To(HaveKey("router"))
 				json, err := update.Routes["router"].MarshalJSON()
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				updatedJson, err := updated.Routes["router"].MarshalJSON()
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(updatedJson).Should(MatchJSON(string(json)))
-				Ω(updated.Annotation).Should(Equal(*update.Annotation))
-				Ω(updated.Instances).Should(Equal(*update.Instances))
-				Ω(updated.ModificationTag.Epoch).Should(Equal(desiredLRP.ModificationTag.Epoch))
-				Ω(updated.ModificationTag.Index).Should(Equal(desiredLRP.ModificationTag.Index + 1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedJson).To(MatchJSON(string(json)))
+				Expect(updated.Annotation).To(Equal(*update.Annotation))
+				Expect(updated.Instances).To(Equal(*update.Instances))
+				Expect(updated.ModificationTag.Epoch).To(Equal(desiredLRP.ModificationTag.Epoch))
+				Expect(updated.ModificationTag.Index).To(Equal(desiredLRP.ModificationTag.Index + 1))
 			})
 
 			Context("when the instances are increased", func() {
@@ -305,18 +305,18 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						originalAuctionCallCount := fakeAuctioneerClient.RequestLRPAuctionsCallCount()
 
 						err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
 						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 						updated, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
 						_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-						Ω(startAuctions).Should(HaveLen(1))
-						Ω(startAuctions[0].DesiredLRP).Should(Equal(updated))
-						Ω(startAuctions[0].Indices).Should(HaveLen(1))
-						Ω(startAuctions[0].Indices).Should(ContainElement(uint(5)))
+						Expect(startAuctions).To(HaveLen(1))
+						Expect(startAuctions[0].DesiredLRP).To(Equal(updated))
+						Expect(startAuctions[0].Indices).To(HaveLen(1))
+						Expect(startAuctions[0].Indices).To(ContainElement(uint(5)))
 					})
 				})
 			})
@@ -339,7 +339,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 								models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
 								models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
 							)
-							Ω(err).ShouldNot(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
 						}
 					})
 
@@ -347,19 +347,19 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						originalStopCallCount := fakeCellClient.StopLRPInstanceCallCount()
 
 						err := bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
-						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(originalStopCallCount + (lrp.Instances - *update.Instances)))
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(originalStopCallCount + (lrp.Instances - *update.Instances)))
 
 						stoppedActuals := make([]int, lrp.Instances-*update.Instances)
 						for i := 0; i < (lrp.Instances - *update.Instances); i++ {
 							addr, key, _ := fakeCellClient.StopLRPInstanceArgsForCall(originalStopCallCount + i)
-							Ω(addr).Should(Equal(cellPresence.RepAddress))
+							Expect(addr).To(Equal(cellPresence.RepAddress))
 
 							stoppedActuals[i] = key.Index
 						}
 
-						Ω(stoppedActuals).Should(ConsistOf([]int{2, 3, 4}))
+						Expect(stoppedActuals).To(ConsistOf([]int{2, 3, 4}))
 					})
 				})
 			})
@@ -374,16 +374,16 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				}
 
 				desiredBeforeUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("instances"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("instances"))
 
 				desiredAfterUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(desiredAfterUpdate).Should(Equal(desiredBeforeUpdate))
+				Expect(desiredAfterUpdate).To(Equal(desiredBeforeUpdate))
 			})
 		})
 
@@ -394,7 +394,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				err := bbs.UpdateDesiredLRP(logger, "garbage-guid", models.DesiredLRPUpdate{
 					Instances: &instances,
 				})
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})

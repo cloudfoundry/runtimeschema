@@ -48,8 +48,8 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(stopErr).ShouldNot(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(stopErr).NotTo(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -64,9 +64,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(stopErr).Should(HaveOccurred())
-				Ω(stopErr.Error()).Should(ContainSubstring("http error: status code 500"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(stopErr).To(HaveOccurred())
+				Expect(stopErr.Error()).To(ContainSubstring("http error: status code 500"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -83,9 +83,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(stopErr).Should(HaveOccurred())
-				Ω(stopErr.Error()).Should(ContainSubstring("EOF"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(stopErr).To(HaveOccurred())
+				Expect(stopErr.Error()).To(ContainSubstring("EOF"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -102,9 +102,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(stopErr).Should(HaveOccurred())
-				Ω(stopErr.Error()).Should(ContainSubstring("use of closed network connection"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(stopErr).To(HaveOccurred())
+				Expect(stopErr.Error()).To(ContainSubstring("use of closed network connection"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
@@ -129,8 +129,8 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(cancelErr).ShouldNot(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(cancelErr).NotTo(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -145,9 +145,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(cancelErr).Should(HaveOccurred())
-				Ω(cancelErr.Error()).Should(ContainSubstring("http error: status code 500"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(cancelErr).To(HaveOccurred())
+				Expect(cancelErr.Error()).To(ContainSubstring("http error: status code 500"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -164,9 +164,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(cancelErr).Should(HaveOccurred())
-				Ω(cancelErr.Error()).Should(ContainSubstring("EOF"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(cancelErr).To(HaveOccurred())
+				Expect(cancelErr.Error()).To(ContainSubstring("EOF"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -183,9 +183,9 @@ var _ = Describe("CellClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(cancelErr).Should(HaveOccurred())
-				Ω(cancelErr.Error()).Should(ContainSubstring("use of closed network connection"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(cancelErr).To(HaveOccurred())
+				Expect(cancelErr.Error()).To(ContainSubstring("use of closed network connection"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})

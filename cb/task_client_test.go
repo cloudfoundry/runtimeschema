@@ -51,8 +51,8 @@ var _ = Describe("TaskClient", func() {
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(completeErr).ShouldNot(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(completeErr).NotTo(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -68,8 +68,8 @@ var _ = Describe("TaskClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(completeErr).Should(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(completeErr).To(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -87,8 +87,8 @@ var _ = Describe("TaskClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(completeErr).Should(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(completeErr).To(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -106,9 +106,9 @@ var _ = Describe("TaskClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(completeErr).Should(HaveOccurred())
-				Ω(completeErr.Error()).Should(ContainSubstring("use of closed network connection"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(completeErr).To(HaveOccurred())
+				Expect(completeErr.Error()).To(ContainSubstring("use of closed network connection"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})

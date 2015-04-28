@@ -15,24 +15,24 @@ var _ = Describe("Lifecycles", func() {
 		})
 		It("adds the mapping", func() {
 			err := lifecycles.Set("foo:bar/baz")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
-			Ω(lifecycles["foo"]).Should(Equal("bar/baz"))
+			Expect(lifecycles["foo"]).To(Equal("bar/baz"))
 		})
 
 		It("errors when the value is not of the form 'lifecycle:path'", func() {
 			err := lifecycles.Set("blork")
-			Ω(err).Should(Equal(flags.ErrLifecycleFormatInvalid))
+			Expect(err).To(Equal(flags.ErrLifecycleFormatInvalid))
 		})
 
 		It("errors when the value has an empty lifecycle", func() {
 			err := lifecycles.Set(":mindy")
-			Ω(err).Should(Equal(flags.ErrLifecycleNameEmpty))
+			Expect(err).To(Equal(flags.ErrLifecycleNameEmpty))
 		})
 
 		It("errors when the value is not of the form 'lifecycle:path'", func() {
 			err := lifecycles.Set("blork:")
-			Ω(err).Should(Equal(flags.ErrLifecyclePathEmpty))
+			Expect(err).To(Equal(flags.ErrLifecyclePathEmpty))
 		})
 	})
 })

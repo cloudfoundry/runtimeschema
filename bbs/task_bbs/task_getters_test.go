@@ -25,7 +25,7 @@ var _ = Describe("Task BBS", func() {
 
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
@@ -38,17 +38,17 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("does not an error", func() {
-				Ω(lookupErr).ShouldNot(HaveOccurred())
+				Expect(lookupErr).NotTo(HaveOccurred())
 			})
 
 			It("returns the task", func() {
-				Ω(receivedTask.TaskGuid).Should(Equal(guid))
+				Expect(receivedTask.TaskGuid).To(Equal(guid))
 			})
 
 			It("is consistent with collection getters", func() {
 				pendingTasks, err := bbs.PendingTasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(pendingTasks).Should(Equal([]models.Task{receivedTask}))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pendingTasks).To(Equal([]models.Task{receivedTask}))
 			})
 		})
 
@@ -58,7 +58,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(lookupErr).Should(HaveOccurred())
+				Expect(lookupErr).To(HaveOccurred())
 			})
 		})
 	})
@@ -67,13 +67,13 @@ var _ = Describe("Task BBS", func() {
 		BeforeEach(func() {
 			task.CellID = "some-other-cell-id"
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 		Context("when there are no tasks for the given cell ID", func() {
 			It("returns an empty list", func() {
 				tasks, err := bbs.TasksByCellID(logger, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks).Should(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tasks).To(BeEmpty())
 			})
 		})
 
@@ -97,21 +97,21 @@ var _ = Describe("Task BBS", func() {
 
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task1Request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				task1, err = bbs.TaskByGuid("some-guid-1")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.DesireTask(logger, task2Request)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				task2, err = bbs.TaskByGuid("some-guid-2")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns only those tasks", func() {
 				tasks, err := bbs.TasksByCellID(logger, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks).Should(ConsistOf(task1, task2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tasks).To(ConsistOf(task1, task2))
 			})
 		})
 	})
@@ -119,64 +119,64 @@ var _ = Describe("Task BBS", func() {
 	Describe("PendingTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'pending' state", func() {
 			tasks, err := bbs.PendingTasks(logger)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tasks).To(HaveLen(1))
+			Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
 		})
 	})
 
 	Describe("RunningTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'running' state", func() {
 			tasks, err := bbs.RunningTasks(logger)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tasks).To(HaveLen(1))
+			Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
 		})
 	})
 
 	Describe("CompletedTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
 			tasks, err := bbs.CompletedTasks(logger)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tasks).To(HaveLen(1))
+			Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
 		})
 	})
 
 	Describe("FailedTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			otherTask := models.Task{
 				Domain:   "tests",
@@ -186,43 +186,43 @@ var _ = Describe("Task BBS", func() {
 			}
 
 			err = bbs.DesireTask(logger, otherTask)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = bbs.StartTask(logger, otherTask.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, otherTask.TaskGuid, "cell-ID", false, "", "a result")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'completed' state that have failed", func() {
 			tasks, err := bbs.FailedTasks(logger)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tasks).To(HaveLen(1))
+			Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
 		})
 	})
 
 	Describe("ResolvingTasks", func() {
 		BeforeEach(func() {
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "a reason", "a result")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.ResolvingTask(logger, task.TaskGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in 'completed' state", func() {
 			tasks, err := bbs.ResolvingTasks(logger)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(tasks).Should(HaveLen(1))
-			Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tasks).To(HaveLen(1))
+			Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
 		})
 	})
 
@@ -230,17 +230,17 @@ var _ = Describe("Task BBS", func() {
 		BeforeEach(func() {
 			task.TaskGuid = "guid-1"
 			err := bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			task.TaskGuid = "guid-2"
 			task.Domain = "other-domain"
 			err = bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			task.TaskGuid = "guid-3"
 			task.Domain = "tests"
 			err = bbs.DesireTask(logger, task)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns all Tasks in the given domain", func() {
@@ -251,8 +251,8 @@ var _ = Describe("Task BBS", func() {
 				guids = append(guids, task.TaskGuid)
 			}
 
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(guids).Should(ConsistOf([]string{"guid-1", "guid-3"}))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(guids).To(ConsistOf([]string{"guid-1", "guid-3"}))
 		})
 	})
 })

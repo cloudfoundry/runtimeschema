@@ -60,7 +60,7 @@ var _ = Describe("Cell Service Registry", func() {
 
 		It("should put /cell/CELL_ID in the store", func() {
 			expectedJSON, err := models.ToJSON(firstCellPresence)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() ([]byte, error) {
 				return consulSession.GetAcquiredValue(shared.CellSchemaPath(firstCellPresence.CellID))
@@ -84,7 +84,7 @@ var _ = Describe("Cell Service Registry", func() {
 		Context("when the cell does not exist", func() {
 			It("returns ErrStoreResourceNotFound", func() {
 				_, err := bbs.CellById(firstCellPresence.CellID)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})
@@ -105,21 +105,21 @@ var _ = Describe("Cell Service Registry", func() {
 			Context("when there is unparsable JSON in there...", func() {
 				BeforeEach(func() {
 					err := consulSession.AcquireLock(shared.CellSchemaPath("blah"), []byte("ß"))
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(func() map[string][]byte {
 						cells, err := consulSession.ListAcquiredValues(shared.CellSchemaRoot)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 						return cells
 					}, 1, 50*time.Millisecond).Should(HaveLen(3))
 				})
 
 				It("should ignore the unparsable JSON and move on", func() {
 					cellPresences, err := bbs.Cells()
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(cellPresences).Should(HaveLen(2))
-					Ω(cellPresences).Should(ContainElement(firstCellPresence))
-					Ω(cellPresences).Should(ContainElement(secondCellPresence))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cellPresences).To(HaveLen(2))
+					Expect(cellPresences).To(ContainElement(firstCellPresence))
+					Expect(cellPresences).To(ContainElement(secondCellPresence))
 				})
 			})
 		})
@@ -127,8 +127,8 @@ var _ = Describe("Cell Service Registry", func() {
 		Context("when there are none", func() {
 			It("should return empty", func() {
 				reps, err := bbs.Cells()
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(reps).Should(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reps).To(BeEmpty())
 			})
 		})
 	})
@@ -193,7 +193,7 @@ var _ = Describe("Cell Service Registry", func() {
 
 				By("setting presences")
 				newSession, err := consulSession.Recreate()
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				bbs = services_bbs.New(newSession, clock, lagertest.NewTestLogger("test"))
 
 				setPresences()

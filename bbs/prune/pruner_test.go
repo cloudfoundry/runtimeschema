@@ -59,7 +59,7 @@ var _ = Describe("Pruner", func() {
 		})
 
 		It("deletes the correct keys", func() {
-			Ω(nodeSetsToDelete).Should(Equal(expectedNodeSetsToDelete))
+			Expect(nodeSetsToDelete).To(Equal(expectedNodeSetsToDelete))
 		})
 	})
 
@@ -113,7 +113,7 @@ var _ = Describe("Pruner", func() {
 		})
 
 		It("deletes the correct keys", func() {
-			Ω(nodeSetsToDelete).Should(Equal(expectedNodeSetsToDelete))
+			Expect(nodeSetsToDelete).To(Equal(expectedNodeSetsToDelete))
 		})
 	})
 
@@ -167,7 +167,7 @@ var _ = Describe("Pruner", func() {
 		})
 
 		It("deletes the correct keys", func() {
-			Ω(nodeSetsToDelete).Should(Equal(expectedNodeSetsToDelete))
+			Expect(nodeSetsToDelete).To(Equal(expectedNodeSetsToDelete))
 		})
 	})
 
@@ -231,7 +231,7 @@ var _ = Describe("Pruner", func() {
 		})
 
 		It("deletes the correct keys", func() {
-			Ω(nodeSetsToDelete).Should(Equal(expectedNodeSetsToDelete))
+			Expect(nodeSetsToDelete).To(Equal(expectedNodeSetsToDelete))
 		})
 	})
 })

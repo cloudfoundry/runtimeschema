@@ -64,9 +64,9 @@ var _ = Describe("CellsLoader", func() {
 			})
 
 			It("returns only one cell", func() {
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(cells).Should(HaveLen(1))
-				Ω(cells).Should(HaveKey("first-rep"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cells).To(HaveLen(1))
+				Expect(cells).To(HaveKey("first-rep"))
 			})
 
 			Context("when one more cell is added", func() {
@@ -80,18 +80,18 @@ var _ = Describe("CellsLoader", func() {
 
 				It("returns only one cell", func() {
 					cells, err := cellsLoader.Cells()
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(cells).Should(HaveLen(1))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cells).To(HaveLen(1))
 				})
 
 				Context("when a new loader is created", func() {
 					It("returns two cells", func() {
 						newCellsLoader := bbs.NewCellsLoader()
 						cells, err := newCellsLoader.Cells()
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(cells).Should(HaveLen(2))
-						Ω(cells).Should(HaveKey("first-rep"))
-						Ω(cells).Should(HaveKey("second-rep"))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(cells).To(HaveLen(2))
+						Expect(cells).To(HaveKey("first-rep"))
+						Expect(cells).To(HaveKey("second-rep"))
 					})
 				})
 			})

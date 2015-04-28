@@ -91,56 +91,56 @@ var _ = Describe("Convergence", func() {
 				processGuid:       struct{}{},
 				"missing-process": struct{}{},
 			}
-			Ω(input.AllProcessGuids).Should(Equal(expectedGuids))
+			Expect(input.AllProcessGuids).To(Equal(expectedGuids))
 		})
 
 		It("gets all valid desired LRPs", func() {
-			Ω(input.DesiredLRPs).Should(HaveLen(len(gatherTest.desiredsToKeep)))
+			Expect(input.DesiredLRPs).To(HaveLen(len(gatherTest.desiredsToKeep)))
 
 			gatherTest.desiredsToKeep.Each(func(expected models.DesiredLRP) {
 				desired, ok := input.DesiredLRPs[expected.ProcessGuid]
-				Ω(ok).Should(BeTrue(), fmt.Sprintf("expected desiredLRP for process '%s' to be present", expected.ProcessGuid))
-				Ω(desired).Should(Equal(expected))
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected desiredLRP for process '%s' to be present", expected.ProcessGuid))
+				Expect(desired).To(Equal(expected))
 			})
 		})
 
 		It("prunes the correct desired LRPs", func() {
 			gatherTest.desiredsToPrune.Each(func(expected models.DesiredLRP) {
 				_, err := bbs.DesiredLRPByProcessGuid(expected.ProcessGuid)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		It("fetches the correct actualLRPs", func() {
-			Ω(input.ActualLRPs).Should(HaveLen(len(gatherTest.actualsToKeep)))
+			Expect(input.ActualLRPs).To(HaveLen(len(gatherTest.actualsToKeep)))
 
 			gatherTest.actualsToKeep.Each(func(expected models.ActualLRP) {
 				actualIndex, ok := input.ActualLRPs[expected.ProcessGuid]
-				Ω(ok).Should(BeTrue(), fmt.Sprintf("expected actualIndex for process '%s' to be present", expected.ProcessGuid))
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actualIndex for process '%s' to be present", expected.ProcessGuid))
 				actual, ok := actualIndex[expected.Index]
-				Ω(ok).Should(BeTrue(), fmt.Sprintf("expected actual for process '%s' and index %d to be present", expected.ProcessGuid, expected.Index))
-				Ω(actual).Should(Equal(actual))
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actual for process '%s' and index %d to be present", expected.ProcessGuid, expected.Index))
+				Expect(actual).To(Equal(actual))
 			})
 		})
 
 		It("prunes the correct actualLRPs", func() {
 			gatherTest.actualsToPrune.Each(func(expected models.ActualLRP) {
 				_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(expected.ProcessGuid, expected.Index)
-				Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		It("gets all the domains", func() {
-			Ω(input.Domains).Should(HaveLen(len(gatherTest.domains)))
+			Expect(input.Domains).To(HaveLen(len(gatherTest.domains)))
 			gatherTest.domains.Each(func(domain string) {
-				Ω(input.Domains).Should(HaveKey(domain))
+				Expect(input.Domains).To(HaveKey(domain))
 			})
 		})
 
 		It("gets all the cells", func() {
-			Ω(input.Cells).Should(HaveLen(len(gatherTest.cells)))
+			Expect(input.Cells).To(HaveLen(len(gatherTest.cells)))
 			gatherTest.cells.Each(func(cell models.CellPresence) {
-				Ω(input.Cells).Should(ContainElement(cell))
+				Expect(input.Cells).To(ContainElement(cell))
 			})
 		})
 	})
@@ -185,7 +185,7 @@ func createMalformedValueForKey(key string) {
 		Value: []byte("ßßßßßß"),
 	})
 
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func newCellPresence(cellID string) models.CellPresence {

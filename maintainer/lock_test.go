@@ -77,7 +77,7 @@ var _ = Describe("Lock", func() {
 			It("acquires the lock", func() {
 				lockProcess = ifrit.Background(lockRunner)
 				Eventually(lockProcess.Ready()).Should(BeClosed())
-				Ω(getLockValue()).Should(Equal(lockValue))
+				Expect(getLockValue()).To(Equal(lockValue))
 			})
 
 			Context("and we have acquired the lock", func() {
@@ -99,7 +99,7 @@ var _ = Describe("Lock", func() {
 					It("loses the lock and exits", func() {
 						var err error
 						Eventually(lockProcess.Wait()).Should(Receive(&err))
-						Ω(err).Should(Equal(maintainer.ErrLockLost))
+						Expect(err).To(Equal(maintainer.ErrLockLost))
 					})
 				})
 
@@ -108,7 +108,7 @@ var _ = Describe("Lock", func() {
 						ginkgomon.Interrupt(lockProcess)
 						Eventually(lockProcess.Wait()).Should(Receive(BeNil()))
 						_, err := getLockValue()
-						Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(lockKey)))
+						Expect(err).To(Equal(consuladapter.NewKeyNotFoundError(lockKey)))
 					})
 				})
 			})
@@ -129,7 +129,7 @@ var _ = Describe("Lock", func() {
 				otherProcess = ifrit.Background(otherRunner)
 
 				Eventually(otherProcess.Ready()).Should(BeClosed())
-				Ω(getLockValue()).Should(Equal(otherValue))
+				Expect(getLockValue()).To(Equal(otherValue))
 			})
 
 			AfterEach(func() {
@@ -139,7 +139,7 @@ var _ = Describe("Lock", func() {
 			It("waits for the lock to become available", func() {
 				lockProcess = ifrit.Background(lockRunner)
 				Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
-				Ω(getLockValue()).Should(Equal(otherValue))
+				Expect(getLockValue()).To(Equal(otherValue))
 			})
 
 			Context("when consul shuts down", func() {
@@ -180,7 +180,7 @@ var _ = Describe("Lock", func() {
 					var entry *api.SessionEntry
 					Eventually(func() *api.SessionEntry {
 						entries, _, err := client.Session().List(nil)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 						for _, e := range entries {
 							if e.Name == "a-session" {
 								entry = e
@@ -190,7 +190,7 @@ var _ = Describe("Lock", func() {
 						return nil
 					}).ShouldNot(BeNil())
 
-					Ω(entry.ID).ShouldNot(Equal(sessionID))
+					Expect(entry.ID).NotTo(Equal(sessionID))
 				})
 			})
 
@@ -208,12 +208,12 @@ var _ = Describe("Lock", func() {
 				It("acquires the lock", func() {
 					lockProcess = ifrit.Background(lockRunner)
 					Consistently(lockProcess.Ready()).ShouldNot(BeClosed())
-					Ω(getLockValue()).Should(Equal(otherValue))
+					Expect(getLockValue()).To(Equal(otherValue))
 
 					ginkgomon.Interrupt(otherProcess)
 
 					Eventually(lockProcess.Ready()).Should(BeClosed())
-					Ω(getLockValue()).Should(Equal(lockValue))
+					Expect(getLockValue()).To(Equal(lockValue))
 				})
 			})
 		})
@@ -253,7 +253,7 @@ var _ = Describe("Lock", func() {
 				consulRunner.WaitUntilReady()
 
 				Eventually(lockProcess.Ready()).Should(BeClosed())
-				Ω(getLockValue()).Should(Equal(lockValue))
+				Expect(getLockValue()).To(Equal(lockValue))
 			})
 		})
 	})

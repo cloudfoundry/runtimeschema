@@ -46,28 +46,28 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("does not error", func() {
-						Ω(errDesire).ShouldNot(HaveOccurred())
+						Expect(errDesire).NotTo(HaveOccurred())
 					})
 
 					It("persists the task", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
-						Ω(persistedTask.Domain).Should(Equal(domain))
-						Ω(persistedTask.RootFS).Should(Equal(rootfs))
-						Ω(persistedTask.Action).Should(Equal(dummyAction))
+						Expect(persistedTask.Domain).To(Equal(domain))
+						Expect(persistedTask.RootFS).To(Equal(rootfs))
+						Expect(persistedTask.Action).To(Equal(dummyAction))
 					})
 
 					It("honours the CreatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.CreatedAt).Should(Equal(createdAtTime))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(persistedTask.CreatedAt).To(Equal(createdAtTime))
 					})
 
 					It("sets the UpdatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
 
 					Context("when able to fetch the Auctioneer address", func() {
@@ -83,12 +83,12 @@ var _ = Describe("Task BBS", func() {
 						})
 
 						It("requests an auction", func() {
-							Ω(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).Should(Equal(1))
+							Expect(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).To(Equal(1))
 
 							requestAddress, requestedTasks := fakeAuctioneerClient.RequestTaskAuctionsArgsForCall(0)
-							Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-							Ω(requestedTasks).Should(HaveLen(1))
-							Ω(requestedTasks[0].TaskGuid).Should(Equal(taskGuid))
+							Expect(requestAddress).To(Equal(auctioneerPresence.AuctioneerAddress))
+							Expect(requestedTasks).To(HaveLen(1))
+							Expect(requestedTasks[0].TaskGuid).To(Equal(taskGuid))
 						})
 
 						Context("when requesting a task auction succeeds", func() {
@@ -97,7 +97,7 @@ var _ = Describe("Task BBS", func() {
 							})
 
 							It("does not return an error", func() {
-								Ω(errDesire).ShouldNot(HaveOccurred())
+								Expect(errDesire).NotTo(HaveOccurred())
 							})
 						})
 
@@ -108,7 +108,7 @@ var _ = Describe("Task BBS", func() {
 
 							It("does not return an error", func() {
 								// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
-								Ω(errDesire).ShouldNot(HaveOccurred())
+								Expect(errDesire).NotTo(HaveOccurred())
 							})
 						})
 					})
@@ -120,7 +120,7 @@ var _ = Describe("Task BBS", func() {
 
 						It("does not return an error", func() {
 							// The creation succeeded, we can ignore the auction request error (converger will eventually do it)
-							Ω(errDesire).ShouldNot(HaveOccurred())
+							Expect(errDesire).NotTo(HaveOccurred())
 						})
 					})
 				})
@@ -143,28 +143,28 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("does not error", func() {
-						Ω(errDesire).ShouldNot(HaveOccurred())
+						Expect(errDesire).NotTo(HaveOccurred())
 					})
 
 					It("persists the task", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
-						Ω(persistedTask.Domain).Should(Equal(domain))
-						Ω(persistedTask.RootFS).Should(Equal(rootfs))
-						Ω(persistedTask.Action).Should(Equal(dummyAction))
+						Expect(persistedTask.Domain).To(Equal(domain))
+						Expect(persistedTask.RootFS).To(Equal(rootfs))
+						Expect(persistedTask.Action).To(Equal(dummyAction))
 					})
 
 					It("provides a CreatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.CreatedAt).Should(Equal(clock.Now().UnixNano()))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(persistedTask.CreatedAt).To(Equal(clock.Now().UnixNano()))
 					})
 
 					It("sets the UpdatedAt time", func() {
 						persistedTask, err := bbs.TaskByGuid(taskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(persistedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
 				})
 			})
@@ -179,7 +179,7 @@ var _ = Describe("Task BBS", func() {
 					}
 
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("does not persist another", func() {
@@ -194,7 +194,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("returns an error", func() {
-					Ω(errDesire).Should(Equal(bbserrors.ErrStoreResourceExists))
+					Expect(errDesire).To(Equal(bbserrors.ErrStoreResourceExists))
 				})
 			})
 		})
@@ -220,7 +220,7 @@ var _ = Describe("Task BBS", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(errDesire).Should(ContainElement(models.ErrInvalidField{"domain"}))
+				Expect(errDesire).To(ContainElement(models.ErrInvalidField{"domain"}))
 			})
 		})
 	})
@@ -239,32 +239,32 @@ var _ = Describe("Task BBS", func() {
 		Context("when starting a pending Task", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("sets the state to running", func() {
 				started, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(started).Should(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(started).To(BeTrue())
 
 				tasks, err := bbs.RunningTasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-				Ω(tasks[0].State).Should(Equal(models.TaskStateRunning))
+				Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
+				Expect(tasks[0].State).To(Equal(models.TaskStateRunning))
 			})
 
 			It("should bump UpdatedAt", func() {
 				clock.IncrementBySeconds(1)
 
 				started, err := bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(started).Should(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(started).To(BeTrue())
 
 				tasks, err := bbs.RunningTasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+				Expect(tasks[0].UpdatedAt).To(Equal(clock.Now().UnixNano()))
 			})
 		})
 
@@ -273,10 +273,10 @@ var _ = Describe("Task BBS", func() {
 
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("on the same cell", func() {
@@ -291,26 +291,26 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("does not return an error", func() {
-					Ω(startErr).ShouldNot(HaveOccurred())
+					Expect(startErr).NotTo(HaveOccurred())
 				})
 
 				It("returns false", func() {
-					Ω(changed).Should(BeFalse())
+					Expect(changed).To(BeFalse())
 				})
 
 				It("does not change the Task in the store", func() {
 					task, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(task.UpdatedAt).Should(Equal(previousTime))
+					Expect(task.UpdatedAt).To(Equal(previousTime))
 				})
 			})
 
 			Context("on another cell", func() {
 				It("returns an error", func() {
 					changed, err := bbs.StartTask(logger, task.TaskGuid, "another-cell-ID")
-					Ω(err).Should(HaveOccurred())
-					Ω(changed).Should(BeFalse())
+					Expect(err).To(HaveOccurred())
+					Expect(changed).To(BeFalse())
 				})
 			})
 		})
@@ -338,36 +338,36 @@ var _ = Describe("Task BBS", func() {
 
 			itMarksTaskAsCancelled := func() {
 				It("does not error", func() {
-					Ω(cancelError).ShouldNot(HaveOccurred())
+					Expect(cancelError).NotTo(HaveOccurred())
 				})
 
 				It("marks the task as completed", func() {
-					Ω(taskAfterCancel.State).Should(Equal(models.TaskStateCompleted))
+					Expect(taskAfterCancel.State).To(Equal(models.TaskStateCompleted))
 				})
 
 				It("marks the task as failed", func() {
-					Ω(taskAfterCancel.Failed).Should(BeTrue())
+					Expect(taskAfterCancel.Failed).To(BeTrue())
 				})
 
 				It("sets the failure reason to cancelled", func() {
-					Ω(taskAfterCancel.FailureReason).Should(Equal("task was cancelled"))
+					Expect(taskAfterCancel.FailureReason).To(Equal("task was cancelled"))
 				})
 
 				It("bumps UpdatedAt", func() {
-					Ω(taskAfterCancel.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(taskAfterCancel.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 				})
 			}
 
 			Context("when the task is in pending state", func() {
 				BeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				itMarksTaskAsCancelled()
 
 				It("does not cancel the task", func() {
-					Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(0))
+					Expect(fakeCellClient.CancelTaskCallCount()).To(Equal(0))
 				})
 			})
 
@@ -378,10 +378,10 @@ var _ = Describe("Task BBS", func() {
 					cellID = "cell-ID"
 
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, cellID)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				itMarksTaskAsCancelled()
@@ -395,17 +395,17 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("cancels the task", func() {
-						Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(1))
+						Expect(fakeCellClient.CancelTaskCallCount()).To(Equal(1))
 
 						addr, taskGuid := fakeCellClient.CancelTaskArgsForCall(0)
-						Ω(addr).Should(Equal(cellPresence.RepAddress))
-						Ω(taskGuid).Should(Equal(task.TaskGuid))
+						Expect(addr).To(Equal(cellPresence.RepAddress))
+						Expect(taskGuid).To(Equal(task.TaskGuid))
 					})
 				})
 
 				Context("when the cell is not present", func() {
 					It("does not cancel the task", func() {
-						Ω(fakeCellClient.CancelTaskCallCount()).Should(Equal(0))
+						Expect(fakeCellClient.CancelTaskCallCount()).To(Equal(0))
 					})
 
 					It("logs the error", func() {
@@ -417,46 +417,46 @@ var _ = Describe("Task BBS", func() {
 			Context("when the task is in completed state", func() {
 				BeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns an error", func() {
-					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateCompleted, models.TaskStateCompleted)))
+					Expect(cancelError).To(HaveOccurred())
+					Expect(cancelError).To(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateCompleted, models.TaskStateCompleted)))
 				})
 			})
 
 			Context("when the task is in resolving state", func() {
 				BeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ResolvingTask(logger, task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns an error", func() {
-					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateResolving, models.TaskStateCompleted)))
+					Expect(cancelError).To(HaveOccurred())
+					Expect(cancelError).To(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateResolving, models.TaskStateCompleted)))
 				})
 			})
 
 			Context("when the task does not exist", func() {
 				It("returns an error", func() {
-					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					Expect(cancelError).To(HaveOccurred())
+					Expect(cancelError).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 
@@ -472,8 +472,8 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("returns an error", func() {
-					Ω(cancelError).Should(HaveOccurred())
-					Ω(cancelError).Should(Equal(storeError))
+					Expect(cancelError).To(HaveOccurred())
+					Expect(cancelError).To(Equal(storeError))
 				})
 			})
 		})
@@ -493,65 +493,65 @@ var _ = Describe("Task BBS", func() {
 		Context("when completing a pending Task", func() {
 			JustBeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "another failure reason", "")
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		Context("when completing a running Task", func() {
 			JustBeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when the cell id is not the same", func() {
 				It("returns an error", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "another-cell-ID", true, "because i said so", "a result")
-					Ω(err).Should(Equal(bbserrors.ErrTaskRunningOnDifferentCell))
+					Expect(err).To(Equal(bbserrors.ErrTaskRunningOnDifferentCell))
 				})
 			})
 
 			Context("when the cell id is the same", func() {
 				It("sets the Task in the completed state", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].Failed).Should(BeTrue())
-					Ω(tasks[0].FailureReason).Should(Equal("because i said so"))
+					Expect(tasks[0].Failed).To(BeTrue())
+					Expect(tasks[0].FailureReason).To(Equal("because i said so"))
 				})
 
 				It("should bump UpdatedAt", func() {
 					clock.IncrementBySeconds(1)
 
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(tasks[0].UpdatedAt).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("sets FirstCompletedAt", func() {
 					clock.IncrementBySeconds(1)
 
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because i said so", "a result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].FirstCompletedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(tasks[0].FirstCompletedAt).To(Equal(clock.Now().UnixNano()))
 				})
 
 				Context("when a receptor is present", func() {
@@ -567,16 +567,16 @@ var _ = Describe("Task BBS", func() {
 
 							It("completes the task using its address", func() {
 								err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
-								Ω(err).ShouldNot(HaveOccurred())
+								Expect(err).NotTo(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+								Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(1))
 								url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-								Ω(url).Should(Equal(receptorURL))
-								Ω(completedTasks).Should(HaveLen(1))
-								Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-								Ω(completedTasks[0].Failed).Should(BeTrue())
-								Ω(completedTasks[0].FailureReason).Should(Equal("because"))
-								Ω(completedTasks[0].Result).Should(Equal("a result"))
+								Expect(url).To(Equal(receptorURL))
+								Expect(completedTasks).To(HaveLen(1))
+								Expect(completedTasks[0].TaskGuid).To(Equal(task.TaskGuid))
+								Expect(completedTasks[0].Failed).To(BeTrue())
+								Expect(completedTasks[0].FailureReason).To(Equal("because"))
+								Expect(completedTasks[0].Result).To(Equal("a result"))
 							})
 						})
 
@@ -587,9 +587,9 @@ var _ = Describe("Task BBS", func() {
 
 							It("does not complete the task via the receptor", func() {
 								err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
-								Ω(err).ShouldNot(HaveOccurred())
+								Expect(err).NotTo(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
+								Expect(fakeTaskClient.CompleteTasksCallCount()).To(BeZero())
 							})
 						})
 					})
@@ -601,7 +601,7 @@ var _ = Describe("Task BBS", func() {
 
 						It("swallows the error, as we'll retry again eventually (via convergence)", func() {
 							err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
-							Ω(err).ShouldNot(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
 						})
 					})
 				})
@@ -611,7 +611,7 @@ var _ = Describe("Task BBS", func() {
 			Context("when no receptors are present", func() {
 				It("swallows the error, as we'll retry again eventually (via convergence)", func() {
 					err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "because", "a result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
@@ -619,57 +619,57 @@ var _ = Describe("Task BBS", func() {
 		Context("When completing a Task that is already completed", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "some failure reason", "")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "another failure reason", "")
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		Context("When completing a Task that is already completed", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "some failure reason", "")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", true, "another failure reason", "")
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		Context("When completing a Task that is resolving", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-ID")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "result")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns an error", func() {
 				err := bbs.CompleteTask(logger, task.TaskGuid, "cell-ID", false, "", "another result")
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
@@ -689,42 +689,42 @@ var _ = Describe("Task BBS", func() {
 			Context("when the task is pending", func() {
 				JustBeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sets the Task in the completed state", func() {
 					err := bbs.FailTask(logger, task.TaskGuid, "because i said so")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].Failed).Should(BeTrue())
-					Ω(tasks[0].FailureReason).Should(Equal("because i said so"))
+					Expect(tasks[0].Failed).To(BeTrue())
+					Expect(tasks[0].FailureReason).To(Equal("because i said so"))
 				})
 
 				It("should bump UpdatedAt", func() {
 					clock.IncrementBySeconds(1)
 
 					err := bbs.FailTask(logger, task.TaskGuid, "because i said so")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(tasks[0].UpdatedAt).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("sets FirstCompletedAt", func() {
 					clock.IncrementBySeconds(1)
 
 					err := bbs.FailTask(logger, task.TaskGuid, "because i said so")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					tasks, err := bbs.CompletedTasks(logger)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
-					Ω(tasks[0].FirstCompletedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(tasks[0].FirstCompletedAt).To(Equal(clock.Now().UnixNano()))
 				})
 
 				Context("when a receptor is present", func() {
@@ -740,16 +740,16 @@ var _ = Describe("Task BBS", func() {
 
 							It("completes the task using its address", func() {
 								err := bbs.FailTask(logger, task.TaskGuid, "because")
-								Ω(err).ShouldNot(HaveOccurred())
+								Expect(err).NotTo(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+								Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(1))
 								url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(0)
-								Ω(url).Should(Equal(receptorURL))
-								Ω(completedTasks).Should(HaveLen(1))
-								Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-								Ω(completedTasks[0].Failed).Should(BeTrue())
-								Ω(completedTasks[0].FailureReason).Should(Equal("because"))
-								Ω(completedTasks[0].Result).Should(BeEmpty())
+								Expect(url).To(Equal(receptorURL))
+								Expect(completedTasks).To(HaveLen(1))
+								Expect(completedTasks[0].TaskGuid).To(Equal(task.TaskGuid))
+								Expect(completedTasks[0].Failed).To(BeTrue())
+								Expect(completedTasks[0].FailureReason).To(Equal("because"))
+								Expect(completedTasks[0].Result).To(BeEmpty())
 							})
 						})
 
@@ -760,9 +760,9 @@ var _ = Describe("Task BBS", func() {
 
 							It("does not complete the task via the receptor", func() {
 								err := bbs.FailTask(logger, task.TaskGuid, "because")
-								Ω(err).ShouldNot(HaveOccurred())
+								Expect(err).NotTo(HaveOccurred())
 
-								Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
+								Expect(fakeTaskClient.CompleteTasksCallCount()).To(BeZero())
 							})
 						})
 					})
@@ -774,7 +774,7 @@ var _ = Describe("Task BBS", func() {
 
 						It("swallows the error, as we'll retry again eventually (via convergence)", func() {
 							err := bbs.FailTask(logger, task.TaskGuid, "because")
-							Ω(err).ShouldNot(HaveOccurred())
+							Expect(err).NotTo(HaveOccurred())
 						})
 					})
 				})
@@ -782,7 +782,7 @@ var _ = Describe("Task BBS", func() {
 				Context("when no receptors are present", func() {
 					It("swallows the error, as we'll retry again eventually (via convergence)", func() {
 						err := bbs.FailTask(logger, task.TaskGuid, "because")
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 			})
@@ -790,39 +790,39 @@ var _ = Describe("Task BBS", func() {
 			Context("when the task is completed", func() {
 				JustBeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because", "some result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("fails", func() {
 					err := bbs.FailTask(logger, task.TaskGuid, "because")
-					Ω(err).Should(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 				})
 			})
 
 			Context("when the task is resolving", func() {
 				JustBeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because", "some result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ResolvingTask(logger, task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("fails", func() {
 					err := bbs.FailTask(logger, task.TaskGuid, "because")
-					Ω(err).Should(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 				})
 			})
 		})
@@ -842,45 +842,45 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is complete", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("swaps /task/<guid>'s state to resolving", func() {
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks[0].TaskGuid).Should(Equal(task.TaskGuid))
-				Ω(tasks[0].State).Should(Equal(models.TaskStateResolving))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tasks[0].TaskGuid).To(Equal(task.TaskGuid))
+				Expect(tasks[0].State).To(Equal(models.TaskStateResolving))
 			})
 
 			It("bumps UpdatedAt", func() {
 				clock.IncrementBySeconds(1)
 
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				tasks, err := bbs.ResolvingTasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks[0].UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tasks[0].UpdatedAt).To(Equal(clock.Now().UnixNano()))
 			})
 
 			Context("when the Task is already resolving", func() {
 				BeforeEach(func() {
 					err := bbs.ResolvingTask(logger, task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("fails", func() {
 					err := bbs.ResolvingTask(logger, task.TaskGuid)
-					Ω(err).Should(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 				})
 			})
 		})
@@ -888,15 +888,15 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is not complete", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should fail", func() {
 				err := bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).Should(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateRunning, models.TaskStateResolving)))
+				Expect(err).To(Equal(bbserrors.NewTaskStateTransitionError(models.TaskStateRunning, models.TaskStateResolving)))
 			})
 		})
 	})
@@ -915,43 +915,43 @@ var _ = Describe("Task BBS", func() {
 		Context("when the task is resolving", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should remove /task/<guid>", func() {
 				err := bbs.ResolveTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				tasks, err := bbs.Tasks(logger)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(tasks).Should(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tasks).To(BeEmpty())
 			})
 		})
 
 		Context("when the task is not resolving", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "some-cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "some-cell-id", true, "because i said so", "a result")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should fail", func() {
 				err := bbs.ResolveTask(logger, task.TaskGuid)
-				Ω(err).Should(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

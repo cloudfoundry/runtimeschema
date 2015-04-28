@@ -53,13 +53,13 @@ var _ = Describe("Convergence of Tasks", func() {
 		})
 
 		It("bumps the convergence counter", func() {
-			Ω(sender.GetCounter("ConvergenceTaskRuns")).Should(Equal(uint64(1)))
+			Expect(sender.GetCounter("ConvergenceTaskRuns")).To(Equal(uint64(1)))
 		})
 
 		It("reports the duration that it took to converge", func() {
 			reportedDuration := sender.GetValue("ConvergenceTaskDuration")
-			Ω(reportedDuration.Unit).Should(Equal("nanos"))
-			Ω(reportedDuration.Value).ShouldNot(BeZero())
+			Expect(reportedDuration.Unit).To(Equal("nanos"))
+			Expect(reportedDuration.Value).NotTo(BeZero())
 		})
 
 		Context("when a Task is malformed", func() {
@@ -72,19 +72,19 @@ var _ = Describe("Convergence of Tasks", func() {
 					Key:   nodeKey,
 					Value: []byte("ß"),
 				})
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = etcdClient.Get(nodeKey)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should delete it", func() {
 				_, err := etcdClient.Get(nodeKey)
-				Ω(err).Should(Equal(storeadapter.ErrorKeyNotFound))
+				Expect(err).To(Equal(storeadapter.ErrorKeyNotFound))
 			})
 
 			It("bumps the pruned counter", func() {
-				Ω(sender.GetCounter("ConvergenceTasksPruned")).Should(Equal(uint64(1)))
+				Expect(sender.GetCounter("ConvergenceTasksPruned")).To(Equal(uint64(1)))
 			})
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				secondTask = models.Task{
 					Domain:                "tests",
@@ -104,7 +104,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				}
 
 				err = bbs.DesireTask(logger, secondTask)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when the Task has NOT been pending for too long", func() {
@@ -130,11 +130,11 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
+					Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(2)))
 				})
 
 				It("logs that it sends an auction for the pending task", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.requesting-auction-for-pending-task"))
+					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.requesting-auction-for-pending-task"))
 				})
 
 				Context("when able to fetch the auctioneer address", func() {
@@ -150,12 +150,12 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					It("requests an auction", func() {
-						Ω(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).Should(Equal(1))
+						Expect(fakeAuctioneerClient.RequestTaskAuctionsCallCount()).To(Equal(1))
 
 						requestAddress, requestedTasks := fakeAuctioneerClient.RequestTaskAuctionsArgsForCall(0)
-						Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-						Ω(requestedTasks).Should(HaveLen(2))
-						Ω([]string{requestedTasks[0].TaskGuid, requestedTasks[1].TaskGuid}).Should(ConsistOf(task.TaskGuid, secondTask.TaskGuid))
+						Expect(requestAddress).To(Equal(auctioneerPresence.AuctioneerAddress))
+						Expect(requestedTasks).To(HaveLen(2))
+						Expect([]string{requestedTasks[0].TaskGuid, requestedTasks[1].TaskGuid}).To(ConsistOf(task.TaskGuid, secondTask.TaskGuid))
 					})
 
 					Context("when requesting an auction is unsuccessful", func() {
@@ -164,14 +164,14 @@ var _ = Describe("Convergence of Tasks", func() {
 						})
 
 						It("logs an error", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
+							Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
 						})
 					})
 				})
 
 				Context("when unable to fetch the auctioneer address", func() {
 					It("logs an error", func() {
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
+						Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-request-auctions-for-pending-tasks"))
 					})
 				})
 			})
@@ -183,19 +183,19 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				It("should mark the Task as completed & failed", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 
-					Ω(returnedTask.Failed).Should(Equal(true))
-					Ω(returnedTask.FailureReason).Should(ContainSubstring("time limit"))
+					Expect(returnedTask.Failed).To(Equal(true))
+					Expect(returnedTask.FailureReason).To(ContainSubstring("time limit"))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
+					Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(2)))
 				})
 
 				It("logs an error", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-start-in-time"))
+					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-start-in-time"))
 				})
 			})
 		})
@@ -203,10 +203,10 @@ var _ = Describe("Convergence of Tasks", func() {
 		Context("when a Task is running", func() {
 			BeforeEach(func() {
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when the associated cell is present", func() {
@@ -228,27 +228,27 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				It("leaves the task running", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateRunning))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(returnedTask.State).To(Equal(models.TaskStateRunning))
 				})
 			})
 
 			Context("when the associated cell is missing", func() {
 				It("should mark the Task as completed & failed", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 
-					Ω(returnedTask.Failed).Should(Equal(true))
-					Ω(returnedTask.FailureReason).Should(ContainSubstring("cell"))
+					Expect(returnedTask.Failed).To(Equal(true))
+					Expect(returnedTask.FailureReason).To(ContainSubstring("cell"))
 				})
 
 				It("logs that the cell disappeared", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.cell-disappeared"))
+					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.cell-disappeared"))
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(1)))
 				})
 			})
 		})
@@ -261,13 +261,13 @@ var _ = Describe("Convergence of Tasks", func() {
 					task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					secondTask := models.Task{
 						Domain:                "tests",
@@ -278,13 +278,13 @@ var _ = Describe("Convergence of Tasks", func() {
 					}
 
 					err = bbs.DesireTask(logger, secondTask)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, secondTask.TaskGuid, "cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, secondTask.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					completeTaskError = nil
 
@@ -300,33 +300,34 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Context("when a receptor is present", func() {
 						It("submits the completed tasks to the receptor in batch", func() {
-							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(3)) // 2 initial completes + convergence
+							Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(3)) // 2 initial completes + convergence
 
 							url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(2)
-							Ω(url).Should(Equal(receptorURL))
-							Ω(completedTasks).Should(HaveLen(2))
+							Expect(url).To(Equal(receptorURL))
+							Expect(completedTasks).To(HaveLen(2))
 
 							firstCompletedTask := completedTasks[0]
-							Ω(firstCompletedTask.Failed).Should(BeTrue())
-							Ω(firstCompletedTask.FailureReason).Should(Equal("'cause I said so"))
-							Ω(firstCompletedTask.Result).Should(Equal("a magical result"))
+							Expect(firstCompletedTask.Failed).To(BeTrue())
+							Expect(firstCompletedTask.FailureReason).To(Equal("'cause I said so"))
+							Expect(firstCompletedTask.Result).To(Equal("a magical result"))
 
 							secondCompletedTask := completedTasks[1]
-							Ω(secondCompletedTask.Failed).Should(BeTrue())
-							Ω(secondCompletedTask.FailureReason).Should(Equal("'cause I said so"))
-							Ω(secondCompletedTask.Result).Should(Equal("a magical result"))
+							Expect(secondCompletedTask.Failed).To(BeTrue())
+							Expect(secondCompletedTask.FailureReason).To(Equal("'cause I said so"))
+							Expect(secondCompletedTask.Result).To(Equal("a magical result"))
 
-							Ω([]string{firstCompletedTask.TaskGuid, secondCompletedTask.TaskGuid}).Should(ConsistOf(
+							Expect([]string{firstCompletedTask.TaskGuid, secondCompletedTask.TaskGuid}).To(ConsistOf(
 								[]string{"some-guid", "some-other-guid"},
 							))
+
 						})
 
 						It("logs that it kicks the completed task", func() {
-							Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.kicking-completed-task"))
+							Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.kicking-completed-task"))
 						})
 
 						It("bumps the convergence tasks kicked counter", func() {
-							Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(2)))
+							Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(2)))
 						})
 
 						Context("when the receptor fails to complete the task", func() {
@@ -335,7 +336,7 @@ var _ = Describe("Convergence of Tasks", func() {
 							})
 
 							It("logs that it failed to complete the task", func() {
-								Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-complete-tasks"))
+								Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-complete-tasks"))
 							})
 						})
 					})
@@ -345,13 +346,13 @@ var _ = Describe("Convergence of Tasks", func() {
 			Context("when a completed task without a complete URL is present", func() {
 				BeforeEach(func() {
 					err := bbs.DesireTask(logger, task)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a magical result")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				Context("for longer than the convergence interval", func() {
@@ -361,12 +362,12 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					Context("when a receptor is present", func() {
 						It("does not submit the completed task to the receptor", func() {
-							Ω(fakeTaskClient.CompleteTasksCallCount()).Should(BeZero())
+							Expect(fakeTaskClient.CompleteTasksCallCount()).To(BeZero())
 						})
 					})
 
 					It("bumps the convergence tasks kicked counter", func() {
-						Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+						Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(1)))
 					})
 				})
 
@@ -377,11 +378,11 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					It("should delete the task", func() {
 						_, err := bbs.TaskByGuid(task.TaskGuid)
-						Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+						Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 					})
 
 					It("logs that it failed to start resolving the task in time", func() {
-						Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-start-resolving-in-time"))
+						Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-start-resolving-in-time"))
 					})
 				})
 
@@ -395,9 +396,9 @@ var _ = Describe("Convergence of Tasks", func() {
 
 					It("should NOT kick the Task", func() {
 						returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-						Ω(err).ShouldNot(HaveOccurred())
-						Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
-						Ω(returnedTask.UpdatedAt).Should(Equal(previousTime))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
+						Expect(returnedTask.UpdatedAt).To(Equal(previousTime))
 					})
 				})
 			})
@@ -408,16 +409,16 @@ var _ = Describe("Convergence of Tasks", func() {
 				task.CompletionCallbackURL = &url.URL{Host: "blah"}
 
 				err := bbs.DesireTask(logger, task)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				_, err = bbs.StartTask(logger, task.TaskGuid, "cell-id")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.CompleteTask(logger, task.TaskGuid, "cell-id", true, "'cause I said so", "a result")
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.ResolvingTask(logger, task.TaskGuid)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when the task is in resolving state for less than the convergence interval", func() {
@@ -429,12 +430,12 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should do nothing", func() {
-					Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(1))
+					Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(1))
 
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateResolving))
-					Ω(returnedTask.UpdatedAt).Should(Equal(previousTime))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(returnedTask.State).To(Equal(models.TaskStateResolving))
+					Expect(returnedTask.UpdatedAt).To(Equal(previousTime))
 				})
 			})
 
@@ -445,28 +446,28 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				It("should put the Task back into the completed state", func() {
 					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(returnedTask.State).Should(Equal(models.TaskStateCompleted))
-					Ω(returnedTask.UpdatedAt).Should(Equal(clock.Now().UnixNano()))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
+					Expect(returnedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("logs that it is demoting task from resolving to completed", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.demoting-resolving-to-completed"))
+					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.demoting-resolving-to-completed"))
 				})
 
 				Context("when a receptor is present", func() {
 					It("submits the completed task to the receptor", func() {
-						Ω(fakeTaskClient.CompleteTasksCallCount()).Should(Equal(2))
+						Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(2))
 
 						url, completedTasks := fakeTaskClient.CompleteTasksArgsForCall(1)
-						Ω(url).Should(Equal(receptorURL))
-						Ω(completedTasks).Should(HaveLen(1))
-						Ω(completedTasks[0].TaskGuid).Should(Equal(task.TaskGuid))
+						Expect(url).To(Equal(receptorURL))
+						Expect(completedTasks).To(HaveLen(1))
+						Expect(completedTasks[0].TaskGuid).To(Equal(task.TaskGuid))
 					})
 				})
 
 				It("bumps the compare-and-swap counter", func() {
-					Ω(sender.GetCounter("ConvergenceTasksKicked")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("ConvergenceTasksKicked")).To(Equal(uint64(1)))
 				})
 			})
 
@@ -477,11 +478,11 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				It("should delete the task", func() {
 					_, err := bbs.TaskByGuid(task.TaskGuid)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
 				It("logs that has failed to resolve task in time", func() {
-					Ω(logger.TestSink.LogMessages()).Should(ContainElement("test.converge-tasks.failed-to-resolve-in-time"))
+					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.converge-tasks.failed-to-resolve-in-time"))
 				})
 			})
 		})

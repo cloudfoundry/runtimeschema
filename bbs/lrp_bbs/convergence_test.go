@@ -31,16 +31,16 @@ var _ = Describe("LrpConvergence", func() {
 		metrics.Initialize(sender)
 
 		err := domainBBS.UpsertDomain(freshDomain, 0)
-		Ω(err).ShouldNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("convergence counters", func() {
 		It("bumps the convergence counter", func() {
-			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(0)))
+			Expect(sender.GetCounter("ConvergenceLRPRuns")).To(Equal(uint64(0)))
 			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(1)))
+			Expect(sender.GetCounter("ConvergenceLRPRuns")).To(Equal(uint64(1)))
 			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-			Ω(sender.GetCounter("ConvergenceLRPRuns")).Should(Equal(uint64(2)))
+			Expect(sender.GetCounter("ConvergenceLRPRuns")).To(Equal(uint64(2)))
 		})
 
 		It("reports the duration that it took to converge", func() {
@@ -48,8 +48,8 @@ var _ = Describe("LrpConvergence", func() {
 			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 			reportedDuration := sender.GetValue("ConvergenceLRPDuration")
-			Ω(reportedDuration.Unit).Should(Equal("nanos"))
-			Ω(reportedDuration.Value).ShouldNot(BeZero())
+			Expect(reportedDuration.Unit).To(Equal("nanos"))
+			Expect(reportedDuration.Value).NotTo(BeZero())
 		})
 	})
 
@@ -77,27 +77,27 @@ var _ = Describe("LrpConvergence", func() {
 		})
 
 		It("logs", func() {
-			Ω(logger.TestSink).Should(gbytes.Say("adding-start-auction"))
+			Expect(logger.TestSink).To(gbytes.Say("adding-start-auction"))
 		})
 
 		It("logs the convergence", func() {
 			logMessages := logger.TestSink.LogMessages()
-			Ω(logMessages).Should(ContainElement("test.converge-lrps.starting-convergence"))
-			Ω(logMessages).Should(ContainElement("test.converge-lrps.finished-convergence"))
+			Expect(logMessages).To(ContainElement("test.converge-lrps.starting-convergence"))
+			Expect(logMessages).To(ContainElement("test.converge-lrps.finished-convergence"))
 		})
 
 		Context("when there are no actuals for desired LRP", func() {
 			It("emits a start auction request for the correct indices", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(1))
 
 				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(startAuctions).Should(HaveLen(1))
-				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0), uint(1)))
+				Expect(startAuctions).To(HaveLen(1))
+				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+				Expect(startAuctions[0].Indices).To(ConsistOf(uint(0), uint(1)))
 			})
 
 			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(2)))
+				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(2)))
 			})
 		})
 
@@ -114,16 +114,16 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("emits a start auction request for the missing index", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(1))
 
 				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(startAuctions).Should(HaveLen(1))
-				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
+				Expect(startAuctions).To(HaveLen(1))
+				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+				Expect(startAuctions[0].Indices).To(ConsistOf(uint(1)))
 			})
 
 			It("bumps the LRP start request counter", func() {
-				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(1)))
+				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(1)))
 			})
 		})
 
@@ -153,16 +153,16 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("emits a start auction request for the crashed index", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(1))
 
 				_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(startAuctions).Should(HaveLen(1))
-				Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(startAuctions[0].Indices).Should(ConsistOf(uint(1)))
+				Expect(startAuctions).To(HaveLen(1))
+				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+				Expect(startAuctions[0].Indices).To(ConsistOf(uint(1)))
 			})
 
 			It("bumps the LRP start request counter", func() {
-				Ω(sender.GetCounter("LRPInstanceStartRequests")).Should(Equal(uint64(1)))
+				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(1)))
 			})
 		})
 	})
@@ -177,18 +177,18 @@ var _ = Describe("LrpConvergence", func() {
 				},
 			})
 
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 		})
 
 		It("should delete the bogus entry", func() {
 			_, err := etcdClient.Get(shared.DesiredLRPSchemaPathByProcessGuid(processGuid))
-			Ω(err).Should(MatchError(storeadapter.ErrorKeyNotFound))
+			Expect(err).To(MatchError(storeadapter.ErrorKeyNotFound))
 		})
 
 		It("logs", func() {
-			Ω(logger.TestSink).Should(gbytes.Say("pruning-invalid-desired-lrp-json"))
+			Expect(logger.TestSink).To(gbytes.Say("pruning-invalid-desired-lrp-json"))
 		})
 	})
 
@@ -216,25 +216,25 @@ var _ = Describe("LrpConvergence", func() {
 			}
 
 			err := bbs.DesireLRP(logger, desiredLRP)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
 			registerCell(cellPresence)
 
 			actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = bbs.ClaimActualLRP(
 				logger,
 				actualLRPGroup.Instance.ActualLRPKey,
 				models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 			)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the cell is present", func() {
 			It("should not prune any LRPs", func() {
-				Ω(bbs.ActualLRPs()).Should(HaveLen(2))
+				Expect(bbs.ActualLRPs()).To(HaveLen(2))
 			})
 		})
 
@@ -242,36 +242,36 @@ var _ = Describe("LrpConvergence", func() {
 			BeforeEach(func() {
 				kv := consulRunner.NewClient().KV()
 				pair, _, err := kv.Get(shared.CellSchemaPath(cellPresence.CellID), nil)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				_, _, err = kv.Release(pair, nil)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should delete LRPs associated with said cell but not the unclaimed LRP", func() {
 				lrps, err := bbs.ActualLRPs()
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(lrps).Should(HaveLen(2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(lrps).To(HaveLen(2))
 
 				indices := make([]int, len(lrps))
 				for i, lrp := range lrps {
-					Ω(lrp.ProcessGuid).Should(Equal(processGuid))
-					Ω(lrp.State).Should(Equal(models.ActualLRPStateUnclaimed))
+					Expect(lrp.ProcessGuid).To(Equal(processGuid))
+					Expect(lrp.State).To(Equal(models.ActualLRPStateUnclaimed))
 
 					indices[i] = lrp.Index
 				}
 
-				Ω(indices).Should(ConsistOf([]int{0, 1}))
+				Expect(indices).To(ConsistOf([]int{0, 1}))
 			})
 
 			It("should prune LRP directories for apps that are no longer running", func() {
 				actual, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actual.ChildNodes).Should(HaveLen(1))
-				Ω(actual.ChildNodes[0].Key).Should(Equal(shared.ActualLRPProcessDir(processGuid)))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actual.ChildNodes).To(HaveLen(1))
+				Expect(actual.ChildNodes[0].Key).To(Equal(shared.ActualLRPProcessDir(processGuid)))
 			})
 
 			It("logs", func() {
-				Ω(logger.TestSink).Should(gbytes.Say("missing-cell"))
+				Expect(logger.TestSink).To(gbytes.Say("missing-cell"))
 			})
 		})
 	})
@@ -304,19 +304,19 @@ var _ = Describe("LrpConvergence", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(logger.TestSink).Should(gbytes.Say("no-longer-desired"))
+					Expect(logger.TestSink).To(gbytes.Say("no-longer-desired"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -328,10 +328,10 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink).Should(gbytes.Say("skipping-unfresh-domain"))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
+						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
 			})
@@ -344,37 +344,37 @@ var _ = Describe("LrpConvergence", func() {
 					registerCell(cellPresence)
 
 					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
+					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(1))
 
 					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(key.ProcessGuid).Should(Equal(processGuid))
-					Ω(key.Index).Should(Equal(index))
-					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
+					Expect(addr).To(Equal(cellPresence.RepAddress))
+					Expect(key.ProcessGuid).To(Equal(processGuid))
+					Expect(key.Index).To(Equal(index))
+					Expect(instanceKey.InstanceGuid).To(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(logger.TestSink).Should(gbytes.Say("no-longer-desired"))
+					Expect(logger.TestSink).To(gbytes.Say("no-longer-desired"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -385,9 +385,9 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not stop the actual LRP", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink).Should(gbytes.Say("skipping-unfresh-domain"))
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
+						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
 			})
@@ -400,14 +400,14 @@ var _ = Describe("LrpConvergence", func() {
 					registerCell(cellPresence)
 
 					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
@@ -415,31 +415,31 @@ var _ = Describe("LrpConvergence", func() {
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
+					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(1))
 
 					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(key.ProcessGuid).Should(Equal(processGuid))
-					Ω(key.Index).Should(Equal(index))
-					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
+					Expect(addr).To(Equal(cellPresence.RepAddress))
+					Expect(key.ProcessGuid).To(Equal(processGuid))
+					Expect(key.Index).To(Equal(index))
+					Expect(instanceKey.InstanceGuid).To(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(logger.TestSink).Should(gbytes.Say("no-longer-desired"))
-					Ω(logger.TestSink).Should(gbytes.Say(`test.converge-lrps.retiring-actual-lrps","log_level":0,"data":{"num-actual-lrps":1`))
+					Expect(logger.TestSink).To(gbytes.Say("no-longer-desired"))
+					Expect(logger.TestSink).To(gbytes.Say(`test.converge-lrps.retiring-actual-lrps","log_level":0,"data":{"num-actual-lrps":1`))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -450,9 +450,9 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not stop the actual LRP", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
-						Ω(logger.TestSink).Should(gbytes.Say("skipping-unfresh-domain"))
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
+						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
 			})
@@ -478,7 +478,7 @@ var _ = Describe("LrpConvergence", func() {
 				}
 
 				err := bbs.DesireLRP(logger, desiredLRP)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("when the actual LRP is UNCLAIMED", func() {
@@ -498,19 +498,19 @@ var _ = Describe("LrpConvergence", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(logger.TestSink).Should(gbytes.Say("retire-actual-lrps.remove-actual-lrp.succeeded"))
+					Expect(logger.TestSink).To(gbytes.Say("retire-actual-lrps.remove-actual-lrp.succeeded"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -522,9 +522,9 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
@@ -548,37 +548,37 @@ var _ = Describe("LrpConvergence", func() {
 					setRawActualLRP(higherIndexActualLRP)
 
 					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
+					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(1))
 
 					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(key.ProcessGuid).Should(Equal(processGuid))
-					Ω(key.Index).Should(Equal(index))
-					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
+					Expect(addr).To(Equal(cellPresence.RepAddress))
+					Expect(key.ProcessGuid).To(Equal(processGuid))
+					Expect(key.Index).To(Equal(index))
+					Expect(instanceKey.InstanceGuid).To(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(logger.TestSink).Should(gbytes.Say("stopping-actual"))
+					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -589,8 +589,8 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not stop the actual LRP", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
@@ -615,14 +615,14 @@ var _ = Describe("LrpConvergence", func() {
 					setRawActualLRP(higherIndexActualLRP)
 
 					actualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.ClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					err = bbs.StartActualLRP(
 						logger,
@@ -630,30 +630,30 @@ var _ = Describe("LrpConvergence", func() {
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
 						models.NewActualLRPNetInfo("host", []models.PortMapping{{HostPort: 1234, ContainerPort: 5678}}),
 					)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sends a stop request to the corresponding cell", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(1))
+					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(1))
 
 					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					Ω(addr).Should(Equal(cellPresence.RepAddress))
-					Ω(key.ProcessGuid).Should(Equal(processGuid))
-					Ω(key.Index).Should(Equal(index))
-					Ω(instanceKey.InstanceGuid).Should(Equal("instance-guid"))
+					Expect(addr).To(Equal(cellPresence.RepAddress))
+					Expect(key.ProcessGuid).To(Equal(processGuid))
+					Expect(key.Index).To(Equal(index))
+					Expect(instanceKey.InstanceGuid).To(Equal("instance-guid"))
 				})
 
 				It("logs", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(logger.TestSink).Should(gbytes.Say("stopping-actual"))
+					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
 				})
 
 				It("bumps the stopped LRPs convergence counter", func() {
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(1)))
+					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -664,8 +664,8 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not stop the actual LRP", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						Ω(fakeCellClient.StopLRPInstanceCallCount()).Should(Equal(0))
-						Ω(sender.GetCounter("LRPInstanceStopRequests")).Should(Equal(uint64(0)))
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
+						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
@@ -685,10 +685,10 @@ var _ = Describe("LrpConvergence", func() {
 			}
 
 			err := bbs.DesireLRP(logger, desiredLRP)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			desiredLRP, err = bbs.DesiredLRPByProcessGuid("process-guid-for-unclaimed")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
 			registerAuctioneer(auctioneerPresence)
@@ -699,7 +699,7 @@ var _ = Describe("LrpConvergence", func() {
 		It("logs", func() {
 			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-			Ω(logger.TestSink).Should(gbytes.Say("adding-start-auction"))
+			Expect(logger.TestSink).To(gbytes.Say("adding-start-auction"))
 		})
 
 		It("re-emits start auction requests", func() {
@@ -708,9 +708,9 @@ var _ = Describe("LrpConvergence", func() {
 			Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
 			_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
-			Ω(startAuctions).Should(HaveLen(1))
-			Ω(startAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-			Ω(startAuctions[0].Indices).Should(ConsistOf(uint(0)))
+			Expect(startAuctions).To(HaveLen(1))
+			Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+			Expect(startAuctions[0].Indices).To(ConsistOf(uint(0)))
 		})
 	})
 })

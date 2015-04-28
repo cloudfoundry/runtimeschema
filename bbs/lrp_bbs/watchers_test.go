@@ -60,31 +60,31 @@ var _ = Describe("Watchers", func() {
 
 		It("sends an event down the pipe for creates", func() {
 			err := bbs.DesireLRP(logger, lrp)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			desiredLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive(Equal(desiredLRP)))
 		})
 
 		It("sends an event down the pipe for updates", func() {
 			err := bbs.DesireLRP(logger, lrp)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
 
 			desiredBeforeUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			lrp.Instances++
 			err = bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, models.DesiredLRPUpdate{
 				Instances: &lrp.Instances,
 			})
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			desiredAfterUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(changes).Should(Receive(Equal(models.DesiredLRPChange{
 				Before: desiredBeforeUpdate,
@@ -94,15 +94,15 @@ var _ = Describe("Watchers", func() {
 
 		It("sends an event down the pipe for deletes", func() {
 			err := bbs.DesireLRP(logger, lrp)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
 
 			desired, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(desired))
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(desired)))
 		})
@@ -196,8 +196,8 @@ var _ = Describe("Watchers", func() {
 			Eventually(changesEvacuating).Should(Receive(Equal(false)))
 
 			before, after := actualLRPChange.Before, actualLRPChange.After
-			Ω(before).Should(Equal(actualLRP))
-			Ω(after).Should(Equal(updatedLRP))
+			Expect(before).To(Equal(actualLRP))
+			Expect(after).To(Equal(updatedLRP))
 		})
 
 		It("sends an event down the pipe for delete", func() {
@@ -256,8 +256,8 @@ var _ = Describe("Watchers", func() {
 				Eventually(changes).Should(Receive(&actualLRPChange))
 				Eventually(changesEvacuating).Should(Receive(Equal(true)))
 
-				Ω(actualLRPChange.Before).Should(Equal(evacuatedLRP))
-				Ω(actualLRPChange.After).Should(Equal(updatedLRP))
+				Expect(actualLRPChange.Before).To(Equal(evacuatedLRP))
+				Expect(actualLRPChange.After).To(Equal(updatedLRP))
 
 				deleteEvacuatingActualLRP(key)
 

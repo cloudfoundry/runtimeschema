@@ -55,14 +55,14 @@ var _ = Describe("Prune", func() {
 		predicate := func(db.StoreNode) bool { return false }
 		prune.Prune(logger, fake_bbs, "/0", predicate)
 
-		Ω(fake_bbs.ListRecursivelyCallCount()).Should(Equal(1))
-		Ω(fake_bbs.ListRecursivelyArgsForCall(0)).Should(Equal("/0"))
+		Expect(fake_bbs.ListRecursivelyCallCount()).To(Equal(1))
+		Expect(fake_bbs.ListRecursivelyArgsForCall(0)).To(Equal("/0"))
 
-		Ω(fake_bbs.CompareAndDeleteByIndexCallCount()).Should(Equal(1))
-		Ω(fake_bbs.CompareAndDeleteByIndexArgsForCall(0)).Should(ConsistOf(exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]))
+		Expect(fake_bbs.CompareAndDeleteByIndexCallCount()).To(Equal(1))
+		Expect(fake_bbs.CompareAndDeleteByIndexArgsForCall(0)).To(ConsistOf(exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]))
 
-		Ω(fake_bbs.DeleteLeavesCallCount()).Should(Equal(1))
-		Ω(fake_bbs.DeleteLeavesArgsForCall(0)).Should(ConsistOf(exampleTree.ChildNodes[0].Key, exampleTree.ChildNodes[1].Key))
+		Expect(fake_bbs.DeleteLeavesCallCount()).To(Equal(1))
+		Expect(fake_bbs.DeleteLeavesArgsForCall(0)).To(ConsistOf(exampleTree.ChildNodes[0].Key, exampleTree.ChildNodes[1].Key))
 	})
 
 	Context("store node doesn't exist", func() {
@@ -73,11 +73,11 @@ var _ = Describe("Prune", func() {
 
 		It("logs and returns without calling predicate function if the store node doesn't exist", func() {
 			predicate := func(db.StoreNode) bool {
-				Ω(false).Should(BeTrue(), "This method shouldn't have been called")
+				Expect(false).To(BeTrue(), "This method shouldn't have been called")
 				return false
 			}
 			prune.Prune(logger, fake_bbs, "/not-present", predicate)
-			Ω(logger).Should(gbytes.Say("test.no-key-found"))
+			Expect(logger).To(gbytes.Say("test.no-key-found"))
 		})
 	})
 

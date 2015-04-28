@@ -49,8 +49,8 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -66,9 +66,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("http error: status code 400"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("http error: status code 400"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -86,9 +86,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("EOF"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("EOF"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -106,9 +106,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("use of closed network connection"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("use of closed network connection"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
@@ -136,8 +136,8 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and does not return an error", func() {
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -153,9 +153,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("http error: status code 400"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("http error: status code 400"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -173,9 +173,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("EOF"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("EOF"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -193,9 +193,9 @@ var _ = Describe("AuctioneerClient", func() {
 			})
 
 			It("makes the request and returns an error", func() {
-				Ω(err).Should(HaveOccurred())
-				Ω(err.Error()).Should(ContainSubstring("use of closed network connection"))
-				Ω(fakeServer.ReceivedRequests()).Should(HaveLen(1))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("use of closed network connection"))
+				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})

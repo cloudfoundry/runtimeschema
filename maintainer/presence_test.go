@@ -107,7 +107,7 @@ var _ = Describe("Presence", func() {
 						ginkgomon.Interrupt(presenceProcess)
 						Eventually(presenceProcess.Wait()).Should(Receive(BeNil()))
 						_, err := getPresenceValue()
-						Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(presenceKey)))
+						Expect(err).To(Equal(consuladapter.NewKeyNotFoundError(presenceKey)))
 					})
 				})
 			})
@@ -124,8 +124,8 @@ var _ = Describe("Presence", func() {
 				otherSession = consulRunner.NewSession("other-session")
 
 				_, err := otherSession.SetPresence(presenceKey, otherValue)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(getPresenceValue()).Should(Equal(otherValue))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getPresenceValue()).To(Equal(otherValue))
 			})
 
 			AfterEach(func() {
@@ -135,7 +135,7 @@ var _ = Describe("Presence", func() {
 			It("waits for the presence to become available", func() {
 				presenceProcess = ifrit.Background(presenceRunner)
 				Eventually(presenceProcess.Ready()).Should(BeClosed())
-				Ω(getPresenceValue()).Should(Equal(otherValue))
+				Expect(getPresenceValue()).To(Equal(otherValue))
 			})
 
 			Context("when consul shuts down", func() {
@@ -176,7 +176,7 @@ var _ = Describe("Presence", func() {
 					var entry *api.SessionEntry
 					Eventually(func() *api.SessionEntry {
 						entries, _, err := client.Session().List(nil)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 						for _, e := range entries {
 							if e.Name == "a-session" {
 								entry = e
@@ -186,7 +186,7 @@ var _ = Describe("Presence", func() {
 						return nil
 					}).ShouldNot(BeNil())
 
-					Ω(entry.ID).ShouldNot(Equal(sessionID))
+					Expect(entry.ID).NotTo(Equal(sessionID))
 				})
 			})
 
@@ -204,7 +204,7 @@ var _ = Describe("Presence", func() {
 				It("acquires the presence", func() {
 					presenceProcess = ifrit.Background(presenceRunner)
 					Eventually(presenceProcess.Ready()).Should(BeClosed())
-					Ω(getPresenceValue()).Should(Equal(otherValue))
+					Expect(getPresenceValue()).To(Equal(otherValue))
 
 					otherSession.Destroy()
 

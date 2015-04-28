@@ -188,88 +188,88 @@ func (t crashTest) Test() {
 
 		if t.Result.ReturnedErr == nil {
 			It("does not return an error", func() {
-				Ω(crashErr).ShouldNot(HaveOccurred())
+				Expect(crashErr).NotTo(HaveOccurred())
 			})
 		} else {
 			It(fmt.Sprintf("returned error should be '%s'", t.Result.ReturnedErr.Error()), func() {
-				Ω(crashErr).Should(Equal(t.Result.ReturnedErr))
+				Expect(crashErr).To(Equal(t.Result.ReturnedErr))
 			})
 		}
 
 		It(fmt.Sprintf("has crash count %d", t.Result.CrashCount), func() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(actualLRP.CrashCount).Should(Equal(t.Result.CrashCount))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualLRP.CrashCount).To(Equal(t.Result.CrashCount))
 		})
 
 		It(fmt.Sprintf("has crash reason %s", t.Result.CrashReason), func() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(actualLRP.CrashReason).Should(Equal(t.Result.CrashReason))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualLRP.CrashReason).To(Equal(t.Result.CrashReason))
 		})
 
 		if t.Result.ShouldUpdate {
 			It("updates the Since", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRP.Since).Should(Equal(clock.Now().UnixNano()))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRP.Since).To(Equal(clock.Now().UnixNano()))
 			})
 
 			It("updates the ModificationIndex", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRP.ModificationTag.Index).Should(Equal(initialModificationIndex + 1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRP.ModificationTag.Index).To(Equal(initialModificationIndex + 1))
 			})
 		} else {
 			It("does not update the Since", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRP.Since).Should(Equal(initialTimestamp))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRP.Since).To(Equal(initialTimestamp))
 			})
 
 			It("does not update the ModificationIndex", func() {
 				actualLRP, err := getInstanceActualLRP(actualLRPKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(actualLRP.ModificationTag.Index).Should(Equal(initialModificationIndex))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRP.ModificationTag.Index).To(Equal(initialModificationIndex))
 			})
 		}
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {
 			actualLRP, err := getInstanceActualLRP(actualLRPKey)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(actualLRP.State).Should(Equal(t.Result.State))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(actualLRP.State).To(Equal(t.Result.State))
 		})
 
 		if t.Result.Auction {
 			It("starts an auction", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(1))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(1))
 
 				requestAddress, requestedAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(0)
-				Ω(requestAddress).Should(Equal(auctioneerPresence.AuctioneerAddress))
-				Ω(requestedAuctions).Should(HaveLen(1))
+				Expect(requestAddress).To(Equal(auctioneerPresence.AuctioneerAddress))
+				Expect(requestedAuctions).To(HaveLen(1))
 
 				desiredLRP, err := bbs.DesiredLRPByProcessGuid(actualLRPKey.ProcessGuid)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(requestedAuctions[0].DesiredLRP).Should(Equal(desiredLRP))
-				Ω(requestedAuctions[0].Indices).Should(ConsistOf(uint(actualLRPKey.Index)))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(requestedAuctions[0].DesiredLRP).To(Equal(desiredLRP))
+				Expect(requestedAuctions[0].Indices).To(ConsistOf(uint(actualLRPKey.Index)))
 			})
 
 			Context("when the desired LRP no longer exists", func() {
 				BeforeEach(func() {
 					err := bbs.RemoveDesiredLRPByProcessGuid(logger, actualLRPKey.ProcessGuid)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("the actual LRP is also deleted", func() {
-					Ω(crashErr).ShouldNot(HaveOccurred())
+					Expect(crashErr).NotTo(HaveOccurred())
 
 					_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
-					Ω(err).Should(Equal(bbserrors.ErrStoreResourceNotFound))
+					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
 		} else {
 			It("does not start an auction", func() {
-				Ω(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).Should(Equal(0))
+				Expect(fakeAuctioneerClient.RequestLRPAuctionsCallCount()).To(Equal(0))
 			})
 		}
 
@@ -279,16 +279,16 @@ func (t crashTest) Test() {
 			BeforeEach(func() {
 				var err error
 				beforeActualGroup, err = bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				instanceKey.InstanceGuid = "another-guid"
 			})
 
 			It("does not crash", func() {
-				Ω(crashErr).Should(Equal(bbserrors.ErrActualLRPCannotBeCrashed))
+				Expect(crashErr).To(Equal(bbserrors.ErrActualLRPCannotBeCrashed))
 
 				afterActualGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(actualLRPKey.ProcessGuid, actualLRPKey.Index)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(afterActualGroup).Should(Equal(beforeActualGroup))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(afterActualGroup).To(Equal(beforeActualGroup))
 			})
 		})
 	})

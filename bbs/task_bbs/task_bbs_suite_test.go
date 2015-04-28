@@ -84,16 +84,16 @@ var _ = BeforeEach(func() {
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 	jsonBytes, err := models.ToJSON(auctioneer)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = consulSession.AcquireLock(shared.LockSchemaPath("auctioneer_lock"), jsonBytes)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func registerCell(cell models.CellPresence) {
 	jsonBytes, err := models.ToJSON(cell)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	_, err = consulSession.SetPresence(shared.CellSchemaPath(cell.CellID), jsonBytes)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }

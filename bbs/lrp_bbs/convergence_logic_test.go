@@ -223,11 +223,11 @@ var _ = Describe("CalculateConvergence", func() {
 })
 
 func changesEqual(actual *lrp_bbs.ConvergenceChanges, expected *lrp_bbs.ConvergenceChanges) {
-	Ω(actual.ActualLRPsWithMissingCells).Should(ConsistOf(expected.ActualLRPsWithMissingCells))
-	Ω(actual.ActualLRPsForExtraIndices).Should(ConsistOf(expected.ActualLRPsForExtraIndices))
-	Ω(actual.ActualLRPKeysForMissingIndices).Should(ConsistOf(expected.ActualLRPKeysForMissingIndices))
-	Ω(actual.RestartableCrashedActualLRPs).Should(ConsistOf(expected.RestartableCrashedActualLRPs))
-	Ω(actual.StaleUnclaimedActualLRPs).Should(ConsistOf(expected.StaleUnclaimedActualLRPs))
+	Expect(actual.ActualLRPsWithMissingCells).To(ConsistOf(expected.ActualLRPsWithMissingCells))
+	Expect(actual.ActualLRPsForExtraIndices).To(ConsistOf(expected.ActualLRPsForExtraIndices))
+	Expect(actual.ActualLRPKeysForMissingIndices).To(ConsistOf(expected.ActualLRPKeysForMissingIndices))
+	Expect(actual.RestartableCrashedActualLRPs).To(ConsistOf(expected.RestartableCrashedActualLRPs))
+	Expect(actual.StaleUnclaimedActualLRPs).To(ConsistOf(expected.StaleUnclaimedActualLRPs))
 }
 
 func domainSet(domains ...string) models.DomainSet {

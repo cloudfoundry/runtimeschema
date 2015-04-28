@@ -27,10 +27,10 @@ var _ = Describe("StagingMessages", func() {
 		It("should be mapped to the CC's staging request JSON", func() {
 			var stagingRequest cc_messages.StagingRequestFromCC
 			err := json.Unmarshal([]byte(ccJSON), &stagingRequest)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			lifecycle_data := json.RawMessage([]byte(`{"foo": "bar"}`))
-			Ω(stagingRequest).Should(Equal(cc_messages.StagingRequestFromCC{
+			Expect(stagingRequest).To(Equal(cc_messages.StagingRequestFromCC{
 				AppId:           "fake-app_id",
 				MemoryMB:        1024,
 				DiskMB:          10000,
@@ -42,6 +42,7 @@ var _ = Describe("StagingMessages", func() {
 				Lifecycle:     "buildpack",
 				LifecycleData: &lifecycle_data,
 			}))
+
 		})
 	})
 
@@ -58,9 +59,9 @@ var _ = Describe("StagingMessages", func() {
 		It("unmarshals correctly", func() {
 			var lifecycleData cc_messages.BuildpackStagingData
 			err := json.Unmarshal([]byte(lifecycleDataJSON), &lifecycleData)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
-			Ω(lifecycleData).Should(Equal(cc_messages.BuildpackStagingData{
+			Expect(lifecycleData).To(Equal(cc_messages.BuildpackStagingData{
 				AppBitsDownloadUri:             "http://fake-download_uri",
 				BuildArtifactsCacheDownloadUri: "http://a-nice-place-to-get-valuable-artifacts.com",
 				BuildArtifactsCacheUploadUri:   "http://a-nice-place-to-upload-valuable-artifacts.com",
@@ -75,6 +76,7 @@ var _ = Describe("StagingMessages", func() {
 				DropletUploadUri: "http://droplet-upload-uri",
 				Stack:            "pancakes",
 			}))
+
 		})
 	})
 
@@ -86,11 +88,12 @@ var _ = Describe("StagingMessages", func() {
 		It("should be mapped to the CC's staging request JSON", func() {
 			var stagingData cc_messages.DockerStagingData
 			err := json.Unmarshal([]byte(lifecycleDataJSON), &stagingData)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
-			Ω(stagingData).Should(Equal(cc_messages.DockerStagingData{
+			Expect(stagingData).To(Equal(cc_messages.DockerStagingData{
 				DockerImageUrl: "docker:///diego/image",
 			}))
+
 		})
 	})
 
@@ -100,7 +103,7 @@ var _ = Describe("StagingMessages", func() {
 				{Name: "FOO", Value: "BAR"},
 			}
 			bbsEnv := env.BBSEnvironment()
-			Ω(bbsEnv).Should(Equal([]models.EnvironmentVariable{{Name: "FOO", Value: "BAR"}}))
+			Expect(bbsEnv).To(Equal([]models.EnvironmentVariable{{Name: "FOO", Value: "BAR"}}))
 		})
 	})
 
@@ -116,13 +119,14 @@ var _ = Describe("StagingMessages", func() {
 				var buildpack cc_messages.Buildpack
 
 				err := json.Unmarshal([]byte(ccJSONFragment), &buildpack)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(buildpack).To(Equal(cc_messages.Buildpack{
+				Expect(buildpack).To(Equal(cc_messages.Buildpack{
 					Name: "ocaml-buildpack",
 					Key:  "ocaml-buildpack-guid",
 					Url:  "http://ocaml.org/buildpack.zip",
 				}))
+
 			})
 		})
 
@@ -138,14 +142,15 @@ var _ = Describe("StagingMessages", func() {
 				var buildpack cc_messages.Buildpack
 
 				err := json.Unmarshal([]byte(ccJSONFragment), &buildpack)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
-				Ω(buildpack).To(Equal(cc_messages.Buildpack{
+				Expect(buildpack).To(Equal(cc_messages.Buildpack{
 					Name:       "ocaml-buildpack",
 					Key:        "ocaml-buildpack-guid",
 					Url:        "http://ocaml.org/buildpack.zip",
 					SkipDetect: true,
 				}))
+
 			})
 		})
 	})
@@ -162,10 +167,11 @@ var _ = Describe("StagingMessages", func() {
 
 		Context("without lifecycle data", func() {
 			It("generates valid json without the lifecycle data", func() {
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
+
 			})
 		})
 
@@ -180,20 +186,22 @@ var _ = Describe("StagingMessages", func() {
 			})
 
 			It("generates valid json with lifecycle data", func() {
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"},
 					"lifecycle_data": {"foo": "bar"}
 				}`))
+
 			})
 		})
 
 		Context("without an error", func() {
 			It("generates valid JSON", func() {
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
+
 			})
 		})
 
@@ -203,12 +211,13 @@ var _ = Describe("StagingMessages", func() {
 					Id:      "StagingError",
 					Message: "FAIL, missing camels!",
 				}
-				Ω(json.Marshal(stagingResponseForCC)).Should(MatchJSON(`{
+				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
 					"error": { "id": "StagingError", "message": "FAIL, missing camels!" },
 
 					"execution_metadata": "the-execution-metadata",
 					"detected_start_command":{"web":"the-detected-start-command"}
 				}`))
+
 			})
 		})
 	})
@@ -224,10 +233,11 @@ var _ = Describe("StagingMessages", func() {
 		})
 
 		It("marshals correctly", func() {
-			Ω(json.Marshal(buildpackStagingResponse)).Should(MatchJSON(`{
+			Expect(json.Marshal(buildpackStagingResponse)).To(MatchJSON(`{
 				"buildpack_key": "buildpack-key",
 				"detected_buildpack": "detected-buildpack"
 			}`))
+
 		})
 
 		It("marshals correctly", func() {
@@ -236,9 +246,9 @@ var _ = Describe("StagingMessages", func() {
 				"buildpack_key": "buildpack-key",
 				"detected_buildpack": "detected-buildpack"
 			}`), &response)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
-			Ω(response).Should(Equal(buildpackStagingResponse))
+			Expect(response).To(Equal(buildpackStagingResponse))
 		})
 	})
 
@@ -246,40 +256,40 @@ var _ = Describe("StagingMessages", func() {
 		Context("when the message is InsufficientResources", func() {
 			It("returns a InsufficientResources", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE)
-				Ω(stagingErr.Id).Should(Equal(cc_messages.INSUFFICIENT_RESOURCES))
-				Ω(stagingErr.Message).Should(Equal(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE))
+				Expect(stagingErr.Id).To(Equal(cc_messages.INSUFFICIENT_RESOURCES))
+				Expect(stagingErr.Message).To(Equal(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE))
 			})
 		})
 
 		Context("when the message is NoCompatibleCell", func() {
 			It("returns a NoCompatibleCell", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.CELL_MISMATCH_MESSAGE)
-				Ω(stagingErr.Id).Should(Equal(cc_messages.NO_COMPATIBLE_CELL))
-				Ω(stagingErr.Message).Should(Equal(diego_errors.CELL_MISMATCH_MESSAGE))
+				Expect(stagingErr.Id).To(Equal(cc_messages.NO_COMPATIBLE_CELL))
+				Expect(stagingErr.Message).To(Equal(diego_errors.CELL_MISMATCH_MESSAGE))
 			})
 		})
 
 		Context("when the message is missing docker image URL", func() {
 			It("returns a StagingError", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_IMAGE_URL)
-				Ω(stagingErr.Id).Should(Equal(cc_messages.STAGING_ERROR))
-				Ω(stagingErr.Message).Should(Equal(diego_errors.MISSING_DOCKER_IMAGE_URL))
+				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
+				Expect(stagingErr.Message).To(Equal(diego_errors.MISSING_DOCKER_IMAGE_URL))
 			})
 		})
 
 		Context("when the message is missing docker registry", func() {
 			It("returns a StagingError", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_REGISTRY)
-				Ω(stagingErr.Id).Should(Equal(cc_messages.STAGING_ERROR))
-				Ω(stagingErr.Message).Should(Equal(diego_errors.MISSING_DOCKER_REGISTRY))
+				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
+				Expect(stagingErr.Message).To(Equal(diego_errors.MISSING_DOCKER_REGISTRY))
 			})
 		})
 
 		Context("any other message", func() {
 			It("returns a StagingError", func() {
 				stagingErr := cc_messages.SanitizeErrorMessage("some-error")
-				Ω(stagingErr.Id).Should(Equal(cc_messages.STAGING_ERROR))
-				Ω(stagingErr.Message).Should(Equal("staging failed"))
+				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
+				Expect(stagingErr.Message).To(Equal("staging failed"))
 			})
 		})
 	})

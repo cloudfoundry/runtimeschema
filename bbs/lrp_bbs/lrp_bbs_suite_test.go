@@ -90,31 +90,31 @@ var _ = BeforeEach(func() {
 
 func registerCell(cell models.CellPresence) {
 	jsonBytes, err := models.ToJSON(cell)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = consulSession.AcquireLock(shared.CellSchemaPath(cell.CellID), jsonBytes)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 	jsonBytes, err := models.ToJSON(auctioneer)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = consulSession.AcquireLock(shared.LockSchemaPath("auctioneer_lock"), jsonBytes)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func claimDesireLRPByIndex(d models.DesiredLRP, index int, instanceKey models.ActualLRPInstanceKey, logger lager.Logger) {
 	unclaimedLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(d.ProcessGuid, index)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = bbs.ClaimActualLRP(logger, unclaimedLRPGroup.Instance.ActualLRPKey, instanceKey)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func setRawActualLRP(lrp models.ActualLRP) {
 	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = etcdClient.SetMulti([]storeadapter.StoreNode{
 		{
@@ -123,12 +123,12 @@ func setRawActualLRP(lrp models.ActualLRP) {
 		},
 	})
 
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func setRawEvacuatingActualLRP(lrp models.ActualLRP, ttlInSeconds uint64) {
 	value, err := json.Marshal(lrp) // do NOT use models.ToJSON; don't want validations
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = etcdClient.SetMulti([]storeadapter.StoreNode{
 		{
@@ -138,12 +138,12 @@ func setRawEvacuatingActualLRP(lrp models.ActualLRP, ttlInSeconds uint64) {
 		},
 	})
 
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func setRawDesiredLRP(d models.DesiredLRP) {
 	value, err := json.Marshal(d) // do NOT use models.ToJSON; don't want validations
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = etcdClient.SetMulti([]storeadapter.StoreNode{
 		{
@@ -152,22 +152,22 @@ func setRawDesiredLRP(d models.DesiredLRP) {
 		},
 	})
 
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func deleteActualLRP(key models.ActualLRPKey) {
 	err := etcdClient.Delete(shared.ActualLRPSchemaPath(key.ProcessGuid, key.Index))
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func deleteEvacuatingActualLRP(key models.ActualLRPKey) {
 	err := etcdClient.Delete(shared.EvacuatingActualLRPSchemaPath(key.ProcessGuid, key.Index))
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func createRawDomain(domain string) {
 	err := domainBBS.UpsertDomain(domain, 0)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func getInstanceActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) {
@@ -175,11 +175,11 @@ func getInstanceActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, error) 
 	if err == storeadapter.ErrorKeyNotFound {
 		return models.ActualLRP{}, bbserrors.ErrStoreResourceNotFound
 	}
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	return lrp, nil
 }
@@ -189,11 +189,11 @@ func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, uint6
 	if err == storeadapter.ErrorKeyNotFound {
 		return models.ActualLRP{}, 0, bbserrors.ErrStoreResourceNotFound
 	}
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	var lrp models.ActualLRP
 	err = models.FromJSON(node.Value, &lrp)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	return lrp, node.TTL, nil
 }

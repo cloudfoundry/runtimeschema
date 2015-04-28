@@ -35,7 +35,7 @@ var _ = Describe("Receptor Service Registry", func() {
 			JustBeforeEach(func() {
 				lockBbs := lock_bbs.New(consulSession, clock, logger)
 				auctioneerLock, err := lockBbs.NewAuctioneerLock(auctioneerPresence, 100*time.Millisecond)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				heartbeater = ifrit.Invoke(auctioneerLock)
 			})
 
@@ -51,8 +51,8 @@ var _ = Describe("Receptor Service Registry", func() {
 
 				It("returns the address", func() {
 					address, err := bbs.AuctioneerAddress()
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(address).Should(Equal(auctioneerPresence.AuctioneerAddress))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(address).To(Equal(auctioneerPresence.AuctioneerAddress))
 				})
 			})
 		})
@@ -60,7 +60,7 @@ var _ = Describe("Receptor Service Registry", func() {
 		Context("when unable to get any auctioneer presences", func() {
 			It("returns ErrServiceUnavailable", func() {
 				_, err := bbs.AuctioneerAddress()
-				Ω(err).Should(Equal(bbserrors.ErrServiceUnavailable))
+				Expect(err).To(Equal(bbserrors.ErrServiceUnavailable))
 			})
 		})
 	})
