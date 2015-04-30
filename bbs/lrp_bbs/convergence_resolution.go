@@ -3,15 +3,9 @@ package lrp_bbs
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/pivotal-golang/lager"
-)
-
-var (
-	lrpStartInstanceCounter = metric.Counter("LRPInstanceStartRequests")
-	lrpStopInstanceCounter  = metric.Counter("LRPInstanceStopRequests")
 )
 
 const workPoolSize = 100
@@ -25,7 +19,6 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	logger.Debug("retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
 	bbs.RetireActualLRPs(logger, actualKeys)
 	logger.Debug("done-retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
-	lrpStopInstanceCounter.Add(uint64(len(changes.ActualLRPsForExtraIndices)))
 
 	startRequests := newStartRequests(desiredLRPs)
 
@@ -154,8 +147,6 @@ func (bbs *LRPBBS) startActualLRPs(logger lager.Logger, starts *startRequests) {
 			"lrp-start-auctions": starts,
 		})
 	}
-
-	lrpStartInstanceCounter.Add(count)
 }
 
 type startRequests struct {

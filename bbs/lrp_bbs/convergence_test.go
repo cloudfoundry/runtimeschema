@@ -95,10 +95,6 @@ var _ = Describe("LrpConvergence", func() {
 				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
 				Expect(startAuctions[0].Indices).To(ConsistOf(uint(0), uint(1)))
 			})
-
-			It("bumps the compare-and-swapped LRPs convergence counter", func() {
-				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(2)))
-			})
 		})
 
 		Context("when there are fewer actuals for desired LRP", func() {
@@ -120,10 +116,6 @@ var _ = Describe("LrpConvergence", func() {
 				Expect(startAuctions).To(HaveLen(1))
 				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
 				Expect(startAuctions[0].Indices).To(ConsistOf(uint(1)))
-			})
-
-			It("bumps the LRP start request counter", func() {
-				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(1)))
 			})
 		})
 
@@ -159,10 +151,6 @@ var _ = Describe("LrpConvergence", func() {
 				Expect(startAuctions).To(HaveLen(1))
 				Expect(startAuctions[0].DesiredLRP).To(Equal(desiredLRP))
 				Expect(startAuctions[0].Indices).To(ConsistOf(uint(1)))
-			})
-
-			It("bumps the LRP start request counter", func() {
-				Expect(sender.GetCounter("LRPInstanceStartRequests")).To(Equal(uint64(1)))
 			})
 		})
 	})
@@ -313,12 +301,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say("no-longer-desired"))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -330,7 +312,6 @@ var _ = Describe("LrpConvergence", func() {
 						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
@@ -357,8 +338,6 @@ var _ = Describe("LrpConvergence", func() {
 				It("sends a stop request to the corresponding cell", func() {
 					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(1))
-
 					addr, key, instanceKey := fakeCellClient.StopLRPInstanceArgsForCall(0)
 					Expect(addr).To(Equal(cellPresence.RepAddress))
 					Expect(key.ProcessGuid).To(Equal(processGuid))
@@ -371,12 +350,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say("no-longer-desired"))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -386,7 +359,6 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
@@ -436,12 +408,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say(`test.converge-lrps.retiring-actual-lrps","log_level":0,"data":{"num-actual-lrps":1`))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -451,7 +417,6 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
 					})
 				})
@@ -507,12 +472,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say("retire-actual-lrps.remove-actual-lrp.succeeded"))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -523,8 +482,6 @@ var _ = Describe("LrpConvergence", func() {
 
 						_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
-
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
@@ -575,12 +532,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -590,7 +541,6 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
@@ -650,12 +600,6 @@ var _ = Describe("LrpConvergence", func() {
 					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
 				})
 
-				It("bumps the stopped LRPs convergence counter", func() {
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
-					bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(1)))
-				})
-
 				Context("when the LRP domain is not fresh", func() {
 					BeforeEach(func() {
 						domain = "expired-domain"
@@ -665,7 +609,6 @@ var _ = Describe("LrpConvergence", func() {
 						bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
-						Expect(sender.GetCounter("LRPInstanceStopRequests")).To(Equal(uint64(0)))
 					})
 				})
 			})
