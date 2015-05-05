@@ -68,8 +68,8 @@ var _ = Describe("Presence", func() {
 				Consistently(presenceProcess.Ready()).Should(BeClosed())
 				Consistently(presenceProcess.Wait()).ShouldNot(Receive())
 
-				Eventually(logger).Should(Say("set-presence-failed"))
-				Eventually(logger).Should(Say("retrying-set-presence"))
+				Eventually(logger).Should(Say("failed-setting-presence"))
+				Eventually(logger).Should(Say("recreating-session"))
 			})
 		})
 
@@ -98,7 +98,7 @@ var _ = Describe("Presence", func() {
 
 					It("loses the presence and retries", func() {
 						Eventually(presenceProcess.Wait()).ShouldNot(Receive())
-						Eventually(logger).Should(Say("retrying-set-presence"))
+						Eventually(logger).Should(Say("recreating-session"))
 					})
 				})
 
@@ -155,8 +155,8 @@ var _ = Describe("Presence", func() {
 					Consistently(presenceProcess.Ready()).Should(BeClosed())
 					Consistently(presenceProcess.Wait()).ShouldNot(Receive())
 
-					Eventually(logger).Should(Say("set-presence-failed"))
-					Eventually(logger).Should(Say("retrying-set-presence"))
+					Eventually(logger).Should(Say("failed-setting-presence"))
+					Eventually(logger).Should(Say("recreating-session"))
 				})
 			})
 
@@ -169,7 +169,7 @@ var _ = Describe("Presence", func() {
 
 					consulSession.Destroy()
 					Eventually(logger).Should(Say("consul-error"))
-					Eventually(logger).Should(Say("retrying-set-presence"))
+					Eventually(logger).Should(Say("recreating-session"))
 
 					client := consulRunner.NewClient()
 
@@ -224,15 +224,15 @@ var _ = Describe("Presence", func() {
 			consulRunner.WaitUntilReady()
 		})
 
-		It("continues to retry setting the presence", func() {
+		It("continues to retry creating the session", func() {
 			presenceProcess = ifrit.Background(presenceRunner)
 
 			Eventually(presenceProcess.Ready()).Should(BeClosed())
 			Consistently(presenceProcess.Wait()).ShouldNot(Receive())
 
-			Eventually(logger).Should(Say("set-presence-failed"))
-			Eventually(logger).Should(Say("retrying-set-presence"))
-			Eventually(logger).Should(Say("retrying-set-presence"))
+			Eventually(logger).Should(Say("failed-setting-presence"))
+			Eventually(logger).Should(Say("recreating-session"))
+			Eventually(logger).Should(Say("recreating-session"))
 		})
 
 		Context("when consul starts up", func() {
@@ -240,8 +240,8 @@ var _ = Describe("Presence", func() {
 				presenceProcess = ifrit.Background(presenceRunner)
 				Eventually(presenceProcess.Ready()).Should(BeClosed())
 
-				Eventually(logger).Should(Say("set-presence-failed"))
-				Eventually(logger).Should(Say("retrying-set-presence"))
+				Eventually(logger).Should(Say("failed-setting-presence"))
+				Eventually(logger).Should(Say("recreating-session"))
 				Consistently(presenceProcess.Wait()).ShouldNot(Receive())
 
 				consulRunner.Start()

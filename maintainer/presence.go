@@ -45,6 +45,7 @@ func (p Presence) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 	logger.Info("starting")
 
 	defer func() {
+		logger.Info("cleaning-up")
 		p.consul.Destroy()
 		logger.Info("done")
 	}()
@@ -74,7 +75,6 @@ func (p Presence) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 		case sig := <-signals:
 			logger.Info("shutting-down", lager.Data{"received-signal": sig})
 
-			logger.Debug("removing-presence")
 			return nil
 		case err := <-p.consul.Err():
 			var data lager.Data
@@ -87,26 +87,32 @@ func (p Presence) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			c = p.clock.NewTimer(p.retryInterval).C()
 		case result := <-presenceCh:
 			if result.err == nil {
+				logger.Info("succeeded-setting-presence")
+
 				c = nil
 				presenceLost = result.presenceLost
-				logger.Info("set-presence-succeeded")
 			} else {
-				logger.Error("set-presence-failed", result.err)
+				logger.Error("failed-setting-presence", result.err)
+
 				c = p.clock.NewTimer(p.retryInterval).C()
 			}
 		case <-presenceLost:
 			logger.Info("presence-lost")
-			presenceLost = nil
 
+			presenceLost = nil
 			c = p.clock.NewTimer(p.retryInterval).C()
 		case <-c:
-			logger.Info("retrying-set-presence")
+			logger.Info("recreating-session")
 
 			presenceLost = nil
 			newSession, err := p.consul.Recreate()
 			if err != nil {
+				logger.Error("failed-recreating-session", err)
+
 				c = p.clock.NewTimer(p.retryInterval).C()
 			} else {
+				logger.Info("succeeded-recreating-session")
+
 				p.consul = newSession
 				c = nil
 				go setPresence(newSession)
