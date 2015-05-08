@@ -87,16 +87,8 @@ func (bbs *LRPBBS) domains(logger lager.Logger) (map[string]struct{}, error) {
 }
 
 func (bbs *LRPBBS) gatherAndPruneActualLRPs(logger lager.Logger) (map[string]models.ActualLRPsByIndex, error) {
-	cellRoot, err := bbs.store.ListRecursively(shared.CellSchemaRoot)
-	if err == storeadapter.ErrorKeyNotFound {
-		cellRoot = storeadapter.StoreNode{}
-	} else if err != nil {
-		logger.Error("failed-to-get-cells", err)
-		return nil, err
-	}
-
-	pruner := newActualPruner(logger, cellRoot)
-	err = prune.Prune(logger, bbs.store, shared.ActualLRPSchemaRoot, pruner.gatherAndPrune)
+	pruner := newActualPruner(logger)
+	err := prune.Prune(logger, bbs.store, shared.ActualLRPSchemaRoot, pruner.gatherAndPrune)
 	if err != nil {
 		logger.Error("failed-to-prune-actual-lrps", err)
 		return nil, err
@@ -109,14 +101,12 @@ type actualPruner struct {
 	logger lager.Logger
 	bbs    *LRPBBS
 
-	cellRoot storeadapter.StoreNode
-	Actuals  models.ActualLRPsByProcessGuidAndIndex
+	Actuals models.ActualLRPsByProcessGuidAndIndex
 }
 
-func newActualPruner(logger lager.Logger, cellRoot storeadapter.StoreNode) *actualPruner {
+func newActualPruner(logger lager.Logger) *actualPruner {
 	return &actualPruner{
-		logger:   logger,
-		cellRoot: cellRoot,
+		logger: logger,
 
 		Actuals: models.ActualLRPsByProcessGuidAndIndex{},
 	}

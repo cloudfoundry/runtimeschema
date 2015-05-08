@@ -18,7 +18,7 @@ var _ = Describe("Pruner", func() {
 			return string(node.Value) == "true"
 		})
 
-		nodeSetsToDelete = pruner.Prune()
+		nodeSetsToDelete = pruner.FindNodesToDelete()
 	})
 
 	Context("an empty tree", func() {

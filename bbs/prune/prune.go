@@ -18,7 +18,7 @@ func Prune(logger lager.Logger, store db.StoreAdapter, rootKey string, predicate
 	}
 
 	p := NewPruner(rootNode, predicate)
-	nodeSetsToDelete := p.Prune()
+	nodeSetsToDelete := p.FindNodesToDelete()
 
 	dirKeySetsToDelete := [][]string{}
 	leavesToDelete := []db.StoreNode{}
@@ -60,7 +60,7 @@ func NewPruner(root db.StoreNode, predicate func(db.StoreNode) bool) *Pruner {
 	}
 }
 
-func (p *Pruner) Prune() [][]db.StoreNode {
+func (p *Pruner) FindNodesToDelete() [][]db.StoreNode {
 	p.walk(0, p.root)
 	return p.nodeSetsToDelete
 }
