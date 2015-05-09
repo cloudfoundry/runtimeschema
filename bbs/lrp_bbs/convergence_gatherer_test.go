@@ -13,286 +13,200 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type processGuidAndIndex struct {
+	processGuid string
+	index       int
+}
+
 type testDataForConvergenceGatherer struct {
-	actualsToKeep      models.ActualLRPsByProcessGuidAndIndex
-	actualsToPrune     models.ActualLRPsByProcessGuidAndIndex
-	evacuationsToKeep  models.ActualLRPsByProcessGuidAndIndex
-	evacuationsToPrune models.ActualLRPsByProcessGuidAndIndex
-	desiredsToKeep     models.DesiredLRPsByProcessGuid
-	desiredsToPrune    models.DesiredLRPsByProcessGuid
-	domains            models.DomainSet
-	cells              models.CellSet
+	instanceKeysToKeep                     map[processGuidAndIndex]struct{}
+	instanceKeysToPrune                    map[processGuidAndIndex]struct{}
+	evacuatingKeysToKeep                   map[processGuidAndIndex]struct{}
+	evacuatingKeysToPrune                  map[processGuidAndIndex]struct{}
+	validDesiredGuids                      []string
+	invalidDesiredGuidsWithValidActuals    []string
+	invalidDesiredGuidsWithoutValidActuals []string
+	unknownDesiredGuidsWithValidActuals    []string
+	unknownDesiredGuidsWithoutValidActuals []string
+	domains                                models.DomainSet
+	cells                                  models.CellSet
 }
 
 func newTestDataForConvergenceGatherer() *testDataForConvergenceGatherer {
 	return &testDataForConvergenceGatherer{
-		actualsToKeep:      models.ActualLRPsByProcessGuidAndIndex{},
-		actualsToPrune:     models.ActualLRPsByProcessGuidAndIndex{},
-		evacuationsToKeep:  models.ActualLRPsByProcessGuidAndIndex{},
-		evacuationsToPrune: models.ActualLRPsByProcessGuidAndIndex{},
-		desiredsToKeep:     models.DesiredLRPsByProcessGuid{},
-		desiredsToPrune:    models.DesiredLRPsByProcessGuid{},
-		domains:            models.DomainSet{},
-		cells:              models.CellSet{},
+		instanceKeysToKeep:                     map[processGuidAndIndex]struct{}{},
+		instanceKeysToPrune:                    map[processGuidAndIndex]struct{}{},
+		evacuatingKeysToKeep:                   map[processGuidAndIndex]struct{}{},
+		evacuatingKeysToPrune:                  map[processGuidAndIndex]struct{}{},
+		validDesiredGuids:                      []string{},
+		invalidDesiredGuidsWithValidActuals:    []string{},
+		invalidDesiredGuidsWithoutValidActuals: []string{},
+		unknownDesiredGuidsWithValidActuals:    []string{},
+		unknownDesiredGuidsWithoutValidActuals: []string{},
+		domains: models.DomainSet{},
+		cells:   models.CellSet{},
 	}
 }
 
 var _ = Describe("Convergence", func() {
 	Describe("Gathering", func() {
+		const cellID = "some-cell-id"
+		const domain = "test-domain"
+		const numValidDesiredGuids = 200
+		const numInvalidDesiredGuidsWithValidActuals = 20
+		const numInvalidDesiredGuidsWithoutValidActuals = 20
+		const numUnknownDesiredGuidsWithValidActuals = 20
+		const numUnknownDesiredGuidsWithoutValidActuals = 20
+
+		// ActualLRPs with indices that don't make sense for their corresponding
+		// DesiredLRPs are *not* pruned at this phase
+		const randomIndex1 = 9001
+		const randomIndex2 = 1337
+
 		var testData *testDataForConvergenceGatherer
-		cellID := "some-cell-id"
-		domain := "test-domain"
 
 		BeforeEach(func() {
 			testData = newTestDataForConvergenceGatherer()
 
-			// create some valid DesiredLRPs
-			for i := 0; i < 200; i++ {
-				testData.desiredsToKeep.Add(newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1))
-			}
-
-			// create some invalid DesiredLRPs that will have valid corresponding ActualLRPs
-			for i := 0; i < 20; i++ {
-				testData.desiredsToPrune.Add(models.DesiredLRP{ProcessGuid: fmt.Sprintf("invalid-desired-with-valid-actual-%d", i)})
-			}
-
-			// create some invalid DesiredLRPs that will NOT have valid corresponding ActualLRPs
-			for i := 0; i < 20; i++ {
-				testData.desiredsToPrune.Add(models.DesiredLRP{ProcessGuid: fmt.Sprintf("invalid-desired-without-valid-actual-%d", i)})
-			}
-
-			// create some ActualLRPs, corresponding to valid DesiredLRPs
-			// with all indices having bad data
-			for i := 0; i < 20; i++ {
-				invalidActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					9001,
+			// create some valid DesiredLRP guids
+			for i := 0; i < numValidDesiredGuids; i++ {
+				testData.validDesiredGuids = append(
+					testData.validDesiredGuids,
+					fmt.Sprintf("valid-desired-%d", i),
 				)
-				invalidActual1.Since = 0
-				testData.actualsToPrune.Add(invalidActual1)
+			}
 
-				invalidActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					1337,
+			// create some invalid DesiredLRP guids that will have valid corresponding ActualLRPs
+			for i := 0; i < numInvalidDesiredGuidsWithValidActuals; i++ {
+				testData.invalidDesiredGuidsWithValidActuals = append(
+					testData.invalidDesiredGuidsWithValidActuals,
+					fmt.Sprintf("invalid-desired-with-valid-actual-%d", i),
 				)
-				invalidActual2.Since = 0
-				testData.actualsToPrune.Add(invalidActual2)
+			}
+
+			// create some invalid DesiredLRP guids that will NOT have valid corresponding ActualLRPs
+			for i := 0; i < numInvalidDesiredGuidsWithoutValidActuals; i++ {
+				testData.invalidDesiredGuidsWithoutValidActuals = append(
+					testData.invalidDesiredGuidsWithoutValidActuals,
+					fmt.Sprintf("invalid-desired-without-valid-actual-%d", i),
+				)
+			}
+
+			// create some unknown DesiredLRP guids that will have valid corresponding ActualLRPs
+			for i := 0; i < numUnknownDesiredGuidsWithValidActuals; i++ {
+				testData.unknownDesiredGuidsWithValidActuals = append(
+					testData.unknownDesiredGuidsWithValidActuals,
+					fmt.Sprintf("unknown-desired-with-valid-actual-%d", i),
+				)
+			}
+
+			// create some unknown DesiredLRP guids that will NOT have valid corresponding ActualLRPs
+			for i := 0; i < numUnknownDesiredGuidsWithoutValidActuals; i++ {
+				testData.unknownDesiredGuidsWithoutValidActuals = append(
+					testData.unknownDesiredGuidsWithoutValidActuals,
+					fmt.Sprintf("unknown-desired-without-valid-actual-%d", i),
+				)
+			}
+
+			// create some ActualLRPs, corresponding to valid DesiredLRPs with all indices having
+			// bad data
+			for i := 0; i < numValidDesiredGuids/10; i++ {
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex1}] = struct{}{}
+
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex2}] = struct{}{}
 			}
 
 			// create some ActualLRPs, corresponding to valid DesiredLRPs
 			// with some indices with bad data, and some with good data
-			for i := 20; i < 40; i++ {
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual)
+			for i := numValidDesiredGuids / 10; i < 2*numValidDesiredGuids/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					1337,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex2}] = struct{}{}
 			}
 
 			// create some ActualLRPs, corresponding to valid DesiredLRPs
 			// with all indices having good data
-			for i := 40; i < 60; i++ {
-				validActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual1)
+			for i := 2 * numValidDesiredGuids / 10; i < 3*numValidDesiredGuids/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex1}] = struct{}{}
 
-				validActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual2)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex2}] = struct{}{}
 			}
 
 			// create some ActualLRPs, corresponding to valid DesiredLRPs
 			// with one index having good Evacuating data but bad Instance data,
 			// another index having the opposite
-			for i := 60; i < 80; i++ {
-				validEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					9001,
-				)
-				testData.evacuationsToKeep.Add(validEvacuating)
+			for i := 3 * numValidDesiredGuids / 10; i < 4*numValidDesiredGuids/10; i++ {
+				testData.evacuatingKeysToKeep[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					9001,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex1}] = struct{}{}
 
-				invalidEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					1337,
-				)
-				invalidEvacuating.Since = 0
-				testData.evacuationsToPrune.Add(invalidEvacuating)
+				testData.evacuatingKeysToPrune[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex2}] = struct{}{}
 
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("valid-desired-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.validDesiredGuids[i], randomIndex2}] = struct{}{}
 			}
 
 			// create similar ActualLRPs corresponding to invalid DesiredLRPs
-			for i := 0; i < 5; i++ {
-				invalidActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-without-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				invalidActual1.Since = 0
-				testData.actualsToPrune.Add(invalidActual1)
+			for i := 0; i < numInvalidDesiredGuidsWithoutValidActuals/10; i++ {
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.invalidDesiredGuidsWithoutValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-without-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidActual2.Since = 0
-				testData.actualsToPrune.Add(invalidActual2)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.invalidDesiredGuidsWithoutValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 0; i < 5; i++ {
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual)
+			for i := 0; i < numInvalidDesiredGuidsWithValidActuals/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 5; i < 10; i++ {
-				validActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual1)
+			for i := numInvalidDesiredGuidsWithValidActuals / 10; i < 2*numInvalidDesiredGuidsWithValidActuals/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				validActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual2)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 10; i < 15; i++ {
-				validEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.evacuationsToKeep.Add(validEvacuating)
+			for i := 2 * numInvalidDesiredGuidsWithValidActuals / 10; i < numInvalidDesiredGuidsWithValidActuals; i++ {
+				testData.evacuatingKeysToKeep[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidEvacuating.Since = 0
-				testData.evacuationsToPrune.Add(invalidEvacuating)
+				testData.evacuatingKeysToPrune[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.invalidDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
 
 			// create similar ActualLRPs corresponding to unknown DesiredLRPs
-			for i := 0; i < 5; i++ {
-				invalidActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-without-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				invalidActual1.Since = 0
-				testData.actualsToPrune.Add(invalidActual1)
+			for i := 0; i < numUnknownDesiredGuidsWithoutValidActuals/10; i++ {
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.unknownDesiredGuidsWithoutValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-without-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidActual2.Since = 0
-				testData.actualsToPrune.Add(invalidActual2)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.unknownDesiredGuidsWithoutValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 0; i < 5; i++ {
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual)
+			for i := 0; i < numUnknownDesiredGuidsWithValidActuals/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 5; i < 10; i++ {
-				validActual1 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.actualsToKeep.Add(validActual1)
+			for i := numUnknownDesiredGuidsWithValidActuals / 10; i < 2*numUnknownDesiredGuidsWithValidActuals/10; i++ {
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				validActual2 := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual2)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
-			for i := 10; i < 15; i++ {
-				validEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				testData.evacuationsToKeep.Add(validEvacuating)
+			for i := 2 * numUnknownDesiredGuidsWithValidActuals / 10; i < numUnknownDesiredGuidsWithValidActuals; i++ {
+				testData.evacuatingKeysToKeep[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					9001,
-				)
-				invalidActual.Since = 0
-				testData.actualsToPrune.Add(invalidActual)
+				testData.instanceKeysToPrune[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex1}] = struct{}{}
 
-				invalidEvacuating := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				invalidEvacuating.Since = 0
-				testData.evacuationsToPrune.Add(invalidEvacuating)
+				testData.evacuatingKeysToPrune[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 
-				validActual := newActualLRP(
-					newDesiredLRP(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), "domain", 1),
-					1337,
-				)
-				testData.actualsToKeep.Add(validActual)
+				testData.instanceKeysToKeep[processGuidAndIndex{testData.unknownDesiredGuidsWithValidActuals[i], randomIndex2}] = struct{}{}
 			}
 
 			// Domains
-			testData.domains.Add(domain)
+			testData.domains = models.DomainSet{domain: struct{}{}}
 
 			// Cells
-			testData.cells.Add(newCellPresence(cellID))
-			testData.cells.Add(newCellPresence("other-cell"))
+			testData.cells = models.CellSet{
+				cellID:       newCellPresence(cellID),
+				"other-cell": newCellPresence("other-cell"),
+			}
 
-			saveTestData(testData)
+			createTestData(testData)
 		})
 
 		var input *lrp_bbs.ConvergenceInput
@@ -302,153 +216,159 @@ var _ = Describe("Convergence", func() {
 			input, gatherError = bbs.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
 		})
 
-		It("gets all processGuids in the system", func() {
+		It("provides all processGuids in the system", func() {
 			expectedGuids := map[string]struct{}{}
-
-			// all valid DesiredLRPs' ProcessGuids should be present
-			for i := 0; i < 200; i++ {
-				expectedGuids[fmt.Sprintf("valid-desired-%d", i)] = struct{}{}
+			for _, desiredGuid := range testData.validDesiredGuids {
+				expectedGuids[desiredGuid] = struct{}{}
 			}
-
-			// invalid DesiredLRPs' ProcessGuids should be present if there
-			// are corresponding valid ActualLRPs
-			for i := 0; i < 15; i++ {
-				expectedGuids[fmt.Sprintf("invalid-desired-with-valid-actual-%d", i)] = struct{}{}
+			for _, desiredGuid := range testData.invalidDesiredGuidsWithValidActuals {
+				expectedGuids[desiredGuid] = struct{}{}
 			}
-
-			// non-existent DesiredLRP ProcessGuids should be present if there
-			// are corresponding valid ActualLRPs
-			for i := 0; i < 15; i++ {
-				expectedGuids[fmt.Sprintf("unknown-desired-with-valid-actual-%d", i)] = struct{}{}
+			for _, desiredGuid := range testData.unknownDesiredGuidsWithValidActuals {
+				expectedGuids[desiredGuid] = struct{}{}
 			}
 
 			Expect(input.AllProcessGuids).To(Equal(expectedGuids))
 		})
 
-		It("fetches the correct desired LRPs", func() {
-			Expect(input.DesiredLRPs).To(HaveLen(len(testData.desiredsToKeep)))
+		It("provides the correct desired LRPs", func() {
+			Expect(input.DesiredLRPs).To(HaveLen(len(testData.validDesiredGuids)))
 
-			testData.desiredsToKeep.Each(func(expected models.DesiredLRP) {
-				desired, ok := input.DesiredLRPs[expected.ProcessGuid]
-				Expect(ok).To(BeTrue(), fmt.Sprintf("expected desiredLRP for process '%s' to be present", expected.ProcessGuid))
-				Expect(desired).To(Equal(expected))
-			})
+			for _, desiredGuid := range testData.validDesiredGuids {
+				_, ok := input.DesiredLRPs[desiredGuid]
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected desiredLRP for process '%s' to be present", desiredGuid))
+			}
 		})
 
-		It("prunes the correct desired LRPs", func() {
-			testData.desiredsToPrune.Each(func(expected models.DesiredLRP) {
-				_, err := bbs.DesiredLRPByProcessGuid(expected.ProcessGuid)
+		It("prunes only the invalid DesiredLRPs from the datastore", func() {
+			for _, desiredGuid := range testData.validDesiredGuids {
+				_, err := bbs.DesiredLRPByProcessGuid(desiredGuid)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			for _, desiredGuid := range testData.invalidDesiredGuidsWithValidActuals {
+				_, err := bbs.DesiredLRPByProcessGuid(desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
-			})
+			}
+
+			for _, desiredGuid := range testData.invalidDesiredGuidsWithoutValidActuals {
+				_, err := bbs.DesiredLRPByProcessGuid(desiredGuid)
+				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
+			}
 		})
 
-		It("fetches the correct actualLRPs", func() {
-			Expect(input.ActualLRPs).To(HaveLen(len(testData.actualsToKeep)))
+		It("provides the correct actualLRPs", func() {
+			for actualData := range testData.instanceKeysToKeep {
+				actualIndex, ok := input.ActualLRPs[actualData.processGuid]
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actualIndex for process '%s' to be present", actualData.processGuid))
 
-			testData.actualsToKeep.Each(func(expected models.ActualLRP) {
-				actualIndex, ok := input.ActualLRPs[expected.ProcessGuid]
-				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actualIndex for process '%s' to be present", expected.ProcessGuid))
-				actual, ok := actualIndex[expected.Index]
-				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actual for process '%s' and index %d to be present", expected.ProcessGuid, expected.Index))
-				Expect(actual).To(Equal(expected))
-			})
+				_, ok = actualIndex[actualData.index]
+				Expect(ok).To(BeTrue(), fmt.Sprintf("expected actual for process '%s' and index %d to be present", actualData.processGuid, actualData.index))
+			}
+
+			for guid, actuals := range input.ActualLRPs {
+				for index, _ := range actuals {
+					_, ok := testData.instanceKeysToKeep[processGuidAndIndex{guid, index}]
+					Expect(ok).To(BeTrue(), fmt.Sprintf("did not expect actual for process '%s' and index %d to be present", guid, index))
+				}
+			}
 		})
 
-		It("prunes the correct actualLRPs", func() {
-			for i := 0; i < 20; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("valid-desired-%d", i))
+		It("prunes only the invalid ActualLRPs from the datastore", func() {
+			for i := 0; i < numValidDesiredGuids/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.validDesiredGuids[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
 
-			for i := 20; i < 40; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("valid-desired-%d", i))
+			for i := numValidDesiredGuids / 10; i < 2*numValidDesiredGuids/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.validDesiredGuids[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(1))
-				Expect(groups).To(HaveKey(9001))
+				Expect(groups).To(HaveKey(randomIndex1))
 			}
 
-			for i := 40; i < 60; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("valid-desired-%d", i))
+			for i := 2 * numValidDesiredGuids / 10; i < 3*numValidDesiredGuids/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.validDesiredGuids[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(2))
-				Expect(groups).To(HaveKey(9001))
-				Expect(groups).To(HaveKey(1337))
+				Expect(groups).To(HaveKey(randomIndex1))
+				Expect(groups).To(HaveKey(randomIndex2))
 			}
 
-			for i := 60; i < 80; i++ {
-				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("valid-desired-%d", i), 9001)
+			for i := 3 * numValidDesiredGuids / 10; i < 4*numValidDesiredGuids/10; i++ {
+				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.validDesiredGuids[i], randomIndex1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group1.Instance).To(BeNil())
 				Expect(group1.Evacuating).NotTo(BeNil())
 
-				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("valid-desired-%d", i), 1337)
+				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.validDesiredGuids[i], randomIndex2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group2.Instance).NotTo(BeNil())
 				Expect(group2.Evacuating).To(BeNil())
 			}
 
-			for i := 0; i < 5; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("invalid-desired-without-valid-actual-%d", i))
+			for i := 0; i < numInvalidDesiredGuidsWithoutValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.invalidDesiredGuidsWithoutValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
 
-			for i := 0; i < 5; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i))
+			for i := 0; i < numInvalidDesiredGuidsWithValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.invalidDesiredGuidsWithValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(1))
-				Expect(groups).To(HaveKey(9001))
+				Expect(groups).To(HaveKey(randomIndex1))
 			}
 
-			for i := 5; i < 10; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i))
+			for i := numInvalidDesiredGuidsWithValidActuals / 10; i < 2*numInvalidDesiredGuidsWithValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.invalidDesiredGuidsWithValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(2))
-				Expect(groups).To(HaveKey(9001))
-				Expect(groups).To(HaveKey(1337))
+				Expect(groups).To(HaveKey(randomIndex1))
+				Expect(groups).To(HaveKey(randomIndex2))
 			}
 
-			for i := 10; i < 15; i++ {
-				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), 9001)
+			for i := 2 * numInvalidDesiredGuidsWithValidActuals / 10; i < 3*numInvalidDesiredGuidsWithValidActuals/10; i++ {
+				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.invalidDesiredGuidsWithValidActuals[i], randomIndex1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group1.Instance).To(BeNil())
 				Expect(group1.Evacuating).NotTo(BeNil())
 
-				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("invalid-desired-with-valid-actual-%d", i), 1337)
+				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.invalidDesiredGuidsWithValidActuals[i], randomIndex2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group2.Instance).NotTo(BeNil())
 				Expect(group2.Evacuating).To(BeNil())
 			}
 
-			for i := 0; i < 5; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("unknown-desired-without-valid-actual-%d", i))
+			for i := 0; i < numUnknownDesiredGuidsWithoutValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.unknownDesiredGuidsWithoutValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
 
-			for i := 0; i < 5; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i))
+			for i := 0; i < numUnknownDesiredGuidsWithValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.unknownDesiredGuidsWithValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(1))
-				Expect(groups).To(HaveKey(9001))
+				Expect(groups).To(HaveKey(randomIndex1))
 			}
 
-			for i := 5; i < 10; i++ {
-				groups, err := bbs.ActualLRPGroupsByProcessGuid(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i))
+			for i := numUnknownDesiredGuidsWithValidActuals / 10; i < 2*numUnknownDesiredGuidsWithValidActuals/10; i++ {
+				groups, err := bbs.ActualLRPGroupsByProcessGuid(testData.unknownDesiredGuidsWithValidActuals[i])
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(HaveLen(2))
-				Expect(groups).To(HaveKey(9001))
-				Expect(groups).To(HaveKey(1337))
+				Expect(groups).To(HaveKey(randomIndex1))
+				Expect(groups).To(HaveKey(randomIndex2))
 			}
 
-			for i := 10; i < 15; i++ {
-				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), 9001)
+			for i := 2 * numUnknownDesiredGuidsWithValidActuals / 10; i < 3*numUnknownDesiredGuidsWithValidActuals/10; i++ {
+				group1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.unknownDesiredGuidsWithValidActuals[i], randomIndex1)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group1.Instance).To(BeNil())
 				Expect(group1.Evacuating).NotTo(BeNil())
 
-				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(fmt.Sprintf("unknown-desired-with-valid-actual-%d", i), 1337)
+				group2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(testData.unknownDesiredGuidsWithValidActuals[i], randomIndex2)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(group2.Instance).NotTo(BeNil())
 				Expect(group2.Evacuating).To(BeNil())
@@ -471,30 +391,28 @@ var _ = Describe("Convergence", func() {
 	})
 })
 
-func saveTestData(testData *testDataForConvergenceGatherer) {
-	testData.desiredsToKeep.Each(func(desired models.DesiredLRP) {
-		setRawDesiredLRP(desired)
-	})
-
-	testData.desiredsToPrune.Each(func(desired models.DesiredLRP) {
-		createMalformedDesiredLRP(desired.ProcessGuid)
-	})
-
-	testData.actualsToKeep.Each(func(actual models.ActualLRP) {
-		setRawActualLRP(actual)
-	})
-
-	testData.actualsToPrune.Each(func(actual models.ActualLRP) {
-		setRawActualLRP(actual)
-	})
-
-	testData.evacuationsToKeep.Each(func(actual models.ActualLRP) {
-		setRawEvacuatingActualLRP(actual, 100)
-	})
-
-	testData.evacuationsToPrune.Each(func(actual models.ActualLRP) {
-		setRawEvacuatingActualLRP(actual, 100)
-	})
+func createTestData(testData *testDataForConvergenceGatherer) {
+	for actualData := range testData.instanceKeysToKeep {
+		createValidActualLRP(actualData.processGuid, actualData.index)
+	}
+	for actualData := range testData.instanceKeysToPrune {
+		createMalformedActualLRP(actualData.processGuid, actualData.index)
+	}
+	for actualData := range testData.evacuatingKeysToKeep {
+		createValidEvacuatingLRP(actualData.processGuid, actualData.index)
+	}
+	for actualData := range testData.evacuatingKeysToPrune {
+		createMalformedEvacuatingLRP(actualData.processGuid, actualData.index)
+	}
+	for _, guid := range testData.validDesiredGuids {
+		createValidDesiredLRP(guid)
+	}
+	for _, guid := range testData.invalidDesiredGuidsWithValidActuals {
+		createMalformedDesiredLRP(guid)
+	}
+	for _, guid := range testData.invalidDesiredGuidsWithoutValidActuals {
+		createMalformedDesiredLRP(guid)
+	}
 
 	testData.domains.Each(func(domain string) {
 		createRawDomain(domain)
@@ -504,12 +422,49 @@ func saveTestData(testData *testDataForConvergenceGatherer) {
 		registerCell(cell)
 	})
 }
+
+func createValidDesiredLRP(guid string) {
+	setRawDesiredLRP(models.DesiredLRP{
+		ProcessGuid: guid,
+		Domain:      "some-domain",
+		Instances:   1,
+		RootFS:      "some:rootfs",
+		MemoryMB:    1024,
+		DiskMB:      512,
+		CPUWeight:   42,
+		Action:      &models.RunAction{Path: "ls"},
+	})
+}
+
 func createMalformedDesiredLRP(guid string) {
 	createMalformedValueForKey(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: guid}))
 }
 
+func createValidActualLRP(guid string, index int) {
+	setRawActualLRP(models.ActualLRP{
+		ActualLRPKey: models.NewActualLRPKey(guid, index, "some-domain"),
+		State:        models.ActualLRPStateUnclaimed,
+		Since:        1138,
+	})
+}
+
 func createMalformedActualLRP(guid string, index int) {
 	createMalformedValueForKey(shared.ActualLRPSchemaPath(guid, index))
+}
+
+func createValidEvacuatingLRP(guid string, index int) {
+	setRawEvacuatingActualLRP(
+		models.ActualLRP{
+			ActualLRPKey: models.NewActualLRPKey(guid, index, "some-domain"),
+			State:        models.ActualLRPStateUnclaimed,
+			Since:        1138,
+		},
+		100,
+	)
+}
+
+func createMalformedEvacuatingLRP(guid string, index int) {
+	createMalformedValueForKey(shared.EvacuatingActualLRPSchemaPath(guid, index))
 }
 
 func createMalformedValueForKey(key string) {
@@ -518,75 +473,9 @@ func createMalformedValueForKey(key string) {
 		Value: []byte("ßßßßßß"),
 	})
 
-	Expect(err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("error occurred at key '%s'", key))
 }
 
 func newCellPresence(cellID string) models.CellPresence {
 	return models.NewCellPresence(cellID, "1.2.3.4", "az-1", models.CellCapacity{128, 1024, 3})
-}
-
-func newDesiredLRP(guid, domain string, instances int) models.DesiredLRP {
-	return models.DesiredLRP{
-		Domain:      domain,
-		ProcessGuid: guid,
-		Instances:   instances,
-		RootFS:      "some:rootfs",
-		MemoryMB:    1024,
-		DiskMB:      512,
-		CPUWeight:   42,
-		Action:      &models.RunAction{Path: "ls"},
-	}
-}
-
-func newActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		State:        models.ActualLRPStateUnclaimed,
-		Since:        1138,
-	}
-}
-
-func newUnclaimedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		State:        models.ActualLRPStateUnclaimed,
-		Since:        1138,
-	}
-}
-
-func newClaimedActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey:         models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
-		State:                models.ActualLRPStateClaimed,
-		Since:                1138,
-	}
-}
-
-func newRunningActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey:         models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
-		ActualLRPNetInfo:     models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
-		State:                models.ActualLRPStateRunning,
-		Since:                1138,
-	}
-}
-
-func newStartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		CrashCount:   1,
-		State:        models.ActualLRPStateCrashed,
-		Since:        1138,
-	}
-}
-
-func newUnstartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
-	return models.ActualLRP{
-		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
-		CrashCount:   201,
-		State:        models.ActualLRPStateCrashed,
-		Since:        1138,
-	}
 }

@@ -1,18 +1,18 @@
 package prune
 
 import (
-	db "github.com/cloudfoundry/storeadapter"
+	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
 )
 
 var token = struct{}{}
 
-func Prune(logger lager.Logger, store db.StoreAdapter, rootKey string, predicate func(db.StoreNode) bool) error {
+func Prune(logger lager.Logger, store storeadapter.StoreAdapter, rootKey string, predicate func(storeadapter.StoreNode) bool) error {
 	rootNode, err := store.ListRecursively(rootKey)
-	if err != nil && err != db.ErrorKeyNotFound {
+	if err != nil && err != storeadapter.ErrorKeyNotFound {
 		return err
 	}
-	if err == db.ErrorKeyNotFound {
+	if err == storeadapter.ErrorKeyNotFound {
 		logger.Info("no-key-found", lager.Data{"root-key": rootKey})
 		return nil
 	}
@@ -21,7 +21,7 @@ func Prune(logger lager.Logger, store db.StoreAdapter, rootKey string, predicate
 	nodeSetsToDelete := p.FindNodesToDelete()
 
 	dirKeySetsToDelete := [][]string{}
-	leavesToDelete := []db.StoreNode{}
+	leavesToDelete := []storeadapter.StoreNode{}
 
 	for _, nodes := range nodeSetsToDelete {
 		dirKeysToDelete := []string{}
@@ -47,47 +47,50 @@ func Prune(logger lager.Logger, store db.StoreAdapter, rootKey string, predicate
 	return nil
 }
 
+type NodesByDepth map[int][]storeadapter.StoreNode
+
 type Pruner struct {
-	root             db.StoreNode
-	nodeSetsToDelete [][]db.StoreNode
-	predicate        func(db.StoreNode) bool
+	root             storeadapter.StoreNode
+	nodeSetsToDelete NodesByDepth
+	predicate        func(storeadapter.StoreNode) bool
 }
 
-func NewPruner(root db.StoreNode, predicate func(db.StoreNode) bool) *Pruner {
+func NewPruner(root storeadapter.StoreNode, predicate func(storeadapter.StoreNode) bool) *Pruner {
 	return &Pruner{
-		root:      root,
-		predicate: predicate,
+		root:             root,
+		predicate:        predicate,
+		nodeSetsToDelete: NodesByDepth{},
 	}
 }
 
-func (p *Pruner) FindNodesToDelete() [][]db.StoreNode {
+func (p *Pruner) FindNodesToDelete() NodesByDepth {
 	p.walk(0, p.root)
 	return p.nodeSetsToDelete
 }
 
-func (p *Pruner) walk(depth int, node db.StoreNode) bool {
-	if len(p.nodeSetsToDelete) < depth+1 {
-		p.nodeSetsToDelete = append(p.nodeSetsToDelete, []db.StoreNode{})
+func (p *Pruner) walk(depth int, node storeadapter.StoreNode) bool {
+	if _, hasDepth := p.nodeSetsToDelete[depth]; !hasDepth {
+		p.nodeSetsToDelete[depth] = []storeadapter.StoreNode{}
 	}
 
-	if len(node.ChildNodes) == 0 {
-		if node.Dir || !p.predicate(node) {
+	if !node.Dir {
+		if p.predicate(node) {
+			return true
+		} else {
 			p.markForDelete(depth, node)
 			return false
-		} else {
-			return true
 		}
 	}
 
-	empty := true
+	willBeEmpty := true
 	childDepth := depth + 1
 	for _, childNode := range node.ChildNodes {
 		if p.walk(childDepth, childNode) {
-			empty = false
+			willBeEmpty = false
 		}
 	}
 
-	if empty {
+	if willBeEmpty {
 		p.markForDelete(depth, node)
 		return false
 	}
@@ -95,6 +98,6 @@ func (p *Pruner) walk(depth int, node db.StoreNode) bool {
 	return true
 }
 
-func (p *Pruner) markForDelete(depth int, node db.StoreNode) {
+func (p *Pruner) markForDelete(depth int, node storeadapter.StoreNode) {
 	p.nodeSetsToDelete[depth] = append(p.nodeSetsToDelete[depth], node)
 }

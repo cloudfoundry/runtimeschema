@@ -66,7 +66,6 @@ var _ = Describe("Prune", func() {
 	})
 
 	Context("store node doesn't exist", func() {
-
 		BeforeEach(func() {
 			fake_bbs.ListRecursivelyReturns(db.StoreNode{}, db.ErrorKeyNotFound)
 		})

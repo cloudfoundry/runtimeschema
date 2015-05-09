@@ -2,19 +2,19 @@ package prune_test
 
 import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/prune"
-	db "github.com/cloudfoundry/storeadapter"
+	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Pruner", func() {
-	var nodeSetsToDelete [][]db.StoreNode
-	var expectedNodeSetsToDelete [][]db.StoreNode
-	var exampleTree db.StoreNode
+	var nodeSetsToDelete prune.NodesByDepth
+	var expectedNodeSetsToDelete prune.NodesByDepth
+	var exampleTree storeadapter.StoreNode
 
 	JustBeforeEach(func() {
-		pruner := prune.NewPruner(exampleTree, func(node db.StoreNode) bool {
+		pruner := prune.NewPruner(exampleTree, func(node storeadapter.StoreNode) bool {
 			return string(node.Value) == "true"
 		})
 
@@ -23,25 +23,25 @@ var _ = Describe("Pruner", func() {
 
 	Context("an empty tree", func() {
 		BeforeEach(func() {
-			exampleTree = db.StoreNode{
+			exampleTree = storeadapter.StoreNode{
 				Key: "/0",
 				Dir: true,
-				ChildNodes: []db.StoreNode{
+				ChildNodes: []storeadapter.StoreNode{
 					{
 						Key: "/0/0",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key:        "/0/0/0",
 								Dir:        true,
-								ChildNodes: []db.StoreNode{},
+								ChildNodes: []storeadapter.StoreNode{},
 							},
 						},
 					},
 					{
 						Key: "/0/1",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/1/0",
 								Dir: true,
@@ -51,10 +51,10 @@ var _ = Describe("Pruner", func() {
 				},
 			}
 
-			expectedNodeSetsToDelete = [][]db.StoreNode{
-				{exampleTree},
-				exampleTree.ChildNodes,
-				{exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
+			expectedNodeSetsToDelete = prune.NodesByDepth{
+				0: {exampleTree},
+				1: exampleTree.ChildNodes,
+				2: {exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
 			}
 		})
 
@@ -65,18 +65,18 @@ var _ = Describe("Pruner", func() {
 
 	Context("a tree filled with deletables", func() {
 		BeforeEach(func() {
-			exampleTree = db.StoreNode{
+			exampleTree = storeadapter.StoreNode{
 				Key: "/0",
 				Dir: true,
-				ChildNodes: []db.StoreNode{
+				ChildNodes: []storeadapter.StoreNode{
 					{
 						Key: "/0/0",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/0/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/0/0/0",
 										Value: []byte("false"),
@@ -88,11 +88,11 @@ var _ = Describe("Pruner", func() {
 					{
 						Key: "/0/1",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/1/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/1/0/0",
 										Value: []byte("false"),
@@ -104,11 +104,11 @@ var _ = Describe("Pruner", func() {
 				},
 			}
 
-			expectedNodeSetsToDelete = [][]db.StoreNode{
-				{exampleTree},
-				exampleTree.ChildNodes,
-				{exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
-				{exampleTree.ChildNodes[0].ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0].ChildNodes[0]},
+			expectedNodeSetsToDelete = prune.NodesByDepth{
+				0: {exampleTree},
+				1: exampleTree.ChildNodes,
+				2: {exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
+				3: {exampleTree.ChildNodes[0].ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0].ChildNodes[0]},
 			}
 		})
 
@@ -119,25 +119,25 @@ var _ = Describe("Pruner", func() {
 
 	Context("a tree filled with keepables", func() {
 		BeforeEach(func() {
-			expectedNodeSetsToDelete = [][]db.StoreNode{
-				{},
-				{},
-				{},
-				{},
+			expectedNodeSetsToDelete = prune.NodesByDepth{
+				0: {},
+				1: {},
+				2: {},
+				3: {},
 			}
 
-			exampleTree = db.StoreNode{
+			exampleTree = storeadapter.StoreNode{
 				Key: "/0",
 				Dir: true,
-				ChildNodes: []db.StoreNode{
+				ChildNodes: []storeadapter.StoreNode{
 					{
 						Key: "/0/0",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/0/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/1/0/0",
 										Value: []byte("true"),
@@ -149,11 +149,11 @@ var _ = Describe("Pruner", func() {
 					{
 						Key: "/0/1",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/1/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/1/0/0",
 										Value: []byte("true"),
@@ -173,28 +173,28 @@ var _ = Describe("Pruner", func() {
 
 	Context("a mixed, partially filled tree", func() {
 		BeforeEach(func() {
-			exampleTree = db.StoreNode{
+			exampleTree = storeadapter.StoreNode{
 				Key: "/0",
 				Dir: true,
-				ChildNodes: []db.StoreNode{
+				ChildNodes: []storeadapter.StoreNode{
 					{
 						Key: "/0/0",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key:        "/0/0/0",
 								Dir:        true,
-								ChildNodes: []db.StoreNode{},
+								ChildNodes: []storeadapter.StoreNode{},
 							},
 						},
 					}, {
 						Key: "/0/1",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/1/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/1/0/0",
 										Value: []byte("false"),
@@ -206,11 +206,11 @@ var _ = Describe("Pruner", func() {
 					{
 						Key: "/0/2",
 						Dir: true,
-						ChildNodes: []db.StoreNode{
+						ChildNodes: []storeadapter.StoreNode{
 							{
 								Key: "/0/2/0",
 								Dir: true,
-								ChildNodes: []db.StoreNode{
+								ChildNodes: []storeadapter.StoreNode{
 									{
 										Key:   "/0/2/0/0",
 										Value: []byte("true"),
@@ -222,11 +222,11 @@ var _ = Describe("Pruner", func() {
 				},
 			}
 
-			expectedNodeSetsToDelete = [][]db.StoreNode{
-				{},
-				{exampleTree.ChildNodes[0], exampleTree.ChildNodes[1]},
-				{exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
-				{exampleTree.ChildNodes[1].ChildNodes[0].ChildNodes[0]},
+			expectedNodeSetsToDelete = prune.NodesByDepth{
+				0: {},
+				1: {exampleTree.ChildNodes[0], exampleTree.ChildNodes[1]},
+				2: {exampleTree.ChildNodes[0].ChildNodes[0], exampleTree.ChildNodes[1].ChildNodes[0]},
+				3: {exampleTree.ChildNodes[1].ChildNodes[0].ChildNodes[0]},
 			}
 		})
 

@@ -323,3 +323,31 @@ func newStableRunningActualLRP(lrp models.DesiredLRP, cellID string, index int) 
 		Since:                1138 - (30 * time.Minute).Nanoseconds(),
 	}
 }
+
+func newRunningActualLRP(d models.DesiredLRP, cellID string, index int) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey:         models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("instance-guid", cellID),
+		ActualLRPNetInfo:     models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{}),
+		State:                models.ActualLRPStateRunning,
+		Since:                1138,
+	}
+}
+
+func newStartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		CrashCount:   1,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
+	}
+}
+
+func newUnstartableCrashedActualLRP(d models.DesiredLRP, index int) models.ActualLRP {
+	return models.ActualLRP{
+		ActualLRPKey: models.NewActualLRPKey(d.ProcessGuid, index, d.Domain),
+		CrashCount:   201,
+		State:        models.ActualLRPStateCrashed,
+		Since:        1138,
+	}
+}

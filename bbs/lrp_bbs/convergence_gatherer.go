@@ -123,7 +123,9 @@ func (p *actualPruner) gatherAndPrune(node storeadapter.StoreNode) bool {
 		return false
 	}
 
-	p.Actuals.Add(actual)
+	if path.Base(node.Key) == shared.ActualLRPInstanceKey {
+		p.Actuals.Add(actual)
+	}
 
 	return true
 }
