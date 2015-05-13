@@ -7,7 +7,12 @@ import (
 
 var token = struct{}{}
 
-func Prune(logger lager.Logger, store storeadapter.StoreAdapter, rootKey string, predicate func(storeadapter.StoreNode) bool) error {
+func Prune(
+	logger lager.Logger,
+	store storeadapter.StoreAdapter,
+	rootKey string,
+	predicate func(storeadapter.StoreNode) bool,
+) error {
 	rootNode, err := store.ListRecursively(rootKey)
 	if err != nil && err != storeadapter.ErrorKeyNotFound {
 		return err
