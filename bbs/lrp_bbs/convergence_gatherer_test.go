@@ -3,7 +3,6 @@ package lrp_bbs_test
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -269,59 +268,6 @@ var _ = Describe("Convergence", func() {
 			testData.cells.Each(func(cell models.CellPresence) {
 				Expect(input.Cells).To(ContainElement(cell))
 			})
-		})
-	})
-
-	Describe("Gathering Performance", func() {
-		Context("with a lot of bad data", func() {
-			BeforeEach(func() {
-				testData = createTestData(3000, 1000, 1000, 300, 100, 100, 300, 100, 100)
-			})
-
-			timeLimitInSeconds := 3.0
-			Measure(fmt.Sprintf("gather-and-pruning efficiency: less than %.2f seconds", timeLimitInSeconds), func(b Benchmarker) {
-				runtime := b.Time("runtime", func() {
-					runtime.GOMAXPROCS(runtime.NumCPU())
-					_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
-					Expect(gatherError).NotTo(HaveOccurred())
-				})
-
-				Expect(runtime.Seconds()).To(BeNumerically("<", timeLimitInSeconds), "GatherAndPruneLRPConvergenceInput shouldn't take too long.")
-			}, 5)
-		})
-
-		Context("with a lot of mostly-good data", func() {
-			BeforeEach(func() {
-				testData = createTestData(3000, 10, 10, 30, 10, 10, 30, 10, 10)
-			})
-
-			timeLimitInSeconds := 1.5
-			Measure(fmt.Sprintf("gather-and-pruning efficiency: less than %.2f seconds", timeLimitInSeconds), func(b Benchmarker) {
-				runtime := b.Time("runtime", func() {
-					runtime.GOMAXPROCS(runtime.NumCPU())
-					_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
-					Expect(gatherError).NotTo(HaveOccurred())
-				})
-
-				Expect(runtime.Seconds()).To(BeNumerically("<", timeLimitInSeconds), "GatherAndPruneLRPConvergenceInput shouldn't take too long.")
-			}, 5)
-		})
-
-		Context("with a small amount of data", func() {
-			BeforeEach(func() {
-				testData = createTestData(30, 10, 10, 3, 1, 1, 3, 1, 1)
-			})
-
-			timeLimitInSeconds := 0.05
-			Measure(fmt.Sprintf("gather-and-pruning efficiency: less than %.2f seconds", timeLimitInSeconds), func(b Benchmarker) {
-				runtime := b.Time("runtime", func() {
-					runtime.GOMAXPROCS(runtime.NumCPU())
-					_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
-					Expect(gatherError).NotTo(HaveOccurred())
-				})
-
-				Expect(runtime.Seconds()).To(BeNumerically("<", timeLimitInSeconds), "GatherAndPruneLRPConvergenceInput shouldn't take too long.")
-			}, 5)
 		})
 	})
 })
