@@ -58,19 +58,19 @@ var _ = Describe("Desired LRP Getters", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := bbs.DesireLRP(logger, desiredLrp1)
+		err := lrpBBS.DesireLRP(logger, desiredLrp1)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = bbs.DesireLRP(logger, desiredLrp2)
+		err = lrpBBS.DesireLRP(logger, desiredLrp2)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = bbs.DesireLRP(logger, desiredLrp3)
+		err = lrpBBS.DesireLRP(logger, desiredLrp3)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("DesiredLRPs", func() {
 		It("returns all desired long running processes", func() {
-			all, err := bbs.DesiredLRPs()
+			all, err := lrpBBS.DesiredLRPs()
 			Expect(err).NotTo(HaveOccurred())
 
 			all = clearModificationTags(all)
@@ -90,13 +90,13 @@ var _ = Describe("Desired LRP Getters", func() {
 		})
 
 		It("returns all desired long running processes for the given domain", func() {
-			byDomain, err := bbs.DesiredLRPsByDomain("domain-1")
+			byDomain, err := lrpBBS.DesiredLRPsByDomain("domain-1")
 			Expect(err).NotTo(HaveOccurred())
 
 			byDomain = clearModificationTags(byDomain)
 			Expect(byDomain).To(ConsistOf([]models.DesiredLRP{desiredLrp1, desiredLrp2}))
 
-			byDomain, err = bbs.DesiredLRPsByDomain("domain-2")
+			byDomain, err = lrpBBS.DesiredLRPsByDomain("domain-2")
 			byDomain = clearModificationTags(byDomain)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -104,14 +104,14 @@ var _ = Describe("Desired LRP Getters", func() {
 		})
 
 		It("returns an error when the domain is empty", func() {
-			_, err := bbs.DesiredLRPsByDomain("")
+			_, err := lrpBBS.DesiredLRPsByDomain("")
 			Expect(err).To(Equal(bbserrors.ErrNoDomain))
 		})
 	})
 
 	Describe("DesiredLRPByProcessGuid", func() {
 		It("returns all desired long running processes", func() {
-			desiredLrp, err := bbs.DesiredLRPByProcessGuid("guidA")
+			desiredLrp, err := lrpBBS.DesiredLRPByProcessGuid("guidA")
 			Expect(err).NotTo(HaveOccurred())
 
 			desiredLrp.ModificationTag = models.ModificationTag{}
@@ -120,14 +120,14 @@ var _ = Describe("Desired LRP Getters", func() {
 
 		Context("when the Desired LRP does not exist", func() {
 			It("returns ErrStoreResourceNotFound", func() {
-				_, err := bbs.DesiredLRPByProcessGuid("non-existent")
+				_, err := lrpBBS.DesiredLRPByProcessGuid("non-existent")
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when the process guid is empty", func() {
 			It("returns an error", func() {
-				_, err := bbs.DesiredLRPByProcessGuid("")
+				_, err := lrpBBS.DesiredLRPByProcessGuid("")
 				Expect(err).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})

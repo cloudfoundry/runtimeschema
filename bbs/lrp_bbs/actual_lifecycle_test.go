@@ -35,7 +35,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		var instanceKey models.ActualLRPInstanceKey
 
 		JustBeforeEach(func() {
-			claimErr = bbs.ClaimActualLRP(logger, lrpKey, instanceKey)
+			claimErr = lrpBBS.ClaimActualLRP(logger, lrpKey, instanceKey)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -57,10 +57,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				err := bbs.DesireLRP(logger, desiredLRP)
+				err := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(err).NotTo(HaveOccurred())
 
-				lrpGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+				lrpGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Expect(err).NotTo(HaveOccurred())
 				createdLRP = *lrpGroup.Instance
 			})
@@ -79,7 +79,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
@@ -105,7 +105,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
@@ -123,14 +123,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("claims the actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
 				})
 
 				It("updates the ModificationIndex", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.ModificationTag.Index).To(Equal(createdLRP.ModificationTag.Index + 1))
@@ -142,7 +142,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := bbs.ClaimActualLRP(
+					err := lrpBBS.ClaimActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),
@@ -166,14 +166,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the state of the persisted LRP", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
 					})
 
 					It("does not update the timestamp of the persisted actual lrp", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.Since).To(Equal(previousTime))
@@ -191,7 +191,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing LRP", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.CellID).To(Equal(cellID))
@@ -209,7 +209,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing actual", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.InstanceGuid).To(Equal(instanceGuid))
@@ -222,7 +222,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := bbs.StartActualLRP(
+					err := lrpBBS.StartActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),
@@ -242,14 +242,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("reverts the persisted LRP to the CLAIMED state", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
 					})
 
 					It("clears the net info", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.Address).To(BeEmpty())
@@ -268,7 +268,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing LRP", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.CellID).To(Equal(cellID))
@@ -286,7 +286,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing actual", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.InstanceGuid).To(Equal(instanceGuid))
@@ -299,12 +299,12 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					lrpKey = createdLRP.ActualLRPKey
 					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
 
-					err := bbs.FailActualLRP(logger, lrpKey, "insufficient resources")
+					err := lrpBBS.FailActualLRP(logger, lrpKey, "insufficient resources")
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("should clear placement error", func() {
-					createdLRP, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					createdLRP, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(createdLRP.Instance.PlacementError).To(BeEmpty())
 				})
@@ -322,7 +322,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			It("does not create an actual LRP", func() {
-				lrps, err := bbs.ActualLRPs()
+				lrps, err := lrpBBS.ActualLRPs()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(lrps).To(BeEmpty())
 			})
@@ -336,7 +336,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		var netInfo models.ActualLRPNetInfo
 
 		JustBeforeEach(func() {
-			startErr = bbs.StartActualLRP(logger, lrpKey, instanceKey, netInfo)
+			startErr = lrpBBS.StartActualLRP(logger, lrpKey, instanceKey, netInfo)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -358,10 +358,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				err := bbs.DesireLRP(logger, desiredLRP)
+				err := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(err).NotTo(HaveOccurred())
 
-				lrpGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+				lrpGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Expect(err).NotTo(HaveOccurred())
 				createdLRP = *lrpGroup.Instance
 			})
@@ -381,7 +381,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
@@ -408,7 +408,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
@@ -427,7 +427,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				})
 
 				It("starts the actual LRP", func() {
-					lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
@@ -435,12 +435,12 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				Context("when there is a placement error", func() {
 					BeforeEach(func() {
-						err := bbs.FailActualLRP(logger, lrpKey, "found no compatible cells")
+						err := lrpBBS.FailActualLRP(logger, lrpKey, "found no compatible cells")
 						Expect(err).NotTo(HaveOccurred())
 					})
 
 					It("should clear placement error", func() {
-						createdLRP, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						createdLRP, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(createdLRP.Instance.PlacementError).To(BeEmpty())
 					})
@@ -452,7 +452,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := bbs.ClaimActualLRP(
+					err := lrpBBS.ClaimActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),
@@ -472,7 +472,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("promotes the persisted LRP to RUNNING", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
@@ -491,7 +491,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("promotes the persisted LRP to RUNNING", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
@@ -510,7 +510,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("promotes the persisted LRP to RUNNING", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
@@ -524,7 +524,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := bbs.StartActualLRP(
+					err := lrpBBS.StartActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),
@@ -545,14 +545,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the state of the persisted LRP", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
 					})
 
 					It("updates the net info", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.ActualLRPNetInfo).To(Equal(netInfo))
@@ -570,7 +570,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						})
 
 						It("does not update the timestamp of the persisted actual lrp", func() {
-							lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+							lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 							Expect(err).NotTo(HaveOccurred())
 
 							Expect(lrpGroupInBBS.Instance.Since).To(Equal(previousTime))
@@ -589,7 +589,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing LRP", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.CellID).To(Equal(cellID))
@@ -607,7 +607,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					})
 
 					It("does not alter the existing actual", func() {
-						lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(lrpGroupInBBS.Instance.InstanceGuid).To(Equal(instanceGuid))
@@ -628,14 +628,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			It("sets the State", func() {
-				lrpGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex("process-guid", 1)
+				lrpGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex("process-guid", 1)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpGroup.Instance.State).To(Equal(models.ActualLRPStateRunning))
 			})
 
 			It("sets the ModificationTag", func() {
-				lrpGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex("process-guid", 1)
+				lrpGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex("process-guid", 1)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpGroup.Instance.ModificationTag.Epoch).NotTo(BeEmpty())
@@ -647,13 +647,13 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 	Describe("RemoveActualLRP", func() {
 		BeforeEach(func() {
 			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
-			err := bbs.StartActualLRP(logger, actualLRPKey, instanceKey, netInfo)
+			err := lrpBBS.StartActualLRP(logger, actualLRPKey, instanceKey, netInfo)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the LRP matches", func() {
 			It("removes the LRP", func() {
-				err := bbs.RemoveActualLRP(logger, actualLRPKey, instanceKey)
+				err := lrpBBS.RemoveActualLRP(logger, actualLRPKey, instanceKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
@@ -664,7 +664,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		Context("when the LRP differs from the one in the store", func() {
 			It("does not delete the LRP", func() {
 				instanceKey.InstanceGuid = "another-instance-guid"
-				err := bbs.RemoveActualLRP(logger, actualLRPKey, instanceKey)
+				err := lrpBBS.RemoveActualLRP(logger, actualLRPKey, instanceKey)
 				Expect(err).To(Equal(bbserrors.ErrStoreComparisonFailed))
 			})
 		})
@@ -689,17 +689,17 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				err := bbs.DesireLRP(logger, desiredLRP)
+				err := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("deletes the LRP", func() {
-				lrpGroupInBBS, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+				lrpGroupInBBS, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Expect(err).NotTo(HaveOccurred())
 
-				bbs.RetireActualLRPs(logger, []models.ActualLRPKey{lrpGroupInBBS.Instance.ActualLRPKey})
+				lrpBBS.RetireActualLRPs(logger, []models.ActualLRPKey{lrpGroupInBBS.Instance.ActualLRPKey})
 
-				_, err = bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+				_, err = lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
@@ -718,11 +718,11 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			JustBeforeEach(func() {
-				bbs.RetireActualLRPs(logger, []models.ActualLRPKey{actual.ActualLRPKey})
+				lrpBBS.RetireActualLRPs(logger, []models.ActualLRPKey{actual.ActualLRPKey})
 			})
 
 			It("should remove the actual", func() {
-				_, err := bbs.ActualLRPGroupByProcessGuidAndIndex(actual.ProcessGuid, actual.Index)
+				_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(actual.ProcessGuid, actual.Index)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 
@@ -755,7 +755,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				lrpInstanceKey1 := models.NewActualLRPInstanceKey("some-instance-guid-1", cellID)
 				lrpInstanceKey2 := models.NewActualLRPInstanceKey("some-instance-guid-2", cellID)
 
-				errDesire := bbs.DesireLRP(logger, desiredLRP)
+				errDesire := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(errDesire).NotTo(HaveOccurred())
 
 				claimDesireLRPByIndex(desiredLRP, 0, lrpInstanceKey1, logger)
@@ -770,20 +770,20 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			JustBeforeEach(func() {
-				lrpGroup1, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, 0)
+				lrpGroup1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, 0)
 				Expect(err).NotTo(HaveOccurred())
 				claimedLRP1 = *lrpGroup1.Instance
 
-				lrpGroup2, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, 1)
+				lrpGroup2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, 1)
 				Expect(err).NotTo(HaveOccurred())
 				claimedLRP2 = *lrpGroup2.Instance
 
 				doneRetiring = make(chan struct{})
 
-				go func(bbs *lrp_bbs.LRPBBS, lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
-					bbs.RetireActualLRPs(logger, []models.ActualLRPKey{lrp1.ActualLRPKey, lrp2.ActualLRPKey})
+				go func(lrpBBS *lrp_bbs.LRPBBS, lrp1, lrp2 models.ActualLRP, doneRetiring chan struct{}, logger lager.Logger) {
+					lrpBBS.RetireActualLRPs(logger, []models.ActualLRPKey{lrp1.ActualLRPKey, lrp2.ActualLRPKey})
 					close(doneRetiring)
-				}(bbs, claimedLRP1, claimedLRP2, doneRetiring, logger)
+				}(lrpBBS, claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})
 
 			Context("when the cell is present", func() {
@@ -882,10 +882,10 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				errDesire := bbs.DesireLRP(logger, desiredLRP)
+				errDesire := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(errDesire).NotTo(HaveOccurred())
 
-				createdLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+				createdLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 				Expect(err).NotTo(HaveOccurred())
 
 				actualLRPKey = createdLRPGroup.Instance.ActualLRPKey
@@ -894,18 +894,18 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("in unclaimed state", func() {
 				BeforeEach(func() {
-					err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
+					err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("sets the placement error", func() {
-					failedActualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					failedActualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(failedActualLRPGroup.Instance.PlacementError).To(Equal(placementError))
 				})
 
 				It("updates the ModificationIndex", func() {
-					failedActualLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					failedActualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(failedActualLRPGroup.Instance.ModificationTag.Index).To(Equal(createdLRP.ModificationTag.Index + 1))
 				})
@@ -913,12 +913,12 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("not in unclaimed state", func() {
 				BeforeEach(func() {
-					claimErr := bbs.ClaimActualLRP(logger, actualLRPKey, instanceKey)
+					claimErr := lrpBBS.ClaimActualLRP(logger, actualLRPKey, instanceKey)
 					Expect(claimErr).NotTo(HaveOccurred())
 				})
 
 				It("returns an error", func() {
-					err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
+					err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -927,7 +927,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		Context("when lrp does not exist", func() {
 			It("returns an error", func() {
 				actualLRPKey := models.NewActualLRPKey("non-existent-process-guid", index, "tests")
-				err := bbs.FailActualLRP(logger, actualLRPKey, placementError)
+				err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
 				Expect(err).To(Equal(bbserrors.ErrActualLRPCannotBeFailed))
 			})
 		})

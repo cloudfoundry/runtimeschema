@@ -101,6 +101,8 @@ type ConvergerBBS interface {
 	CellEvents() <-chan services_bbs.CellEvent
 }
 
+const ConvergerBBSWorkPoolSize = 50
+
 //go:generate counterfeiter -o fake_bbs/fake_nsync_bbs.go . NsyncBBS
 type NsyncBBS interface {
 	//lock

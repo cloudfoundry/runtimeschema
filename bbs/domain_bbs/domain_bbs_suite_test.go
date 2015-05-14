@@ -26,7 +26,7 @@ var logger *lagertest.TestLogger
 
 var _ = BeforeSuite(func() {
 	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter()
+	etcdClient = etcdRunner.RetryableAdapter(10)
 
 	etcdRunner.Start()
 })

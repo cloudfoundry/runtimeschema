@@ -51,7 +51,7 @@ var _ = Describe("Watchers", func() {
 			deletesCh := make(chan models.DesiredLRP)
 			deletes = deletesCh
 
-			stop, errors = bbs.WatchForDesiredLRPChanges(logger,
+			stop, errors = lrpBBS.WatchForDesiredLRPChanges(logger,
 				func(created models.DesiredLRP) { createsCh <- created },
 				func(changed models.DesiredLRPChange) { changesCh <- changed },
 				func(deleted models.DesiredLRP) { deletesCh <- deleted },
@@ -59,31 +59,31 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for creates", func() {
-			err := bbs.DesireLRP(logger, lrp)
+			err := lrpBBS.DesireLRP(logger, lrp)
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredLRP, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredLRP, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive(Equal(desiredLRP)))
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			err := bbs.DesireLRP(logger, lrp)
+			err := lrpBBS.DesireLRP(logger, lrp)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
 
-			desiredBeforeUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredBeforeUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			lrp.Instances++
-			err = bbs.UpdateDesiredLRP(logger, lrp.ProcessGuid, models.DesiredLRPUpdate{
+			err = lrpBBS.UpdateDesiredLRP(logger, lrp.ProcessGuid, models.DesiredLRPUpdate{
 				Instances: &lrp.Instances,
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredAfterUpdate, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredAfterUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(changes).Should(Receive(Equal(models.DesiredLRPChange{
@@ -93,12 +93,12 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for deletes", func() {
-			err := bbs.DesireLRP(logger, lrp)
+			err := lrpBBS.DesireLRP(logger, lrp)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive())
 
-			desired, err := bbs.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desired, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(desired))
@@ -153,7 +153,7 @@ var _ = Describe("Watchers", func() {
 			deletesEvacuatingCh := make(chan bool)
 			deletesEvacuating = deletesEvacuatingCh
 
-			stop, errors = bbs.WatchForActualLRPChanges(logger,
+			stop, errors = lrpBBS.WatchForActualLRPChanges(logger,
 				func(created models.ActualLRP, evacuating bool) {
 					createsCh <- created
 					createsEvacuatingCh <- evacuating
@@ -221,7 +221,7 @@ var _ = Describe("Watchers", func() {
 			Eventually(deletes).Should(Receive(Equal(actualLRP)))
 			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
 
-			bbs.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
+			lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
 			Consistently(logger).ShouldNot(Say("failed-to-unmarshal"))
 		})

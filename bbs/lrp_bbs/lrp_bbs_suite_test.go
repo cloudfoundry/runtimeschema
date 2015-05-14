@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
@@ -28,7 +29,7 @@ var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulSession *consuladapter.Session
 var consulRunner *consuladapter.ClusterRunner
-var bbs *lrp_bbs.LRPBBS
+var lrpBBS *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
 var clock *AdvancingFakeClock
 var fakeCellClient *cbfakes.FakeCellClient
@@ -62,7 +63,7 @@ var _ = AfterEach(func() {
 
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
-	etcdClient = etcdRunner.RetryableAdapter()
+	etcdClient = etcdRunner.RetryableAdapter(bbs.ConvergerBBSWorkPoolSize)
 
 	consulRunner.Reset()
 	consulSession = consulRunner.NewSession("a-session")
@@ -77,7 +78,7 @@ var _ = BeforeEach(func() {
 
 	servicesBBS = services_bbs.New(consulSession, clock, lagertest.NewTestLogger("test"))
 
-	bbs = lrp_bbs.New(
+	lrpBBS = lrp_bbs.New(
 		etcdClient,
 		clock,
 		fakeCellClient,
@@ -105,10 +106,10 @@ func registerAuctioneer(auctioneer models.AuctioneerPresence) {
 }
 
 func claimDesireLRPByIndex(d models.DesiredLRP, index int, instanceKey models.ActualLRPInstanceKey, logger lager.Logger) {
-	unclaimedLRPGroup, err := bbs.ActualLRPGroupByProcessGuidAndIndex(d.ProcessGuid, index)
+	unclaimedLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(d.ProcessGuid, index)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = bbs.ClaimActualLRP(logger, unclaimedLRPGroup.Instance.ActualLRPKey, instanceKey)
+	err = lrpBBS.ClaimActualLRP(logger, unclaimedLRPGroup.Instance.ActualLRPKey, instanceKey)
 	Expect(err).NotTo(HaveOccurred())
 }
 

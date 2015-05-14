@@ -19,7 +19,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					return bbs.EvacuateClaimedActualLRP(logger, lrpKey, alphaInstanceKey)
+					return lrpBBS.EvacuateClaimedActualLRP(logger, lrpKey, alphaInstanceKey)
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -31,7 +31,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					return bbs.EvacuateRunningActualLRP(logger, lrpKey, alphaInstanceKey, alphaNetInfo, alphaEvacuationTTL)
+					return lrpBBS.EvacuateRunningActualLRP(logger, lrpKey, alphaInstanceKey, alphaNetInfo, alphaEvacuationTTL)
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -43,7 +43,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					return bbs.EvacuateStoppedActualLRP(logger, lrpKey, alphaInstanceKey)
+					return lrpBBS.EvacuateStoppedActualLRP(logger, lrpKey, alphaInstanceKey)
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -55,7 +55,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					return bbs.EvacuateCrashedActualLRP(logger, lrpKey, alphaInstanceKey, "crashed")
+					return lrpBBS.EvacuateCrashedActualLRP(logger, lrpKey, alphaInstanceKey, "crashed")
 				},
 				InstanceLRP:   base.InstanceLRP,
 				EvacuatingLRP: base.EvacuatingLRP,
@@ -67,7 +67,7 @@ var _ = Describe("Evacuation", func() {
 			return evacuationTest{
 				Name: base.Name,
 				Subject: func() (shared.ContainerRetainment, error) {
-					err := bbs.RemoveEvacuatingActualLRP(logger, lrpKey, alphaInstanceKey)
+					err := lrpBBS.RemoveEvacuatingActualLRP(logger, lrpKey, alphaInstanceKey)
 					return shared.DeleteContainer, err
 				},
 				InstanceLRP:   base.InstanceLRP,
@@ -861,14 +861,14 @@ func (t evacuationTest) Test() {
 
 			Context("when the desired LRP no longer exists", func() {
 				BeforeEach(func() {
-					err := bbs.RemoveDesiredLRPByProcessGuid(logger, desiredLRP.ProcessGuid)
+					err := lrpBBS.RemoveDesiredLRPByProcessGuid(logger, desiredLRP.ProcessGuid)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("the actual LRP is also deleted", func() {
 					Expect(evacuateErr).NotTo(HaveOccurred())
 
-					lrpGroup, _ := bbs.ActualLRPGroupByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
+					lrpGroup, _ := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
 					Expect(lrpGroup.Instance).To(BeNil())
 				})
 			})

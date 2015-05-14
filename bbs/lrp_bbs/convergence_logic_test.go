@@ -61,15 +61,16 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("actual LRPs with missing cells", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs: actualLRPs(
 					newRunningActualLRP(lrpA, cellA.CellID, 0),
 					newRunningActualLRP(lrpA, cellA.CellID, 1),
 				),
-				domainSet(domainA),
-				cellSet(),
-			)
+				Domains: domainSet(domainA),
+				Cells:   cellSet(),
+			}
 		})
 
 		It("reports them", func() {
@@ -86,12 +87,13 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("actual lrp keys for missing desired indices", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(),
-				domainSet(domainA),
-				cellSet(cellA),
-			)
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs:      actualLRPs(),
+				Domains:         domainSet(domainA),
+				Cells:           cellSet(cellA),
+			}
 		})
 
 		It("reports them", func() {
@@ -108,16 +110,17 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("actualLRPs existing for indices we don't desire", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs: actualLRPs(
 					newRunningActualLRP(lrpA, cellA.CellID, 0),
 					newRunningActualLRP(lrpA, cellA.CellID, 1),
 					newRunningActualLRP(lrpA, cellA.CellID, 2),
 				),
-				domainSet(domainA),
-				cellSet(cellA),
-			)
+				Domains: domainSet(domainA),
+				Cells:   cellSet(cellA),
+			}
 		})
 
 		It("reports them", func() {
@@ -133,15 +136,16 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("crashed actual LRPS ready to be restarted", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs: actualLRPs(
 					newStartableCrashedActualLRP(lrpA, 0),
 					newUnstartableCrashedActualLRP(lrpA, 1),
 				),
-				domainSet(domainA),
-				cellSet(cellA),
-			)
+				Domains: domainSet(domainA),
+				Cells:   cellSet(cellA),
+			}
 		})
 
 		It("reports them", func() {
@@ -157,15 +161,16 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("stale unclaimed actual LRPs", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs: actualLRPs(
 					newRunningActualLRP(lrpA, cellA.CellID, 0),
 					newStaleUnclaimedActualLRP(lrpA, 1),
 				),
-				domainSet(domainA),
-				cellSet(cellA),
-			)
+				Domains: domainSet(domainA),
+				Cells:   cellSet(cellA),
+			}
 		})
 
 		It("reports them", func() {
@@ -181,12 +186,16 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("an unfresh domain", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA, lrpB),
-				actualLRPs(newRunningActualLRP(lrpA, cellA.CellID, 7)),
-				domainSet(domainB),
-				cellSet(cellA, cellB),
-			)
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{
+					lrpA.ProcessGuid: struct{}{},
+					lrpB.ProcessGuid: struct{}{},
+				},
+				DesiredLRPs: desiredLRPs(lrpA, lrpB),
+				ActualLRPs:  actualLRPs(newRunningActualLRP(lrpA, cellA.CellID, 7)),
+				Domains:     domainSet(domainB),
+				Cells:       cellSet(cellA, cellB),
+			}
 		})
 
 		It("performs all checks except stopping extra indices", func() {
@@ -205,15 +214,16 @@ var _ = Describe("CalculateConvergence", func() {
 
 	Context("stable state", func() {
 		BeforeEach(func() {
-			input = lrp_bbs.NewConvergenceInput(
-				desiredLRPs(lrpA),
-				actualLRPs(
+			input = &lrp_bbs.ConvergenceInput{
+				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+				DesiredLRPs:     desiredLRPs(lrpA),
+				ActualLRPs: actualLRPs(
 					newStableRunningActualLRP(lrpA, cellA.CellID, 0),
 					newStableRunningActualLRP(lrpA, cellA.CellID, 1),
 				),
-				domainSet(domainA),
-				cellSet(cellA),
-			)
+				Domains: domainSet(domainA),
+				Cells:   cellSet(cellA),
+			}
 		})
 
 		It("reports nothing", func() {
