@@ -487,8 +487,12 @@ func createTestData(
 }
 
 func createValidDesiredLRP(guid string) {
+	setRawDesiredLRP(newValidDesiredLRP(guid))
+}
+
+func newValidDesiredLRP(guid string) models.DesiredLRP {
 	myRouterJSON := json.RawMessage(`{"foo":"bar"}`)
-	setRawDesiredLRP(models.DesiredLRP{
+	desiredLRP := models.DesiredLRP{
 		ProcessGuid:          guid,
 		Domain:               "some-domain",
 		RootFS:               "some:rootfs",
@@ -519,15 +523,19 @@ func createValidDesiredLRP(guid string) {
 			Destinations: []string{"1.1.1.1/32", "2.2.2.2/32"},
 			PortRange:    &models.PortRange{Start: 10, End: 16000},
 		}},
-	})
+	}
+	err := desiredLRP.Validate()
+	Expect(err).NotTo(HaveOccurred())
+
+	return desiredLRP
 }
 
 func createMalformedDesiredLRP(guid string) {
 	createMalformedValueForKey(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: guid}))
 }
 
-func createValidActualLRP(guid string, index int) {
-	setRawActualLRP(models.ActualLRP{
+func newValidActualLRP(guid string, index int) models.ActualLRP {
+	actualLRP := models.ActualLRP{
 		ActualLRPKey:         models.NewActualLRPKey(guid, index, "some-domain"),
 		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-guid", "some-cell"),
 		ActualLRPNetInfo:     models.NewActualLRPNetInfo("some-address", []models.PortMapping{{HostPort: 2222, ContainerPort: 4444}}),
@@ -536,7 +544,15 @@ func createValidActualLRP(guid string, index int) {
 		State:                models.ActualLRPStateRunning,
 		Since:                1138,
 		ModificationTag:      models.ModificationTag{Epoch: "some-epoch", Index: 999},
-	})
+	}
+	err := actualLRP.Validate()
+	Expect(err).NotTo(HaveOccurred())
+
+	return actualLRP
+}
+
+func createValidActualLRP(guid string, index int) {
+	setRawActualLRP(newValidActualLRP(guid, index))
 }
 
 func createMalformedActualLRP(guid string, index int) {
@@ -544,19 +560,7 @@ func createMalformedActualLRP(guid string, index int) {
 }
 
 func createValidEvacuatingLRP(guid string, index int) {
-	setRawEvacuatingActualLRP(
-		models.ActualLRP{
-			ActualLRPKey:         models.NewActualLRPKey(guid, index, "some-domain"),
-			ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-guid", "some-cell"),
-			ActualLRPNetInfo:     models.NewActualLRPNetInfo("some-address", []models.PortMapping{{HostPort: 2222, ContainerPort: 4444}}),
-			CrashCount:           33,
-			CrashReason:          "badness",
-			State:                models.ActualLRPStateRunning,
-			Since:                1138,
-			ModificationTag:      models.ModificationTag{Epoch: "some-epoch", Index: 999},
-		},
-		100,
-	)
+	setRawEvacuatingActualLRP(newValidActualLRP(guid, index), 100)
 }
 
 func createMalformedEvacuatingLRP(guid string, index int) {
