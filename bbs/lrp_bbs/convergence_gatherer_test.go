@@ -8,6 +8,8 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
+	"github.com/cloudfoundry/dropsonde/metrics"
 	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
@@ -47,10 +49,13 @@ const randomIndex1 = 9001
 const randomIndex2 = 1337
 
 var _ = Describe("Convergence", func() {
+	var metricSender *fake.FakeMetricSender
 	var testData *testDataForConvergenceGatherer
 
 	Describe("Gathering Behaviour", func() {
 		BeforeEach(func() {
+			metricSender = fake.NewFakeMetricSender()
+			metrics.Initialize(metricSender)
 			testData = createTestData(3, 1, 1, 3, 1, 1, 3, 1, 1)
 		})
 
@@ -127,6 +132,28 @@ var _ = Describe("Convergence", func() {
 				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
+		})
+
+		It("emits a metric for the number of pruned DesiredLRPs", func() {
+			_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
+			Expect(gatherError).NotTo(HaveOccurred())
+
+			expectedMetric := len(testData.invalidDesiredGuidsWithSomeValidActuals) +
+				len(testData.invalidDesiredGuidsWithNoActuals) +
+				len(testData.invalidDesiredGuidsWithOnlyInvalidActuals) +
+				len(testData.unknownDesiredGuidsWithSomeValidActuals) +
+				len(testData.unknownDesiredGuidsWithNoActuals) +
+				len(testData.unknownDesiredGuidsWithOnlyInvalidActuals)
+			Expect(metricSender.GetCounter("ConvergerDesiredLRPsDeleted")).To(BeNumerically("==", expectedMetric))
+		})
+
+		It("emits a metric for the number of pruned ActualLRPs", func() {
+			_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
+			Expect(gatherError).NotTo(HaveOccurred())
+
+			expectedMetric := len(testData.instanceKeysToPrune) +
+				len(testData.evacuatingKeysToPrune)
+			Expect(metricSender.GetCounter("ConvergerActualLRPsDeleted")).To(BeNumerically("==", expectedMetric))
 		})
 
 		It("provides the correct actualLRPs", func() {

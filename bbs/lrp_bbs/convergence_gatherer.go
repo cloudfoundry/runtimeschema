@@ -6,9 +6,15 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
+	"github.com/cloudfoundry-incubator/runtime-schema/metric"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/pivotal-golang/lager"
+)
+
+const (
+	desiredLRPsDeleted = metric.Counter("ConvergerDesiredLRPsDeleted")
+	actualLRPsDeleted  = metric.Counter("ConvergerActualLRPsDeleted")
 )
 
 type ConvergenceInput struct {
@@ -133,6 +139,7 @@ func (bbs *LRPBBS) gatherAndPruneActualLRPs(logger lager.Logger, guids map[strin
 	} else {
 		logger.Info("succeeded-deleting-invalid-actual-lrps", lager.Data{"num-lrps": len(actualsToDelete)})
 	}
+	actualLRPsDeleted.Add(uint64(len(actualsToDelete)))
 
 	logger.Info("deleting-empty-actual-indices", lager.Data{"num-indices": len(indexKeysToDelete)})
 	err = bbs.store.DeleteLeaves(indexKeysToDelete...)
@@ -212,6 +219,7 @@ func (bbs *LRPBBS) gatherAndPruneDesiredLRPs(logger lager.Logger, domains, guids
 	logger.Info("deleting-invalid-desired-lrps", lager.Data{"num-lrps": len(desiredsToDelete)})
 	bbs.store.CompareAndDeleteByIndex(desiredsToDelete...)
 	logger.Info("done-deleting-invalid-desired-lrps", lager.Data{"num-lrps": len(desiredsToDelete)})
+	desiredLRPsDeleted.Add(uint64(len(desiredsToDelete)))
 
 	return desireds, nil
 }
