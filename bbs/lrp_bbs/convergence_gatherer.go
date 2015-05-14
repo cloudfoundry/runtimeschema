@@ -127,16 +127,28 @@ func (bbs *LRPBBS) gatherAndPruneActualLRPs(logger lager.Logger, guids map[strin
 	logger.Info("done-walking-actual-lrp-tree")
 
 	logger.Info("deleting-invalid-actual-lrps", lager.Data{"num-lrps": len(actualsToDelete)})
-	bbs.store.CompareAndDeleteByIndex(actualsToDelete...)
-	logger.Info("done-deleting-invalid-actual-lrps", lager.Data{"num-lrps": len(actualsToDelete)})
+	err = bbs.store.CompareAndDeleteByIndex(actualsToDelete...)
+	if err != nil {
+		logger.Error("failed-deleting-invalid-actual-lrps", err, lager.Data{"num-lrps": len(actualsToDelete)})
+	} else {
+		logger.Info("succeeded-deleting-invalid-actual-lrps", lager.Data{"num-lrps": len(actualsToDelete)})
+	}
 
 	logger.Info("deleting-empty-actual-indices", lager.Data{"num-indices": len(indexKeysToDelete)})
-	bbs.store.DeleteLeaves(indexKeysToDelete...)
-	logger.Info("done-deleting-empty-actual-indices", lager.Data{"num-indices": len(indexKeysToDelete)})
+	err = bbs.store.DeleteLeaves(indexKeysToDelete...)
+	if err != nil {
+		logger.Error("failed-deleting-empty-actual-indices", err, lager.Data{"num-indices": len(indexKeysToDelete)})
+	} else {
+		logger.Info("succeeded-deleting-empty-actual-indices", lager.Data{"num-indices": len(indexKeysToDelete)})
+	}
 
 	logger.Info("deleting-empty-actual-guids", lager.Data{"num-guids": len(guidKeysToDelete)})
-	bbs.store.DeleteLeaves(guidKeysToDelete...)
-	logger.Info("done-deleting-empty-actual-guids", lager.Data{"num-guids": len(guidKeysToDelete)})
+	err = bbs.store.DeleteLeaves(guidKeysToDelete...)
+	if err != nil {
+		logger.Error("failed-deleting-empty-actual-guids", err, lager.Data{"num-guids": len(guidKeysToDelete)})
+	} else {
+		logger.Info("succeeded-deleting-empty-actual-guids", lager.Data{"num-guids": len(guidKeysToDelete)})
+	}
 
 	return actuals, nil
 }
