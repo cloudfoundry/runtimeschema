@@ -168,6 +168,10 @@ func (bbs *LRPBBS) domains(logger lager.Logger) (map[string]struct{}, error) {
 		logger.Error("failed-to-fetch-domains", err)
 		return nil, err
 	}
+	if err == storeadapter.ErrorKeyNotFound {
+		logger.Info("domains-schema-root-not-found")
+		return domains, nil
+	}
 
 	for _, node := range domainRoot.ChildNodes {
 		domains[path.Base(node.Key)] = struct{}{}

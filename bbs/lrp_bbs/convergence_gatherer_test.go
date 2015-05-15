@@ -296,6 +296,28 @@ var _ = Describe("Convergence", func() {
 				Expect(input.Cells).To(ContainElement(cell))
 			})
 		})
+
+		Context("when root nodes are missing", func() {
+			BeforeEach(func() {
+				etcdRunner.Reset()
+				consulRunner.Reset()
+			})
+
+			It("does not error", func() {
+				_, gatherError := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
+				Expect(gatherError).NotTo(HaveOccurred())
+			})
+
+			It("returns empty convergence input", func() {
+				input, _ := lrpBBS.GatherAndPruneLRPConvergenceInput(logger, servicesBBS.NewCellsLoader())
+
+				Expect(input.AllProcessGuids).To(BeEmpty())
+				Expect(input.DesiredLRPs).To(BeEmpty())
+				Expect(input.ActualLRPs).To(BeEmpty())
+				Expect(input.Domains).To(BeEmpty())
+				Expect(input.Cells).To(BeEmpty())
+			})
+		})
 	})
 })
 
