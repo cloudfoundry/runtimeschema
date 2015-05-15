@@ -29,14 +29,6 @@ type compareAndSwappableTask struct {
 	NewTask  models.Task
 }
 
-// ConvergeTask is run by *one* cell every X seconds (doesn't really matter what X is.. pick something performant)
-// Converge will:
-// 1. Kick (by setting) any tasks that are still pending (and have been for > convergence interval)
-// 2. Kick any tasks that are completed (and have been for > convergence interval)
-// 3. Delete any tasks that are completed (and have been for > timeToResolve interval)
-// 5. Demote to completed any resolving tasks that have been resolving for > 30s
-// 6. Mark as failed any tasks that have been in the pending state for > expirePendingTaskDuration
-// 7. Mark as failed any running tasks whose cell has stopped maintaining presence
 func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader) {
 	taskLog := logger.Session("converge-tasks")
 	taskLog.Info("starting-convergence")
@@ -46,7 +38,6 @@ func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration
 
 	convergeStart := bbs.clock.Now()
 
-	// make sure to get funcy here otherwise the time will be precomputed
 	defer func() {
 		convergeTaskDuration.Send(time.Since(convergeStart))
 	}()
