@@ -144,7 +144,7 @@ var _ = Describe("Convergence", func() {
 				len(testData.unknownDesiredGuidsWithSomeValidActuals) +
 				len(testData.unknownDesiredGuidsWithNoActuals) +
 				len(testData.unknownDesiredGuidsWithOnlyInvalidActuals)
-			Expect(metricSender.GetCounter("ConvergerDesiredLRPsDeleted")).To(BeNumerically("==", expectedMetric))
+			Expect(metricSender.GetCounter("ConvergenceLRPPreProcessingDesiredLRPsDeleted")).To(BeNumerically("==", expectedMetric))
 		})
 
 		It("emits a metric for the number of pruned ActualLRPs", func() {
@@ -153,7 +153,7 @@ var _ = Describe("Convergence", func() {
 
 			expectedMetric := len(testData.instanceKeysToPrune) +
 				len(testData.evacuatingKeysToPrune)
-			Expect(metricSender.GetCounter("ConvergerActualLRPsDeleted")).To(BeNumerically("==", expectedMetric))
+			Expect(metricSender.GetCounter("ConvergenceLRPPreProcessingActualLRPsDeleted")).To(BeNumerically("==", expectedMetric))
 		})
 
 		It("provides the correct actualLRPs", func() {

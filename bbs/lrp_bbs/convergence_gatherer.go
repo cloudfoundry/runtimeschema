@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	desiredLRPsDeleted = metric.Counter("ConvergerDesiredLRPsDeleted")
-	actualLRPsDeleted  = metric.Counter("ConvergerActualLRPsDeleted")
+	desiredLRPsDeleted = metric.Counter("ConvergenceLRPPreProcessingDesiredLRPsDeleted")
+	actualLRPsDeleted  = metric.Counter("ConvergenceLRPPreProcessingActualLRPsDeleted")
 )
 
 type ConvergenceInput struct {
