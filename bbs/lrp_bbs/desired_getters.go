@@ -2,31 +2,54 @@ package lrp_bbs
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
 
 func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	lrps := []models.DesiredLRP{}
 
-	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
 	} else if err != nil {
 		return lrps, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		var lrp models.DesiredLRP
-		err = models.FromJSON(node.Value, &lrp)
-		if err != nil {
-			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
-		} else {
-			lrps = append(lrps, lrp)
-		}
+	lrpLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			var lrp models.DesiredLRP
+			err = models.FromJSON(node.Value, &lrp)
+			if err != nil {
+				errLock.Lock()
+				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				errLock.Unlock()
+			} else {
+				lrpLock.Lock()
+				lrps = append(lrps, lrp)
+				lrpLock.Unlock()
+			}
+		})
+	}
+	wg.Wait()
+
+	if err != nil {
+		return []models.DesiredLRP{}, err
 	}
 
 	return lrps, nil
@@ -38,25 +61,46 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	}
 
 	lrps := []models.DesiredLRP{}
-
-	node, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
 	} else if err != nil {
 		return lrps, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		var lrp models.DesiredLRP
-		err = models.FromJSON(node.Value, &lrp)
-		if err != nil {
-			return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
-		} else if lrp.Domain == domain {
-			lrps = append(lrps, lrp)
-		}
+	lrpLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			var lrp models.DesiredLRP
+			err = models.FromJSON(node.Value, &lrp)
+			if err != nil {
+				errLock.Lock()
+				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				errLock.Unlock()
+			} else if lrp.Domain == domain {
+				lrpLock.Lock()
+				lrps = append(lrps, lrp)
+				lrpLock.Unlock()
+			}
+		})
+	}
+	wg.Wait()
+
+	if err != nil {
+		return []models.DesiredLRP{}, err
 	}
 
 	return lrps, nil
+
 }
 
 func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {

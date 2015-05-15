@@ -1,6 +1,8 @@
 package lrp_bbs_test
 
 import (
+	"fmt"
+
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -9,84 +11,31 @@ import (
 )
 
 var _ = Describe("Desired LRP Getters", func() {
-	var (
-		desiredLrp1 models.DesiredLRP
-		desiredLrp2 models.DesiredLRP
-		desiredLrp3 models.DesiredLRP
-		desiredLRPs map[string]*models.DesiredLRP
-	)
-
-	BeforeEach(func() {
-		desiredLrp1 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidA",
-			RootFS:      "some:rootfs",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		desiredLrp2 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidB",
-			RootFS:      "some:rootfs",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		desiredLrp3 = models.DesiredLRP{
-			Domain:      "tests",
-			ProcessGuid: "guidC",
-			RootFS:      "some:rootfs",
-			Instances:   1,
-			Action: &models.DownloadAction{
-				From: "http://example.com",
-				To:   "/tmp/internet",
-			},
-		}
-
-		desiredLRPs = map[string]*models.DesiredLRP{
-			"guidA": &desiredLrp1,
-			"guidB": &desiredLrp2,
-			"guidC": &desiredLrp3,
-		}
-	})
-
-	JustBeforeEach(func() {
-		err := lrpBBS.DesireLRP(logger, desiredLrp1)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = lrpBBS.DesireLRP(logger, desiredLrp2)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = lrpBBS.DesireLRP(logger, desiredLrp3)
-		Expect(err).NotTo(HaveOccurred())
-	})
+	var createdDesiredLRPs map[string][]models.DesiredLRP
 
 	Describe("DesiredLRPs", func() {
+		BeforeEach(func() {
+			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
+				"domain-1": 3,
+			})
+		})
+
 		It("returns all desired long running processes", func() {
 			all, err := lrpBBS.DesiredLRPs()
 			Expect(err).NotTo(HaveOccurred())
 
 			all = clearModificationTags(all)
 
-			Expect(all).To(HaveLen(3))
-			Expect(all).To(ContainElement(desiredLrp1))
-			Expect(all).To(ContainElement(desiredLrp2))
-			Expect(all).To(ContainElement(desiredLrp3))
+			Expect(all).To(ConsistOf(createdDesiredLRPs["domain-1"]))
 		})
 	})
 
 	Describe("DesiredLRPsByDomain", func() {
 		BeforeEach(func() {
-			desiredLrp1.Domain = "domain-1"
-			desiredLrp2.Domain = "domain-1"
-			desiredLrp3.Domain = "domain-2"
+			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
+				"domain-1": 2,
+				"domain-2": 1,
+			})
 		})
 
 		It("returns all desired long running processes for the given domain", func() {
@@ -94,13 +43,13 @@ var _ = Describe("Desired LRP Getters", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			byDomain = clearModificationTags(byDomain)
-			Expect(byDomain).To(ConsistOf([]models.DesiredLRP{desiredLrp1, desiredLrp2}))
+			Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-1"]))
 
 			byDomain, err = lrpBBS.DesiredLRPsByDomain("domain-2")
 			byDomain = clearModificationTags(byDomain)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(byDomain).To(ConsistOf([]models.DesiredLRP{desiredLrp3}))
+			Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-2"]))
 		})
 
 		It("returns an error when the domain is empty", func() {
@@ -110,12 +59,18 @@ var _ = Describe("Desired LRP Getters", func() {
 	})
 
 	Describe("DesiredLRPByProcessGuid", func() {
+		BeforeEach(func() {
+			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
+				"domain-1": 1,
+			})
+		})
+
 		It("returns all desired long running processes", func() {
-			desiredLrp, err := lrpBBS.DesiredLRPByProcessGuid("guidA")
+			desiredLrp, err := lrpBBS.DesiredLRPByProcessGuid("guid-0-for-domain-1")
 			Expect(err).NotTo(HaveOccurred())
 
 			desiredLrp.ModificationTag = models.ModificationTag{}
-			Expect(desiredLrp).To(Equal(desiredLrp1))
+			Expect(desiredLrp).To(Equal(createdDesiredLRPs["domain-1"][0]))
 		})
 
 		Context("when the Desired LRP does not exist", func() {
@@ -133,6 +88,33 @@ var _ = Describe("Desired LRP Getters", func() {
 		})
 	})
 })
+
+func createDesiredLRPsInDomains(domainCounts map[string]int) map[string][]models.DesiredLRP {
+	createdDesiredLRPs := map[string][]models.DesiredLRP{}
+
+	for domain, count := range domainCounts {
+		createdDesiredLRPs[domain] = []models.DesiredLRP{}
+
+		for i := 0; i < count; i++ {
+			desiredLRP := models.DesiredLRP{
+				Domain:      domain,
+				ProcessGuid: fmt.Sprintf("guid-%d-for-%s", i, domain),
+				RootFS:      "some:rootfs",
+				Instances:   1,
+				Action: &models.DownloadAction{
+					From: "http://example.com",
+					To:   "/tmp/internet",
+				},
+			}
+			err := lrpBBS.DesireLRP(logger, desiredLRP)
+			Expect(err).NotTo(HaveOccurred())
+
+			createdDesiredLRPs[domain] = append(createdDesiredLRPs[domain], desiredLRP)
+		}
+	}
+
+	return createdDesiredLRPs
+}
 
 func clearModificationTags(lrps []models.DesiredLRP) []models.DesiredLRP {
 	result := []models.DesiredLRP{}
