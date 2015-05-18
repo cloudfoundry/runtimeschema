@@ -46,9 +46,6 @@ var _ = Describe("Actual LRP Getters", func() {
 		baseLRPInstanceKey models.ActualLRPInstanceKey
 
 		netInfo models.ActualLRPNetInfo
-
-		actualLRPs      []models.ActualLRP
-		actualLRPGroups []models.ActualLRPGroup
 	)
 
 	BeforeEach(func() {
@@ -111,12 +108,6 @@ var _ = Describe("Actual LRP Getters", func() {
 	})
 
 	Describe("ActualLRPs", func() {
-		JustBeforeEach(func() {
-			var err error
-			actualLRPs, err = lrpBBS.ActualLRPs()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -126,6 +117,8 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns all the /instance LRPs and no /evacuating LRPs", func() {
+				actualLRPs, err := lrpBBS.ActualLRPs()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPs).To(ConsistOf(baseLRP, otherDomainLRP))
 			})
 		})
@@ -139,19 +132,28 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
+				actualLRPs, err := lrpBBS.ActualLRPs()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPs).NotTo(BeNil())
 				Expect(actualLRPs).To(BeEmpty())
+			})
+		})
+
+		Context("when there is invalid data", func() {
+			BeforeEach(func() {
+				createValidActualLRP("some-guid", 0)
+				createMalformedActualLRP("some-other-guid", 0)
+				createValidActualLRP("some-third-guid", 0)
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.ActualLRPs()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("ActualLRPGroups", func() {
-		JustBeforeEach(func() {
-			var err error
-			actualLRPGroups, err = lrpBBS.ActualLRPGroups()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -161,12 +163,13 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
+				actualLRPGroups, err := lrpBBS.ActualLRPGroups()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).To(ConsistOf(
 					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: &evacuatingLRP},
 					models.ActualLRPGroup{Instance: &otherDomainLRP, Evacuating: nil},
 					models.ActualLRPGroup{Instance: nil, Evacuating: &otherIndexLRP},
 				))
-
 			})
 		})
 
@@ -179,18 +182,28 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
+				actualLRPGroups, err := lrpBBS.ActualLRPGroups()
+				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).NotTo(BeNil())
 				Expect(actualLRPGroups).To(BeEmpty())
+			})
+		})
+
+		Context("when there is invalid data", func() {
+			BeforeEach(func() {
+				createValidActualLRP("some-guid", 0)
+				createMalformedActualLRP("some-other-guid", 0)
+				createValidActualLRP("some-third-guid", 0)
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.ActualLRPs()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("ActualLRPGroupsByProcessGuid", func() {
-		var (
-			actualLRPGroupsByIndex models.ActualLRPGroupsByIndex
-			err                    error
-		)
-
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -201,14 +214,13 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
-				actualLRPGroupsByIndex, err = lrpBBS.ActualLRPGroupsByProcessGuid(baseProcessGuid)
+				actualLRPGroupsByIndex, err := lrpBBS.ActualLRPGroupsByProcessGuid(baseProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroupsByIndex).To(Equal(models.ActualLRPGroupsByIndex{
 					baseIndex:       {Instance: &baseLRP, Evacuating: nil},
 					otherIndex:      {Instance: &otherIndexLRP, Evacuating: nil},
 					yetAnotherIndex: {Instance: &yetAnotherIndexLRP, Evacuating: &yetAnotherIndexLRP},
 				}))
-
 			})
 		})
 
@@ -221,7 +233,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty map", func() {
-				actualLRPGroupsByIndex, err = lrpBBS.ActualLRPGroupsByProcessGuid(baseProcessGuid)
+				actualLRPGroupsByIndex, err := lrpBBS.ActualLRPGroupsByProcessGuid(baseProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroupsByIndex).NotTo(BeNil())
 				Expect(actualLRPGroupsByIndex).To(BeEmpty())
@@ -230,15 +242,13 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when given an empty process guid", func() {
 			It("returns an error", func() {
-				_, err = lrpBBS.ActualLRPGroupsByProcessGuid("")
+				_, err := lrpBBS.ActualLRPGroupsByProcessGuid("")
 				Expect(err).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
 	})
 
 	Describe("ActualLRPGroupsByCellID", func() {
-		var err error
-
 		Context("when there are /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -250,7 +260,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns both /instance and /evacuting actual lrps for the requested cell id", func() {
-				actualLRPGroups, err = lrpBBS.ActualLRPGroupsByCellID(cellID)
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByCellID(cellID)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).To(ConsistOf(
 					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: nil},
@@ -258,7 +268,6 @@ var _ = Describe("Actual LRP Getters", func() {
 					models.ActualLRPGroup{Instance: &otherDomainLRP, Evacuating: &otherDomainLRP},
 					models.ActualLRPGroup{Instance: nil, Evacuating: &yetAnotherIndexLRP},
 				))
-
 			})
 		})
 
@@ -271,7 +280,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
-				actualLRPGroups, err = lrpBBS.ActualLRPGroupsByCellID(cellID)
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByCellID(cellID)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).NotTo(BeNil())
 				Expect(actualLRPGroups).To(BeEmpty())
@@ -280,15 +289,26 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when given an empty cell id", func() {
 			It("returns an error", func() {
-				_, err = lrpBBS.ActualLRPGroupsByCellID("")
+				_, err := lrpBBS.ActualLRPGroupsByCellID("")
 				Expect(err).To(Equal(bbserrors.ErrNoCellID))
+			})
+		})
+
+		Context("when there is invalid data", func() {
+			BeforeEach(func() {
+				createValidActualLRP("some-guid", 0)
+				createMalformedActualLRP("some-other-guid", 0)
+				createValidActualLRP("some-third-guid", 0)
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.ActualLRPs()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("ActualLRPGroupsByDomain", func() {
-		var err error
-
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -299,14 +319,13 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("should fetch all the instance and evacuating LRPs for the specified domain", func() {
-				actualLRPGroups, err = lrpBBS.ActualLRPGroupsByDomain(baseDomain)
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByDomain(baseDomain)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).To(ConsistOf(
 					models.ActualLRPGroup{Instance: &baseLRP, Evacuating: &evacuatingLRP},
 					models.ActualLRPGroup{Instance: &yetAnotherIndexLRP, Evacuating: nil},
 					models.ActualLRPGroup{Instance: nil, Evacuating: &otherIndexLRP},
 				))
-
 			})
 		})
 
@@ -318,7 +337,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an empty list", func() {
-				actualLRPGroups, err = lrpBBS.ActualLRPGroupsByDomain(baseDomain)
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByDomain(baseDomain)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).NotTo(BeNil())
 				Expect(actualLRPGroups).To(HaveLen(0))
@@ -327,28 +346,33 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when given an empty domain", func() {
 			It("returns an error", func() {
-				_, err = lrpBBS.ActualLRPGroupsByDomain("")
+				_, err := lrpBBS.ActualLRPGroupsByDomain("")
 				Expect(err).To(Equal(bbserrors.ErrNoDomain))
+			})
+		})
+
+		Context("when there is invalid data", func() {
+			BeforeEach(func() {
+				createValidActualLRP("some-guid", 0)
+				createMalformedActualLRP("some-other-guid", 0)
+				createValidActualLRP("some-third-guid", 0)
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.ActualLRPs()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
 
 	Describe("ActualLRPGroupByProcessGuidAndIndex", func() {
-		var (
-			returnedLRPGroup models.ActualLRPGroup
-			returnedErr      error
-		)
-
-		JustBeforeEach(func() {
-			returnedLRPGroup, returnedErr = lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
-		})
-
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
+				returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 					Instance:   &baseLRP,
@@ -363,6 +387,7 @@ var _ = Describe("Actual LRP Getters", func() {
 				})
 
 				It("returns both the /instance LRPs and /evacuating LRPs the group", func() {
+					returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 					Expect(returnedErr).NotTo(HaveOccurred())
 					Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 						Instance:   &baseLRP,
@@ -379,6 +404,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
+				returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 					Instance:   nil,
@@ -390,14 +416,14 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no entries", func() {
 			It("returns an ErrStoreResourceNotFound", func() {
-				_, returnedErr = lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when given an empty process guid", func() {
 			It("returns an error", func() {
-				_, returnedErr = lrpBBS.ActualLRPGroupByProcessGuidAndIndex("", baseIndex)
+				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex("", baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
@@ -410,17 +436,13 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
+				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 	})
 
 	Describe("EvacuatingActualLRPByProcessGuidAndIndex", func() {
-		var (
-			returnedLRP models.ActualLRP
-			returnedErr error
-		)
-
 		Context("when there is both an /instance and an /evacuating entry", func() {
 			BeforeEach(func() {
 				setRawActualLRP(baseLRP)
@@ -428,7 +450,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns the /evacuating entry", func() {
-				returnedLRP, returnedErr = lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+				returnedLRP, returnedErr := lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRP).To(Equal(evacuatingLRP))
 			})
@@ -440,7 +462,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns ErrStoreResourceNotFound", func() {
-				returnedLRP, returnedErr = lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+				_, returnedErr := lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
@@ -451,7 +473,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns the /evacuating entry", func() {
-				returnedLRP, returnedErr = lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+				returnedLRP, returnedErr := lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRP).To(Equal(evacuatingLRP))
 			})
@@ -459,14 +481,14 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no entries", func() {
 			It("returns ErrStoreResourceNotFound", func() {
-				_, returnedErr = lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
+				_, returnedErr := lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex(baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when given an empty process guid", func() {
 			It("returns an error", func() {
-				_, returnedErr = lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex("", baseIndex)
+				_, returnedErr := lrpBBS.EvacuatingActualLRPByProcessGuidAndIndex("", baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})

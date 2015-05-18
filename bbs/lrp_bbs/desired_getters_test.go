@@ -28,6 +28,18 @@ var _ = Describe("Desired LRP Getters", func() {
 
 			Expect(all).To(ConsistOf(createdDesiredLRPs["domain-1"]))
 		})
+
+		Context("with invalid data", func() {
+			BeforeEach(func() {
+				createMalformedDesiredLRP("some-guid")
+				createValidDesiredLRP("another-guid")
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.DesiredLRPs()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 
 	Describe("DesiredLRPsByDomain", func() {
@@ -55,6 +67,18 @@ var _ = Describe("Desired LRP Getters", func() {
 		It("returns an error when the domain is empty", func() {
 			_, err := lrpBBS.DesiredLRPsByDomain("")
 			Expect(err).To(Equal(bbserrors.ErrNoDomain))
+		})
+
+		Context("with invalid data", func() {
+			BeforeEach(func() {
+				createMalformedDesiredLRP("some-guid")
+				createValidDesiredLRP("another-guid")
+			})
+
+			It("errors", func() {
+				_, err := lrpBBS.DesiredLRPs()
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 

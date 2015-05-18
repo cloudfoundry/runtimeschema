@@ -3,46 +3,70 @@ package lrp_bbs
 import (
 	"fmt"
 	"path"
+	"sync"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
 
 func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 	groups := []models.ActualLRPGroup{}
 
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return groups, nil
 	} else if err != nil {
 		return groups, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			group := models.ActualLRPGroup{}
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
+	groupsLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			for _, indexNode := range node.ChildNodes {
+				group := models.ActualLRPGroup{}
+				for _, instanceNode := range indexNode.ChildNodes {
+					var lrp models.ActualLRP
+					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
+					if deserializeErr != nil {
+						errLock.Lock()
+						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						errLock.Unlock()
+						continue
+					}
+
+					if isInstanceActualLRPNode(instanceNode) {
+						group.Instance = &lrp
+					}
+
+					if isEvacuatingActualLRPNode(instanceNode) {
+						group.Evacuating = &lrp
+					}
 				}
 
-				if isInstanceActualLRPNode(instanceNode) {
-					group.Instance = &lrp
-				}
-
-				if isEvacuatingActualLRPNode(instanceNode) {
-					group.Evacuating = &lrp
+				if group.Instance != nil || group.Evacuating != nil {
+					groupsLock.Lock()
+					groups = append(groups, group)
+					groupsLock.Unlock()
 				}
 			}
+		})
+	}
+	wg.Wait()
 
-			if group.Instance != nil || group.Evacuating != nil {
-				groups = append(groups, group)
-			}
-		}
+	if err != nil {
+		return []models.ActualLRPGroup{}, err
 	}
 
 	return groups, nil
@@ -51,29 +75,51 @@ func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 	lrps := []models.ActualLRP{}
 
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return lrps, nil
 	} else if err != nil {
 		return lrps, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			for _, instanceNode := range indexNode.ChildNodes {
-				if !isInstanceActualLRPNode(instanceNode) {
-					continue
-				}
+	lrpsLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
 
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return lrps, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				} else {
-					lrps = append(lrps, lrp)
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			for _, indexNode := range node.ChildNodes {
+				for _, instanceNode := range indexNode.ChildNodes {
+					if !isInstanceActualLRPNode(instanceNode) {
+						continue
+					}
+
+					var lrp models.ActualLRP
+					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
+					if deserializeErr != nil {
+						errLock.Lock()
+						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						errLock.Unlock()
+						continue
+					} else {
+						lrpsLock.Lock()
+						lrps = append(lrps, lrp)
+						lrpsLock.Unlock()
+					}
 				}
 			}
-		}
+		})
+	}
+	wg.Wait()
+
+	if err != nil {
+		return []models.ActualLRP{}, err
 	}
 
 	return lrps, nil
@@ -86,39 +132,61 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 
 	groups := []models.ActualLRPGroup{}
 
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return groups, nil
 	} else if err != nil {
 		return groups, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			group := models.ActualLRPGroup{}
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				}
-				if lrp.Domain != domain {
-					continue
+	groupsLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			for _, indexNode := range node.ChildNodes {
+				group := models.ActualLRPGroup{}
+				for _, instanceNode := range indexNode.ChildNodes {
+					var lrp models.ActualLRP
+					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
+					if deserializeErr != nil {
+						errLock.Lock()
+						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						errLock.Unlock()
+						continue
+					}
+					if lrp.Domain != domain {
+						continue
+					}
+
+					if isInstanceActualLRPNode(instanceNode) {
+						group.Instance = &lrp
+					}
+
+					if isEvacuatingActualLRPNode(instanceNode) {
+						group.Evacuating = &lrp
+					}
 				}
 
-				if isInstanceActualLRPNode(instanceNode) {
-					group.Instance = &lrp
-				}
-
-				if isEvacuatingActualLRPNode(instanceNode) {
-					group.Evacuating = &lrp
+				if group.Instance != nil || group.Evacuating != nil {
+					groupsLock.Lock()
+					groups = append(groups, group)
+					groupsLock.Unlock()
 				}
 			}
+		})
+	}
+	wg.Wait()
 
-			if group.Instance != nil || group.Evacuating != nil {
-				groups = append(groups, group)
-			}
-		}
+	if err != nil {
+		return []models.ActualLRPGroup{}, err
 	}
 
 	return groups, nil
@@ -170,39 +238,60 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 
 	groups := []models.ActualLRPGroup{}
 
-	node, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
+	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
 		return groups, nil
 	} else if err != nil {
 		return groups, shared.ConvertStoreError(err)
 	}
 
-	for _, node := range node.ChildNodes {
-		for _, indexNode := range node.ChildNodes {
-			group := models.ActualLRPGroup{}
-			for _, instanceNode := range indexNode.ChildNodes {
-				var lrp models.ActualLRP
-				err = models.FromJSON(instanceNode.Value, &lrp)
-				if err != nil {
-					return groups, fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, err.Error())
-				}
-				if lrp.CellID != cellID {
-					continue
+	groupsLock := sync.Mutex{}
+	errLock := sync.Mutex{}
+	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+
+	wg := sync.WaitGroup{}
+	for _, node := range root.ChildNodes {
+		node := node
+
+		wg.Add(1)
+		workPool.Submit(func() {
+			defer wg.Done()
+
+			for _, indexNode := range node.ChildNodes {
+				group := models.ActualLRPGroup{}
+				for _, instanceNode := range indexNode.ChildNodes {
+					var lrp models.ActualLRP
+					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
+					if deserializeErr != nil {
+						errLock.Lock()
+						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						errLock.Unlock()
+					}
+					if lrp.CellID != cellID {
+						continue
+					}
+
+					if isInstanceActualLRPNode(instanceNode) {
+						group.Instance = &lrp
+					}
+
+					if isEvacuatingActualLRPNode(instanceNode) {
+						group.Evacuating = &lrp
+					}
 				}
 
-				if isInstanceActualLRPNode(instanceNode) {
-					group.Instance = &lrp
-				}
-
-				if isEvacuatingActualLRPNode(instanceNode) {
-					group.Evacuating = &lrp
+				if group.Instance != nil || group.Evacuating != nil {
+					groupsLock.Lock()
+					groups = append(groups, group)
+					groupsLock.Unlock()
 				}
 			}
+		})
+	}
+	wg.Wait()
 
-			if group.Instance != nil || group.Evacuating != nil {
-				groups = append(groups, group)
-			}
-		}
+	if err != nil {
+		return []models.ActualLRPGroup{}, err
 	}
 
 	return groups, nil

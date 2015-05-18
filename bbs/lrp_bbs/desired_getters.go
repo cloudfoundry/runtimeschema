@@ -34,10 +34,10 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 			defer wg.Done()
 
 			var lrp models.DesiredLRP
-			err = models.FromJSON(node.Value, &lrp)
-			if err != nil {
+			deserializeErr := models.FromJSON(node.Value, &lrp)
+			if deserializeErr != nil {
 				errLock.Lock()
-				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
 				errLock.Unlock()
 			} else {
 				lrpLock.Lock()
@@ -81,15 +81,17 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 			defer wg.Done()
 
 			var lrp models.DesiredLRP
-			err = models.FromJSON(node.Value, &lrp)
-			if err != nil {
+			deserializeErr := models.FromJSON(node.Value, &lrp)
+			switch {
+			case deserializeErr != nil:
 				errLock.Lock()
-				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
+				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
 				errLock.Unlock()
-			} else if lrp.Domain == domain {
+			case lrp.Domain == domain:
 				lrpLock.Lock()
 				lrps = append(lrps, lrp)
 				lrpLock.Unlock()
+			default:
 			}
 		})
 	}
