@@ -93,7 +93,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			Context("when an auctioneer is present", func() {
 				BeforeEach(func() {
 					auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-					registerAuctioneer(auctioneerPresence)
+					testHelper.RegisterAuctioneer(auctioneerPresence)
 				})
 
 				It("emits start auction requests", func() {
@@ -202,7 +202,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
 
 				BeforeEach(func() {
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 
 					for i := 0; i < lrp.Instances; i++ {
 						err := lrpBBS.ClaimActualLRP(
@@ -298,7 +298,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				Context("when an auctioneer is present", func() {
 					BeforeEach(func() {
 						auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-						registerAuctioneer(auctioneerPresence)
+						testHelper.RegisterAuctioneer(auctioneerPresence)
 					})
 
 					It("emits start auction requests", func() {
@@ -331,7 +331,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
 
 					BeforeEach(func() {
-						registerCell(cellPresence)
+						testHelper.RegisterCell(cellPresence)
 
 						for i := 0; i < lrp.Instances; i++ {
 							err := lrpBBS.ClaimActualLRP(

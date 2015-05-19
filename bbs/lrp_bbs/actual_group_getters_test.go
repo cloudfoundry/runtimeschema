@@ -110,10 +110,10 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPs", func() {
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				setRawActualLRP(otherDomainLRP)
-				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(otherDomainLRP)
+				testHelper.SetRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("returns all the /instance LRPs and no /evacuating LRPs", func() {
@@ -126,7 +126,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -141,9 +141,9 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is invalid data", func() {
 			BeforeEach(func() {
-				createValidActualLRP("some-guid", 0)
-				createMalformedActualLRP("some-other-guid", 0)
-				createValidActualLRP("some-third-guid", 0)
+				testHelper.CreateValidActualLRP("some-guid", 0)
+				testHelper.CreateMalformedActualLRP("some-other-guid", 0)
+				testHelper.CreateValidActualLRP("some-third-guid", 0)
 			})
 
 			It("errors", func() {
@@ -156,10 +156,10 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPGroups", func() {
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				setRawActualLRP(otherDomainLRP)
-				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(otherDomainLRP)
+				testHelper.SetRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
@@ -176,7 +176,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -191,9 +191,9 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is invalid data", func() {
 			BeforeEach(func() {
-				createValidActualLRP("some-guid", 0)
-				createMalformedActualLRP("some-other-guid", 0)
-				createValidActualLRP("some-third-guid", 0)
+				testHelper.CreateValidActualLRP("some-guid", 0)
+				testHelper.CreateMalformedActualLRP("some-other-guid", 0)
+				testHelper.CreateValidActualLRP("some-third-guid", 0)
 			})
 
 			It("errors", func() {
@@ -206,11 +206,11 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPGroupsByProcessGuid", func() {
 		Context("when there are both /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawActualLRP(otherIndexLRP)
-				setRawActualLRP(yetAnotherIndexLRP)
-				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				setRawActualLRP(otherProcessGuidLRP)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(otherIndexLRP)
+				testHelper.SetRawActualLRP(yetAnotherIndexLRP)
+				testHelper.SetRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(otherProcessGuidLRP)
 			})
 
 			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
@@ -227,7 +227,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -251,12 +251,12 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPGroupsByCellID", func() {
 		Context("when there are /instance and /evacuating LRPs", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawActualLRP(otherIndexLRP)
-				setRawActualLRP(otherDomainLRP)
-				setRawEvacuatingActualLRP(otherDomainLRP, noExpirationTTL)
-				setRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				setRawActualLRP(otherCellIDLRP)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(otherIndexLRP)
+				testHelper.SetRawActualLRP(otherDomainLRP)
+				testHelper.SetRawEvacuatingActualLRP(otherDomainLRP, noExpirationTTL)
+				testHelper.SetRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(otherCellIDLRP)
 			})
 
 			It("returns both /instance and /evacuting actual lrps for the requested cell id", func() {
@@ -274,7 +274,7 @@ var _ = Describe("Actual LRP Getters", func() {
 		Context("when there are no LRPs", func() {
 			BeforeEach(func() {
 				// leave some intermediate directories in the store
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -296,9 +296,9 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is invalid data", func() {
 			BeforeEach(func() {
-				createValidActualLRP("some-guid", 0)
-				createMalformedActualLRP("some-other-guid", 0)
-				createValidActualLRP("some-third-guid", 0)
+				testHelper.CreateValidActualLRP("some-guid", 0)
+				testHelper.CreateMalformedActualLRP("some-other-guid", 0)
+				testHelper.CreateValidActualLRP("some-third-guid", 0)
 			})
 
 			It("errors", func() {
@@ -311,11 +311,11 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPGroupsByDomain", func() {
 		Context("when there are both /instance and /evacuating LRPs in the domain", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
-				setRawActualLRP(yetAnotherIndexLRP)
-				setRawActualLRP(otherDomainLRP)
-				setRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(yetAnotherIndexLRP)
+				testHelper.SetRawActualLRP(otherDomainLRP)
+				testHelper.SetRawEvacuatingActualLRP(otherIndexLRP, noExpirationTTL)
 			})
 
 			It("should fetch all the instance and evacuating LRPs for the specified domain", func() {
@@ -331,7 +331,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no actual LRPs in the requested domain", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -353,9 +353,9 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is invalid data", func() {
 			BeforeEach(func() {
-				createValidActualLRP("some-guid", 0)
-				createMalformedActualLRP("some-other-guid", 0)
-				createValidActualLRP("some-third-guid", 0)
+				testHelper.CreateValidActualLRP("some-guid", 0)
+				testHelper.CreateMalformedActualLRP("some-other-guid", 0)
+				testHelper.CreateValidActualLRP("some-third-guid", 0)
 			})
 
 			It("errors", func() {
@@ -368,7 +368,7 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("ActualLRPGroupByProcessGuidAndIndex", func() {
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
@@ -383,7 +383,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 			Context("when there is also an /evacuating entry", func() {
 				BeforeEach(func() {
-					setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+					testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 				})
 
 				It("returns both the /instance LRPs and /evacuating LRPs the group", func() {
@@ -400,7 +400,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /evacuating entry", func() {
 			BeforeEach(func() {
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
@@ -430,7 +430,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is an index entry without /instance or /evacuating", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 				err := etcdClient.Delete(shared.ActualLRPSchemaPath(baseLRP.ProcessGuid, baseLRP.Index))
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -445,8 +445,8 @@ var _ = Describe("Actual LRP Getters", func() {
 	Describe("EvacuatingActualLRPByProcessGuidAndIndex", func() {
 		Context("when there is both an /instance and an /evacuating entry", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawActualLRP(baseLRP)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns the /evacuating entry", func() {
@@ -458,7 +458,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /instance entry", func() {
 			BeforeEach(func() {
-				setRawActualLRP(baseLRP)
+				testHelper.SetRawActualLRP(baseLRP)
 			})
 
 			It("returns ErrStoreResourceNotFound", func() {
@@ -469,7 +469,7 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there is only an /evacuating entry", func() {
 			BeforeEach(func() {
-				setRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, noExpirationTTL)
 			})
 
 			It("returns the /evacuating entry", func() {

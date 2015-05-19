@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -794,17 +795,17 @@ func (t evacuationTest) Test() {
 			auctioneerPresence = models.NewAuctioneerPresence("the-auctioneer-id", "the-address")
 			initialTimestamp = clock.Now().UnixNano()
 
-			registerAuctioneer(auctioneerPresence)
-			setRawDesiredLRP(desiredLRP)
+			testHelper.RegisterAuctioneer(auctioneerPresence)
+			testHelper.SetRawDesiredLRP(desiredLRP)
 			if t.InstanceLRP != nil {
 				actualLRP := t.InstanceLRP()
 				initialInstanceModificationIndex = actualLRP.ModificationTag.Index
-				setRawActualLRP(actualLRP)
+				testHelper.SetRawActualLRP(actualLRP)
 			}
 			if t.EvacuatingLRP != nil {
 				evacuatingLRP := t.EvacuatingLRP()
 				initialEvacuatingModificationIndex = evacuatingLRP.ModificationTag.Index
-				setRawEvacuatingActualLRP(evacuatingLRP, omegaEvacuationTTL)
+				testHelper.SetRawEvacuatingActualLRP(evacuatingLRP, omegaEvacuationTTL)
 			}
 		})
 
@@ -880,27 +881,27 @@ func (t evacuationTest) Test() {
 
 		if t.Result.Instance == nil {
 			It("removes the /instance actualLRP", func() {
-				_, err := getInstanceActualLRP(lrpKey)
+				_, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		} else {
 			if t.Result.Instance.ShouldUpdate {
 				It("updates the /instance Since", func() {
-					lrpInBBS, err := getInstanceActualLRP(lrpKey)
+					lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpInBBS.Since).To(Equal(clock.Now().UnixNano()))
 				})
 
 				It("updates the /instance ModificationTag", func() {
-					lrpInBBS, err := getInstanceActualLRP(lrpKey)
+					lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpInBBS.ModificationTag.Index).To(Equal(initialInstanceModificationIndex + 1))
 				})
 			} else {
 				It("does not update the /instance Since", func() {
-					lrpInBBS, err := getInstanceActualLRP(lrpKey)
+					lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(lrpInBBS.Since).To(Equal(initialTimestamp))
@@ -908,35 +909,35 @@ func (t evacuationTest) Test() {
 			}
 
 			It("has the expected /instance state", func() {
-				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpInBBS.State).To(Equal(t.Result.Instance.State))
 			})
 
 			It("has the expected /instance crash count", func() {
-				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpInBBS.CrashCount).To(Equal(t.Result.Instance.CrashCount))
 			})
 
 			It("has the expected /instance crash reason", func() {
-				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpInBBS.CrashReason).To(Equal(t.Result.Instance.CrashReason))
 			})
 
 			It("has the expected /instance instance key", func() {
-				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpInBBS.ActualLRPInstanceKey).To(Equal(t.Result.Instance.ActualLRPInstanceKey))
 			})
 
 			It("has the expected /instance net info", func() {
-				lrpInBBS, err := getInstanceActualLRP(lrpKey)
+				lrpInBBS, err := testHelper.GetInstanceActualLRP(lrpKey)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpInBBS.ActualLRPNetInfo).To(Equal(t.Result.Instance.ActualLRPNetInfo))
@@ -1008,4 +1009,18 @@ func (t evacuationTest) Test() {
 			})
 		}
 	})
+}
+
+func getEvacuatingActualLRP(lrpKey models.ActualLRPKey) (models.ActualLRP, uint64, error) {
+	node, err := etcdClient.Get(shared.EvacuatingActualLRPSchemaPath(lrpKey.ProcessGuid, lrpKey.Index))
+	if err == storeadapter.ErrorKeyNotFound {
+		return models.ActualLRP{}, 0, bbserrors.ErrStoreResourceNotFound
+	}
+	Expect(err).NotTo(HaveOccurred())
+
+	var lrp models.ActualLRP
+	err = models.FromJSON(node.Value, &lrp)
+	Expect(err).NotTo(HaveOccurred())
+
+	return lrp, node.TTL, nil
 }

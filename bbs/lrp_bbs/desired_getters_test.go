@@ -31,8 +31,8 @@ var _ = Describe("Desired LRP Getters", func() {
 
 		Context("with invalid data", func() {
 			BeforeEach(func() {
-				createMalformedDesiredLRP("some-guid")
-				createValidDesiredLRP("another-guid")
+				testHelper.CreateMalformedDesiredLRP("some-guid")
+				testHelper.CreateValidDesiredLRP("another-guid")
 			})
 
 			It("errors", func() {
@@ -71,8 +71,8 @@ var _ = Describe("Desired LRP Getters", func() {
 
 		Context("with invalid data", func() {
 			BeforeEach(func() {
-				createMalformedDesiredLRP("some-guid")
-				createValidDesiredLRP("another-guid")
+				testHelper.CreateMalformedDesiredLRP("some-guid")
+				testHelper.CreateValidDesiredLRP("another-guid")
 			})
 
 			It("errors", func() {

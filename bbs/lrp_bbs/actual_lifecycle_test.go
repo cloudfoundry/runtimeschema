@@ -714,7 +714,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					State:        models.ActualLRPStateCrashed,
 					Since:        777,
 				}
-				setRawActualLRP(actual)
+				testHelper.SetRawActualLRP(actual)
 			})
 
 			JustBeforeEach(func() {
@@ -752,14 +752,27 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					},
 				}
 
-				lrpInstanceKey1 := models.NewActualLRPInstanceKey("some-instance-guid-1", cellID)
-				lrpInstanceKey2 := models.NewActualLRPInstanceKey("some-instance-guid-2", cellID)
-
 				errDesire := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(errDesire).NotTo(HaveOccurred())
 
-				claimDesireLRPByIndex(desiredLRP, 0, lrpInstanceKey1, logger)
-				claimDesireLRPByIndex(desiredLRP, 1, lrpInstanceKey2, logger)
+				lrpGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(desiredLRP.ProcessGuid)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(lrpGroups).To(HaveKey(0))
+				err = lrpBBS.ClaimActualLRP(
+					logger,
+					lrpGroups[0].Instance.ActualLRPKey,
+					models.NewActualLRPInstanceKey("some-instance-guid-1", cellID),
+				)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(lrpGroups).To(HaveKey(1))
+				err = lrpBBS.ClaimActualLRP(
+					logger,
+					lrpGroups[1].Instance.ActualLRPKey,
+					models.NewActualLRPInstanceKey("some-instance-guid-2", cellID),
+				)
+				Expect(err).NotTo(HaveOccurred())
 
 				blockStopInstanceChan = make(chan struct{})
 
@@ -789,7 +802,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			Context("when the cell is present", func() {
 				BeforeEach(func() {
 					cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 				})
 
 				It("stops the LRPs in parallel", func() {

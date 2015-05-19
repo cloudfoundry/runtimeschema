@@ -176,20 +176,20 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for create", func() {
-			setRawActualLRP(actualLRP)
+			testHelper.SetRawActualLRP(actualLRP)
 			Eventually(creates).Should(Receive(Equal(actualLRP)))
 			Eventually(createsEvacuating).Should(Receive(Equal(false)))
 		})
 
 		It("sends an event down the pipe for updates", func() {
-			setRawActualLRP(actualLRP)
+			testHelper.SetRawActualLRP(actualLRP)
 			Eventually(creates).Should(Receive())
 			Eventually(createsEvacuating).Should(Receive())
 
 			updatedLRP := actualLRP
 			updatedLRP.ActualLRPInstanceKey = models.NewActualLRPInstanceKey("instance-guid", lrpCellId)
 			updatedLRP.State = models.ActualLRPStateClaimed
-			setRawActualLRP(updatedLRP)
+			testHelper.SetRawActualLRP(updatedLRP)
 
 			var actualLRPChange models.ActualLRPChange
 			Eventually(changes).Should(Receive(&actualLRPChange))
@@ -201,22 +201,26 @@ var _ = Describe("Watchers", func() {
 		})
 
 		It("sends an event down the pipe for delete", func() {
-			setRawActualLRP(actualLRP)
+			testHelper.SetRawActualLRP(actualLRP)
 			Eventually(creates).Should(Receive())
 			Eventually(createsEvacuating).Should(Receive())
 
-			deleteActualLRP(actualLRP.ActualLRPKey)
+			key := actualLRP.ActualLRPKey
+			err := etcdClient.Delete(shared.ActualLRPSchemaPath(key.ProcessGuid, key.Index))
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(actualLRP)))
 			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
 		})
 
 		It("ignores delete events for directories", func() {
-			setRawActualLRP(actualLRP)
+			testHelper.SetRawActualLRP(actualLRP)
 			Eventually(creates).Should(Receive())
 			Eventually(createsEvacuating).Should(Receive())
 
-			deleteActualLRP(actualLRP.ActualLRPKey)
+			key := actualLRP.ActualLRPKey
+			err := etcdClient.Delete(shared.ActualLRPSchemaPath(key.ProcessGuid, key.Index))
+			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(deletes).Should(Receive(Equal(actualLRP)))
 			Eventually(deletesEvacuating).Should(Receive(Equal(false)))
@@ -243,14 +247,14 @@ var _ = Describe("Watchers", func() {
 					Since:                clock.Now().UnixNano(),
 				}
 
-				setRawEvacuatingActualLRP(evacuatedLRP, 0)
+				testHelper.SetRawEvacuatingActualLRP(evacuatedLRP, 0)
 
 				Eventually(creates).Should(Receive(Equal(evacuatedLRP)))
 				Eventually(createsEvacuating).Should(Receive(Equal(true)))
 
 				updatedLRP := evacuatedLRP
 				updatedLRP.ActualLRPNetInfo = models.ActualLRPNetInfo{Address: "2.2.2.2"}
-				setRawEvacuatingActualLRP(updatedLRP, 0)
+				testHelper.SetRawEvacuatingActualLRP(updatedLRP, 0)
 
 				var actualLRPChange models.ActualLRPChange
 				Eventually(changes).Should(Receive(&actualLRPChange))
@@ -259,7 +263,8 @@ var _ = Describe("Watchers", func() {
 				Expect(actualLRPChange.Before).To(Equal(evacuatedLRP))
 				Expect(actualLRPChange.After).To(Equal(updatedLRP))
 
-				deleteEvacuatingActualLRP(key)
+				err := etcdClient.Delete(shared.EvacuatingActualLRPSchemaPath(key.ProcessGuid, key.Index))
+				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(deletes).Should(Receive(Equal(updatedLRP)))
 				Eventually(deletesEvacuating).Should(Receive(Equal(true)))

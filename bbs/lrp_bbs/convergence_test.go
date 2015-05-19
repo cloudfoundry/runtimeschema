@@ -67,9 +67,9 @@ var _ = Describe("LrpConvergence", func() {
 				Action:      dummyAction,
 			}
 
-			setRawDesiredLRP(desiredLRP)
-			registerCell(models.NewCellPresence(cellId, "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3)))
-			registerAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
+			testHelper.SetRawDesiredLRP(desiredLRP)
+			testHelper.RegisterCell(models.NewCellPresence(cellId, "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3)))
+			testHelper.RegisterAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
 		})
 
 		JustBeforeEach(func() {
@@ -102,11 +102,11 @@ var _ = Describe("LrpConvergence", func() {
 				actualLRP := models.ActualLRP{
 					ActualLRPKey:         models.NewActualLRPKey(desiredLRP.ProcessGuid, 0, desiredLRP.Domain),
 					ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-instance-guid", cellId),
-					ActualLRPNetInfo:     defaultNetInfo(),
+					ActualLRPNetInfo:     models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
 					State:                models.ActualLRPStateRunning,
 					Since:                clock.Now().Add(-time.Minute).UnixNano(),
 				}
-				setRawActualLRP(actualLRP)
+				testHelper.SetRawActualLRP(actualLRP)
 			})
 
 			It("emits a start auction request for the missing index", func() {
@@ -140,8 +140,8 @@ var _ = Describe("LrpConvergence", func() {
 					Since:        twentyMinutesAgo,
 				}
 
-				setRawActualLRP(crashedRecently)
-				setRawActualLRP(crashedLongAgo)
+				testHelper.SetRawActualLRP(crashedRecently)
+				testHelper.SetRawActualLRP(crashedLongAgo)
 			})
 
 			It("emits a start auction request for the crashed index", func() {
@@ -207,7 +207,7 @@ var _ = Describe("LrpConvergence", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
-			registerCell(cellPresence)
+			testHelper.RegisterCell(cellPresence)
 
 			actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 			Expect(err).NotTo(HaveOccurred())
@@ -284,7 +284,7 @@ var _ = Describe("LrpConvergence", func() {
 					Since:        clock.Now().UnixNano(),
 				}
 
-				setRawActualLRP(actualUnclaimedLRP)
+				testHelper.SetRawActualLRP(actualUnclaimedLRP)
 			})
 
 			Context("when the actual LRP is UNCLAIMED", func() {
@@ -322,7 +322,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
@@ -369,7 +369,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
@@ -456,7 +456,7 @@ var _ = Describe("LrpConvergence", func() {
 						Since:        clock.Now().UnixNano(),
 					}
 
-					setRawActualLRP(higherIndexActualLRP)
+					testHelper.SetRawActualLRP(higherIndexActualLRP)
 				})
 
 				It("removes the actual LRP", func() {
@@ -491,7 +491,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 100))
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 
 					index = numInstances
 
@@ -502,7 +502,7 @@ var _ = Describe("LrpConvergence", func() {
 						Since:                clock.Now().UnixNano(),
 					}
 
-					setRawActualLRP(higherIndexActualLRP)
+					testHelper.SetRawActualLRP(higherIndexActualLRP)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
@@ -550,7 +550,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				JustBeforeEach(func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(124, 1024, 6))
-					registerCell(cellPresence)
+					testHelper.RegisterCell(cellPresence)
 
 					index = numInstances
 
@@ -562,7 +562,7 @@ var _ = Describe("LrpConvergence", func() {
 						Since:                clock.Now().UnixNano(),
 					}
 
-					setRawActualLRP(higherIndexActualLRP)
+					testHelper.SetRawActualLRP(higherIndexActualLRP)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
@@ -634,7 +634,7 @@ var _ = Describe("LrpConvergence", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")
-			registerAuctioneer(auctioneerPresence)
+			testHelper.RegisterAuctioneer(auctioneerPresence)
 
 			clock.Increment(models.StaleUnclaimedActualLRPDuration + 1*time.Second)
 		})

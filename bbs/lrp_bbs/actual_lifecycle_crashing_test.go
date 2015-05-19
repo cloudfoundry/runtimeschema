@@ -176,9 +176,9 @@ func (t crashTest) Test() {
 				Action:      &models.RunAction{Path: "true"},
 			}
 
-			registerAuctioneer(auctioneerPresence)
-			setRawDesiredLRP(desiredLRP)
-			setRawActualLRP(actualLRP)
+			testHelper.RegisterAuctioneer(auctioneerPresence)
+			testHelper.SetRawDesiredLRP(desiredLRP)
+			testHelper.SetRawActualLRP(actualLRP)
 		})
 
 		JustBeforeEach(func() {
@@ -197,45 +197,45 @@ func (t crashTest) Test() {
 		}
 
 		It(fmt.Sprintf("has crash count %d", t.Result.CrashCount), func() {
-			actualLRP, err := getInstanceActualLRP(actualLRPKey)
+			actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualLRP.CrashCount).To(Equal(t.Result.CrashCount))
 		})
 
 		It(fmt.Sprintf("has crash reason %s", t.Result.CrashReason), func() {
-			actualLRP, err := getInstanceActualLRP(actualLRPKey)
+			actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualLRP.CrashReason).To(Equal(t.Result.CrashReason))
 		})
 
 		if t.Result.ShouldUpdate {
 			It("updates the Since", func() {
-				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRP.Since).To(Equal(clock.Now().UnixNano()))
 			})
 
 			It("updates the ModificationIndex", func() {
-				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRP.ModificationTag.Index).To(Equal(initialModificationIndex + 1))
 			})
 		} else {
 			It("does not update the Since", func() {
-				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRP.Since).To(Equal(initialTimestamp))
 			})
 
 			It("does not update the ModificationIndex", func() {
-				actualLRP, err := getInstanceActualLRP(actualLRPKey)
+				actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRP.ModificationTag.Index).To(Equal(initialModificationIndex))
 			})
 		}
 
 		It(fmt.Sprintf("CAS to %s", t.Result.State), func() {
-			actualLRP, err := getInstanceActualLRP(actualLRPKey)
+			actualLRP, err := testHelper.GetInstanceActualLRP(actualLRPKey)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualLRP.State).To(Equal(t.Result.State))
 		})

@@ -1,16 +1,12 @@
 package lrp_bbs_test
 
 import (
-	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
-	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -482,147 +478,58 @@ func createTestData(
 	}
 
 	for actualData := range testData.instanceKeysToKeep {
-		createValidActualLRP(actualData.processGuid, actualData.index)
+		testHelper.CreateValidActualLRP(actualData.processGuid, actualData.index)
 	}
 	for actualData := range testData.instanceKeysToPrune {
-		createMalformedActualLRP(actualData.processGuid, actualData.index)
+		testHelper.CreateMalformedActualLRP(actualData.processGuid, actualData.index)
 	}
 	for actualData := range testData.evacuatingKeysToKeep {
-		createValidEvacuatingLRP(actualData.processGuid, actualData.index)
+		testHelper.CreateValidEvacuatingLRP(actualData.processGuid, actualData.index)
 	}
 	for actualData := range testData.evacuatingKeysToPrune {
-		createMalformedEvacuatingLRP(actualData.processGuid, actualData.index)
+		testHelper.CreateMalformedEvacuatingLRP(actualData.processGuid, actualData.index)
 	}
 
 	for _, guid := range testData.validDesiredGuidsWithSomeValidActuals {
-		createValidDesiredLRP(guid)
+		testHelper.CreateValidDesiredLRP(guid)
 	}
 	for _, guid := range testData.validDesiredGuidsWithNoActuals {
-		createValidDesiredLRP(guid)
+		testHelper.CreateValidDesiredLRP(guid)
 	}
 	for _, guid := range testData.validDesiredGuidsWithOnlyInvalidActuals {
-		createValidDesiredLRP(guid)
+		testHelper.CreateValidDesiredLRP(guid)
 	}
 
 	for _, guid := range testData.invalidDesiredGuidsWithSomeValidActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 	for _, guid := range testData.invalidDesiredGuidsWithNoActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 	for _, guid := range testData.invalidDesiredGuidsWithOnlyInvalidActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 
 	for _, guid := range testData.unknownDesiredGuidsWithSomeValidActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 	for _, guid := range testData.unknownDesiredGuidsWithNoActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 	for _, guid := range testData.unknownDesiredGuidsWithOnlyInvalidActuals {
-		createMalformedDesiredLRP(guid)
+		testHelper.CreateMalformedDesiredLRP(guid)
 	}
 
 	testData.domains.Each(func(domain string) {
-		createRawDomain(domain)
+		err := domainBBS.UpsertDomain(domain, 0)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	testData.cells.Each(func(cell models.CellPresence) {
-		registerCell(cell)
+		testHelper.RegisterCell(cell)
 	})
 
 	return testData
-}
-
-func createValidDesiredLRP(guid string) {
-	setRawDesiredLRP(newValidDesiredLRP(guid))
-}
-
-func newValidDesiredLRP(guid string) models.DesiredLRP {
-	myRouterJSON := json.RawMessage(`{"foo":"bar"}`)
-	desiredLRP := models.DesiredLRP{
-		ProcessGuid:          guid,
-		Domain:               "some-domain",
-		RootFS:               "some:rootfs",
-		Instances:            1,
-		EnvironmentVariables: []models.EnvironmentVariable{{Name: "FOO", Value: "bar"}},
-		Setup:                &models.RunAction{Path: "ls"},
-		Action:               &models.RunAction{Path: "ls"},
-		StartTimeout:         15,
-		Monitor: models.EmitProgressFor(
-			models.Timeout(
-				models.Try(models.Parallel(models.Serial(&models.RunAction{Path: "ls"}))),
-				10*time.Second,
-			),
-			"start-message",
-			"success-message",
-			"failure-message",
-		),
-		DiskMB:      512,
-		MemoryMB:    1024,
-		CPUWeight:   42,
-		Routes:      map[string]*json.RawMessage{"my-router": &myRouterJSON},
-		LogSource:   "some-log-source",
-		LogGuid:     "some-log-guid",
-		MetricsGuid: "some-metrics-guid",
-		Annotation:  "some-annotation",
-		EgressRules: []models.SecurityGroupRule{{
-			Protocol:     models.TCPProtocol,
-			Destinations: []string{"1.1.1.1/32", "2.2.2.2/32"},
-			PortRange:    &models.PortRange{Start: 10, End: 16000},
-		}},
-	}
-	err := desiredLRP.Validate()
-	Expect(err).NotTo(HaveOccurred())
-
-	return desiredLRP
-}
-
-func createMalformedDesiredLRP(guid string) {
-	createMalformedValueForKey(shared.DesiredLRPSchemaPath(models.DesiredLRP{ProcessGuid: guid}))
-}
-
-func newValidActualLRP(guid string, index int) models.ActualLRP {
-	actualLRP := models.ActualLRP{
-		ActualLRPKey:         models.NewActualLRPKey(guid, index, "some-domain"),
-		ActualLRPInstanceKey: models.NewActualLRPInstanceKey("some-guid", "some-cell"),
-		ActualLRPNetInfo:     models.NewActualLRPNetInfo("some-address", []models.PortMapping{{HostPort: 2222, ContainerPort: 4444}}),
-		CrashCount:           33,
-		CrashReason:          "badness",
-		State:                models.ActualLRPStateRunning,
-		Since:                1138,
-		ModificationTag:      models.ModificationTag{Epoch: "some-epoch", Index: 999},
-	}
-	err := actualLRP.Validate()
-	Expect(err).NotTo(HaveOccurred())
-
-	return actualLRP
-}
-
-func createValidActualLRP(guid string, index int) {
-	setRawActualLRP(newValidActualLRP(guid, index))
-}
-
-func createMalformedActualLRP(guid string, index int) {
-	createMalformedValueForKey(shared.ActualLRPSchemaPath(guid, index))
-}
-
-func createValidEvacuatingLRP(guid string, index int) {
-	setRawEvacuatingActualLRP(newValidActualLRP(guid, index), 100)
-}
-
-func createMalformedEvacuatingLRP(guid string, index int) {
-	createMalformedValueForKey(shared.EvacuatingActualLRPSchemaPath(guid, index))
-}
-
-func createMalformedValueForKey(key string) {
-	err := etcdClient.Create(storeadapter.StoreNode{
-		Key:   key,
-		Value: []byte("ßßßßßß"),
-	})
-
-	Expect(err).NotTo(HaveOccurred(), fmt.Sprintf("error occurred at key '%s'", key))
 }
 
 func newCellPresence(cellID string) models.CellPresence {
