@@ -29,7 +29,11 @@ type compareAndSwappableTask struct {
 	NewTask  models.Task
 }
 
-func (bbs *TaskBBS) ConvergeTasks(logger lager.Logger, expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader) {
+func (bbs *TaskBBS) ConvergeTasks(
+	logger lager.Logger,
+	expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration,
+	cellsLoader *services_bbs.CellsLoader,
+) {
 	taskLog := logger.Session("converge-tasks")
 	taskLog.Info("starting-convergence")
 	defer taskLog.Info("finished-convergence")
