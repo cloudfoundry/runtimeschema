@@ -22,7 +22,11 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 
 	startRequests := newStartRequests(desiredLRPs)
 
-	pool := workpool.NewWorkPool(workPoolSize)
+	pool, err := workpool.NewWorkPool(workPoolSize)
+	if err != nil {
+		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": workPoolSize})
+		return
+	}
 	defer pool.Stop()
 
 	wg := new(sync.WaitGroup)

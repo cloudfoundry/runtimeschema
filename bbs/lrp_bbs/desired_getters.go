@@ -7,9 +7,10 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
+
+const maxDesiredGetterWorkPoolSize = 50
 
 func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 	lrps := []models.DesiredLRP{}
@@ -21,9 +22,16 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 		return lrps, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return lrps, nil
+	}
+
 	lrpLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxDesiredGetterWorkPoolSize)
+	if err != nil {
+		return lrps, err
+	}
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -68,9 +76,16 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 		return lrps, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return lrps, nil
+	}
+
 	lrpLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxDesiredGetterWorkPoolSize)
+	if err != nil {
+		return lrps, err
+	}
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -102,7 +117,6 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 	}
 
 	return lrps, nil
-
 }
 
 func (bbs *LRPBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {

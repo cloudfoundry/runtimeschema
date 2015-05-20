@@ -14,19 +14,35 @@ var _ = Describe("Desired LRP Getters", func() {
 	var createdDesiredLRPs map[string][]models.DesiredLRP
 
 	Describe("DesiredLRPs", func() {
-		BeforeEach(func() {
-			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
-				"domain-1": 3,
+		Context("with existing desired lrps", func() {
+			BeforeEach(func() {
+				createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
+					"domain-1": 3,
+				})
+			})
+
+			It("returns all desired long running processes", func() {
+				all, err := lrpBBS.DesiredLRPs()
+				Expect(err).NotTo(HaveOccurred())
+
+				all = clearModificationTags(all)
+
+				Expect(all).To(ConsistOf(createdDesiredLRPs["domain-1"]))
 			})
 		})
 
-		It("returns all desired long running processes", func() {
-			all, err := lrpBBS.DesiredLRPs()
-			Expect(err).NotTo(HaveOccurred())
+		Context("when the desired root node exists with no desired lrps", func() {
+			BeforeEach(func() {
+				testHelper.CreateValidDesiredLRP("some-guid")
+				err := lrpBBS.RemoveDesiredLRPByProcessGuid(logger, "some-guid")
+				Expect(err).NotTo(HaveOccurred())
+			})
 
-			all = clearModificationTags(all)
-
-			Expect(all).To(ConsistOf(createdDesiredLRPs["domain-1"]))
+			It("returns an empty list of desired long running processes", func() {
+				all, err := lrpBBS.DesiredLRPs()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(all).To(BeEmpty())
+			})
 		})
 
 		Context("with invalid data", func() {
@@ -43,30 +59,46 @@ var _ = Describe("Desired LRP Getters", func() {
 	})
 
 	Describe("DesiredLRPsByDomain", func() {
-		BeforeEach(func() {
-			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
-				"domain-1": 2,
-				"domain-2": 1,
+		Context("with existing data", func() {
+			BeforeEach(func() {
+				createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
+					"domain-1": 2,
+					"domain-2": 1,
+				})
+			})
+
+			It("returns an error when the domain is empty", func() {
+				_, err := lrpBBS.DesiredLRPsByDomain("")
+				Expect(err).To(Equal(bbserrors.ErrNoDomain))
+			})
+
+			It("returns all desired long running processes for the given domain", func() {
+				byDomain, err := lrpBBS.DesiredLRPsByDomain("domain-1")
+				Expect(err).NotTo(HaveOccurred())
+
+				byDomain = clearModificationTags(byDomain)
+				Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-1"]))
+
+				byDomain, err = lrpBBS.DesiredLRPsByDomain("domain-2")
+				byDomain = clearModificationTags(byDomain)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-2"]))
 			})
 		})
 
-		It("returns all desired long running processes for the given domain", func() {
-			byDomain, err := lrpBBS.DesiredLRPsByDomain("domain-1")
-			Expect(err).NotTo(HaveOccurred())
+		Context("when the desired root node exists with no desired lrps", func() {
+			BeforeEach(func() {
+				testHelper.CreateValidDesiredLRP("some-guid")
+				err := lrpBBS.RemoveDesiredLRPByProcessGuid(logger, "some-guid")
+				Expect(err).NotTo(HaveOccurred())
+			})
 
-			byDomain = clearModificationTags(byDomain)
-			Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-1"]))
-
-			byDomain, err = lrpBBS.DesiredLRPsByDomain("domain-2")
-			byDomain = clearModificationTags(byDomain)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(byDomain).To(ConsistOf(createdDesiredLRPs["domain-2"]))
-		})
-
-		It("returns an error when the domain is empty", func() {
-			_, err := lrpBBS.DesiredLRPsByDomain("")
-			Expect(err).To(Equal(bbserrors.ErrNoDomain))
+			It("returns an empty list of desired long running processes", func() {
+				all, err := lrpBBS.DesiredLRPsByDomain("foobar")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(all).To(BeEmpty())
+			})
 		})
 
 		Context("with invalid data", func() {

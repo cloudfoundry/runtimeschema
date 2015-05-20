@@ -8,9 +8,10 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
+
+const maxActualGroupGetterWorkPoolSize = 50
 
 func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 	groups := []models.ActualLRPGroup{}
@@ -22,9 +23,17 @@ func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 		return groups, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return groups, nil
+	}
+
 	groupsLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
+	if err != nil {
+		return groups, err
+	}
+	defer workPool.Stop()
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -82,9 +91,17 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 		return lrps, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return lrps, nil
+	}
+
 	lrpsLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
+	if err != nil {
+		return lrps, err
+	}
+	defer workPool.Stop()
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -139,9 +156,17 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 		return groups, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return groups, nil
+	}
+
 	groupsLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
+	if err != nil {
+		return groups, err
+	}
+	defer workPool.Stop()
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -245,9 +270,17 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 		return groups, shared.ConvertStoreError(err)
 	}
 
+	if len(root.ChildNodes) == 0 {
+		return groups, nil
+	}
+
 	groupsLock := sync.Mutex{}
 	errLock := sync.Mutex{}
-	workPool := workpool.New(50, len(root.ChildNodes)-50, workpool.DefaultAround)
+	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
+	if err != nil {
+		return groups, err
+	}
+	defer workPool.Stop()
 
 	wg := sync.WaitGroup{}
 	for _, node := range root.ChildNodes {
@@ -266,6 +299,7 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 						errLock.Lock()
 						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
 						errLock.Unlock()
+						continue
 					}
 					if lrp.CellID != cellID {
 						continue

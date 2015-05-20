@@ -170,7 +170,12 @@ func (bbs *TaskBBS) ConvergeTasks(
 		logger.Debug("done-requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 	}
 
-	workPool := workpool.NewWorkPool(workerPoolSize)
+	workPool, err := workpool.NewWorkPool(workerPoolSize)
+	if err != nil {
+		logger.Error("failed-to-construct-workpool", err, lager.Data{"num-workers": workerPoolSize})
+		return
+	}
+
 	tasksKickedCounter.Add(tasksKicked)
 	logger.Debug("compare-and-swapping-tasks", lager.Data{"num-tasks-to-cas": len(tasksToCAS)})
 	bbs.batchCompareAndSwapTasks(tasksToCAS, workPool, taskLog)

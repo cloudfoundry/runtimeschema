@@ -139,6 +139,23 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 		})
 
+		Context("when the root node exists with no child nodes", func() {
+			BeforeEach(func() {
+				testHelper.SetRawActualLRP(baseLRP)
+
+				processGuid := baseLRP.ActualLRPKey.ProcessGuid
+				err := etcdClient.Delete(shared.ActualLRPProcessDir(processGuid))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				actualLRPs, err := lrpBBS.ActualLRPs()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRPs).NotTo(BeNil())
+				Expect(actualLRPs).To(BeEmpty())
+			})
+		})
+
 		Context("when there is invalid data", func() {
 			BeforeEach(func() {
 				testHelper.CreateValidActualLRP("some-guid", 0)
@@ -178,6 +195,23 @@ var _ = Describe("Actual LRP Getters", func() {
 				// leave some intermediate directories in the store
 				testHelper.SetRawActualLRP(baseLRP)
 				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				actualLRPGroups, err := lrpBBS.ActualLRPGroups()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRPGroups).NotTo(BeNil())
+				Expect(actualLRPGroups).To(BeEmpty())
+			})
+		})
+
+		Context("when the root node exists with no child nodes", func() {
+			BeforeEach(func() {
+				testHelper.SetRawActualLRP(baseLRP)
+
+				processGuid := baseLRP.ActualLRPKey.ProcessGuid
+				err := etcdClient.Delete(shared.ActualLRPProcessDir(processGuid))
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -287,6 +321,23 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 		})
 
+		Context("when the root node exists with no child nodes", func() {
+			BeforeEach(func() {
+				testHelper.SetRawActualLRP(baseLRP)
+
+				processGuid := baseLRP.ActualLRPKey.ProcessGuid
+				err := etcdClient.Delete(shared.ActualLRPProcessDir(processGuid))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByCellID(cellID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRPGroups).NotTo(BeNil())
+				Expect(actualLRPGroups).To(BeEmpty())
+			})
+		})
+
 		Context("when given an empty cell id", func() {
 			It("returns an error", func() {
 				_, err := lrpBBS.ActualLRPGroupsByCellID("")
@@ -341,6 +392,23 @@ var _ = Describe("Actual LRP Getters", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).NotTo(BeNil())
 				Expect(actualLRPGroups).To(HaveLen(0))
+			})
+		})
+
+		Context("when the root node exists with no child nodes", func() {
+			BeforeEach(func() {
+				testHelper.SetRawActualLRP(baseLRP)
+
+				processGuid := baseLRP.ActualLRPKey.ProcessGuid
+				err := etcdClient.Delete(shared.ActualLRPProcessDir(processGuid))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an empty list", func() {
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByDomain(baseDomain)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualLRPGroups).NotTo(BeNil())
+				Expect(actualLRPGroups).To(BeEmpty())
 			})
 		})
 

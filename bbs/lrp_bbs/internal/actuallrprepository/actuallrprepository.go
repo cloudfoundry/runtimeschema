@@ -222,7 +222,12 @@ func (repo *actualLRPRepository) CreateActualLRP(logger lager.Logger, desiredLRP
 }
 
 func (repo *actualLRPRepository) CreateActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) []uint {
-	workPool := workpool.NewWorkPool(createActualPoolSize)
+	workPool, err := workpool.NewWorkPool(createActualPoolSize)
+	if err != nil {
+		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": createActualPoolSize})
+		return []uint{}
+	}
+
 	createdIndicesChan := make(chan uint, len(indices))
 	wg := sync.WaitGroup{}
 

@@ -210,7 +210,11 @@ func (bbs *LRPBBS) RetireActualLRPs(
 ) {
 	logger = logger.Session("retire-actual-lrps")
 
-	pool := workpool.NewWorkPool(retireActualPoolSize)
+	pool, err := workpool.NewWorkPool(retireActualPoolSize)
+	if err != nil {
+		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": retireActualPoolSize})
+		return
+	}
 
 	wg := new(sync.WaitGroup)
 	wg.Add(len(lrpKeys))
