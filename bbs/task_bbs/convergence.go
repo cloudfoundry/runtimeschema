@@ -31,7 +31,7 @@ type compareAndSwappableTask struct {
 
 func (bbs *TaskBBS) ConvergeTasks(
 	logger lager.Logger,
-	expirePendingTaskDuration, convergenceInterval, timeToResolve time.Duration,
+	kickTaskDuration, expirePendingTaskDuration, expireCompletedTaskDuration time.Duration,
 	cellsLoader *services_bbs.CellsLoader,
 ) {
 	taskLog := logger.Session("converge-tasks")
@@ -109,7 +109,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 			continue
 		}
 
-		shouldKickTask := bbs.durationSinceTaskUpdated(task) >= convergenceInterval
+		shouldKickTask := bbs.durationSinceTaskUpdated(task) >= kickTaskDuration
 
 		switch task.State {
 		case models.TaskStatePending:
@@ -131,7 +131,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 				tasksKicked++
 			}
 		case models.TaskStateCompleted:
-			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
+			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= expireCompletedTaskDuration
 			if shouldDeleteTask {
 				logError(task, "failed-to-start-resolving-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
@@ -141,7 +141,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 				tasksKicked++
 			}
 		case models.TaskStateResolving:
-			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= timeToResolve
+			shouldDeleteTask := bbs.durationSinceTaskFirstCompleted(task) >= expireCompletedTaskDuration
 			if shouldDeleteTask {
 				logError(task, "failed-to-resolve-in-time")
 				keysToDelete = append(keysToDelete, node.Key)

@@ -22,22 +22,20 @@ var _ = Describe("Convergence of Tasks", func() {
 	var (
 		sender *fake.FakeMetricSender
 
-		task                             models.Task
-		timeToStartInSeconds             uint64
-		convergenceIntervalInSeconds     uint64
-		timeToStart, convergenceInterval time.Duration
-		timeToResolveInterval            time.Duration
+		task                                                                      models.Task
+		kickTasksDurationInSeconds, expirePendingTaskDurationInSeconds            uint64
+		kickTasksDuration, expirePendingTaskDuration, expireCompletedTaskDuration time.Duration
 	)
 
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender)
 
-		timeToStartInSeconds = 30
-		timeToStart = time.Duration(timeToStartInSeconds) * time.Second
-		convergenceIntervalInSeconds = 10
-		convergenceInterval = time.Duration(convergenceIntervalInSeconds) * time.Second
-		timeToResolveInterval = time.Hour
+		kickTasksDurationInSeconds = 10
+		kickTasksDuration = time.Duration(kickTasksDurationInSeconds) * time.Second
+		expirePendingTaskDurationInSeconds = 30
+		expirePendingTaskDuration = time.Duration(expirePendingTaskDurationInSeconds) * time.Second
+		expireCompletedTaskDuration = time.Hour
 
 		task = models.Task{
 			Domain:   "tests",
@@ -49,7 +47,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 	Describe("ConvergeTasks", func() {
 		JustBeforeEach(func() {
-			bbs.ConvergeTasks(logger, timeToStart, convergenceInterval, timeToResolveInterval, servicesBBS.NewCellsLoader())
+			bbs.ConvergeTasks(logger, kickTasksDuration, expirePendingTaskDuration, expireCompletedTaskDuration, servicesBBS.NewCellsLoader())
 		})
 
 		It("bumps the convergence counter", func() {
@@ -109,7 +107,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the Task has NOT been pending for too long", func() {
 				BeforeEach(func() {
-					clock.IncrementBySeconds(convergenceIntervalInSeconds - 1)
+					clock.IncrementBySeconds(kickTasksDurationInSeconds - 1)
 
 					auctioneerPresence := models.AuctioneerPresence{
 						AuctioneerID:      "the-auctioneer-id",
@@ -124,9 +122,9 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 			})
 
-			Context("when the Tasks have been pending for longer than the convergence interval", func() {
+			Context("when the Tasks have been pending for longer than the kick interval", func() {
 				BeforeEach(func() {
-					clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+					clock.IncrementBySeconds(kickTasksDurationInSeconds + 1)
 				})
 
 				It("bumps the compare-and-swap counter", func() {
@@ -176,9 +174,9 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 			})
 
-			Context("when the Task has been pending for longer than the timeToStart", func() {
+			Context("when the Task has been pending for longer than the expirePendingTasksDuration", func() {
 				BeforeEach(func() {
-					clock.IncrementBySeconds(timeToStartInSeconds + 1)
+					clock.IncrementBySeconds(expirePendingTaskDurationInSeconds + 1)
 				})
 
 				It("should mark the Task as completed & failed", func() {
@@ -295,7 +293,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
-						clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+						clock.IncrementBySeconds(expirePendingTaskDurationInSeconds + 1)
 					})
 
 					Context("when a receptor is present", func() {
@@ -357,7 +355,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("for longer than the convergence interval", func() {
 					BeforeEach(func() {
-						clock.IncrementBySeconds(convergenceIntervalInSeconds + 1)
+						clock.IncrementBySeconds(expirePendingTaskDurationInSeconds + 1)
 					})
 
 					Context("when a receptor is present", func() {
@@ -373,7 +371,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 				Context("when the task has been completed for longer than the time-to-resolve interval", func() {
 					BeforeEach(func() {
-						clock.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+						clock.IncrementBySeconds(uint64(expireCompletedTaskDuration.Seconds()) + 1)
 					})
 
 					It("should delete the task", func() {
@@ -441,7 +439,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the task has been resolving for longer than a convergence interval", func() {
 				BeforeEach(func() {
-					clock.IncrementBySeconds(convergenceIntervalInSeconds)
+					clock.IncrementBySeconds(expirePendingTaskDurationInSeconds)
 				})
 
 				It("should put the Task back into the completed state", func() {
@@ -473,7 +471,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the resolving task has been completed for longer than the time-to-resolve interval", func() {
 				BeforeEach(func() {
-					clock.IncrementBySeconds(uint64(timeToResolveInterval.Seconds()) + 1)
+					clock.IncrementBySeconds(uint64(expireCompletedTaskDuration.Seconds()) + 1)
 				})
 
 				It("should delete the task", func() {
