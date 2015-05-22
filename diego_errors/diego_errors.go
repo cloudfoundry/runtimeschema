@@ -10,4 +10,5 @@ const (
 	CELL_MISMATCH_MESSAGE                 = "found no compatible cell"
 	MISSING_DOCKER_IMAGE_URL              = "missing docker image download url"
 	MISSING_DOCKER_REGISTRY               = "missing docker registry"
+	MISSING_DOCKER_CREDENTIALS            = "missing docker credentials"
 )

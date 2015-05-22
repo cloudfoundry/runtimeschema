@@ -43,7 +43,11 @@ type BuildpackStagingData struct {
 }
 
 type DockerStagingData struct {
-	DockerImageUrl string `json:"docker_image"`
+	DockerImageUrl    string `json:"docker_image"`
+	DockerLoginServer string `json:"docker_login_server,omitempty"`
+	DockerUser        string `json:"docker_user,omitempty"`
+	DockerPassword    string `json:"docker_password,omitempty"`
+	DockerEmail       string `json:"docker_email,omitempty"`
 }
 
 const CUSTOM_BUILDPACK = "custom"
@@ -80,6 +84,7 @@ func SanitizeErrorMessage(message string) *StagingError {
 		id = NO_COMPATIBLE_CELL
 	case diego_errors.MISSING_DOCKER_IMAGE_URL:
 	case diego_errors.MISSING_DOCKER_REGISTRY:
+	case diego_errors.MISSING_DOCKER_CREDENTIALS:
 	default:
 		message = "staging failed"
 	}

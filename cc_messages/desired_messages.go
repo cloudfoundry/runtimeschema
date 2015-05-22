@@ -16,6 +16,10 @@ type DesireAppRequestFromCC struct {
 	ProcessGuid                 string                     `json:"process_guid"`
 	DropletUri                  string                     `json:"droplet_uri"`
 	DockerImageUrl              string                     `json:"docker_image"`
+	DockerLoginServer           string                     `json:"docker_login_server,omitempty"`
+	DockerUser                  string                     `json:"docker_user,omitempty"`
+	DockerPassword              string                     `json:"docker_password,omitempty"`
+	DockerEmail                 string                     `json:"docker_email,omitempty"`
 	Stack                       string                     `json:"stack"`
 	StartCommand                string                     `json:"start_command"`
 	ExecutionMetadata           string                     `json:"execution_metadata"`
