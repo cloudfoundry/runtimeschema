@@ -51,7 +51,7 @@ var _ = Describe("Convergence", func() {
 	Describe("Gathering Behaviour", func() {
 		BeforeEach(func() {
 			metricSender = fake.NewFakeMetricSender()
-			metrics.Initialize(metricSender)
+			metrics.Initialize(metricSender, nil)
 			testData = createTestData(3, 1, 1, 3, 1, 1, 3, 1, 1)
 		})
 

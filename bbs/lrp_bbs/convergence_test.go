@@ -28,7 +28,7 @@ var _ = Describe("LrpConvergence", func() {
 
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
-		metrics.Initialize(sender)
+		metrics.Initialize(sender, nil)
 
 		err := domainBBS.UpsertDomain(freshDomain, 0)
 		Expect(err).NotTo(HaveOccurred())

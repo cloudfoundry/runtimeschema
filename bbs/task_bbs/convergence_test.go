@@ -29,7 +29,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 	BeforeEach(func() {
 		sender = fake.NewFakeMetricSender()
-		metrics.Initialize(sender)
+		metrics.Initialize(sender, nil)
 
 		kickTasksDurationInSeconds = 10
 		kickTasksDuration = time.Duration(kickTasksDurationInSeconds) * time.Second
