@@ -161,6 +161,7 @@ var _ = Describe("Actual LRP Getters", func() {
 				testHelper.CreateValidActualLRP("some-guid", 0)
 				testHelper.CreateMalformedActualLRP("some-other-guid", 0)
 				testHelper.CreateValidActualLRP("some-third-guid", 0)
+				testHelper.CreateMalformedActualLRP("some-fourth-guid", 0)
 			})
 
 			It("errors", func() {

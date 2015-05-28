@@ -7,46 +7,45 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
 
 const maxDesiredGetterWorkPoolSize = 50
 
 func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
-	lrps := []models.DesiredLRP{}
-
 	root, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return []models.DesiredLRP{}, nil
 	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
+		return []models.DesiredLRP{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return lrps, nil
+		return []models.DesiredLRP{}, nil
 	}
 
+	var lrps = []models.DesiredLRP{}
 	lrpLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxDesiredGetterWorkPoolSize)
-	if err != nil {
-		return lrps, err
-	}
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			var lrp models.DesiredLRP
 			deserializeErr := models.FromJSON(node.Value, &lrp)
 			if deserializeErr != nil {
-				errLock.Lock()
-				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
-				errLock.Unlock()
+				workErrLock.Lock()
+				workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
+				workErrLock.Unlock()
 			} else {
 				lrpLock.Lock()
 				lrps = append(lrps, lrp)
@@ -54,10 +53,18 @@ func (bbs *LRPBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxDesiredGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.DesiredLRP{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.DesiredLRP{}, workErr
 	}
 
 	return lrps, nil
@@ -68,40 +75,39 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 		return nil, bbserrors.ErrNoDomain
 	}
 
-	lrps := []models.DesiredLRP{}
 	root, err := bbs.store.ListRecursively(shared.DesiredLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return []models.DesiredLRP{}, nil
 	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
+		return []models.DesiredLRP{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return lrps, nil
+		return []models.DesiredLRP{}, nil
 	}
 
+	var lrps = []models.DesiredLRP{}
 	lrpLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxDesiredGetterWorkPoolSize)
-	if err != nil {
-		return lrps, err
-	}
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			var lrp models.DesiredLRP
 			deserializeErr := models.FromJSON(node.Value, &lrp)
 			switch {
 			case deserializeErr != nil:
-				errLock.Lock()
-				err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
-				errLock.Unlock()
+				workErrLock.Lock()
+				workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, deserializeErr.Error())
+				workErrLock.Unlock()
 			case lrp.Domain == domain:
 				lrpLock.Lock()
 				lrps = append(lrps, lrp)
@@ -110,10 +116,18 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, erro
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxDesiredGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.DesiredLRP{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.DesiredLRP{}, workErr
 	}
 
 	return lrps, nil

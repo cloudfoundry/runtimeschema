@@ -8,39 +8,37 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
+	"github.com/cloudfoundry/gunk/workpool"
 	"github.com/cloudfoundry/storeadapter"
 )
 
 const maxActualGroupGetterWorkPoolSize = 50
 
 func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
-	groups := []models.ActualLRPGroup{}
-
 	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	} else if err != nil {
-		return groups, shared.ConvertStoreError(err)
+		return []models.ActualLRPGroup{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	}
 
+	var groups = []models.ActualLRPGroup{}
 	groupsLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
-	if err != nil {
-		return groups, err
-	}
-	defer workPool.Stop()
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			for _, indexNode := range node.ChildNodes {
@@ -49,9 +47,9 @@ func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 					var lrp models.ActualLRP
 					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
 					if deserializeErr != nil {
-						errLock.Lock()
-						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
-						errLock.Unlock()
+						workErrLock.Lock()
+						workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						workErrLock.Unlock()
 						continue
 					}
 
@@ -72,43 +70,48 @@ func (bbs *LRPBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxActualGroupGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.ActualLRPGroup{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.ActualLRPGroup{}, workErr
 	}
 
 	return groups, nil
 }
 
 func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
-	lrps := []models.ActualLRP{}
-
 	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return lrps, nil
+		return []models.ActualLRP{}, nil
 	} else if err != nil {
-		return lrps, shared.ConvertStoreError(err)
+		return []models.ActualLRP{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return lrps, nil
+		return []models.ActualLRP{}, nil
 	}
 
+	var lrps = []models.ActualLRP{}
 	lrpsLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
-	if err != nil {
-		return lrps, err
-	}
-	defer workPool.Stop()
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			for _, indexNode := range node.ChildNodes {
@@ -120,9 +123,9 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 					var lrp models.ActualLRP
 					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
 					if deserializeErr != nil {
-						errLock.Lock()
-						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
-						errLock.Unlock()
+						workErrLock.Lock()
+						workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						workErrLock.Unlock()
 						continue
 					} else {
 						lrpsLock.Lock()
@@ -133,10 +136,18 @@ func (bbs *LRPBBS) ActualLRPs() ([]models.ActualLRP, error) {
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxActualGroupGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.ActualLRP{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.ActualLRP{}, workErr
 	}
 
 	return lrps, nil
@@ -147,33 +158,30 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 		return nil, bbserrors.ErrNoDomain
 	}
 
-	groups := []models.ActualLRPGroup{}
-
 	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	} else if err != nil {
-		return groups, shared.ConvertStoreError(err)
+		return []models.ActualLRPGroup{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	}
 
+	var groups = []models.ActualLRPGroup{}
 	groupsLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
-	if err != nil {
-		return groups, err
-	}
-	defer workPool.Stop()
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			for _, indexNode := range node.ChildNodes {
@@ -182,9 +190,9 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 					var lrp models.ActualLRP
 					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
 					if deserializeErr != nil {
-						errLock.Lock()
-						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
-						errLock.Unlock()
+						workErrLock.Lock()
+						workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						workErrLock.Unlock()
 						continue
 					}
 					if lrp.Domain != domain {
@@ -208,10 +216,18 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGro
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxActualGroupGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.ActualLRPGroup{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.ActualLRPGroup{}, workErr
 	}
 
 	return groups, nil
@@ -261,33 +277,30 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 		return nil, bbserrors.ErrNoCellID
 	}
 
-	groups := []models.ActualLRPGroup{}
-
 	root, err := bbs.store.ListRecursively(shared.ActualLRPSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	} else if err != nil {
-		return groups, shared.ConvertStoreError(err)
+		return []models.ActualLRPGroup{}, shared.ConvertStoreError(err)
 	}
 
 	if len(root.ChildNodes) == 0 {
-		return groups, nil
+		return []models.ActualLRPGroup{}, nil
 	}
 
+	var groups = []models.ActualLRPGroup{}
 	groupsLock := sync.Mutex{}
-	errLock := sync.Mutex{}
-	workPool, err := constructWorkPool(len(root.ChildNodes), maxActualGroupGetterWorkPoolSize)
-	if err != nil {
-		return groups, err
-	}
-	defer workPool.Stop()
+	var workErr error
+	workErrLock := sync.Mutex{}
 
 	wg := sync.WaitGroup{}
+	works := []func(){}
+
 	for _, node := range root.ChildNodes {
 		node := node
 
 		wg.Add(1)
-		workPool.Submit(func() {
+		works = append(works, func() {
 			defer wg.Done()
 
 			for _, indexNode := range node.ChildNodes {
@@ -296,9 +309,9 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 					var lrp models.ActualLRP
 					deserializeErr := models.FromJSON(instanceNode.Value, &lrp)
 					if deserializeErr != nil {
-						errLock.Lock()
-						err = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
-						errLock.Unlock()
+						workErrLock.Lock()
+						workErr = fmt.Errorf("cannot parse lrp JSON for key %s: %s", instanceNode.Key, deserializeErr.Error())
+						workErrLock.Unlock()
 						continue
 					}
 					if lrp.CellID != cellID {
@@ -322,10 +335,18 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGro
 			}
 		})
 	}
-	wg.Wait()
 
+	throttler, err := workpool.NewThrottler(maxActualGroupGetterWorkPoolSize, works)
 	if err != nil {
 		return []models.ActualLRPGroup{}, err
+	}
+	defer throttler.Stop()
+
+	throttler.Start()
+	wg.Wait()
+
+	if workErr != nil {
+		return []models.ActualLRPGroup{}, workErr
 	}
 
 	return groups, nil
