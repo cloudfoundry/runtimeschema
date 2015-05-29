@@ -3,7 +3,6 @@ package actuallrprepository
 import (
 	"fmt"
 	"path"
-	"sync"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
@@ -34,7 +33,7 @@ func NewActualLRPRepository(store storeadapter.StoreAdapter, clock clock.Clock) 
 	}
 }
 
-const createActualPoolSize = 100
+const createActualMaxWorkers = 100
 
 type actualLRPIndexTooLargeError struct {
 	actualIndex      int
@@ -222,30 +221,29 @@ func (repo *actualLRPRepository) CreateActualLRP(logger lager.Logger, desiredLRP
 }
 
 func (repo *actualLRPRepository) CreateActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) []uint {
-	workPool, err := workpool.NewWorkPool(createActualPoolSize)
-	if err != nil {
-		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": createActualPoolSize})
-		return []uint{}
-	}
-
 	createdIndicesChan := make(chan uint, len(indices))
-	wg := sync.WaitGroup{}
 
-	wg.Add(len(indices))
-	for _, actualIndex := range indices {
+	works := make([]func(), len(indices))
+
+	for i, actualIndex := range indices {
 		actualIndex := actualIndex
-		workPool.Submit(func() {
-			defer wg.Done()
+		works[i] = func() {
 			err := repo.CreateActualLRP(logger, lrp, int(actualIndex))
 			if err != nil {
 				logger.Info("failed-creating-actual-lrp", lager.Data{"index": actualIndex, "err-message": err.Error()})
 			} else {
 				createdIndicesChan <- actualIndex
 			}
-		})
+		}
 	}
-	wg.Wait()
-	workPool.Stop()
+
+	throttler, err := workpool.NewThrottler(createActualMaxWorkers, works)
+	if err != nil {
+		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": createActualMaxWorkers, "num-works": len(works)})
+		return []uint{}
+	}
+
+	throttler.Work()
 	close(createdIndicesChan)
 
 	createdIndices := make([]uint, 0, len(indices))

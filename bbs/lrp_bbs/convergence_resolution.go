@@ -8,7 +8,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-const workPoolSize = 100
+const throttlerMaxWorkers = 100
 
 func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.DesiredLRPsByProcessGuid, changes *ConvergenceChanges) {
 	actualKeys := make([]models.ActualLRPKey, 0, len(changes.ActualLRPsForExtraIndices))
@@ -21,46 +21,39 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	logger.Debug("done-retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
 
 	startRequests := newStartRequests(desiredLRPs)
-
-	pool, err := workpool.NewWorkPool(workPoolSize)
-	if err != nil {
-		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": workPoolSize})
-		return
-	}
-	defer pool.Stop()
-
-	wg := new(sync.WaitGroup)
-
 	for _, actual := range changes.StaleUnclaimedActualLRPs {
 		startRequests.Add(logger, actual.ActualLRPKey)
 	}
 
-	logger.Debug("submitting-lrp-convergence-work-to-pool")
+	works := []func(){}
+
 	for _, actual := range changes.ActualLRPsWithMissingCells {
-		pool.Submit(bbs.resolveActualsWithMissingCells(logger, wg, desiredLRPs[actual.ProcessGuid], actual, startRequests))
+		works = append(works, bbs.resolveActualsWithMissingCells(logger, desiredLRPs[actual.ProcessGuid], actual, startRequests))
 	}
 	for _, actualKey := range changes.ActualLRPKeysForMissingIndices {
-		pool.Submit(bbs.resolveActualsWithMissingIndices(logger, wg, desiredLRPs[actualKey.ProcessGuid], actualKey, startRequests))
+		works = append(works, bbs.resolveActualsWithMissingIndices(logger, desiredLRPs[actualKey.ProcessGuid], actualKey, startRequests))
 	}
 	for _, actual := range changes.RestartableCrashedActualLRPs {
-		pool.Submit(bbs.resolveRestartableCrashedActualLRPS(logger, wg, actual, startRequests))
+		works = append(works, bbs.resolveRestartableCrashedActualLRPS(logger, actual, startRequests))
 	}
-	logger.Debug("done-submitting-lrp-convergence-work-to-pool")
 
-	logger.Debug("waiting-for-lrp-convergence-work-pool")
-	wg.Wait()
-	logger.Debug("done-waiting-for-lrp-convergence-work-pool")
+	throttler, err := workpool.NewThrottler(throttlerMaxWorkers, works)
+	if err != nil {
+		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": throttlerMaxWorkers, "num-works": len(works)})
+		return
+	}
+
+	logger.Debug("waiting-for-lrp-convergence-work")
+	throttler.Work()
+	logger.Debug("done-waiting-for-lrp-convergence-work")
 
 	logger.Debug("requesting-start-auctions", lager.Data{"start-requests-instance-count": startRequests.InstanceCount()})
 	bbs.startActualLRPs(logger, startRequests)
 	logger.Debug("done-requesting-start-auctions", lager.Data{"start-requests-instance-count": startRequests.InstanceCount()})
 }
 
-func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.WaitGroup, desired models.DesiredLRP, actual models.ActualLRP, starts *startRequests) func() {
-	wg.Add(1)
-
+func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, desired models.DesiredLRP, actual models.ActualLRP, starts *startRequests) func() {
 	return func() {
-		defer wg.Done()
 		logger = logger.Session("start-missing-actual", lager.Data{
 			"process-guid": actual.ProcessGuid,
 			"index":        actual.Index,
@@ -86,12 +79,8 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, wg *sync.
 	}
 }
 
-func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, wg *sync.WaitGroup, desired models.DesiredLRP, actualKey models.ActualLRPKey, starts *startRequests) func() {
-	wg.Add(1)
-
+func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, desired models.DesiredLRP, actualKey models.ActualLRPKey, starts *startRequests) func() {
 	return func() {
-		defer wg.Done()
-
 		logger = logger.Session("start-missing-actual", lager.Data{
 			"process-guid": actualKey.ProcessGuid,
 			"index":        actualKey.Index,
@@ -109,12 +98,8 @@ func (bbs *LRPBBS) resolveActualsWithMissingIndices(logger lager.Logger, wg *syn
 	}
 }
 
-func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, wg *sync.WaitGroup, actualLRP models.ActualLRP, starts *startRequests) func() {
-	wg.Add(1)
-
+func (bbs *LRPBBS) resolveRestartableCrashedActualLRPS(logger lager.Logger, actualLRP models.ActualLRP, starts *startRequests) func() {
 	return func() {
-		defer wg.Done()
-
 		actualKey := actualLRP.ActualLRPKey
 
 		logger = logger.Session("restart-crash", lager.Data{

@@ -3,7 +3,6 @@ package lrp_bbs
 import (
 	"fmt"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
@@ -14,7 +13,7 @@ import (
 )
 
 const CrashResetTimeout = 5 * time.Minute
-const retireActualPoolSize = 20
+const retireActualThrottlerSize = 20
 const RetireActualLRPRetryAttempts = 5
 
 func (bbs *LRPBBS) ClaimActualLRP(
@@ -210,32 +209,28 @@ func (bbs *LRPBBS) RetireActualLRPs(
 ) {
 	logger = logger.Session("retire-actual-lrps")
 
-	pool, err := workpool.NewWorkPool(retireActualPoolSize)
-	if err != nil {
-		logger.Error("failed-constructing-work-pool", err, lager.Data{"num-workers": retireActualPoolSize})
-		return
-	}
+	works := make([]func(), len(lrpKeys))
 
-	wg := new(sync.WaitGroup)
-	wg.Add(len(lrpKeys))
-
-	for _, lrpKey := range lrpKeys {
+	for i, lrpKey := range lrpKeys {
 		lrpKey := lrpKey
-		pool.Submit(func() {
+
+		works[i] = func() {
 			err := bbs.retireActualLRP(lrpKey, logger)
 			if err != nil {
 				logger.Error("failed-to-retire", err, lager.Data{
 					"lrp-key": lrpKey,
 				})
 			}
-
-			wg.Done()
-		})
+		}
 	}
 
-	wg.Wait()
+	throttler, err := workpool.NewThrottler(retireActualThrottlerSize, works)
+	if err != nil {
+		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": retireActualThrottlerSize, "num-works": len(works)})
+		return
+	}
 
-	pool.Stop()
+	throttler.Work()
 }
 
 func (bbs *LRPBBS) FailActualLRP(

@@ -36,16 +36,12 @@ func (bbs *LRPBBS) ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			for _, indexNode := range node.ChildNodes {
 				group := models.ActualLRPGroup{}
 				for _, instanceNode := range indexNode.ChildNodes {
@@ -82,12 +78,9 @@ func (bbs *LRPBBS) ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxActualGroupGetterWorkPoolSize, "num-works": len(works)})
 		return []models.ActualLRPGroup{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.ActualLRPGroup{}, workErr
@@ -118,16 +111,12 @@ func (bbs *LRPBBS) ActualLRPs(logger lager.Logger) ([]models.ActualLRP, error) {
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			for _, indexNode := range node.ChildNodes {
 				for _, instanceNode := range indexNode.ChildNodes {
 					if !isInstanceActualLRPNode(instanceNode) {
@@ -157,12 +146,9 @@ func (bbs *LRPBBS) ActualLRPs(logger lager.Logger) ([]models.ActualLRP, error) {
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxActualGroupGetterWorkPoolSize, "num-works": len(works)})
 		return []models.ActualLRP{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.ActualLRP{}, workErr
@@ -198,16 +184,12 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(logger lager.Logger, domain string) (
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			for _, indexNode := range node.ChildNodes {
 				group := models.ActualLRPGroup{}
 				for _, instanceNode := range indexNode.ChildNodes {
@@ -247,12 +229,9 @@ func (bbs *LRPBBS) ActualLRPGroupsByDomain(logger lager.Logger, domain string) (
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxActualGroupGetterWorkPoolSize, "num-works": len(works)})
 		return []models.ActualLRPGroup{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.ActualLRPGroup{}, workErr
@@ -333,16 +312,12 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(logger lager.Logger, cellID string) (
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			for _, indexNode := range node.ChildNodes {
 				group := models.ActualLRPGroup{}
 				for _, instanceNode := range indexNode.ChildNodes {
@@ -382,12 +357,9 @@ func (bbs *LRPBBS) ActualLRPGroupsByCellID(logger lager.Logger, cellID string) (
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxActualGroupGetterWorkPoolSize, "num-works": len(works)})
 		return []models.ActualLRPGroup{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.ActualLRPGroup{}, workErr

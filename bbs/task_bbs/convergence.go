@@ -1,7 +1,6 @@
 package task_bbs
 
 import (
-	"sync"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
@@ -14,7 +13,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-const workerPoolSize = 20
+const throttlerSize = 20
 
 const (
 	convergeTaskRunsCounter = metric.Counter("ConvergenceTaskRuns")
@@ -170,17 +169,13 @@ func (bbs *TaskBBS) ConvergeTasks(
 		logger.Debug("done-requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 	}
 
-	workPool, err := workpool.NewWorkPool(workerPoolSize)
-	if err != nil {
-		logger.Error("failed-to-construct-workpool", err, lager.Data{"num-workers": workerPoolSize})
-		return
-	}
-
 	tasksKickedCounter.Add(tasksKicked)
 	logger.Debug("compare-and-swapping-tasks", lager.Data{"num-tasks-to-cas": len(tasksToCAS)})
-	bbs.batchCompareAndSwapTasks(tasksToCAS, workPool, taskLog)
+	err = bbs.batchCompareAndSwapTasks(tasksToCAS, taskLog)
+	if err != nil {
+		return
+	}
 	logger.Debug("done-compare-and-swapping-tasks", lager.Data{"num-tasks-to-cas": len(tasksToCAS)})
-	workPool.Stop()
 
 	logger.Debug("marking-tasks-completed", lager.Data{"num-tasks-to-complete": len(tasksToComplete)})
 	bbs.completeTasks(tasksToComplete, taskLog)
@@ -226,13 +221,12 @@ func demoteToCompleted(task models.Task) models.Task {
 	return task
 }
 
-func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTask, pool *workpool.WorkPool, taskLog lager.Logger) {
+func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTask, taskLog lager.Logger) error {
 	if len(tasksToCAS) == 0 {
-		return
+		return nil
 	}
 
-	waitGroup := &sync.WaitGroup{}
-	waitGroup.Add(len(tasksToCAS))
+	works := []func(){}
 
 	for _, taskToCAS := range tasksToCAS {
 		task := taskToCAS.NewTask
@@ -250,8 +244,7 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 			Value: value,
 		}
 		index := taskToCAS.OldIndex
-		pool.Submit(func() {
-			defer waitGroup.Done()
+		works = append(works, func() {
 			err := bbs.store.CompareAndSwapByIndex(index, newStoreNode)
 			if err != nil {
 				taskLog.Error("failed-to-compare-and-swap", err, lager.Data{
@@ -261,7 +254,13 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 		})
 	}
 
-	waitGroup.Wait()
+	throttler, err := workpool.NewThrottler(throttlerSize, works)
+	if err != nil {
+		return err
+	}
+
+	throttler.Work()
+	return nil
 }
 
 func (bbs *TaskBBS) completeTasks(tasksToComplete []models.Task, taskLog lager.Logger) {

@@ -35,16 +35,12 @@ func (bbs *LRPBBS) DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error)
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			var lrp models.DesiredLRP
 			deserializeErr := models.FromJSON(node.Value, &lrp)
 			if deserializeErr != nil {
@@ -65,12 +61,9 @@ func (bbs *LRPBBS) DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error)
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxDesiredGetterWorkPoolSize, "num-works": len(works)})
 		return []models.DesiredLRP{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.DesiredLRP{}, workErr
@@ -106,16 +99,12 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(logger lager.Logger, domain string) ([]mo
 	var workErr error
 	workErrLock := sync.Mutex{}
 
-	wg := sync.WaitGroup{}
 	works := []func(){}
 
 	for _, node := range root.ChildNodes {
 		node := node
 
-		wg.Add(1)
 		works = append(works, func() {
-			defer wg.Done()
-
 			var lrp models.DesiredLRP
 			deserializeErr := models.FromJSON(node.Value, &lrp)
 			switch {
@@ -138,12 +127,9 @@ func (bbs *LRPBBS) DesiredLRPsByDomain(logger lager.Logger, domain string) ([]mo
 		logger.Error("failed-constructing-throttler", err, lager.Data{"max-workers": maxDesiredGetterWorkPoolSize, "num-works": len(works)})
 		return []models.DesiredLRP{}, err
 	}
-	defer throttler.Stop()
 
 	logger.Debug("performing-deserialization-work")
-	throttler.Start()
-	wg.Wait()
-
+	throttler.Work()
 	if workErr != nil {
 		logger.Error("failed-performing-deserialization-work", workErr)
 		return []models.DesiredLRP{}, workErr
