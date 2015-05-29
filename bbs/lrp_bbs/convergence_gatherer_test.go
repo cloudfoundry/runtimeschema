@@ -104,28 +104,28 @@ var _ = Describe("Convergence", func() {
 			Expect(gatherError).NotTo(HaveOccurred())
 
 			for _, desiredGuid := range testData.validDesiredGuidsWithSomeValidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			for _, desiredGuid := range testData.validDesiredGuidsWithNoActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			for _, desiredGuid := range testData.validDesiredGuidsWithOnlyInvalidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithSomeValidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithNoActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithOnlyInvalidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(desiredGuid)
+				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 		})
@@ -177,7 +177,7 @@ var _ = Describe("Convergence", func() {
 			Expect(gatherError).NotTo(HaveOccurred())
 
 			for _, guid := range testData.validDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -185,23 +185,23 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.validDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex1)
+					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex2)
+					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())
@@ -209,7 +209,7 @@ var _ = Describe("Convergence", func() {
 			}
 
 			for _, guid := range testData.invalidDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -217,23 +217,23 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.invalidDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex1)
+					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex2)
+					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())
@@ -241,7 +241,7 @@ var _ = Describe("Convergence", func() {
 			}
 
 			for _, guid := range testData.unknownDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -249,23 +249,23 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.unknownDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(guid)
+					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex1)
+					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(guid, randomIndex2)
+					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())

@@ -75,9 +75,10 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	ActualLRPGroupsByCellIDStub        func(cellID string) ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByCellIDStub        func(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error)
 	actualLRPGroupsByCellIDMutex       sync.RWMutex
 	actualLRPGroupsByCellIDArgsForCall []struct {
+		logger lager.Logger
 		cellID string
 	}
 	actualLRPGroupsByCellIDReturns struct {
@@ -391,14 +392,15 @@ func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeRepBBS) ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error) {
+func (fake *FakeRepBBS) ActualLRPGroupsByCellID(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error) {
 	fake.actualLRPGroupsByCellIDMutex.Lock()
 	fake.actualLRPGroupsByCellIDArgsForCall = append(fake.actualLRPGroupsByCellIDArgsForCall, struct {
+		logger lager.Logger
 		cellID string
-	}{cellID})
+	}{logger, cellID})
 	fake.actualLRPGroupsByCellIDMutex.Unlock()
 	if fake.ActualLRPGroupsByCellIDStub != nil {
-		return fake.ActualLRPGroupsByCellIDStub(cellID)
+		return fake.ActualLRPGroupsByCellIDStub(logger, cellID)
 	} else {
 		return fake.actualLRPGroupsByCellIDReturns.result1, fake.actualLRPGroupsByCellIDReturns.result2
 	}
@@ -410,10 +412,10 @@ func (fake *FakeRepBBS) ActualLRPGroupsByCellIDCallCount() int {
 	return len(fake.actualLRPGroupsByCellIDArgsForCall)
 }
 
-func (fake *FakeRepBBS) ActualLRPGroupsByCellIDArgsForCall(i int) string {
+func (fake *FakeRepBBS) ActualLRPGroupsByCellIDArgsForCall(i int) (lager.Logger, string) {
 	fake.actualLRPGroupsByCellIDMutex.RLock()
 	defer fake.actualLRPGroupsByCellIDMutex.RUnlock()
-	return fake.actualLRPGroupsByCellIDArgsForCall[i].cellID
+	return fake.actualLRPGroupsByCellIDArgsForCall[i].logger, fake.actualLRPGroupsByCellIDArgsForCall[i].cellID
 }
 
 func (fake *FakeRepBBS) ActualLRPGroupsByCellIDReturns(result1 []models.ActualLRPGroup, result2 error) {

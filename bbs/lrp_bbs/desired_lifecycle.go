@@ -47,7 +47,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGui
 	logger.Info("starting")
 	defer logger.Info("complete")
 
-	lrp, err := bbs.DesiredLRPByProcessGuid(processGuid)
+	lrp, err := bbs.DesiredLRPByProcessGuid(logger, processGuid)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (bbs *LRPBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, des
 	logger.Info("starting")
 	defer logger.Info("complete")
 
-	existing, index, err := bbs.desiredLRPByProcessGuidWithIndex(processGuid)
+	existing, index, err := bbs.desiredLRPByProcessGuidWithIndex(logger, processGuid)
 	if err != nil {
 		logger.Error("failed-to-fetch-existing-desired-lrp", err)
 		return err

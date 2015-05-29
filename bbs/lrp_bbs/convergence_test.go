@@ -209,7 +209,7 @@ var _ = Describe("LrpConvergence", func() {
 			cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
 			testHelper.RegisterCell(cellPresence)
 
-			actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+			actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = lrpBBS.ClaimActualLRP(
@@ -222,7 +222,7 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the cell is present", func() {
 			It("should not prune any LRPs", func() {
-				Expect(lrpBBS.ActualLRPs()).To(HaveLen(2))
+				Expect(lrpBBS.ActualLRPs(logger)).To(HaveLen(2))
 			})
 		})
 
@@ -236,7 +236,7 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("should delete LRPs associated with said cell but not the unclaimed LRP", func() {
-				lrps, err := lrpBBS.ActualLRPs()
+				lrps, err := lrpBBS.ActualLRPs(logger)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(lrps).To(HaveLen(2))
 
@@ -291,7 +291,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("removes the actual LRP", func() {
 					lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
@@ -309,7 +309,7 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not delete the actual LRP", func() {
 						lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(logger.TestSink).To(gbytes.Say("skipping-unfresh-domain"))
@@ -324,7 +324,7 @@ var _ = Describe("LrpConvergence", func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					testHelper.RegisterCell(cellPresence)
 
-					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = lrpBBS.ClaimActualLRP(
@@ -371,7 +371,7 @@ var _ = Describe("LrpConvergence", func() {
 					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
 					testHelper.RegisterCell(cellPresence)
 
-					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = lrpBBS.ClaimActualLRP(
@@ -462,7 +462,7 @@ var _ = Describe("LrpConvergence", func() {
 				It("removes the actual LRP", func() {
 					lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-					_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 
@@ -480,7 +480,7 @@ var _ = Describe("LrpConvergence", func() {
 					It("does not delete the actual LRP", func() {
 						lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
 
-						_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+						_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 						Expect(err).NotTo(HaveOccurred())
 					})
 				})
@@ -504,7 +504,7 @@ var _ = Describe("LrpConvergence", func() {
 
 					testHelper.SetRawActualLRP(higherIndexActualLRP)
 
-					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = lrpBBS.ClaimActualLRP(
@@ -564,7 +564,7 @@ var _ = Describe("LrpConvergence", func() {
 
 					testHelper.SetRawActualLRP(higherIndexActualLRP)
 
-					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(processGuid, index)
+					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = lrpBBS.ClaimActualLRP(
@@ -630,7 +630,7 @@ var _ = Describe("LrpConvergence", func() {
 			err := lrpBBS.DesireLRP(logger, desiredLRP)
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredLRP, err = lrpBBS.DesiredLRPByProcessGuid("process-guid-for-unclaimed")
+			desiredLRP, err = lrpBBS.DesiredLRPByProcessGuid(logger, "process-guid-for-unclaimed")
 			Expect(err).NotTo(HaveOccurred())
 
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")

@@ -62,7 +62,7 @@ var _ = Describe("Watchers", func() {
 			err := lrpBBS.DesireLRP(logger, lrp)
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredLRP, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredLRP, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(creates).Should(Receive(Equal(desiredLRP)))
@@ -74,7 +74,7 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			desiredBeforeUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredBeforeUpdate, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			lrp.Instances++
@@ -83,7 +83,7 @@ var _ = Describe("Watchers", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredAfterUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredAfterUpdate, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(changes).Should(Receive(Equal(models.DesiredLRPChange{
@@ -98,7 +98,7 @@ var _ = Describe("Watchers", func() {
 
 			Eventually(creates).Should(Receive())
 
-			desired, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desired, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = etcdClient.Delete(shared.DesiredLRPSchemaPath(desired))

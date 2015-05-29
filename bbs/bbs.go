@@ -35,16 +35,16 @@ type ReceptorBBS interface {
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error
-	DesiredLRPs() ([]models.DesiredLRP, error)
-	DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error)
-	DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error)
+	DesiredLRPsByDomain(logger lager.Logger, domain string) ([]models.DesiredLRP, error)
+	DesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error)
 	WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error)
 
 	//actual lrp
-	ActualLRPGroups() ([]models.ActualLRPGroup, error)
-	ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error)
-	ActualLRPGroupsByProcessGuid(string) (models.ActualLRPGroupsByIndex, error)
-	ActualLRPGroupByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRPGroup, error)
+	ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByDomain(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error)
+	ActualLRPGroupByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error)
 	RetireActualLRPs(lager.Logger, []models.ActualLRPKey)
 	WatchForActualLRPChanges(logger lager.Logger, created func(models.ActualLRP, bool), changed func(models.ActualLRPChange, bool), deleted func(models.ActualLRP, bool)) (stop chan<- bool, errs <-chan error)
 
@@ -69,7 +69,7 @@ type RepBBS interface {
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
-	ActualLRPGroupsByCellID(cellID string) ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByCellID(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error)
 	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
 	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, string) error
@@ -147,8 +147,8 @@ type VeritasBBS interface {
 	Tasks(logger lager.Logger) ([]models.Task, error)
 
 	//lrp
-	DesiredLRPs() ([]models.DesiredLRP, error)
-	ActualLRPGroups() ([]models.ActualLRPGroup, error)
+	DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error)
+	ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error)
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 

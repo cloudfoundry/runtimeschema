@@ -102,25 +102,29 @@ type FakeReceptorBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	DesiredLRPsStub        func() ([]models.DesiredLRP, error)
+	DesiredLRPsStub        func(logger lager.Logger) ([]models.DesiredLRP, error)
 	desiredLRPsMutex       sync.RWMutex
-	desiredLRPsArgsForCall []struct{}
-	desiredLRPsReturns     struct {
+	desiredLRPsArgsForCall []struct {
+		logger lager.Logger
+	}
+	desiredLRPsReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	DesiredLRPsByDomainStub        func(domain string) ([]models.DesiredLRP, error)
+	DesiredLRPsByDomainStub        func(logger lager.Logger, domain string) ([]models.DesiredLRP, error)
 	desiredLRPsByDomainMutex       sync.RWMutex
 	desiredLRPsByDomainArgsForCall []struct {
+		logger lager.Logger
 		domain string
 	}
 	desiredLRPsByDomainReturns struct {
 		result1 []models.DesiredLRP
 		result2 error
 	}
-	DesiredLRPByProcessGuidStub        func(processGuid string) (models.DesiredLRP, error)
+	DesiredLRPByProcessGuidStub        func(logger lager.Logger, processGuid string) (models.DesiredLRP, error)
 	desiredLRPByProcessGuidMutex       sync.RWMutex
 	desiredLRPByProcessGuidArgsForCall []struct {
+		logger      lager.Logger
 		processGuid string
 	}
 	desiredLRPByProcessGuidReturns struct {
@@ -139,34 +143,39 @@ type FakeReceptorBBS struct {
 		result1 chan<- bool
 		result2 <-chan error
 	}
-	ActualLRPGroupsStub        func() ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsStub        func(logger lager.Logger) ([]models.ActualLRPGroup, error)
 	actualLRPGroupsMutex       sync.RWMutex
-	actualLRPGroupsArgsForCall []struct{}
-	actualLRPGroupsReturns     struct {
+	actualLRPGroupsArgsForCall []struct {
+		logger lager.Logger
+	}
+	actualLRPGroupsReturns struct {
 		result1 []models.ActualLRPGroup
 		result2 error
 	}
-	ActualLRPGroupsByDomainStub        func(domain string) ([]models.ActualLRPGroup, error)
+	ActualLRPGroupsByDomainStub        func(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error)
 	actualLRPGroupsByDomainMutex       sync.RWMutex
 	actualLRPGroupsByDomainArgsForCall []struct {
+		logger lager.Logger
 		domain string
 	}
 	actualLRPGroupsByDomainReturns struct {
 		result1 []models.ActualLRPGroup
 		result2 error
 	}
-	ActualLRPGroupsByProcessGuidStub        func(string) (models.ActualLRPGroupsByIndex, error)
+	ActualLRPGroupsByProcessGuidStub        func(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error)
 	actualLRPGroupsByProcessGuidMutex       sync.RWMutex
 	actualLRPGroupsByProcessGuidArgsForCall []struct {
-		arg1 string
+		logger      lager.Logger
+		processGuid string
 	}
 	actualLRPGroupsByProcessGuidReturns struct {
 		result1 models.ActualLRPGroupsByIndex
 		result2 error
 	}
-	ActualLRPGroupByProcessGuidAndIndexStub        func(processGuid string, index int) (models.ActualLRPGroup, error)
+	ActualLRPGroupByProcessGuidAndIndexStub        func(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error)
 	actualLRPGroupByProcessGuidAndIndexMutex       sync.RWMutex
 	actualLRPGroupByProcessGuidAndIndexArgsForCall []struct {
+		logger      lager.Logger
 		processGuid string
 		index       int
 	}
@@ -195,7 +204,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -211,7 +220,7 @@ type FakeReceptorBBS struct {
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns     struct {
+	domainsReturns struct {
 		result1 []string
 		result2 error
 	}
@@ -549,12 +558,14 @@ func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error)
 	}{result1}
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPs() ([]models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error) {
 	fake.desiredLRPsMutex.Lock()
-	fake.desiredLRPsArgsForCall = append(fake.desiredLRPsArgsForCall, struct{}{})
+	fake.desiredLRPsArgsForCall = append(fake.desiredLRPsArgsForCall, struct {
+		logger lager.Logger
+	}{logger})
 	fake.desiredLRPsMutex.Unlock()
 	if fake.DesiredLRPsStub != nil {
-		return fake.DesiredLRPsStub()
+		return fake.DesiredLRPsStub(logger)
 	} else {
 		return fake.desiredLRPsReturns.result1, fake.desiredLRPsReturns.result2
 	}
@@ -566,6 +577,12 @@ func (fake *FakeReceptorBBS) DesiredLRPsCallCount() int {
 	return len(fake.desiredLRPsArgsForCall)
 }
 
+func (fake *FakeReceptorBBS) DesiredLRPsArgsForCall(i int) lager.Logger {
+	fake.desiredLRPsMutex.RLock()
+	defer fake.desiredLRPsMutex.RUnlock()
+	return fake.desiredLRPsArgsForCall[i].logger
+}
+
 func (fake *FakeReceptorBBS) DesiredLRPsReturns(result1 []models.DesiredLRP, result2 error) {
 	fake.DesiredLRPsStub = nil
 	fake.desiredLRPsReturns = struct {
@@ -574,14 +591,15 @@ func (fake *FakeReceptorBBS) DesiredLRPsReturns(result1 []models.DesiredLRP, res
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPsByDomain(domain string) ([]models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPsByDomain(logger lager.Logger, domain string) ([]models.DesiredLRP, error) {
 	fake.desiredLRPsByDomainMutex.Lock()
 	fake.desiredLRPsByDomainArgsForCall = append(fake.desiredLRPsByDomainArgsForCall, struct {
+		logger lager.Logger
 		domain string
-	}{domain})
+	}{logger, domain})
 	fake.desiredLRPsByDomainMutex.Unlock()
 	if fake.DesiredLRPsByDomainStub != nil {
-		return fake.DesiredLRPsByDomainStub(domain)
+		return fake.DesiredLRPsByDomainStub(logger, domain)
 	} else {
 		return fake.desiredLRPsByDomainReturns.result1, fake.desiredLRPsByDomainReturns.result2
 	}
@@ -593,10 +611,10 @@ func (fake *FakeReceptorBBS) DesiredLRPsByDomainCallCount() int {
 	return len(fake.desiredLRPsByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPsByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) DesiredLRPsByDomainArgsForCall(i int) (lager.Logger, string) {
 	fake.desiredLRPsByDomainMutex.RLock()
 	defer fake.desiredLRPsByDomainMutex.RUnlock()
-	return fake.desiredLRPsByDomainArgsForCall[i].domain
+	return fake.desiredLRPsByDomainArgsForCall[i].logger, fake.desiredLRPsByDomainArgsForCall[i].domain
 }
 
 func (fake *FakeReceptorBBS) DesiredLRPsByDomainReturns(result1 []models.DesiredLRP, result2 error) {
@@ -607,14 +625,15 @@ func (fake *FakeReceptorBBS) DesiredLRPsByDomainReturns(result1 []models.Desired
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(processGuid string) (models.DesiredLRP, error) {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error) {
 	fake.desiredLRPByProcessGuidMutex.Lock()
 	fake.desiredLRPByProcessGuidArgsForCall = append(fake.desiredLRPByProcessGuidArgsForCall, struct {
+		logger      lager.Logger
 		processGuid string
-	}{processGuid})
+	}{logger, processGuid})
 	fake.desiredLRPByProcessGuidMutex.Unlock()
 	if fake.DesiredLRPByProcessGuidStub != nil {
-		return fake.DesiredLRPByProcessGuidStub(processGuid)
+		return fake.DesiredLRPByProcessGuidStub(logger, processGuid)
 	} else {
 		return fake.desiredLRPByProcessGuidReturns.result1, fake.desiredLRPByProcessGuidReturns.result2
 	}
@@ -626,10 +645,10 @@ func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidCallCount() int {
 	return len(fake.desiredLRPByProcessGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidArgsForCall(i int) (lager.Logger, string) {
 	fake.desiredLRPByProcessGuidMutex.RLock()
 	defer fake.desiredLRPByProcessGuidMutex.RUnlock()
-	return fake.desiredLRPByProcessGuidArgsForCall[i].processGuid
+	return fake.desiredLRPByProcessGuidArgsForCall[i].logger, fake.desiredLRPByProcessGuidArgsForCall[i].processGuid
 }
 
 func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
@@ -676,12 +695,14 @@ func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 chan<- boo
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroups() ([]models.ActualLRPGroup, error) {
+func (fake *FakeReceptorBBS) ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error) {
 	fake.actualLRPGroupsMutex.Lock()
-	fake.actualLRPGroupsArgsForCall = append(fake.actualLRPGroupsArgsForCall, struct{}{})
+	fake.actualLRPGroupsArgsForCall = append(fake.actualLRPGroupsArgsForCall, struct {
+		logger lager.Logger
+	}{logger})
 	fake.actualLRPGroupsMutex.Unlock()
 	if fake.ActualLRPGroupsStub != nil {
-		return fake.ActualLRPGroupsStub()
+		return fake.ActualLRPGroupsStub(logger)
 	} else {
 		return fake.actualLRPGroupsReturns.result1, fake.actualLRPGroupsReturns.result2
 	}
@@ -693,6 +714,12 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsCallCount() int {
 	return len(fake.actualLRPGroupsArgsForCall)
 }
 
+func (fake *FakeReceptorBBS) ActualLRPGroupsArgsForCall(i int) lager.Logger {
+	fake.actualLRPGroupsMutex.RLock()
+	defer fake.actualLRPGroupsMutex.RUnlock()
+	return fake.actualLRPGroupsArgsForCall[i].logger
+}
+
 func (fake *FakeReceptorBBS) ActualLRPGroupsReturns(result1 []models.ActualLRPGroup, result2 error) {
 	fake.ActualLRPGroupsStub = nil
 	fake.actualLRPGroupsReturns = struct {
@@ -701,14 +728,15 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsReturns(result1 []models.ActualLRPGr
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomain(domain string) ([]models.ActualLRPGroup, error) {
+func (fake *FakeReceptorBBS) ActualLRPGroupsByDomain(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error) {
 	fake.actualLRPGroupsByDomainMutex.Lock()
 	fake.actualLRPGroupsByDomainArgsForCall = append(fake.actualLRPGroupsByDomainArgsForCall, struct {
+		logger lager.Logger
 		domain string
-	}{domain})
+	}{logger, domain})
 	fake.actualLRPGroupsByDomainMutex.Unlock()
 	if fake.ActualLRPGroupsByDomainStub != nil {
-		return fake.ActualLRPGroupsByDomainStub(domain)
+		return fake.ActualLRPGroupsByDomainStub(logger, domain)
 	} else {
 		return fake.actualLRPGroupsByDomainReturns.result1, fake.actualLRPGroupsByDomainReturns.result2
 	}
@@ -720,10 +748,10 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainCallCount() int {
 	return len(fake.actualLRPGroupsByDomainArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainArgsForCall(i int) (lager.Logger, string) {
 	fake.actualLRPGroupsByDomainMutex.RLock()
 	defer fake.actualLRPGroupsByDomainMutex.RUnlock()
-	return fake.actualLRPGroupsByDomainArgsForCall[i].domain
+	return fake.actualLRPGroupsByDomainArgsForCall[i].logger, fake.actualLRPGroupsByDomainArgsForCall[i].domain
 }
 
 func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainReturns(result1 []models.ActualLRPGroup, result2 error) {
@@ -734,14 +762,15 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainReturns(result1 []models.Act
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuid(arg1 string) (models.ActualLRPGroupsByIndex, error) {
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error) {
 	fake.actualLRPGroupsByProcessGuidMutex.Lock()
 	fake.actualLRPGroupsByProcessGuidArgsForCall = append(fake.actualLRPGroupsByProcessGuidArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		logger      lager.Logger
+		processGuid string
+	}{logger, processGuid})
 	fake.actualLRPGroupsByProcessGuidMutex.Unlock()
 	if fake.ActualLRPGroupsByProcessGuidStub != nil {
-		return fake.ActualLRPGroupsByProcessGuidStub(arg1)
+		return fake.ActualLRPGroupsByProcessGuidStub(logger, processGuid)
 	} else {
 		return fake.actualLRPGroupsByProcessGuidReturns.result1, fake.actualLRPGroupsByProcessGuidReturns.result2
 	}
@@ -753,10 +782,10 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidCallCount() int {
 	return len(fake.actualLRPGroupsByProcessGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidArgsForCall(i int) (lager.Logger, string) {
 	fake.actualLRPGroupsByProcessGuidMutex.RLock()
 	defer fake.actualLRPGroupsByProcessGuidMutex.RUnlock()
-	return fake.actualLRPGroupsByProcessGuidArgsForCall[i].arg1
+	return fake.actualLRPGroupsByProcessGuidArgsForCall[i].logger, fake.actualLRPGroupsByProcessGuidArgsForCall[i].processGuid
 }
 
 func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidReturns(result1 models.ActualLRPGroupsByIndex, result2 error) {
@@ -767,15 +796,16 @@ func (fake *FakeReceptorBBS) ActualLRPGroupsByProcessGuidReturns(result1 models.
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndex(processGuid string, index int) (models.ActualLRPGroup, error) {
+func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error) {
 	fake.actualLRPGroupByProcessGuidAndIndexMutex.Lock()
 	fake.actualLRPGroupByProcessGuidAndIndexArgsForCall = append(fake.actualLRPGroupByProcessGuidAndIndexArgsForCall, struct {
+		logger      lager.Logger
 		processGuid string
 		index       int
-	}{processGuid, index})
+	}{logger, processGuid, index})
 	fake.actualLRPGroupByProcessGuidAndIndexMutex.Unlock()
 	if fake.ActualLRPGroupByProcessGuidAndIndexStub != nil {
-		return fake.ActualLRPGroupByProcessGuidAndIndexStub(processGuid, index)
+		return fake.ActualLRPGroupByProcessGuidAndIndexStub(logger, processGuid, index)
 	} else {
 		return fake.actualLRPGroupByProcessGuidAndIndexReturns.result1, fake.actualLRPGroupByProcessGuidAndIndexReturns.result2
 	}
@@ -787,10 +817,10 @@ func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndexCallCount() int 
 	return len(fake.actualLRPGroupByProcessGuidAndIndexArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndexArgsForCall(i int) (string, int) {
+func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndexArgsForCall(i int) (lager.Logger, string, int) {
 	fake.actualLRPGroupByProcessGuidAndIndexMutex.RLock()
 	defer fake.actualLRPGroupByProcessGuidAndIndexMutex.RUnlock()
-	return fake.actualLRPGroupByProcessGuidAndIndexArgsForCall[i].processGuid, fake.actualLRPGroupByProcessGuidAndIndexArgsForCall[i].index
+	return fake.actualLRPGroupByProcessGuidAndIndexArgsForCall[i].logger, fake.actualLRPGroupByProcessGuidAndIndexArgsForCall[i].processGuid, fake.actualLRPGroupByProcessGuidAndIndexArgsForCall[i].index
 }
 
 func (fake *FakeReceptorBBS) ActualLRPGroupByProcessGuidAndIndexReturns(result1 models.ActualLRPGroup, result2 error) {

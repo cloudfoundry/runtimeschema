@@ -869,7 +869,7 @@ func (t evacuationTest) Test() {
 				It("the actual LRP is also deleted", func() {
 					Expect(evacuateErr).NotTo(HaveOccurred())
 
-					lrpGroup, _ := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
+					lrpGroup, _ := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, t.InstanceLRP().ProcessGuid, t.InstanceLRP().Index)
 					Expect(lrpGroup.Instance).To(BeNil())
 				})
 			})

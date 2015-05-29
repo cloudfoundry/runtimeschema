@@ -60,7 +60,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			It("creates one ActualLRP per index", func() {
 				err := lrpBBS.DesireLRP(logger, lrp)
 				Expect(err).NotTo(HaveOccurred())
-				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid("some-process-guid")
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, "some-process-guid")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).To(HaveLen(5))
 			})
@@ -68,7 +68,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			It("sets a ModificationTag on each ActualLRP with a unique epoch", func() {
 				err := lrpBBS.DesireLRP(logger, lrp)
 				Expect(err).NotTo(HaveOccurred())
-				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid("some-process-guid")
+				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, "some-process-guid")
 				Expect(err).NotTo(HaveOccurred())
 
 				epochs := map[string]models.ActualLRP{}
@@ -83,7 +83,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				err := lrpBBS.DesireLRP(logger, lrp)
 				Expect(err).NotTo(HaveOccurred())
 
-				lrp, err := lrpBBS.DesiredLRPByProcessGuid("some-process-guid")
+				lrp, err := lrpBBS.DesiredLRPByProcessGuid(logger, "some-process-guid")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrp.ModificationTag.Epoch).NotTo(BeEmpty())
@@ -102,7 +102,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					err := lrpBBS.DesireLRP(logger, lrp)
 					Expect(err).NotTo(HaveOccurred())
 
-					desired, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+					desired, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 					Expect(err).NotTo(HaveOccurred())
 
 					Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
@@ -137,7 +137,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						err := bbsWithFakeRepo.DesireLRP(logger, lrp)
 						Expect(err).NotTo(HaveOccurred())
 
-						desired, err := bbsWithFakeRepo.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+						desired, err := bbsWithFakeRepo.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
@@ -251,7 +251,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			err := lrpBBS.DesireLRP(logger, lrp)
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredLRP, err = lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+			desiredLRP, err = lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 			Expect(err).NotTo(HaveOccurred())
 
 			update = models.DesiredLRPUpdate{}
@@ -274,7 +274,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				err := lrpBBS.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 				Expect(err).NotTo(HaveOccurred())
 
-				updated, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+				updated, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(updated.Routes).To(HaveKey("router"))
@@ -309,7 +309,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 
 						Consistently(fakeAuctioneerClient.RequestLRPAuctionsCallCount).Should(Equal(originalAuctionCallCount + 1))
 
-						updated, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+						updated, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						_, startAuctions := fakeAuctioneerClient.RequestLRPAuctionsArgsForCall(originalAuctionCallCount)
@@ -373,14 +373,14 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					Instances: &instances,
 				}
 
-				desiredBeforeUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+				desiredBeforeUpdate, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = lrpBBS.UpdateDesiredLRP(logger, lrp.ProcessGuid, update)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("instances"))
 
-				desiredAfterUpdate, err := lrpBBS.DesiredLRPByProcessGuid(lrp.ProcessGuid)
+				desiredAfterUpdate, err := lrpBBS.DesiredLRPByProcessGuid(logger, lrp.ProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(desiredAfterUpdate).To(Equal(desiredBeforeUpdate))
