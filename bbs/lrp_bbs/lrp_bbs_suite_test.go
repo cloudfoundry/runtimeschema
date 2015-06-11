@@ -40,7 +40,8 @@ func TestLRPBbs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
+	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1, nil)
+
 	consulRunner = consuladapter.NewClusterRunner(9001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength, 1, "http")
 
 	etcdRunner.Start()
@@ -59,7 +60,7 @@ var _ = AfterEach(func() {
 
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
-	etcdClient = etcdRunner.RetryableAdapter(bbs.ConvergerBBSWorkPoolSize)
+	etcdClient = etcdRunner.RetryableAdapter(bbs.ConvergerBBSWorkPoolSize, nil)
 
 	consulRunner.Reset()
 	consulSession = consulRunner.NewSession("a-session")

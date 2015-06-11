@@ -44,8 +44,8 @@ func TestTaskBbs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter(10)
+	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1, nil)
+	etcdClient = etcdRunner.RetryableAdapter(10, nil)
 	etcdRunner.Start()
 
 	consulRunner = consuladapter.NewClusterRunner(

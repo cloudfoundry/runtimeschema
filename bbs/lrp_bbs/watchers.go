@@ -80,8 +80,10 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(
 	events, stop, err := bbs.store.Watch(shared.ActualLRPSchemaRoot)
 
 	go func() {
+		logger.Info("started-watching")
+		defer logger.Info("finished-watching")
+
 		for event := range events {
-			logger.Debug("event-node", lager.Data{"event": event})
 			switch {
 			case event.Node != nil && event.PrevNode == nil:
 				logger.Debug("received-create")

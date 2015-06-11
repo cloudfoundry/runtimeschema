@@ -16,7 +16,7 @@ import (
 
 func TestDomainBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "DomainBbs Suite")
+	RunSpecs(t, "Domain BBS Suite")
 }
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
@@ -25,8 +25,8 @@ var bbs *domain_bbs.DomainBBS
 var logger *lagertest.TestLogger
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter(10)
+	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1, nil)
+	etcdClient = etcdRunner.RetryableAdapter(10, nil)
 
 	etcdRunner.Start()
 })
