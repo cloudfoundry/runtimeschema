@@ -50,7 +50,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("persists the task", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(persistedTask.Domain).To(Equal(domain))
@@ -59,13 +59,13 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("honours the CreatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.CreatedAt).To(Equal(createdAtTime))
 					})
 
 					It("sets the UpdatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
@@ -147,7 +147,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("persists the task", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(persistedTask.Domain).To(Equal(domain))
@@ -156,13 +156,13 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("provides a CreatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.CreatedAt).To(Equal(clock.Now().UnixNano()))
 					})
 
 					It("sets the UpdatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(taskGuid)
+						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
@@ -299,7 +299,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("does not change the Task in the store", func() {
-					task, err := bbs.TaskByGuid(task.TaskGuid)
+					task, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(task.UpdatedAt).To(Equal(previousTime))
@@ -333,7 +333,7 @@ var _ = Describe("Task BBS", func() {
 
 			JustBeforeEach(func() {
 				cancelError = bbs.CancelTask(logger, task.TaskGuid)
-				taskAfterCancel, _ = bbs.TaskByGuid(task.TaskGuid)
+				taskAfterCancel, _ = bbs.TaskByGuid(logger, task.TaskGuid)
 			})
 
 			itMarksTaskAsCancelled := func() {
@@ -409,7 +409,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("logs the error", func() {
-						Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.cancel-task.failed-to-cancel-immediately"))
+						Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.cancel-task.failed-getting-cell-info"))
 					})
 				})
 			})

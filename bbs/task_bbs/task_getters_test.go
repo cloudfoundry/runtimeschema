@@ -29,7 +29,7 @@ var _ = Describe("Task BBS", func() {
 		})
 
 		JustBeforeEach(func() {
-			receivedTask, lookupErr = bbs.TaskByGuid(guid)
+			receivedTask, lookupErr = bbs.TaskByGuid(logger, guid)
 		})
 
 		Context("When there is a task with the given guid", func() {
@@ -99,12 +99,12 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.DesireTask(logger, task1Request)
 				Expect(err).NotTo(HaveOccurred())
 
-				task1, err = bbs.TaskByGuid("some-guid-1")
+				task1, err = bbs.TaskByGuid(logger, "some-guid-1")
 				Expect(err).NotTo(HaveOccurred())
 
 				err = bbs.DesireTask(logger, task2Request)
 				Expect(err).NotTo(HaveOccurred())
-				task2, err = bbs.TaskByGuid("some-guid-2")
+				task2, err = bbs.TaskByGuid(logger, "some-guid-2")
 				Expect(err).NotTo(HaveOccurred())
 			})
 

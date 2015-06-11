@@ -8,19 +8,24 @@ import (
 )
 
 func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
+	logger.Info("fetching-tasks-from-store")
 	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
+		logger.Info("no-tasks-to-fetch")
 		return []models.Task{}, nil
 	} else if err != nil {
+		logger.Error("failed-fetching-tasks-from-store", err)
 		return []models.Task{}, shared.ConvertStoreError(err)
 	}
+	logger.Info("succeeded-fetching-tasks-from-store")
 
+	logger.Debug("unmarshalling-tasks")
 	tasks := []models.Task{}
 	for _, node := range node.ChildNodes {
 		var task models.Task
 		err := models.FromJSON(node.Value, &task)
 		if err != nil {
-			logger.Error("failed-to-unmarshal-task", err, lager.Data{
+			logger.Error("failed-unmarshalling-task", err, lager.Data{
 				"key":   node.Key,
 				"value": node.Value,
 			})
@@ -28,13 +33,23 @@ func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 			tasks = append(tasks, task)
 		}
 	}
+	logger.Debug("succeeded-unmarshalling-tasks")
 
 	return tasks, nil
 }
 
-func (bbs *TaskBBS) TaskByGuid(guid string) (models.Task, error) {
+func (bbs *TaskBBS) TaskByGuid(logger lager.Logger, guid string) (models.Task, error) {
+	logger = logger.WithData(lager.Data{"guid": guid})
+
+	logger.Debug("getting-task")
 	task, _, err := bbs.getTask(guid)
-	return task, err
+	if err != nil {
+		logger.Error("failed-getting-task", err)
+		return models.Task{}, err
+	} else {
+		logger.Debug("succeeded-getting-task")
+		return task, nil
+	}
 }
 
 func (bbs *TaskBBS) PendingTasks(logger lager.Logger) ([]models.Task, error) {

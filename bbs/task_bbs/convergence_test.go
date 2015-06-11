@@ -180,7 +180,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should mark the Task as completed & failed", func() {
-					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 
@@ -225,7 +225,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("leaves the task running", func() {
-					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(returnedTask.State).To(Equal(models.TaskStateRunning))
 				})
@@ -233,7 +233,7 @@ var _ = Describe("Convergence of Tasks", func() {
 
 			Context("when the associated cell is missing", func() {
 				It("should mark the Task as completed & failed", func() {
-					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 
@@ -375,7 +375,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					It("should delete the task", func() {
-						_, err := bbs.TaskByGuid(task.TaskGuid)
+						_, err := bbs.TaskByGuid(logger, task.TaskGuid)
 						Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 					})
 
@@ -393,7 +393,7 @@ var _ = Describe("Convergence of Tasks", func() {
 					})
 
 					It("should NOT kick the Task", func() {
-						returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+						returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 						Expect(returnedTask.UpdatedAt).To(Equal(previousTime))
@@ -430,7 +430,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				It("should do nothing", func() {
 					Expect(fakeTaskClient.CompleteTasksCallCount()).To(Equal(1))
 
-					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(returnedTask.State).To(Equal(models.TaskStateResolving))
 					Expect(returnedTask.UpdatedAt).To(Equal(previousTime))
@@ -443,7 +443,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should put the Task back into the completed state", func() {
-					returnedTask, err := bbs.TaskByGuid(task.TaskGuid)
+					returnedTask, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(returnedTask.State).To(Equal(models.TaskStateCompleted))
 					Expect(returnedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
@@ -475,7 +475,7 @@ var _ = Describe("Convergence of Tasks", func() {
 				})
 
 				It("should delete the task", func() {
-					_, err := bbs.TaskByGuid(task.TaskGuid)
+					_, err := bbs.TaskByGuid(logger, task.TaskGuid)
 					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 

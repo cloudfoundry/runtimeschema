@@ -38,9 +38,10 @@ type FakeReceptorBBS struct {
 		result1 []models.Task
 		result2 error
 	}
-	TaskByGuidStub        func(taskGuid string) (models.Task, error)
+	TaskByGuidStub        func(logger lager.Logger, taskGuid string) (models.Task, error)
 	taskByGuidMutex       sync.RWMutex
 	taskByGuidArgsForCall []struct {
+		logger   lager.Logger
 		taskGuid string
 	}
 	taskByGuidReturns struct {
@@ -326,14 +327,15 @@ func (fake *FakeReceptorBBS) TasksByDomainReturns(result1 []models.Task, result2
 	}{result1, result2}
 }
 
-func (fake *FakeReceptorBBS) TaskByGuid(taskGuid string) (models.Task, error) {
+func (fake *FakeReceptorBBS) TaskByGuid(logger lager.Logger, taskGuid string) (models.Task, error) {
 	fake.taskByGuidMutex.Lock()
 	fake.taskByGuidArgsForCall = append(fake.taskByGuidArgsForCall, struct {
+		logger   lager.Logger
 		taskGuid string
-	}{taskGuid})
+	}{logger, taskGuid})
 	fake.taskByGuidMutex.Unlock()
 	if fake.TaskByGuidStub != nil {
-		return fake.TaskByGuidStub(taskGuid)
+		return fake.TaskByGuidStub(logger, taskGuid)
 	} else {
 		return fake.taskByGuidReturns.result1, fake.taskByGuidReturns.result2
 	}
@@ -345,10 +347,10 @@ func (fake *FakeReceptorBBS) TaskByGuidCallCount() int {
 	return len(fake.taskByGuidArgsForCall)
 }
 
-func (fake *FakeReceptorBBS) TaskByGuidArgsForCall(i int) string {
+func (fake *FakeReceptorBBS) TaskByGuidArgsForCall(i int) (lager.Logger, string) {
 	fake.taskByGuidMutex.RLock()
 	defer fake.taskByGuidMutex.RUnlock()
-	return fake.taskByGuidArgsForCall[i].taskGuid
+	return fake.taskByGuidArgsForCall[i].logger, fake.taskByGuidArgsForCall[i].taskGuid
 }
 
 func (fake *FakeReceptorBBS) TaskByGuidReturns(result1 models.Task, result2 error) {
