@@ -34,13 +34,21 @@ var servicesBBS *services_bbs.ServicesBBS
 
 var logger *lagertest.TestLogger
 
+const assetsPath = "../../../../cloudfoundry/storeadapter/assets/"
+
 func TestLRPBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Long Running Process BBS Suite")
 }
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
+	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1,
+		&etcdstorerunner.SSLConfig{
+			CertFile: assetsPath + "server.crt",
+			KeyFile:  assetsPath + "server.key",
+			CAFile:   assetsPath + "ca.crt",
+		})
+
 	consulRunner = consuladapter.NewClusterRunner(9001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength, 1, "http")
 
 	etcdRunner.Start()
@@ -59,7 +67,12 @@ var _ = AfterEach(func() {
 
 var _ = BeforeEach(func() {
 	etcdRunner.Reset()
-	etcdClient = etcdRunner.RetryableAdapter(bbs.ConvergerBBSWorkPoolSize)
+	etcdClient = etcdRunner.RetryableAdapter(bbs.ConvergerBBSWorkPoolSize,
+		&etcdstorerunner.SSLConfig{
+			CertFile: assetsPath + "client.crt",
+			KeyFile:  assetsPath + "client.key",
+			CAFile:   assetsPath + "ca.crt",
+		})
 
 	consulRunner.Reset()
 	consulSession = consulRunner.NewSession("a-session")

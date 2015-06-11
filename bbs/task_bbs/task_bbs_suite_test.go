@@ -38,14 +38,26 @@ var dummyAction = &models.RunAction{
 	Args: []string{"/tmp/file"},
 }
 
+const assetsPath = "../../../../cloudfoundry/storeadapter/assets/"
+
 func TestTaskBbs(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Task BBS Suite")
 }
 
 var _ = BeforeSuite(func() {
-	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1)
-	etcdClient = etcdRunner.RetryableAdapter(10)
+	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1,
+		&etcdstorerunner.SSLConfig{
+			CertFile: assetsPath + "/server.crt",
+			KeyFile:  assetsPath + "/server.key",
+			CAFile:   assetsPath + "/ca.crt",
+		})
+	etcdClient = etcdRunner.RetryableAdapter(10,
+		&etcdstorerunner.SSLConfig{
+			CertFile: assetsPath + "client.crt",
+			KeyFile:  assetsPath + "client.key",
+			CAFile:   assetsPath + "ca.crt",
+		})
 	etcdRunner.Start()
 
 	consulRunner = consuladapter.NewClusterRunner(
