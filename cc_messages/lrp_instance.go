@@ -1,5 +1,7 @@
 package cc_messages
 
+import "time"
+
 type LRPInstanceState string
 
 const (
@@ -15,12 +17,15 @@ type LRPInstance struct {
 	Index        uint              `json:"index"`
 	State        LRPInstanceState  `json:"state"`
 	Details      string            `json:"details,omitempty"`
-	Since        int64             `json:"since_in_ns"`
+	Host         string            `json:"host,omitempty"`
+	Port         uint16            `json:"port,omitempty"`
+	Since        int64             `json:"since"`
 	Stats        *LRPInstanceStats `json:"stats,omitempty"`
 }
 
 type LRPInstanceStats struct {
-	CpuPercentage float64 `json:"cpu"`
-	MemoryBytes   uint64  `json:"mem"`
-	DiskBytes     uint64  `json:"disk"`
+	Time          time.Time `json:"time"`
+	CpuPercentage float64   `json:"cpu"`
+	MemoryBytes   uint64    `json:"mem"`
+	DiskBytes     uint64    `json:"disk"`
 }
