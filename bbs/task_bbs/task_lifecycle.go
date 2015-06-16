@@ -12,7 +12,7 @@ import (
 // stagerTaskBBS will retry this repeatedly if it gets a StoreTimeout error (up to N seconds?)
 // If this fails, the stager should bail and run its "this-failed-to-stage" routine
 func (bbs *TaskBBS) DesireTask(logger lager.Logger, task models.Task) error {
-	taskLogger := logger.WithData(lager.Data{"task-guid": task.TaskGuid})
+	taskLogger := logger.Session("desire-task", lager.Data{"task-guid": task.TaskGuid})
 
 	taskLogger.Info("starting")
 	defer taskLogger.Info("finished")
