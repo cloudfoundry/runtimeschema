@@ -1,7 +1,8 @@
 package maintainer_test
 
 import (
-	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -11,7 +12,7 @@ import (
 
 var (
 	consulStartingPort int
-	consulRunner       *consuladapter.ClusterRunner
+	consulRunner       *consulrunner.ClusterRunner
 )
 
 const (
@@ -24,8 +25,8 @@ func TestMaintainer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	consulStartingPort = 5001 + config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength
-	consulRunner = consuladapter.NewClusterRunner(consulStartingPort, 1, defaultScheme)
+	consulStartingPort = 5001 + config.GinkgoConfig.ParallelNode*consulrunner.PortOffsetLength
+	consulRunner = consulrunner.NewClusterRunner(consulStartingPort, 1, defaultScheme)
 
 	consulRunner.Start()
 	consulRunner.WaitUntilReady()

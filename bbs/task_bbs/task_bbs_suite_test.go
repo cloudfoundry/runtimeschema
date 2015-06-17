@@ -2,6 +2,7 @@ package task_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
@@ -23,7 +24,7 @@ const receptorURL = "http://some-receptor-url"
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var consulRunner *consuladapter.ClusterRunner
+var consulRunner *consulrunner.ClusterRunner
 var consulSession *consuladapter.Session
 var logger *lagertest.TestLogger
 var servicesBBS *services_bbs.ServicesBBS
@@ -48,8 +49,8 @@ var _ = BeforeSuite(func() {
 	etcdClient = etcdRunner.RetryableAdapter(10, nil)
 	etcdRunner.Start()
 
-	consulRunner = consuladapter.NewClusterRunner(
-		9001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength,
+	consulRunner = consulrunner.NewClusterRunner(
+		9001+config.GinkgoConfig.ParallelNode*consulrunner.PortOffsetLength,
 		1,
 		"http",
 	)

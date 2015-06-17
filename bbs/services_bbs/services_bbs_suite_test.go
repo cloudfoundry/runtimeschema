@@ -2,6 +2,7 @@ package services_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -9,7 +10,7 @@ import (
 	"testing"
 )
 
-var consulRunner *consuladapter.ClusterRunner
+var consulRunner *consulrunner.ClusterRunner
 var consulSession *consuladapter.Session
 
 func TestServicesBbs(t *testing.T) {
@@ -18,8 +19,8 @@ func TestServicesBbs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	consulRunner = consuladapter.NewClusterRunner(
-		5001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength,
+	consulRunner = consulrunner.NewClusterRunner(
+		5001+config.GinkgoConfig.ParallelNode*consulrunner.PortOffsetLength,
 		1,
 		"http",
 	)

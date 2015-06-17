@@ -2,6 +2,7 @@ package lrp_bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
@@ -23,7 +24,7 @@ import (
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
 var consulSession *consuladapter.Session
-var consulRunner *consuladapter.ClusterRunner
+var consulRunner *consulrunner.ClusterRunner
 var testHelper *test_helpers.TestHelper
 var lrpBBS *lrp_bbs.LRPBBS
 var domainBBS *domain_bbs.DomainBBS
@@ -42,7 +43,7 @@ func TestLRPBbs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	etcdRunner = etcdstorerunner.NewETCDClusterRunner(5001+config.GinkgoConfig.ParallelNode, 1, nil)
 
-	consulRunner = consuladapter.NewClusterRunner(9001+config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength, 1, "http")
+	consulRunner = consulrunner.NewClusterRunner(9001+config.GinkgoConfig.ParallelNode*consulrunner.PortOffsetLength, 1, "http")
 
 	etcdRunner.Start()
 	consulRunner.Start()

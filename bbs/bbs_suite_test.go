@@ -2,6 +2,7 @@ package bbs_test
 
 import (
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	"github.com/cloudfoundry/storeadapter"
 	"github.com/cloudfoundry/storeadapter/storerunner/etcdstorerunner"
 	. "github.com/onsi/ginkgo"
@@ -15,7 +16,7 @@ import (
 
 var etcdRunner *etcdstorerunner.ETCDClusterRunner
 var etcdClient storeadapter.StoreAdapter
-var consulRunner *consuladapter.ClusterRunner
+var consulRunner *consulrunner.ClusterRunner
 var consulSession *consuladapter.Session
 var clock *fakeclock.FakeClock
 var logger lager.Logger
