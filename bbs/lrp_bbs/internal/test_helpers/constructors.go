@@ -17,12 +17,12 @@ func (t *TestHelper) NewValidDesiredLRP(guid string) models.DesiredLRP {
 		RootFS:               "some:rootfs",
 		Instances:            1,
 		EnvironmentVariables: []models.EnvironmentVariable{{Name: "FOO", Value: "bar"}},
-		Setup:                &models.RunAction{Path: "ls"},
-		Action:               &models.RunAction{Path: "ls"},
+		Setup:                &models.RunAction{Path: "ls", User: "name"},
+		Action:               &models.RunAction{Path: "ls", User: "name"},
 		StartTimeout:         15,
 		Monitor: models.EmitProgressFor(
 			models.Timeout(
-				models.Try(models.Parallel(models.Serial(&models.RunAction{Path: "ls"}))),
+				models.Try(models.Parallel(models.Serial(&models.RunAction{Path: "ls", User: "name"}))),
 				10*time.Second,
 			),
 			"start-message",

@@ -35,6 +35,7 @@ var clock *fakeclock.FakeClock
 var bbs *task_bbs.TaskBBS
 
 var dummyAction = &models.RunAction{
+	User: "me",
 	Path: "cat",
 	Args: []string{"/tmp/file"},
 }

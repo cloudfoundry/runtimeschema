@@ -54,6 +54,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   index + 1,
 					Action: &models.RunAction{
 						Path: "true",
+						User: "me",
 					},
 				}
 
@@ -355,6 +356,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   index + 1,
 					Action: &models.RunAction{
 						Path: "true",
+						User: "me",
 					},
 				}
 
@@ -686,6 +688,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   2,
 					Action: &models.RunAction{
 						Path: "true",
+						User: "me",
 					},
 				}
 
@@ -749,6 +752,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   2,
 					Action: &models.RunAction{
 						Path: "true",
+						User: "me",
 					},
 				}
 
@@ -912,6 +916,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Instances:   3,
 					Action: &models.RunAction{
 						Path: "true",
+						User: "me",
 					},
 				}
 

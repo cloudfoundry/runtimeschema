@@ -580,7 +580,7 @@ var (
 		Domain:      "domain",
 		Instances:   1,
 		RootFS:      "some:rootfs",
-		Action:      &models.RunAction{Path: "/bin/true"},
+		Action:      &models.RunAction{Path: "/bin/true", User: "name"},
 	}
 
 	index  = 0

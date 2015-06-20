@@ -174,7 +174,7 @@ func (t crashTest) Test() {
 				Domain:      actualLRPKey.Domain,
 				Instances:   actualLRPKey.Index + 1,
 				RootFS:      "foo:bar",
-				Action:      &models.RunAction{Path: "true"},
+				Action:      &models.RunAction{Path: "true", User: "me"},
 			}
 
 			testHelper.RegisterAuctioneer(auctioneerPresence)
