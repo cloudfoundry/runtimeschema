@@ -67,6 +67,10 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, desired m
 		}
 		logger.Debug("succeeded-removing-actual-lrp")
 
+		if actual.Index >= desired.Instances {
+			return
+		}
+
 		logger.Debug("creating-actual-lrp")
 		err = bbs.actualLRPRepo.CreateActualLRP(logger, desired, actual.Index)
 		if err != nil {

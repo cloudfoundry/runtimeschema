@@ -529,7 +529,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				It("logs", func() {
 					lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
+					Expect(logger.TestSink).To(gbytes.Say("retire-actual-lrps.stopping-lrp-instance"))
 				})
 
 				Context("when the LRP domain is not fresh", func() {
@@ -597,7 +597,7 @@ var _ = Describe("LrpConvergence", func() {
 
 				It("logs", func() {
 					lrpBBS.ConvergeLRPs(logger, servicesBBS.NewCellsLoader())
-					Expect(logger.TestSink).To(gbytes.Say("stopping-actual"))
+					Expect(logger.TestSink).To(gbytes.Say("retire-actual-lrps.stopping-lrp-instance"))
 				})
 
 				Context("when the LRP domain is not fresh", func() {

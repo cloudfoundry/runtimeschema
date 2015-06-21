@@ -54,6 +54,13 @@ func CalculateConvergence(
 			}
 
 			for i, actual := range actualsByIndex {
+
+				if actual.CellIsMissing(input.Cells) {
+					pLog.Info("missing-cell", lager.Data{"index": i})
+					changes.ActualLRPsWithMissingCells = append(changes.ActualLRPsWithMissingCells, actual)
+					continue
+				}
+
 				if actual.Index >= desired.Instances && input.Domains.Contains(desired.Domain) {
 					pLog.Info("extra", lager.Data{"index": i})
 					changes.ActualLRPsForExtraIndices = append(changes.ActualLRPsForExtraIndices, actual)
@@ -66,12 +73,6 @@ func CalculateConvergence(
 					continue
 				}
 
-				if actual.CellIsMissing(input.Cells) {
-					pLog.Info("missing-cell", lager.Data{"index": i})
-					changes.ActualLRPsWithMissingCells = append(changes.ActualLRPsWithMissingCells, actual)
-					continue
-				}
-
 				if actual.ShouldStartUnclaimed(now) {
 					pLog.Info("stale-unclaimed", lager.Data{"index": i})
 					changes.StaleUnclaimedActualLRPs = append(changes.StaleUnclaimedActualLRPs, actual)
@@ -80,6 +81,12 @@ func CalculateConvergence(
 			}
 		} else {
 			for i, actual := range actualsByIndex {
+				if actual.CellIsMissing(input.Cells) {
+					pLog.Info("missing-cell", lager.Data{"index": i})
+					changes.ActualLRPsWithMissingCells = append(changes.ActualLRPsWithMissingCells, actual)
+					continue
+				}
+
 				if !input.Domains.Contains(actual.Domain) {
 					pLog.Info("skipping-unfresh-domain")
 					continue

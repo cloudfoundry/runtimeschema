@@ -20,7 +20,7 @@ type ActualLRPRepository interface {
 	ActualLRPWithIndex(logger lager.Logger, processGuid string, index int) (*models.ActualLRP, uint64, error)
 	CreateRawActualLRP(logger lager.Logger, lrp *models.ActualLRP) error
 	CompareAndSwapRawActualLRP(logger lager.Logger, lrp *models.ActualLRP, storeIndex uint64) error
-	CompareAndDeleteRawActualLRP(logger lager.Logger, lrp *models.ActualLRP, storeIndex uint64) error
+	CompareAndDeleteRawActualLRPKey(logger lager.Logger, lrp *models.ActualLRPKey, storeIndex uint64) error
 	DeleteRawActualLRPKey(logger lager.Logger, lrp *models.ActualLRPKey) error
 	CreateActualLRP(logger lager.Logger, desiredLRP models.DesiredLRP, index int) error
 	CreateActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) []uint
@@ -152,9 +152,9 @@ func (repo *actualLRPRepository) CompareAndSwapRawActualLRP(
 	return nil
 }
 
-func (repo *actualLRPRepository) CompareAndDeleteRawActualLRP(
+func (repo *actualLRPRepository) CompareAndDeleteRawActualLRPKey(
 	logger lager.Logger,
-	lrp *models.ActualLRP,
+	lrp *models.ActualLRPKey,
 	storeIndex uint64,
 ) error {
 	err := repo.store.CompareAndDeleteByIndex(storeadapter.StoreNode{

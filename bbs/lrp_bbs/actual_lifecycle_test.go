@@ -799,69 +799,89 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				}(lrpBBS, claimedLRP1, claimedLRP2, doneRetiring, logger)
 			})
 
-			Context("when the cell is present", func() {
-				BeforeEach(func() {
-					cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
-					testHelper.RegisterCell(cellPresence)
-				})
-
-				It("stops the LRPs in parallel", func() {
-					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(2))
-
-					addr1, key1, cnrKey1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
-					addr2, key2, cnrKey2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
-
-					Expect(addr1).To(Equal(cellPresence.RepAddress))
-					Expect(addr2).To(Equal(cellPresence.RepAddress))
-
-					Expect([]models.ActualLRPKey{key1, key2}).To(ConsistOf(
-						claimedLRP1.ActualLRPKey,
-						claimedLRP2.ActualLRPKey,
-					))
-
-					Expect([]models.ActualLRPInstanceKey{cnrKey1, cnrKey2}).To(ConsistOf(
-						claimedLRP1.ActualLRPInstanceKey,
-						claimedLRP2.ActualLRPInstanceKey,
-					))
-
-					Consistently(doneRetiring).ShouldNot(BeClosed())
-
-					close(blockStopInstanceChan)
-
-					Eventually(doneRetiring).Should(BeClosed())
-				})
-
-				Context("when stopping any of the LRPs fails", func() {
+			Context("when the cell", func() {
+				Context("is present", func() {
 					BeforeEach(func() {
-						fakeCellClient.StopLRPInstanceStub = func(cellAddr string, key models.ActualLRPKey, _ models.ActualLRPInstanceKey) error {
-							return fmt.Errorf("failed to stop %d", key.Index)
-						}
+						cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
+						testHelper.RegisterCell(cellPresence)
 					})
 
-					It("logs the failure", func() {
+					It("stops the LRPs in parallel", func() {
+						Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(2))
+
+						addr1, key1, cnrKey1 := fakeCellClient.StopLRPInstanceArgsForCall(0)
+						addr2, key2, cnrKey2 := fakeCellClient.StopLRPInstanceArgsForCall(1)
+
+						Expect(addr1).To(Equal(cellPresence.RepAddress))
+						Expect(addr2).To(Equal(cellPresence.RepAddress))
+
+						Expect([]models.ActualLRPKey{key1, key2}).To(ConsistOf(
+							claimedLRP1.ActualLRPKey,
+							claimedLRP2.ActualLRPKey,
+						))
+
+						Expect([]models.ActualLRPInstanceKey{cnrKey1, cnrKey2}).To(ConsistOf(
+							claimedLRP1.ActualLRPInstanceKey,
+							claimedLRP2.ActualLRPInstanceKey,
+						))
+
+						Consistently(doneRetiring).ShouldNot(BeClosed())
+
+						close(blockStopInstanceChan)
+
 						Eventually(doneRetiring).Should(BeClosed())
-						Expect(logger.LogMessages()).To(ContainElement("test.retire-actual-lrps.failed-to-retire"))
 					})
 
-					It("retries", func() {
-						Eventually(doneRetiring).Should(BeClosed())
-						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(2 * lrp_bbs.RetireActualLRPRetryAttempts))
-					})
+					Context("when stopping any of the LRPs fails", func() {
+						BeforeEach(func() {
+							fakeCellClient.StopLRPInstanceStub = func(cellAddr string, key models.ActualLRPKey, _ models.ActualLRPInstanceKey) error {
+								return fmt.Errorf("failed to stop %d", key.Index)
+							}
+						})
 
-					It("logs each retry", func() {
-						Eventually(doneRetiring).Should(BeClosed())
-						Expect(logger.LogMessages()).To(ContainElement("test.retire-actual-lrps.retrying-failed-retire-of-actual-lrp"))
+						It("logs the failure", func() {
+							Eventually(doneRetiring).Should(BeClosed())
+							Expect(logger.LogMessages()).To(ContainElement("test.retire-actual-lrps.failed-to-retire"))
+						})
+
+						It("retries", func() {
+							Eventually(doneRetiring).Should(BeClosed())
+							Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(2 * lrp_bbs.RetireActualLRPRetryAttempts))
+						})
+
+						It("logs each retry", func() {
+							Eventually(doneRetiring).Should(BeClosed())
+							Expect(logger.LogMessages()).To(ContainElement("test.retire-actual-lrps.retrying-failed-retire-of-actual-lrp"))
+						})
 					})
 				})
-			})
 
-			Context("when the cell is not present", func() {
-				It("does not stop the instances", func() {
-					Eventually(fakeCellClient.StopLRPInstanceCallCount).Should(Equal(0))
+				Context("is not present", func() {
+					It("removes the LRPs", func() {
+						Eventually(doneRetiring).Should(BeClosed())
+
+						_, err := etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
+						Expect(err).To(Equal(storeadapter.ErrorKeyNotFound))
+					})
 				})
 
-				It("logs the error", func() {
-					Eventually(logger.TestSink.LogMessages).Should(ContainElement("test.retire-actual-lrps.failed-to-retire"))
+				Context("cannot be retrieved", func() {
+					BeforeEach(func() {
+						_, err := consulSession.SetPresence(shared.CellSchemaPath(cellID), []byte("abcd"))
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					JustBeforeEach(func() {
+						Eventually(doneRetiring).Should(BeClosed())
+					})
+
+					It("does not stop the instances", func() {
+						Expect(fakeCellClient.StopLRPInstanceCallCount()).To(Equal(0))
+					})
+
+					It("logs the error", func() {
+						Expect(logger.TestSink.LogMessages()).To(ContainElement("test.retire-actual-lrps.failed-to-retire"))
+					})
 				})
 			})
 		})

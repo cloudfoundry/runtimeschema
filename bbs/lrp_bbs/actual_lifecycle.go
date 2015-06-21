@@ -181,9 +181,6 @@ func (bbs *LRPBBS) RemoveActualLRP(
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	logger = logger.Session("remove-actual-lrp", lager.Data{"lrp-key": key, "instance-key": instanceKey})
-	logger.Info("starting")
-
 	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
 	if err != nil {
 		return err
@@ -194,7 +191,18 @@ func (bbs *LRPBBS) RemoveActualLRP(
 		return bbserrors.ErrStoreComparisonFailed
 	}
 
-	err = bbs.actualLRPRepo.CompareAndDeleteRawActualLRP(logger, lrp, storeIndex)
+	return bbs.removeActualLRPWithIndex(logger, key, storeIndex)
+}
+
+func (bbs *LRPBBS) removeActualLRPWithIndex(
+	logger lager.Logger,
+	key models.ActualLRPKey,
+	index uint64,
+) error {
+	logger = logger.Session("remove-actual-lrp", lager.Data{"lrp-key": key})
+	logger.Info("starting")
+
+	err := bbs.actualLRPRepo.CompareAndDeleteRawActualLRPKey(logger, &key, index)
 	if err != nil {
 		return err
 	}
@@ -346,9 +354,10 @@ func (bbs *LRPBBS) unclaimActualLRPWithIndex(
 func (bbs *LRPBBS) retireActualLRP(actualLRPKey models.ActualLRPKey, logger lager.Logger) error {
 	var err error
 	var lrp *models.ActualLRP
+	var index uint64
 
 	for i := 0; i < RetireActualLRPRetryAttempts; i++ {
-		lrp, _, err = bbs.actualLRPRepo.ActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
+		lrp, index, err = bbs.actualLRPRepo.ActualLRPWithIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 		if err != nil {
 			logger.Error("failed-fetching-actual-lrp", err, lager.Data{
 				"actual-lrp-key": actualLRPKey,
@@ -358,11 +367,9 @@ func (bbs *LRPBBS) retireActualLRP(actualLRPKey models.ActualLRPKey, logger lage
 
 		switch lrp.State {
 		case models.ActualLRPStateUnclaimed, models.ActualLRPStateCrashed:
-			logger.Info("removing-actual")
-			err = bbs.RemoveActualLRP(logger, lrp.ActualLRPKey, lrp.ActualLRPInstanceKey)
+			err = bbs.removeActualLRPWithIndex(logger, lrp.ActualLRPKey, index)
 		default:
-			logger.Info("stopping-actual")
-			err = bbs.requestStopLRPInstance(lrp.ActualLRPKey, lrp.ActualLRPInstanceKey)
+			err = bbs.requestStopLRPInstanceWithIndex(logger, lrp.ActualLRPKey, lrp.ActualLRPInstanceKey, index)
 		}
 
 		if err == nil {
@@ -428,15 +435,23 @@ func (bbs *LRPBBS) requestLRPAuctionForLRPKey(logger lager.Logger, key models.Ac
 	return bbs.requestLRPAuctions([]models.LRPStartRequest{lrpStart})
 }
 
-func (bbs *LRPBBS) requestStopLRPInstance(
+func (bbs *LRPBBS) requestStopLRPInstanceWithIndex(
+	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,
+	index uint64,
 ) error {
 	cell, err := bbs.services.CellById(instanceKey.CellID)
 	if err != nil {
+		if err == bbserrors.ErrStoreResourceNotFound {
+			return bbs.removeActualLRPWithIndex(logger, key, index)
+		}
 		return err
 	}
 
+	logger.Info("stopping-lrp-instance", lager.Data{
+		"actual-lrp-key": key,
+	})
 	err = bbs.cellClient.StopLRPInstance(cell.RepAddress, key, instanceKey)
 	if err != nil {
 		return err

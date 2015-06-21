@@ -51,14 +51,14 @@ type FakeActualLRPRepository struct {
 	compareAndSwapRawActualLRPReturns struct {
 		result1 error
 	}
-	CompareAndDeleteRawActualLRPStub        func(logger lager.Logger, lrp *models.ActualLRP, storeIndex uint64) error
-	compareAndDeleteRawActualLRPMutex       sync.RWMutex
-	compareAndDeleteRawActualLRPArgsForCall []struct {
+	CompareAndDeleteRawActualLRPKeyStub        func(logger lager.Logger, lrp *models.ActualLRPKey, storeIndex uint64) error
+	compareAndDeleteRawActualLRPKeyMutex       sync.RWMutex
+	compareAndDeleteRawActualLRPKeyArgsForCall []struct {
 		logger     lager.Logger
-		lrp        *models.ActualLRP
+		lrp        *models.ActualLRPKey
 		storeIndex uint64
 	}
-	compareAndDeleteRawActualLRPReturns struct {
+	compareAndDeleteRawActualLRPKeyReturns struct {
 		result1 error
 	}
 	DeleteRawActualLRPKeyStub        func(logger lager.Logger, lrp *models.ActualLRPKey) error
@@ -229,36 +229,36 @@ func (fake *FakeActualLRPRepository) CompareAndSwapRawActualLRPReturns(result1 e
 	}{result1}
 }
 
-func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRP(logger lager.Logger, lrp *models.ActualLRP, storeIndex uint64) error {
-	fake.compareAndDeleteRawActualLRPMutex.Lock()
-	fake.compareAndDeleteRawActualLRPArgsForCall = append(fake.compareAndDeleteRawActualLRPArgsForCall, struct {
+func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPKey(logger lager.Logger, lrp *models.ActualLRPKey, storeIndex uint64) error {
+	fake.compareAndDeleteRawActualLRPKeyMutex.Lock()
+	fake.compareAndDeleteRawActualLRPKeyArgsForCall = append(fake.compareAndDeleteRawActualLRPKeyArgsForCall, struct {
 		logger     lager.Logger
-		lrp        *models.ActualLRP
+		lrp        *models.ActualLRPKey
 		storeIndex uint64
 	}{logger, lrp, storeIndex})
-	fake.compareAndDeleteRawActualLRPMutex.Unlock()
-	if fake.CompareAndDeleteRawActualLRPStub != nil {
-		return fake.CompareAndDeleteRawActualLRPStub(logger, lrp, storeIndex)
+	fake.compareAndDeleteRawActualLRPKeyMutex.Unlock()
+	if fake.CompareAndDeleteRawActualLRPKeyStub != nil {
+		return fake.CompareAndDeleteRawActualLRPKeyStub(logger, lrp, storeIndex)
 	} else {
-		return fake.compareAndDeleteRawActualLRPReturns.result1
+		return fake.compareAndDeleteRawActualLRPKeyReturns.result1
 	}
 }
 
-func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPCallCount() int {
-	fake.compareAndDeleteRawActualLRPMutex.RLock()
-	defer fake.compareAndDeleteRawActualLRPMutex.RUnlock()
-	return len(fake.compareAndDeleteRawActualLRPArgsForCall)
+func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPKeyCallCount() int {
+	fake.compareAndDeleteRawActualLRPKeyMutex.RLock()
+	defer fake.compareAndDeleteRawActualLRPKeyMutex.RUnlock()
+	return len(fake.compareAndDeleteRawActualLRPKeyArgsForCall)
 }
 
-func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPArgsForCall(i int) (lager.Logger, *models.ActualLRP, uint64) {
-	fake.compareAndDeleteRawActualLRPMutex.RLock()
-	defer fake.compareAndDeleteRawActualLRPMutex.RUnlock()
-	return fake.compareAndDeleteRawActualLRPArgsForCall[i].logger, fake.compareAndDeleteRawActualLRPArgsForCall[i].lrp, fake.compareAndDeleteRawActualLRPArgsForCall[i].storeIndex
+func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPKeyArgsForCall(i int) (lager.Logger, *models.ActualLRPKey, uint64) {
+	fake.compareAndDeleteRawActualLRPKeyMutex.RLock()
+	defer fake.compareAndDeleteRawActualLRPKeyMutex.RUnlock()
+	return fake.compareAndDeleteRawActualLRPKeyArgsForCall[i].logger, fake.compareAndDeleteRawActualLRPKeyArgsForCall[i].lrp, fake.compareAndDeleteRawActualLRPKeyArgsForCall[i].storeIndex
 }
 
-func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPReturns(result1 error) {
-	fake.CompareAndDeleteRawActualLRPStub = nil
-	fake.compareAndDeleteRawActualLRPReturns = struct {
+func (fake *FakeActualLRPRepository) CompareAndDeleteRawActualLRPKeyReturns(result1 error) {
+	fake.CompareAndDeleteRawActualLRPKeyStub = nil
+	fake.compareAndDeleteRawActualLRPKeyReturns = struct {
 		result1 error
 	}{result1}
 }

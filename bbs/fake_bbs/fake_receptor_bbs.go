@@ -205,7 +205,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns struct {
+	cellsReturns     struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -221,7 +221,7 @@ type FakeReceptorBBS struct {
 	DomainsStub        func() ([]string, error)
 	domainsMutex       sync.RWMutex
 	domainsArgsForCall []struct{}
-	domainsReturns struct {
+	domainsReturns     struct {
 		result1 []string
 		result2 error
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
@@ -256,7 +257,7 @@ func (t crashTest) Test() {
 
 			Context("when the desired LRP no longer exists", func() {
 				BeforeEach(func() {
-					err := lrpBBS.RemoveDesiredLRPByProcessGuid(logger, actualLRPKey.ProcessGuid)
+					err := etcdClient.Delete(shared.DesiredLRPSchemaPathByProcessGuid(actualLRPKey.ProcessGuid))
 					Expect(err).NotTo(HaveOccurred())
 				})
 

@@ -39,13 +39,13 @@ type FakeConvergerBBS struct {
 	NewCellsLoaderStub        func() *services_bbs.CellsLoader
 	newCellsLoaderMutex       sync.RWMutex
 	newCellsLoaderArgsForCall []struct{}
-	newCellsLoaderReturns struct {
+	newCellsLoaderReturns     struct {
 		result1 *services_bbs.CellsLoader
 	}
 	CellEventsStub        func() <-chan services_bbs.CellEvent
 	cellEventsMutex       sync.RWMutex
 	cellEventsArgsForCall []struct{}
-	cellEventsReturns struct {
+	cellEventsReturns     struct {
 		result1 <-chan services_bbs.CellEvent
 	}
 }

@@ -59,64 +59,168 @@ var _ = Describe("CalculateConvergence", func() {
 		changes = lrp_bbs.CalculateConvergence(logger, fakeClock, models.NewDefaultRestartCalculator(), input)
 	})
 
-	Context("actual LRPs with missing cells", func() {
-		BeforeEach(func() {
-			input = &lrp_bbs.ConvergenceInput{
-				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
-				DesiredLRPs:     desiredLRPs(lrpA),
-				ActualLRPs: actualLRPs(
-					newRunningActualLRP(lrpA, cellA.CellID, 0),
-					newRunningActualLRP(lrpA, cellA.CellID, 1),
-				),
-				Domains: domainSet(domainA),
-				Cells:   cellSet(),
-			}
+	Context("actual LRPs with a desired LRP", func() {
+		Context("with missing cells", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+					DesiredLRPs:     desiredLRPs(lrpA),
+					ActualLRPs: actualLRPs(
+						newRunningActualLRP(lrpA, cellA.CellID, 0),
+						newRunningActualLRP(lrpA, cellA.CellID, 1),
+					),
+					Domains: domainSet(),
+					Cells:   cellSet(),
+				}
+			})
+
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					ActualLRPsWithMissingCells: []models.ActualLRP{
+						newRunningActualLRP(lrpA, cellA.CellID, 0),
+						newRunningActualLRP(lrpA, cellA.CellID, 1),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
 		})
 
-		It("reports them", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				ActualLRPsWithMissingCells: []models.ActualLRP{
-					newRunningActualLRP(lrpA, cellA.CellID, 0),
-					newRunningActualLRP(lrpA, cellA.CellID, 1),
-				},
-			}
+		Context("with missing desired indices", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+					DesiredLRPs:     desiredLRPs(lrpA),
+					ActualLRPs:      actualLRPs(),
+					Domains:         domainSet(domainA),
+					Cells:           cellSet(cellA),
+				}
+			})
 
-			changesEqual(changes, output)
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
+						actualLRPKey(lrpA, 0),
+						actualLRPKey(lrpA, 1),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
+		})
+
+		Context("with indices we don't desire", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+					DesiredLRPs:     desiredLRPs(lrpA),
+					ActualLRPs: actualLRPs(
+						newRunningActualLRP(lrpA, cellA.CellID, 0),
+						newRunningActualLRP(lrpA, cellA.CellID, 1),
+						newRunningActualLRP(lrpA, cellA.CellID, 2),
+					),
+					Domains: domainSet(domainA),
+					Cells:   cellSet(cellA),
+				}
+			})
+
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					ActualLRPsForExtraIndices: []models.ActualLRP{
+						newRunningActualLRP(lrpA, cellA.CellID, 2),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
+		})
+
+		Context("crashed actual LRPS ready to be restarted", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+					DesiredLRPs:     desiredLRPs(lrpA),
+					ActualLRPs: actualLRPs(
+						newStartableCrashedActualLRP(lrpA, 0),
+						newUnstartableCrashedActualLRP(lrpA, 1),
+					),
+					Domains: domainSet(domainA),
+					Cells:   cellSet(cellA),
+				}
+			})
+
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					RestartableCrashedActualLRPs: []models.ActualLRP{
+						newStartableCrashedActualLRP(lrpA, 0),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
+		})
+
+		Context("with stale unclaimed actual LRPs", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
+					DesiredLRPs:     desiredLRPs(lrpA),
+					ActualLRPs: actualLRPs(
+						newRunningActualLRP(lrpA, cellA.CellID, 0),
+						newStaleUnclaimedActualLRP(lrpA, 1),
+					),
+					Domains: domainSet(domainA),
+					Cells:   cellSet(cellA),
+				}
+			})
+
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					StaleUnclaimedActualLRPs: []models.ActualLRP{
+						newStaleUnclaimedActualLRP(lrpA, 1),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
+		})
+
+		Context("an unfresh domain", func() {
+			BeforeEach(func() {
+				input = &lrp_bbs.ConvergenceInput{
+					AllProcessGuids: map[string]struct{}{
+						lrpA.ProcessGuid: struct{}{},
+						lrpB.ProcessGuid: struct{}{},
+					},
+					DesiredLRPs: desiredLRPs(lrpA, lrpB),
+					ActualLRPs:  actualLRPs(newRunningActualLRP(lrpA, cellA.CellID, 7)),
+					Domains:     domainSet(domainB),
+					Cells:       cellSet(cellA, cellB),
+				}
+			})
+
+			It("performs all checks except stopping extra indices", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
+						actualLRPKey(lrpA, 0),
+						actualLRPKey(lrpA, 1),
+						actualLRPKey(lrpB, 0),
+						actualLRPKey(lrpB, 1),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
 		})
 	})
 
-	Context("actual lrp keys for missing desired indices", func() {
+	Context("actual LRPs with no desired LRP", func() {
 		BeforeEach(func() {
 			input = &lrp_bbs.ConvergenceInput{
 				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
-				DesiredLRPs:     desiredLRPs(lrpA),
-				ActualLRPs:      actualLRPs(),
-				Domains:         domainSet(domainA),
-				Cells:           cellSet(cellA),
-			}
-		})
-
-		It("reports them", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
-					actualLRPKey(lrpA, 0),
-					actualLRPKey(lrpA, 1),
-				},
-			}
-
-			changesEqual(changes, output)
-		})
-	})
-
-	Context("actualLRPs existing for indices we don't desire", func() {
-		BeforeEach(func() {
-			input = &lrp_bbs.ConvergenceInput{
-				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
-				DesiredLRPs:     desiredLRPs(lrpA),
 				ActualLRPs: actualLRPs(
 					newRunningActualLRP(lrpA, cellA.CellID, 0),
 					newRunningActualLRP(lrpA, cellA.CellID, 1),
-					newRunningActualLRP(lrpA, cellA.CellID, 2),
 				),
 				Domains: domainSet(domainA),
 				Cells:   cellSet(cellA),
@@ -126,89 +230,39 @@ var _ = Describe("CalculateConvergence", func() {
 		It("reports them", func() {
 			output := &lrp_bbs.ConvergenceChanges{
 				ActualLRPsForExtraIndices: []models.ActualLRP{
-					newRunningActualLRP(lrpA, cellA.CellID, 2),
-				},
-			}
-
-			changesEqual(changes, output)
-		})
-	})
-
-	Context("crashed actual LRPS ready to be restarted", func() {
-		BeforeEach(func() {
-			input = &lrp_bbs.ConvergenceInput{
-				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
-				DesiredLRPs:     desiredLRPs(lrpA),
-				ActualLRPs: actualLRPs(
-					newStartableCrashedActualLRP(lrpA, 0),
-					newUnstartableCrashedActualLRP(lrpA, 1),
-				),
-				Domains: domainSet(domainA),
-				Cells:   cellSet(cellA),
-			}
-		})
-
-		It("reports them", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				RestartableCrashedActualLRPs: []models.ActualLRP{
-					newStartableCrashedActualLRP(lrpA, 0),
-				},
-			}
-
-			changesEqual(changes, output)
-		})
-	})
-
-	Context("stale unclaimed actual LRPs", func() {
-		BeforeEach(func() {
-			input = &lrp_bbs.ConvergenceInput{
-				AllProcessGuids: map[string]struct{}{lrpA.ProcessGuid: struct{}{}},
-				DesiredLRPs:     desiredLRPs(lrpA),
-				ActualLRPs: actualLRPs(
 					newRunningActualLRP(lrpA, cellA.CellID, 0),
-					newStaleUnclaimedActualLRP(lrpA, 1),
-				),
-				Domains: domainSet(domainA),
-				Cells:   cellSet(cellA),
-			}
-		})
-
-		It("reports them", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				StaleUnclaimedActualLRPs: []models.ActualLRP{
-					newStaleUnclaimedActualLRP(lrpA, 1),
+					newRunningActualLRP(lrpA, cellA.CellID, 1),
 				},
 			}
 
 			changesEqual(changes, output)
 		})
-	})
 
-	Context("an unfresh domain", func() {
-		BeforeEach(func() {
-			input = &lrp_bbs.ConvergenceInput{
-				AllProcessGuids: map[string]struct{}{
-					lrpA.ProcessGuid: struct{}{},
-					lrpB.ProcessGuid: struct{}{},
-				},
-				DesiredLRPs: desiredLRPs(lrpA, lrpB),
-				ActualLRPs:  actualLRPs(newRunningActualLRP(lrpA, cellA.CellID, 7)),
-				Domains:     domainSet(domainB),
-				Cells:       cellSet(cellA, cellB),
-			}
+		Context("with missing cells", func() {
+			BeforeEach(func() {
+				input.Cells = cellSet()
+			})
+
+			It("reports them", func() {
+				output := &lrp_bbs.ConvergenceChanges{
+					ActualLRPsWithMissingCells: []models.ActualLRP{
+						newRunningActualLRP(lrpA, cellA.CellID, 0),
+						newRunningActualLRP(lrpA, cellA.CellID, 1),
+					},
+				}
+
+				changesEqual(changes, output)
+			})
 		})
 
-		It("performs all checks except stopping extra indices", func() {
-			output := &lrp_bbs.ConvergenceChanges{
-				ActualLRPKeysForMissingIndices: []models.ActualLRPKey{
-					actualLRPKey(lrpA, 0),
-					actualLRPKey(lrpA, 1),
-					actualLRPKey(lrpB, 0),
-					actualLRPKey(lrpB, 1),
-				},
-			}
+		Context("an unfresh domain", func() {
+			BeforeEach(func() {
+				input.Domains = domainSet()
+			})
 
-			changesEqual(changes, output)
+			It("does nothing", func() {
+				changesEqual(changes, &lrp_bbs.ConvergenceChanges{})
+			})
 		})
 	})
 
