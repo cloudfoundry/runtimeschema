@@ -1,8 +1,6 @@
 package domain_bbs
 
 import (
-	"path"
-
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -52,19 +50,4 @@ func (bbs *DomainBBS) UpsertDomain(domain string, ttlInSeconds int) error {
 			TTL: uint64(ttlInSeconds),
 		},
 	}))
-}
-
-func (bbs *DomainBBS) Domains() ([]string, error) {
-	node, err := bbs.store.ListRecursively(shared.DomainSchemaRoot)
-	if err != nil && err != storeadapter.ErrorKeyNotFound {
-		return nil, shared.ConvertStoreError(err)
-	}
-
-	domains := make([]string, 0, len(node.ChildNodes))
-
-	for _, node := range node.ChildNodes {
-		domains = append(domains, path.Base(node.Key))
-	}
-
-	return domains, nil
 }

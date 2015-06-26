@@ -1,8 +1,6 @@
 package domain_bbs_test
 
 import (
-	"time"
-
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
@@ -53,37 +51,6 @@ var _ = Describe("DomainBBS", func() {
 				err := bbs.UpsertDomain("domain", -1)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(ConsistOf(models.ErrInvalidParameter{"ttlInSeconds"}))
-			})
-		})
-	})
-
-	Describe("Domains", func() {
-		Context("when domains exist in the bbs", func() {
-			BeforeEach(func() {
-				err := bbs.UpsertDomain("the-domain", 2)
-				Expect(err).NotTo(HaveOccurred())
-				err = bbs.UpsertDomain("another-domain", 10)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns all domains which have not expired", func() {
-				domains, err := bbs.Domains()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(domains).To(ConsistOf("the-domain", "another-domain"))
-
-				time.Sleep(3001 * time.Millisecond)
-
-				domains, err = bbs.Domains()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(domains).To(ConsistOf("another-domain"))
-			})
-		})
-
-		Context("when no domains exist in the bbs", func() {
-			It("returns an empty list", func() {
-				domains, err := bbs.Domains()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(domains).To(BeEmpty())
 			})
 		})
 	})

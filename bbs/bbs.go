@@ -53,7 +53,6 @@ type ReceptorBBS interface {
 
 	// domains
 	UpsertDomain(domain string, ttlInSeconds int) error
-	Domains() ([]string, error)
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
@@ -153,7 +152,6 @@ type VeritasBBS interface {
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 
 	// domains
-	Domains() ([]string, error)
 	UpsertDomain(domain string, ttlInSeconds int) error
 
 	//services

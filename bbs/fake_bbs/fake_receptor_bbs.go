@@ -205,7 +205,7 @@ type FakeReceptorBBS struct {
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
-	cellsReturns     struct {
+	cellsReturns struct {
 		result1 []models.CellPresence
 		result2 error
 	}
@@ -217,13 +217,6 @@ type FakeReceptorBBS struct {
 	}
 	upsertDomainReturns struct {
 		result1 error
-	}
-	DomainsStub        func() ([]string, error)
-	domainsMutex       sync.RWMutex
-	domainsArgsForCall []struct{}
-	domainsReturns     struct {
-		result1 []string
-		result2 error
 	}
 }
 
@@ -949,31 +942,6 @@ func (fake *FakeReceptorBBS) UpsertDomainReturns(result1 error) {
 	fake.upsertDomainReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeReceptorBBS) Domains() ([]string, error) {
-	fake.domainsMutex.Lock()
-	fake.domainsArgsForCall = append(fake.domainsArgsForCall, struct{}{})
-	fake.domainsMutex.Unlock()
-	if fake.DomainsStub != nil {
-		return fake.DomainsStub()
-	} else {
-		return fake.domainsReturns.result1, fake.domainsReturns.result2
-	}
-}
-
-func (fake *FakeReceptorBBS) DomainsCallCount() int {
-	fake.domainsMutex.RLock()
-	defer fake.domainsMutex.RUnlock()
-	return len(fake.domainsArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) DomainsReturns(result1 []string, result2 error) {
-	fake.DomainsStub = nil
-	fake.domainsReturns = struct {
-		result1 []string
-		result2 error
-	}{result1, result2}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
