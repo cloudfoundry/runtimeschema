@@ -20,6 +20,7 @@ type LRPInstance struct {
 	Host         string            `json:"host,omitempty"`
 	Port         uint16            `json:"port,omitempty"`
 	Uptime       int64             `json:"uptime"`
+	Since        int64             `json:"since"`
 	Stats        *LRPInstanceStats `json:"stats,omitempty"`
 }
 
