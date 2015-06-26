@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
+	"github.com/cloudfoundry-incubator/runtime-schema/bbs/shared"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/dropsonde/metric_sender/fake"
 	"github.com/cloudfoundry/dropsonde/metrics"
+	"github.com/cloudfoundry/storeadapter"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -521,7 +523,7 @@ func createTestData(
 	}
 
 	testData.domains.Each(func(domain string) {
-		err := domainBBS.UpsertDomain(domain, 0)
+		err := etcdClient.SetMulti([]storeadapter.StoreNode{{Key: shared.DomainSchemaPath(domain), TTL: 0}})
 		Expect(err).NotTo(HaveOccurred())
 	})
 

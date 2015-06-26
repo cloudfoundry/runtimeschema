@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -50,9 +49,6 @@ type ReceptorBBS interface {
 
 	// cells
 	Cells() ([]models.CellPresence, error)
-
-	// domains
-	UpsertDomain(domain string, ttlInSeconds int) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_rep_bbs.go . RepBBS
@@ -151,9 +147,6 @@ type VeritasBBS interface {
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 
-	// domains
-	UpsertDomain(domain string, ttlInSeconds int) error
-
 	//services
 	Cells() ([]models.CellPresence, error)
 	AuctioneerAddress() (string, error)
@@ -205,7 +198,6 @@ func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, rece
 		LRPBBS:      lrp_bbs.New(store, clock, cellClient, auctioneerClient, services),
 		ServicesBBS: services,
 		TaskBBS:     task_bbs.New(store, consul, clock, cb.NewTaskClient(), auctioneerClient, cellClient, services, receptorTaskHandlerURL),
-		DomainBBS:   domain_bbs.New(store, logger),
 	}
 }
 
@@ -214,5 +206,4 @@ type BBS struct {
 	*lrp_bbs.LRPBBS
 	*services_bbs.ServicesBBS
 	*task_bbs.TaskBBS
-	*domain_bbs.DomainBBS
 }

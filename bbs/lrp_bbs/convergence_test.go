@@ -30,7 +30,7 @@ var _ = Describe("LrpConvergence", func() {
 		sender = fake.NewFakeMetricSender()
 		metrics.Initialize(sender, nil)
 
-		err := domainBBS.UpsertDomain(freshDomain, 0)
+		err := etcdClient.SetMulti([]storeadapter.StoreNode{{Key: shared.DomainSchemaPath(freshDomain), TTL: 0}})
 		Expect(err).NotTo(HaveOccurred())
 	})
 

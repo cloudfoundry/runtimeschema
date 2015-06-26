@@ -4,7 +4,6 @@ import (
 	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/domain_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs/internal/test_helpers"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
@@ -27,7 +26,6 @@ var consulSession *consuladapter.Session
 var consulRunner *consulrunner.ClusterRunner
 var testHelper *test_helpers.TestHelper
 var lrpBBS *lrp_bbs.LRPBBS
-var domainBBS *domain_bbs.DomainBBS
 var clock *AdvancingFakeClock
 var fakeCellClient *cbfakes.FakeCellClient
 var fakeAuctioneerClient *cbfakes.FakeAuctioneerClient
@@ -85,6 +83,4 @@ var _ = BeforeEach(func() {
 		fakeAuctioneerClient,
 		servicesBBS,
 	)
-
-	domainBBS = domain_bbs.New(etcdClient, lagertest.NewTestLogger("test"))
 })

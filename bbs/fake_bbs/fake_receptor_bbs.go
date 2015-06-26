@@ -209,15 +209,6 @@ type FakeReceptorBBS struct {
 		result1 []models.CellPresence
 		result2 error
 	}
-	UpsertDomainStub        func(domain string, ttlInSeconds int) error
-	upsertDomainMutex       sync.RWMutex
-	upsertDomainArgsForCall []struct {
-		domain       string
-		ttlInSeconds int
-	}
-	upsertDomainReturns struct {
-		result1 error
-	}
 }
 
 func (fake *FakeReceptorBBS) DesireTask(arg1 lager.Logger, arg2 models.Task) error {
@@ -909,39 +900,6 @@ func (fake *FakeReceptorBBS) CellsReturns(result1 []models.CellPresence, result2
 		result1 []models.CellPresence
 		result2 error
 	}{result1, result2}
-}
-
-func (fake *FakeReceptorBBS) UpsertDomain(domain string, ttlInSeconds int) error {
-	fake.upsertDomainMutex.Lock()
-	fake.upsertDomainArgsForCall = append(fake.upsertDomainArgsForCall, struct {
-		domain       string
-		ttlInSeconds int
-	}{domain, ttlInSeconds})
-	fake.upsertDomainMutex.Unlock()
-	if fake.UpsertDomainStub != nil {
-		return fake.UpsertDomainStub(domain, ttlInSeconds)
-	} else {
-		return fake.upsertDomainReturns.result1
-	}
-}
-
-func (fake *FakeReceptorBBS) UpsertDomainCallCount() int {
-	fake.upsertDomainMutex.RLock()
-	defer fake.upsertDomainMutex.RUnlock()
-	return len(fake.upsertDomainArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) UpsertDomainArgsForCall(i int) (string, int) {
-	fake.upsertDomainMutex.RLock()
-	defer fake.upsertDomainMutex.RUnlock()
-	return fake.upsertDomainArgsForCall[i].domain, fake.upsertDomainArgsForCall[i].ttlInSeconds
-}
-
-func (fake *FakeReceptorBBS) UpsertDomainReturns(result1 error) {
-	fake.UpsertDomainStub = nil
-	fake.upsertDomainReturns = struct {
-		result1 error
-	}{result1}
 }
 
 var _ bbs.ReceptorBBS = new(FakeReceptorBBS)
