@@ -68,7 +68,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 
 	logError := func(task models.Task, message string) {
 		taskLog.Error(message, nil, lager.Data{
-			"task": task,
+			"task-guid": task.TaskGuid,
 		})
 	}
 
@@ -118,7 +118,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 				scheduleForCASByIndex(node.Index, bbs.markTaskFailed(task, "not started within time limit"))
 				tasksKicked++
 			} else if shouldKickTask {
-				taskLog.Info("requesting-auction-for-pending-task", lager.Data{"task": task})
+				taskLog.Info("requesting-auction-for-pending-task", lager.Data{"task-guid": task.TaskGuid})
 				tasksToAuction = append(tasksToAuction, task)
 				tasksKicked++
 			}
@@ -135,7 +135,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 				logError(task, "failed-to-start-resolving-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				taskLog.Info("kicking-completed-task", lager.Data{"task": task})
+				taskLog.Info("kicking-completed-task", lager.Data{"task-guid": task.TaskGuid})
 				scheduleForCompletion(task)
 				tasksKicked++
 			}
@@ -145,7 +145,7 @@ func (bbs *TaskBBS) ConvergeTasks(
 				logError(task, "failed-to-resolve-in-time")
 				keysToDelete = append(keysToDelete, node.Key)
 			} else if shouldKickTask {
-				taskLog.Info("demoting-resolving-to-completed", lager.Data{"task": task})
+				taskLog.Info("demoting-resolving-to-completed", lager.Data{"task-guid": task.TaskGuid})
 				demoted := demoteToCompleted(task)
 				scheduleForCASByIndex(node.Index, demoted)
 				scheduleForCompletion(demoted)
@@ -163,8 +163,12 @@ func (bbs *TaskBBS) ConvergeTasks(
 	if len(tasksToAuction) > 0 {
 		logger.Debug("requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 		if err := bbs.requestTaskAuctions(taskLog, tasksToAuction); err != nil {
+			taskGuids := make([]string, len(tasksToAuction))
+			for i, task := range tasksToAuction {
+				taskGuids[i] = task.TaskGuid
+			}
 			taskLog.Error("failed-to-request-auctions-for-pending-tasks", err,
-				lager.Data{"tasks": tasksToAuction})
+				lager.Data{"task-guids": taskGuids})
 		}
 		logger.Debug("done-requesting-task-auctions", lager.Data{"num-tasks-to-auction": len(tasksToAuction)})
 	}
@@ -234,7 +238,7 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 		value, err := models.ToJSON(task)
 		if err != nil {
 			taskLog.Error("failed-to-marshal", err, lager.Data{
-				"task": task,
+				"task-guid": task.TaskGuid,
 			})
 			continue
 		}
@@ -248,7 +252,7 @@ func (bbs *TaskBBS) batchCompareAndSwapTasks(tasksToCAS []compareAndSwappableTas
 			err := bbs.store.CompareAndSwapByIndex(index, newStoreNode)
 			if err != nil {
 				taskLog.Error("failed-to-compare-and-swap", err, lager.Data{
-					"task": task,
+					"task-guid": task.TaskGuid,
 				})
 			}
 		})
@@ -270,8 +274,12 @@ func (bbs *TaskBBS) completeTasks(tasksToComplete []models.Task, taskLog lager.L
 
 	err := bbs.taskClient.CompleteTasks(bbs.receptorTaskHandlerURL, tasksToComplete)
 	if err != nil {
+		taskGuids := make([]string, len(tasksToComplete))
+		for i, task := range tasksToComplete {
+			taskGuids[i] = task.TaskGuid
+		}
 		taskLog.Error("failed-to-complete-tasks", err, lager.Data{
-			"tasks": tasksToComplete,
+			"task-guids": taskGuids,
 		})
 	}
 }

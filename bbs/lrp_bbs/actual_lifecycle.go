@@ -134,7 +134,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 		newCrashCount = lrp.CrashCount + 1
 	}
 
-	logger.Debug("retrieved-lrp", lager.Data{"lrp": lrp})
+	logger.Debug("retrieved-lrp")
 	if !lrp.AllowsTransitionTo(key, instanceKey, models.ActualLRPStateCrashed) {
 		err := fmt.Errorf("cannot transition crashed lrp from state %s to state %s", lrp.State, models.ActualLRPStateCrashed)
 		logger.Error("failed-to-transition-actual", err)
@@ -259,7 +259,7 @@ func (bbs *LRPBBS) FailActualLRP(
 	}
 
 	if lrp.ActualLRPKey == key && lrp.State != models.ActualLRPStateUnclaimed {
-		logger.Error("failed-to-set-placement-error", bbserrors.ErrActualLRPCannotBeFailed, lager.Data{"lrp": lrp})
+		logger.Error("failed-to-set-placement-error", bbserrors.ErrActualLRPCannotBeFailed)
 		return bbserrors.ErrActualLRPCannotBeFailed
 	}
 
