@@ -16,7 +16,7 @@ var _ = Describe("CellPresence", func() {
 
 	BeforeEach(func() {
 		capacity = models.NewCellCapacity(128, 1024, 3)
-		cellPresence = models.NewCellPresence("some-id", "some-address", "some-zone", capacity)
+		cellPresence = models.NewCellPresence("some-id", "some-address", "some-zone", capacity, "provider-1", "provider-2")
 
 		payload = `{
     "cell_id":"some-id",
@@ -26,8 +26,9 @@ var _ = Describe("CellPresence", func() {
        "memory_mb": 128,
        "disk_mb": 1024,
        "containers": 3
-    }
-  }`
+		 },
+		 "rootfs_providers":["provider-1", "provider-2"]
+   }`
 	})
 
 	Describe("Validate", func() {
