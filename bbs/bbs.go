@@ -40,7 +40,6 @@ type ReceptorBBS interface {
 	WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error)
 
 	//actual lrp
-	ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error)
 	ActualLRPGroupsByDomain(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error)
 	ActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error)
 	ActualLRPGroupByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error)
@@ -143,7 +142,6 @@ type VeritasBBS interface {
 
 	//lrp
 	DesiredLRPs(logger lager.Logger) ([]models.DesiredLRP, error)
-	ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error)
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
 

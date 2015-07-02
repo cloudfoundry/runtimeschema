@@ -222,7 +222,9 @@ var _ = Describe("LrpConvergence", func() {
 
 		Context("when the cell is present", func() {
 			It("should not prune any LRPs", func() {
-				Expect(lrpBBS.ActualLRPs(logger)).To(HaveLen(2))
+				root, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(root.ChildNodes[0].ChildNodes).To(HaveLen(2))
 			})
 		})
 
@@ -236,16 +238,23 @@ var _ = Describe("LrpConvergence", func() {
 			})
 
 			It("should delete LRPs associated with said cell but not the unclaimed LRP", func() {
-				lrps, err := lrpBBS.ActualLRPs(logger)
+				root, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(lrps).To(HaveLen(2))
+				root = root.ChildNodes[0]
+				Expect(root.ChildNodes).To(HaveLen(2))
 
-				indices := make([]int, len(lrps))
-				for i, lrp := range lrps {
-					Expect(lrp.ProcessGuid).To(Equal(processGuid))
-					Expect(lrp.State).To(Equal(models.ActualLRPStateUnclaimed))
-
-					indices[i] = lrp.Index
+				indices := make([]int, len(root.ChildNodes))
+				i := 0
+				for _, indexNode := range root.ChildNodes {
+					for _, instanceNode := range indexNode.ChildNodes {
+						var lrp models.ActualLRP
+						err := models.FromJSON(instanceNode.Value, &lrp)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(lrp.ProcessGuid).To(Equal(processGuid))
+						Expect(lrp.State).To(Equal(models.ActualLRPStateUnclaimed))
+						indices[i] = lrp.Index
+						i++
+					}
 				}
 
 				Expect(indices).To(ConsistOf([]int{0, 1}))

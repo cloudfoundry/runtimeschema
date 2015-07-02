@@ -323,9 +323,8 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			})
 
 			It("does not create an actual LRP", func() {
-				lrps, err := lrpBBS.ActualLRPs(logger)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(lrps).To(BeEmpty())
+				_, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
