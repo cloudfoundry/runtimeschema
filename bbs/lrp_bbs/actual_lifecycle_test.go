@@ -805,7 +805,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 			Context("when the cell", func() {
 				Context("is present", func() {
 					BeforeEach(func() {
-						cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
+						cellPresence = models.NewCellPresence(
+							cellID,
+							"cell.example.com",
+							"the-zone",
+							models.NewCellCapacity(128, 1024, 6),
+							[]string{},
+							[]string{},
+						)
 						testHelper.RegisterCell(cellPresence)
 					})
 

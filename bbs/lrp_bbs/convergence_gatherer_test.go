@@ -535,5 +535,5 @@ func createTestData(
 }
 
 func newCellPresence(cellID string) models.CellPresence {
-	return models.NewCellPresence(cellID, "1.2.3.4", "az-1", models.CellCapacity{128, 1024, 3})
+	return models.NewCellPresence(cellID, "1.2.3.4", "az-1", models.CellCapacity{128, 1024, 3}, []string{}, []string{})
 }

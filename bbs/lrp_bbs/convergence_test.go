@@ -68,7 +68,7 @@ var _ = Describe("LrpConvergence", func() {
 			}
 
 			testHelper.SetRawDesiredLRP(desiredLRP)
-			testHelper.RegisterCell(models.NewCellPresence(cellId, "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3)))
+			testHelper.RegisterCell(models.NewCellPresence(cellId, "example.com", "the-zone", models.NewCellCapacity(128, 1024, 3), []string{}, []string{}))
 			testHelper.RegisterAuctioneer(models.NewAuctioneerPresence(cellId, "example.com"))
 		})
 
@@ -206,7 +206,7 @@ var _ = Describe("LrpConvergence", func() {
 			err := lrpBBS.DesireLRP(logger, desiredLRP)
 			Expect(err).NotTo(HaveOccurred())
 
-			cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3})
+			cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.CellCapacity{128, 1024, 3}, []string{}, []string{})
 			testHelper.RegisterCell(cellPresence)
 
 			actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
@@ -330,7 +330,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
+					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3), []string{}, []string{})
 					testHelper.RegisterCell(cellPresence)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
@@ -377,7 +377,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3))
+					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 3), []string{}, []string{})
 					testHelper.RegisterCell(cellPresence)
 
 					actualLRPGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
@@ -499,7 +499,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 100))
+					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 100), []string{}, []string{})
 					testHelper.RegisterCell(cellPresence)
 
 					index = numInstances
@@ -558,7 +558,7 @@ var _ = Describe("LrpConvergence", func() {
 				var cellPresence models.CellPresence
 
 				JustBeforeEach(func() {
-					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(124, 1024, 6))
+					cellPresence = models.NewCellPresence("cell-id", "cell.example.com", "the-zone", models.NewCellCapacity(124, 1024, 6), []string{}, []string{})
 					testHelper.RegisterCell(cellPresence)
 
 					index = numInstances

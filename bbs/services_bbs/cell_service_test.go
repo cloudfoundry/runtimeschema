@@ -34,8 +34,8 @@ var _ = Describe("Cell Service Registry", func() {
 		clock = fakeclock.NewFakeClock(time.Now())
 		bbs = services_bbs.New(consulSession, clock, lagertest.NewTestLogger("test"))
 
-		firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3))
-		secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3))
+		firstCellPresence = models.NewCellPresence("first-rep", "1.2.3.4", "the-zone", models.NewCellCapacity(128, 1024, 3), []string{}, []string{})
+		secondCellPresence = models.NewCellPresence("second-rep", "4.5.6.7", "the-zone", models.NewCellCapacity(128, 1024, 3), []string{}, []string{})
 
 		presence1 = nil
 		presence2 = nil

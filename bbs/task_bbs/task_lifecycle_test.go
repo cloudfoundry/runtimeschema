@@ -390,7 +390,7 @@ var _ = Describe("Task BBS", func() {
 					var cellPresence models.CellPresence
 
 					BeforeEach(func() {
-						cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6))
+						cellPresence = models.NewCellPresence(cellID, "cell.example.com", "the-zone", models.NewCellCapacity(128, 1024, 6), []string{}, []string{})
 						registerCell(cellPresence)
 					})
 

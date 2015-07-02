@@ -199,7 +199,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			})
 
 			Context("when there are running instances on a present cell", func() {
-				cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
+				cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6), []string{}, []string{})
 
 				BeforeEach(func() {
 					testHelper.RegisterCell(cellPresence)
@@ -328,7 +328,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 				})
 
 				Context("when the cell is present", func() {
-					cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6))
+					cellPresence := models.NewCellPresence("the-cell-id", "cell.example.com", "az1", models.NewCellCapacity(128, 1024, 6), []string{}, []string{})
 
 					BeforeEach(func() {
 						testHelper.RegisterCell(cellPresence)
