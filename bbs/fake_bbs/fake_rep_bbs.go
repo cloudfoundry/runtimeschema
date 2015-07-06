@@ -76,16 +76,6 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	ActualLRPGroupsByCellIDStub        func(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error)
-	actualLRPGroupsByCellIDMutex       sync.RWMutex
-	actualLRPGroupsByCellIDArgsForCall []struct {
-		logger lager.Logger
-		cellID string
-	}
-	actualLRPGroupsByCellIDReturns struct {
-		result1 []models.ActualLRPGroup
-		result2 error
-	}
 	ClaimActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 	claimActualLRPMutex       sync.RWMutex
 	claimActualLRPArgsForCall []struct {
@@ -392,40 +382,6 @@ func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	fake.completeTaskReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeRepBBS) ActualLRPGroupsByCellID(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error) {
-	fake.actualLRPGroupsByCellIDMutex.Lock()
-	fake.actualLRPGroupsByCellIDArgsForCall = append(fake.actualLRPGroupsByCellIDArgsForCall, struct {
-		logger lager.Logger
-		cellID string
-	}{logger, cellID})
-	fake.actualLRPGroupsByCellIDMutex.Unlock()
-	if fake.ActualLRPGroupsByCellIDStub != nil {
-		return fake.ActualLRPGroupsByCellIDStub(logger, cellID)
-	} else {
-		return fake.actualLRPGroupsByCellIDReturns.result1, fake.actualLRPGroupsByCellIDReturns.result2
-	}
-}
-
-func (fake *FakeRepBBS) ActualLRPGroupsByCellIDCallCount() int {
-	fake.actualLRPGroupsByCellIDMutex.RLock()
-	defer fake.actualLRPGroupsByCellIDMutex.RUnlock()
-	return len(fake.actualLRPGroupsByCellIDArgsForCall)
-}
-
-func (fake *FakeRepBBS) ActualLRPGroupsByCellIDArgsForCall(i int) (lager.Logger, string) {
-	fake.actualLRPGroupsByCellIDMutex.RLock()
-	defer fake.actualLRPGroupsByCellIDMutex.RUnlock()
-	return fake.actualLRPGroupsByCellIDArgsForCall[i].logger, fake.actualLRPGroupsByCellIDArgsForCall[i].cellID
-}
-
-func (fake *FakeRepBBS) ActualLRPGroupsByCellIDReturns(result1 []models.ActualLRPGroup, result2 error) {
-	fake.ActualLRPGroupsByCellIDStub = nil
-	fake.actualLRPGroupsByCellIDReturns = struct {
-		result1 []models.ActualLRPGroup
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeRepBBS) ClaimActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPInstanceKey) error {

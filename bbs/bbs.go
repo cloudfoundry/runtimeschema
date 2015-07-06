@@ -63,7 +63,6 @@ type RepBBS interface {
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	//lrp
-	ActualLRPGroupsByCellID(logger lager.Logger, cellID string) ([]models.ActualLRPGroup, error)
 	ClaimActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
 	StartActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
 	CrashActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, string) error

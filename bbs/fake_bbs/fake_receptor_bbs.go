@@ -144,15 +144,6 @@ type FakeReceptorBBS struct {
 		result1 chan<- bool
 		result2 <-chan error
 	}
-	ActualLRPGroupsStub        func(logger lager.Logger) ([]models.ActualLRPGroup, error)
-	actualLRPGroupsMutex       sync.RWMutex
-	actualLRPGroupsArgsForCall []struct {
-		logger lager.Logger
-	}
-	actualLRPGroupsReturns struct {
-		result1 []models.ActualLRPGroup
-		result2 error
-	}
 	ActualLRPGroupsByDomainStub        func(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error)
 	actualLRPGroupsByDomainMutex       sync.RWMutex
 	actualLRPGroupsByDomainArgsForCall []struct {
@@ -678,39 +669,6 @@ func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 chan<- boo
 	fake.watchForDesiredLRPChangesReturns = struct {
 		result1 chan<- bool
 		result2 <-chan error
-	}{result1, result2}
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroups(logger lager.Logger) ([]models.ActualLRPGroup, error) {
-	fake.actualLRPGroupsMutex.Lock()
-	fake.actualLRPGroupsArgsForCall = append(fake.actualLRPGroupsArgsForCall, struct {
-		logger lager.Logger
-	}{logger})
-	fake.actualLRPGroupsMutex.Unlock()
-	if fake.ActualLRPGroupsStub != nil {
-		return fake.ActualLRPGroupsStub(logger)
-	} else {
-		return fake.actualLRPGroupsReturns.result1, fake.actualLRPGroupsReturns.result2
-	}
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsCallCount() int {
-	fake.actualLRPGroupsMutex.RLock()
-	defer fake.actualLRPGroupsMutex.RUnlock()
-	return len(fake.actualLRPGroupsArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsArgsForCall(i int) lager.Logger {
-	fake.actualLRPGroupsMutex.RLock()
-	defer fake.actualLRPGroupsMutex.RUnlock()
-	return fake.actualLRPGroupsArgsForCall[i].logger
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsReturns(result1 []models.ActualLRPGroup, result2 error) {
-	fake.ActualLRPGroupsStub = nil
-	fake.actualLRPGroupsReturns = struct {
-		result1 []models.ActualLRPGroup
-		result2 error
 	}{result1, result2}
 }
 
