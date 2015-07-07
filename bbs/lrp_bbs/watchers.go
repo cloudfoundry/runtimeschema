@@ -147,3 +147,4 @@ func (bbs *LRPBBS) WatchForActualLRPChanges(
 
 	return stop, err
 }
+

@@ -198,12 +198,12 @@ var _ = Describe("Convergence", func() {
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
+					group1, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
+					group2, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())
@@ -230,12 +230,12 @@ var _ = Describe("Convergence", func() {
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
+					group1, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
+					group2, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())
@@ -262,12 +262,12 @@ var _ = Describe("Convergence", func() {
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
 				case 2:
-					group1, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
+					group1, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex1)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group1.Instance).To(BeNil())
 					Expect(group1.Evacuating).NotTo(BeNil())
 
-					group2, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
+					group2, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, guid, randomIndex2)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(group2.Instance).NotTo(BeNil())
 					Expect(group2.Evacuating).To(BeNil())

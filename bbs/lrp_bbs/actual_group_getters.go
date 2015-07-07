@@ -143,7 +143,7 @@ func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid
 	return groups, nil
 }
 
-func (bbs *LRPBBS) ActualLRPGroupByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error) {
+func (bbs *LRPBBS) LegacyActualLRPGroupByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRPGroup, error) {
 	if len(processGuid) == 0 {
 		return models.ActualLRPGroup{}, bbserrors.ErrNoProcessGuid
 	}

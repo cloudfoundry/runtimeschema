@@ -152,14 +152,14 @@ var _ = Describe("Actual LRP Getters", func() {
 		})
 	})
 
-	Describe("ActualLRPGroupByProcessGuidAndIndex", func() {
+	Describe("LegacyActualLRPGroupByProcessGuidAndIndex", func() {
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {
 				testHelper.SetRawActualLRP(baseLRP)
 			})
 
 			It("returns the /instance entry", func() {
-				returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
+				returnedLRPGroup, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 					Instance:   &baseLRP,
@@ -174,7 +174,7 @@ var _ = Describe("Actual LRP Getters", func() {
 				})
 
 				It("returns both the /instance LRPs and /evacuating LRPs the group", func() {
-					returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
+					returnedLRPGroup, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
 					Expect(returnedErr).NotTo(HaveOccurred())
 					Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 						Instance:   &baseLRP,
@@ -191,7 +191,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
-				returnedLRPGroup, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
+				returnedLRPGroup, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
 				Expect(returnedErr).NotTo(HaveOccurred())
 				Expect(returnedLRPGroup).To(Equal(models.ActualLRPGroup{
 					Instance:   nil,
@@ -203,14 +203,14 @@ var _ = Describe("Actual LRP Getters", func() {
 
 		Context("when there are no entries", func() {
 			It("returns an ErrStoreResourceNotFound", func() {
-				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
+				_, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when given an empty process guid", func() {
 			It("returns an error", func() {
-				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, "", baseIndex)
+				_, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, "", baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})
@@ -223,7 +223,7 @@ var _ = Describe("Actual LRP Getters", func() {
 			})
 
 			It("returns an ErrStoreResourceNotFound", func() {
-				_, returnedErr := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
+				_, returnedErr := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, baseProcessGuid, baseIndex)
 				Expect(returnedErr).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})

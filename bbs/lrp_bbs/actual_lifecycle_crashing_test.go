@@ -264,7 +264,7 @@ func (t crashTest) Test() {
 				It("the actual LRP is also deleted", func() {
 					Expect(crashErr).NotTo(HaveOccurred())
 
-					_, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
+					_, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 					Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 				})
 			})
@@ -279,7 +279,7 @@ func (t crashTest) Test() {
 
 			BeforeEach(func() {
 				var err error
-				beforeActualGroup, err = lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				beforeActualGroup, err = lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 				Expect(err).NotTo(HaveOccurred())
 				instanceKey.InstanceGuid = "another-guid"
 			})
@@ -287,7 +287,7 @@ func (t crashTest) Test() {
 			It("does not crash", func() {
 				Expect(crashErr).To(Equal(bbserrors.ErrActualLRPCannotBeCrashed))
 
-				afterActualGroup, err := lrpBBS.ActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
+				afterActualGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, actualLRPKey.ProcessGuid, actualLRPKey.Index)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(afterActualGroup).To(Equal(beforeActualGroup))
 			})
