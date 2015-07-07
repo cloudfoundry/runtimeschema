@@ -182,30 +182,6 @@ func (bbs *LRPBBS) LegacyActualLRPGroupByProcessGuidAndIndex(logger lager.Logger
 	return group, err
 }
 
-func (bbs *LRPBBS) EvacuatingActualLRPByProcessGuidAndIndex(logger lager.Logger, processGuid string, index int) (models.ActualLRP, error) {
-	if len(processGuid) == 0 {
-		return models.ActualLRP{}, bbserrors.ErrNoProcessGuid
-	}
-	logger = logger.WithData(lager.Data{"process-guid": processGuid, "index": index})
-
-	logger.Debug("fetching-evacuating-lrp-from-bbs")
-	node, err := bbs.store.Get(shared.EvacuatingActualLRPSchemaPath(processGuid, index))
-	if err != nil {
-		logger.Error("failed-fetching-evacuating-lrp-from-bbs", err)
-		return models.ActualLRP{}, shared.ConvertStoreError(err)
-	}
-	logger.Debug("succeeded-fetching-evacuating-lrp-from-bbs")
-
-	var lrp models.ActualLRP
-	err = models.FromJSON(node.Value, &lrp)
-	if err != nil {
-		logger.Error("invalid-node", err)
-		return models.ActualLRP{}, fmt.Errorf("cannot parse lrp JSON for key %s: %s", node.Key, err.Error())
-	}
-
-	return lrp, err
-}
-
 func isInstanceActualLRPNode(node storeadapter.StoreNode) bool {
 	return path.Base(node.Key) == shared.ActualLRPInstanceKey
 }
