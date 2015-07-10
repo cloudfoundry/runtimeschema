@@ -33,6 +33,8 @@ type DownloadAction struct {
 	To       string `json:"to"`
 	CacheKey string `json:"cache_key"`
 
+	User string `json:"user"`
+
 	LogSource string `json:"log_source,omitempty"`
 }
 
@@ -51,6 +53,10 @@ func (a DownloadAction) Validate() error {
 		validationError = validationError.Append(ErrInvalidField{"to"})
 	}
 
+	if a.User == "" {
+		validationError = validationError.Append(ErrInvalidField{"user"})
+	}
+
 	if !validationError.Empty() {
 		return validationError
 	}
@@ -62,6 +68,8 @@ type UploadAction struct {
 	Artifact string `json:"artifact,omitempty"`
 	To       string `json:"to"`
 	From     string `json:"from"`
+
+	User string `json:"user"`
 
 	LogSource string `json:"log_source,omitempty"`
 }
@@ -79,6 +87,10 @@ func (a UploadAction) Validate() error {
 
 	if a.From == "" {
 		validationError = validationError.Append(ErrInvalidField{"from"})
+	}
+
+	if a.User == "" {
+		validationError = validationError.Append(ErrInvalidField{"user"})
 	}
 
 	if !validationError.Empty() {

@@ -59,6 +59,7 @@ func createDesiredLRPsInDomains(domainCounts map[string]int) map[string][]models
 				Action: &models.DownloadAction{
 					From: "http://example.com",
 					To:   "/tmp/internet",
+					User: "diego",
 				},
 			}
 			err := lrpBBS.DesireLRP(logger, desiredLRP)

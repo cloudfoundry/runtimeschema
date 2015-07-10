@@ -20,6 +20,7 @@ var _ = Describe("LrpConvergence", func() {
 	var dummyAction = &models.DownloadAction{
 		From: "http://example.com",
 		To:   "/tmp/internet",
+		User: "diego",
 	}
 
 	var (

@@ -31,7 +31,8 @@ var _ = Describe("DesiredLRP", func() {
 			"download": {
 				"from": "http://example.com",
 				"to": "/tmp/internet",
-				"cache_key": ""
+				"cache_key": "",
+				"user": "someone"
 			}
 		},
 		"action": {
@@ -123,6 +124,7 @@ var _ = Describe("DesiredLRP", func() {
 			Setup: &DownloadAction{
 				From: "http://example.com",
 				To:   "/tmp/internet",
+				User: "someone",
 			},
 			Action: &RunAction{
 				Path: "ls",
@@ -416,19 +418,19 @@ var _ = Describe("DesiredLRP", func() {
 				"domain": "some-domain",
 				"rootfs": "some-rootfs",
 				"action":
-					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
+				{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":"","user":"someone"}}
 			}`,
 			"rootfs": `{
 				"domain": "some-domain",
 				"process_guid": "process_guid",
 				"action":
-					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
+				{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":"","user":"someone"}}
 			}`,
 			"domain": `{
 				"rootfs": "some-rootfs",
 				"process_guid": "process_guid",
 				"action":
-					{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}}
+				{"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":"","user":"someone"}}
 			}`,
 		} {
 			missingField := field
@@ -452,7 +454,7 @@ var _ = Describe("DesiredLRP", func() {
 				"process_guid": "process_guid",
 				"instances": 1,
 				"action": {
-					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":"","user":"someone"}
 				},
 				"annotation":"` + strings.Repeat("a", 10*1024+1) + `"
 			}`,
@@ -462,7 +464,7 @@ var _ = Describe("DesiredLRP", func() {
 				"process_guid": "process_guid",
 				"instances": 1,
 				"action": {
-					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":""}
+					"download":{"from":"http://example.com","to":"/tmp/internet","cache_key":"","user":"someone"}
 				},
 				"routes": {
 					"cf-route": "` + strings.Repeat("r", 4*1024) + `"

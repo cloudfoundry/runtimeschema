@@ -37,6 +37,7 @@ var _ = Describe("Watchers", func() {
 				Action: &models.DownloadAction{
 					From: "http://example.com",
 					To:   "/tmp/internet",
+					User: "diego",
 				},
 			}
 		}
