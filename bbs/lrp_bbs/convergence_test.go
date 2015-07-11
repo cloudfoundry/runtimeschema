@@ -640,7 +640,7 @@ var _ = Describe("LrpConvergence", func() {
 			err := lrpBBS.DesireLRP(logger, desiredLRP)
 			Expect(err).NotTo(HaveOccurred())
 
-			desiredLRP, err = lrpBBS.DesiredLRPByProcessGuid(logger, "process-guid-for-unclaimed")
+			desiredLRP, err = lrpBBS.LegacyDesiredLRPByProcessGuid(logger, "process-guid-for-unclaimed")
 			Expect(err).NotTo(HaveOccurred())
 
 			auctioneerPresence := models.NewAuctioneerPresence("auctioneer-id", "example.com")

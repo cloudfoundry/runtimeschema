@@ -47,7 +47,7 @@ func (bbs *LRPBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGui
 	logger.Info("starting")
 	defer logger.Info("complete")
 
-	lrp, err := bbs.DesiredLRPByProcessGuid(logger, processGuid)
+	lrp, err := bbs.LegacyDesiredLRPByProcessGuid(logger, processGuid)
 	if err != nil {
 		return err
 	}

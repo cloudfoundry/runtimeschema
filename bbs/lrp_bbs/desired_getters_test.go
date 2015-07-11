@@ -13,7 +13,7 @@ import (
 var _ = Describe("Desired LRP Getters", func() {
 	var createdDesiredLRPs map[string][]models.DesiredLRP
 
-	Describe("DesiredLRPByProcessGuid", func() {
+	Describe("LegacyDesiredLRPByProcessGuid", func() {
 		BeforeEach(func() {
 			createdDesiredLRPs = createDesiredLRPsInDomains(map[string]int{
 				"domain-1": 1,
@@ -21,7 +21,7 @@ var _ = Describe("Desired LRP Getters", func() {
 		})
 
 		It("returns all desired long running processes", func() {
-			desiredLrp, err := lrpBBS.DesiredLRPByProcessGuid(logger, "guid-0-for-domain-1")
+			desiredLrp, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, "guid-0-for-domain-1")
 			Expect(err).NotTo(HaveOccurred())
 
 			desiredLrp.ModificationTag = models.ModificationTag{}
@@ -30,14 +30,14 @@ var _ = Describe("Desired LRP Getters", func() {
 
 		Context("when the Desired LRP does not exist", func() {
 			It("returns ErrStoreResourceNotFound", func() {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, "non-existent")
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, "non-existent")
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			})
 		})
 
 		Context("when the process guid is empty", func() {
 			It("returns an error", func() {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, "")
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, "")
 				Expect(err).To(Equal(bbserrors.ErrNoProcessGuid))
 			})
 		})

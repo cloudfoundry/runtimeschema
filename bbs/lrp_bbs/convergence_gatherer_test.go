@@ -106,28 +106,28 @@ var _ = Describe("Convergence", func() {
 			Expect(gatherError).NotTo(HaveOccurred())
 
 			for _, desiredGuid := range testData.validDesiredGuidsWithSomeValidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			for _, desiredGuid := range testData.validDesiredGuidsWithNoActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 			for _, desiredGuid := range testData.validDesiredGuidsWithOnlyInvalidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithSomeValidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithNoActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 			for _, desiredGuid := range testData.invalidDesiredGuidsWithOnlyInvalidActuals {
-				_, err := lrpBBS.DesiredLRPByProcessGuid(logger, desiredGuid)
+				_, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, desiredGuid)
 				Expect(err).To(Equal(bbserrors.ErrStoreResourceNotFound))
 			}
 		})

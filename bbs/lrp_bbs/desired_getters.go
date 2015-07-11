@@ -9,7 +9,7 @@ import (
 
 const maxDesiredGetterWorkPoolSize = 50
 
-func (bbs *LRPBBS) DesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error) {
+func (bbs *LRPBBS) LegacyDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error) {
 	logger = logger.WithData(lager.Data{"process-guid": processGuid})
 	lrp, _, err := bbs.desiredLRPByProcessGuidWithIndex(logger, processGuid)
 	return lrp, err

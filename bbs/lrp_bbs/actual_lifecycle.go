@@ -422,7 +422,7 @@ func (bbs *LRPBBS) requestLRPAuctions(lrpStarts []models.LRPStartRequest) error 
 }
 
 func (bbs *LRPBBS) requestLRPAuctionForLRPKey(logger lager.Logger, key models.ActualLRPKey) error {
-	desiredLRP, err := bbs.DesiredLRPByProcessGuid(logger, key.ProcessGuid)
+	desiredLRP, err := bbs.LegacyDesiredLRPByProcessGuid(logger, key.ProcessGuid)
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return bbs.actualLRPRepo.DeleteRawActualLRPKey(logger, &key)
 	}

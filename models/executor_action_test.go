@@ -242,8 +242,6 @@ var _ = Describe("Actions", func() {
 					"run": {
 						"path": "echo",
 						"user": "someone",
-						"args": null,
-						"env": null,
 						"resource_limits":{}
 					}
 				},
@@ -336,8 +334,6 @@ var _ = Describe("Actions", func() {
 					"action": {
 						"run": {
 							"path": "echo",
-							"args": null,
-							"env": null,
 							"resource_limits":{},
 							"user": "me"
 						}
@@ -410,9 +406,7 @@ var _ = Describe("Actions", func() {
 						{
 							"run": {
 								"resource_limits": {},
-								"env": null,
 								"path": "echo",
-								"args": null,
 								"user": "me"
 							}
 						}
@@ -525,9 +519,7 @@ var _ = Describe("Actions", func() {
 						{
 							"run": {
 								"resource_limits": {},
-								"env": null,
 								"path": "echo",
-								"args": null,
 								"user": "me"
 							}
 						}
@@ -635,8 +627,6 @@ var _ = Describe("Actions", func() {
 					"action": {
 						"run": {
 							"path": "echo",
-							"args": null,
-							"env": null,
 							"resource_limits":{},
 							"user": "me"
 						}
@@ -728,9 +718,7 @@ var _ = Describe("Actions", func() {
 						{
 							"run": {
 								"resource_limits": {},
-								"env": null,
 								"path": "echo",
-								"args": null,
 								"user": "me"
 							}
 						}

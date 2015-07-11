@@ -34,7 +34,6 @@ type ReceptorBBS interface {
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error
-	DesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error)
 	WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error)
 
 	//actual lrp

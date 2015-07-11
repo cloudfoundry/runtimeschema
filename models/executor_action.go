@@ -102,9 +102,9 @@ func (a UploadAction) Validate() error {
 
 type RunAction struct {
 	Path           string                `json:"path"`
-	Args           []string              `json:"args"`
+	Args           []string              `json:"args,omitempty"`
 	Dir            string                `json:"dir,omitempty"`
-	Env            []EnvironmentVariable `json:"env"`
+	Env            []EnvironmentVariable `json:"env,omitempty"`
 	ResourceLimits ResourceLimits        `json:"resource_limits"`
 	User           string                `json:"user"`
 

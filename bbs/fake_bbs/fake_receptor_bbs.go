@@ -103,16 +103,6 @@ type FakeReceptorBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	DesiredLRPByProcessGuidStub        func(logger lager.Logger, processGuid string) (models.DesiredLRP, error)
-	desiredLRPByProcessGuidMutex       sync.RWMutex
-	desiredLRPByProcessGuidArgsForCall []struct {
-		logger      lager.Logger
-		processGuid string
-	}
-	desiredLRPByProcessGuidReturns struct {
-		result1 models.DesiredLRP
-		result2 error
-	}
 	WatchForDesiredLRPChangesStub        func(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error)
 	watchForDesiredLRPChangesMutex       sync.RWMutex
 	watchForDesiredLRPChangesArgsForCall []struct {
@@ -493,40 +483,6 @@ func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error)
 	fake.removeDesiredLRPByProcessGuidReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuid(logger lager.Logger, processGuid string) (models.DesiredLRP, error) {
-	fake.desiredLRPByProcessGuidMutex.Lock()
-	fake.desiredLRPByProcessGuidArgsForCall = append(fake.desiredLRPByProcessGuidArgsForCall, struct {
-		logger      lager.Logger
-		processGuid string
-	}{logger, processGuid})
-	fake.desiredLRPByProcessGuidMutex.Unlock()
-	if fake.DesiredLRPByProcessGuidStub != nil {
-		return fake.DesiredLRPByProcessGuidStub(logger, processGuid)
-	} else {
-		return fake.desiredLRPByProcessGuidReturns.result1, fake.desiredLRPByProcessGuidReturns.result2
-	}
-}
-
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidCallCount() int {
-	fake.desiredLRPByProcessGuidMutex.RLock()
-	defer fake.desiredLRPByProcessGuidMutex.RUnlock()
-	return len(fake.desiredLRPByProcessGuidArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidArgsForCall(i int) (lager.Logger, string) {
-	fake.desiredLRPByProcessGuidMutex.RLock()
-	defer fake.desiredLRPByProcessGuidMutex.RUnlock()
-	return fake.desiredLRPByProcessGuidArgsForCall[i].logger, fake.desiredLRPByProcessGuidArgsForCall[i].processGuid
-}
-
-func (fake *FakeReceptorBBS) DesiredLRPByProcessGuidReturns(result1 models.DesiredLRP, result2 error) {
-	fake.DesiredLRPByProcessGuidStub = nil
-	fake.desiredLRPByProcessGuidReturns = struct {
-		result1 models.DesiredLRP
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeReceptorBBS) WatchForDesiredLRPChanges(logger lager.Logger, created func(models.DesiredLRP), changed func(models.DesiredLRPChange), deleted func(models.DesiredLRP)) (stop chan<- bool, errs <-chan error) {

@@ -38,8 +38,6 @@ var _ = Describe("DesiredLRP", func() {
 		"action": {
 			"run": {
 				"path": "ls",
-				"args": null,
-				"env": null,
 				"resource_limits":{},
 				"user": "me"
 			}
@@ -47,8 +45,6 @@ var _ = Describe("DesiredLRP", func() {
 		"monitor": {
 			"run": {
 				"path": "reboot",
-				"args": null,
-				"env": null,
 				"resource_limits":{},
 				"user": "someone"
 			}

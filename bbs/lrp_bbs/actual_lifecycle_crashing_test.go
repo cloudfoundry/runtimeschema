@@ -249,7 +249,7 @@ func (t crashTest) Test() {
 				Expect(requestAddress).To(Equal(auctioneerPresence.AuctioneerAddress))
 				Expect(requestedAuctions).To(HaveLen(1))
 
-				desiredLRP, err := lrpBBS.DesiredLRPByProcessGuid(logger, actualLRPKey.ProcessGuid)
+				desiredLRP, err := lrpBBS.LegacyDesiredLRPByProcessGuid(logger, actualLRPKey.ProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(requestedAuctions[0].DesiredLRP).To(Equal(desiredLRP))
 				Expect(requestedAuctions[0].Indices).To(ConsistOf(uint(actualLRPKey.Index)))
