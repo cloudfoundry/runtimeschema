@@ -115,16 +115,6 @@ type FakeReceptorBBS struct {
 		result1 chan<- bool
 		result2 <-chan error
 	}
-	ActualLRPGroupsByDomainStub        func(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error)
-	actualLRPGroupsByDomainMutex       sync.RWMutex
-	actualLRPGroupsByDomainArgsForCall []struct {
-		logger lager.Logger
-		domain string
-	}
-	actualLRPGroupsByDomainReturns struct {
-		result1 []models.ActualLRPGroup
-		result2 error
-	}
 	RetireActualLRPsStub        func(lager.Logger, []models.ActualLRPKey)
 	retireActualLRPsMutex       sync.RWMutex
 	retireActualLRPsArgsForCall []struct {
@@ -518,40 +508,6 @@ func (fake *FakeReceptorBBS) WatchForDesiredLRPChangesReturns(result1 chan<- boo
 	fake.watchForDesiredLRPChangesReturns = struct {
 		result1 chan<- bool
 		result2 <-chan error
-	}{result1, result2}
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomain(logger lager.Logger, domain string) ([]models.ActualLRPGroup, error) {
-	fake.actualLRPGroupsByDomainMutex.Lock()
-	fake.actualLRPGroupsByDomainArgsForCall = append(fake.actualLRPGroupsByDomainArgsForCall, struct {
-		logger lager.Logger
-		domain string
-	}{logger, domain})
-	fake.actualLRPGroupsByDomainMutex.Unlock()
-	if fake.ActualLRPGroupsByDomainStub != nil {
-		return fake.ActualLRPGroupsByDomainStub(logger, domain)
-	} else {
-		return fake.actualLRPGroupsByDomainReturns.result1, fake.actualLRPGroupsByDomainReturns.result2
-	}
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainCallCount() int {
-	fake.actualLRPGroupsByDomainMutex.RLock()
-	defer fake.actualLRPGroupsByDomainMutex.RUnlock()
-	return len(fake.actualLRPGroupsByDomainArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainArgsForCall(i int) (lager.Logger, string) {
-	fake.actualLRPGroupsByDomainMutex.RLock()
-	defer fake.actualLRPGroupsByDomainMutex.RUnlock()
-	return fake.actualLRPGroupsByDomainArgsForCall[i].logger, fake.actualLRPGroupsByDomainArgsForCall[i].domain
-}
-
-func (fake *FakeReceptorBBS) ActualLRPGroupsByDomainReturns(result1 []models.ActualLRPGroup, result2 error) {
-	fake.ActualLRPGroupsByDomainStub = nil
-	fake.actualLRPGroupsByDomainReturns = struct {
-		result1 []models.ActualLRPGroup
-		result2 error
 	}{result1, result2}
 }
 
