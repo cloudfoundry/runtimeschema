@@ -206,7 +206,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 					testHelper.RegisterCell(cellPresence)
 
 					for i := 0; i < lrp.Instances; i++ {
-						err := lrpBBS.ClaimActualLRP(
+						err := lrpBBS.LegacyClaimActualLRP(
 							logger,
 							models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
 							models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),
@@ -335,7 +335,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 						testHelper.RegisterCell(cellPresence)
 
 						for i := 0; i < lrp.Instances; i++ {
-							err := lrpBBS.ClaimActualLRP(
+							err := lrpBBS.LegacyClaimActualLRP(
 								logger,
 								models.NewActualLRPKey(lrp.ProcessGuid, i, lrp.Domain),
 								models.NewActualLRPInstanceKey(fmt.Sprintf("some-instance-guid-%d", i), cellPresence.CellID),

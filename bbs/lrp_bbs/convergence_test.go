@@ -213,7 +213,7 @@ var _ = Describe("LrpConvergence", func() {
 			actualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = lrpBBS.ClaimActualLRP(
+			err = lrpBBS.LegacyClaimActualLRP(
 				logger,
 				actualLRPGroup.Instance.ActualLRPKey,
 				models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
@@ -337,7 +337,7 @@ var _ = Describe("LrpConvergence", func() {
 					actualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.ClaimActualLRP(
+					err = lrpBBS.LegacyClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
@@ -384,7 +384,7 @@ var _ = Describe("LrpConvergence", func() {
 					actualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.ClaimActualLRP(
+					err = lrpBBS.LegacyClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
@@ -517,7 +517,7 @@ var _ = Describe("LrpConvergence", func() {
 					actualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.ClaimActualLRP(
+					err = lrpBBS.LegacyClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
@@ -577,7 +577,7 @@ var _ = Describe("LrpConvergence", func() {
 					actualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.ClaimActualLRP(
+					err = lrpBBS.LegacyClaimActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),

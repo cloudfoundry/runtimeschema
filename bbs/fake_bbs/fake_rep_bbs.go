@@ -76,16 +76,6 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	ClaimActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
-	claimActualLRPMutex       sync.RWMutex
-	claimActualLRPArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-	}
-	claimActualLRPReturns struct {
-		result1 error
-	}
 	StartActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
 	startActualLRPMutex       sync.RWMutex
 	startActualLRPArgsForCall []struct {
@@ -380,40 +370,6 @@ func (fake *FakeRepBBS) CompleteTaskArgsForCall(i int) (lager.Logger, string, st
 func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	fake.CompleteTaskStub = nil
 	fake.completeTaskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeRepBBS) ClaimActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPInstanceKey) error {
-	fake.claimActualLRPMutex.Lock()
-	fake.claimActualLRPArgsForCall = append(fake.claimActualLRPArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-	}{arg1, arg2, arg3})
-	fake.claimActualLRPMutex.Unlock()
-	if fake.ClaimActualLRPStub != nil {
-		return fake.ClaimActualLRPStub(arg1, arg2, arg3)
-	} else {
-		return fake.claimActualLRPReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) ClaimActualLRPCallCount() int {
-	fake.claimActualLRPMutex.RLock()
-	defer fake.claimActualLRPMutex.RUnlock()
-	return len(fake.claimActualLRPArgsForCall)
-}
-
-func (fake *FakeRepBBS) ClaimActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) {
-	fake.claimActualLRPMutex.RLock()
-	defer fake.claimActualLRPMutex.RUnlock()
-	return fake.claimActualLRPArgsForCall[i].arg1, fake.claimActualLRPArgsForCall[i].arg2, fake.claimActualLRPArgsForCall[i].arg3
-}
-
-func (fake *FakeRepBBS) ClaimActualLRPReturns(result1 error) {
-	fake.ClaimActualLRPStub = nil
-	fake.claimActualLRPReturns = struct {
 		result1 error
 	}{result1}
 }

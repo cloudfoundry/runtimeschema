@@ -16,7 +16,7 @@ const CrashResetTimeout = 5 * time.Minute
 const retireActualThrottlerSize = 20
 const RetireActualLRPRetryAttempts = 5
 
-func (bbs *LRPBBS) ClaimActualLRP(
+func (bbs *LRPBBS) LegacyClaimActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,

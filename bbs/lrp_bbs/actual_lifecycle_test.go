@@ -29,306 +29,6 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 	})
 
-	Describe("ClaimActualLRP", func() {
-		var claimErr error
-		var lrpKey models.ActualLRPKey
-		var instanceKey models.ActualLRPInstanceKey
-
-		JustBeforeEach(func() {
-			claimErr = lrpBBS.ClaimActualLRP(logger, lrpKey, instanceKey)
-		})
-
-		Context("when the actual LRP exists", func() {
-			var processGuid string
-			var desiredLRP models.DesiredLRP
-			var index int
-			var createdLRP models.ActualLRP
-
-			BeforeEach(func() {
-				index = 1
-				processGuid = "some-process-guid"
-				desiredLRP = models.DesiredLRP{
-					ProcessGuid: processGuid,
-					Domain:      "some-domain",
-					RootFS:      "some:rootfs",
-					Instances:   index + 1,
-					Action: &models.RunAction{
-						Path: "true",
-						User: "me",
-					},
-				}
-
-				err := lrpBBS.DesireLRP(logger, desiredLRP)
-				Expect(err).NotTo(HaveOccurred())
-
-				lrpGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-				Expect(err).NotTo(HaveOccurred())
-				createdLRP = *lrpGroup.Instance
-			})
-
-			Context("when the instance key is invalid", func() {
-				BeforeEach(func() {
-					lrpKey = createdLRP.ActualLRPKey
-					instanceKey = models.NewActualLRPInstanceKey(
-						"", // invalid InstanceGuid
-						cellID,
-					)
-				})
-
-				It("returns a validation error", func() {
-					Expect(claimErr).To(ContainElement(models.ErrInvalidField{"instance_guid"}))
-				})
-
-				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
-				})
-
-				It("logs the error", func() {
-					Expect(logger.TestSink.LogMessages()).To(ContainElement("test.claim-actual-lrp.failed-to-marshal-actual-lrp"))
-				})
-			})
-
-			Context("when the domain differs", func() {
-				BeforeEach(func() {
-					lrpKey = models.NewActualLRPKey(
-						createdLRP.ProcessGuid,
-						createdLRP.Index,
-						"some-other-domain",
-					)
-					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
-				})
-
-				It("returns an error", func() {
-					Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-				})
-
-				It("does not modify the persisted actual LRP", func() {
-					lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateUnclaimed))
-				})
-			})
-
-			Context("when the existing ActualLRP is Unclaimed", func() {
-				BeforeEach(func() {
-					lrpKey = createdLRP.ActualLRPKey
-					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
-				})
-
-				It("does not error", func() {
-					Expect(claimErr).NotTo(HaveOccurred())
-				})
-
-				It("claims the actual LRP", func() {
-					lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
-				})
-
-				It("updates the ModificationIndex", func() {
-					lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(lrpGroupInBBS.Instance.ModificationTag.Index).To(Equal(createdLRP.ModificationTag.Index + 1))
-				})
-			})
-
-			Context("when the existing ActualLRP is Claimed", func() {
-				var instanceGuid string
-
-				BeforeEach(func() {
-					instanceGuid = "some-instance-guid"
-					err := lrpBBS.ClaimActualLRP(
-						logger,
-						createdLRP.ActualLRPKey,
-						models.NewActualLRPInstanceKey(instanceGuid, cellID),
-					)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				Context("with the same cell and instance guid", func() {
-					var previousTime int64
-
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
-
-						previousTime = clock.Now().UnixNano()
-						clock.IncrementBySeconds(1)
-					})
-
-					It("does not return an error", func() {
-						Expect(claimErr).NotTo(HaveOccurred())
-					})
-
-					It("does not alter the state of the persisted LRP", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
-					})
-
-					It("does not update the timestamp of the persisted actual lrp", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.Since).To(Equal(previousTime))
-					})
-				})
-
-				Context("with a different cell", func() {
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
-					})
-
-					It("returns an error", func() {
-						Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-					})
-
-					It("does not alter the existing LRP", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.CellID).To(Equal(cellID))
-					})
-				})
-
-				Context("when the instance guid differs", func() {
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
-					})
-
-					It("returns an error", func() {
-						Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-					})
-
-					It("does not alter the existing actual", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.InstanceGuid).To(Equal(instanceGuid))
-					})
-				})
-			})
-
-			Context("when the existing ActualLRP is Running", func() {
-				var instanceGuid string
-
-				BeforeEach(func() {
-					instanceGuid = "some-instance-guid"
-					err := lrpBBS.StartActualLRP(
-						logger,
-						createdLRP.ActualLRPKey,
-						models.NewActualLRPInstanceKey(instanceGuid, cellID),
-						models.NewActualLRPNetInfo("1.2.3.4", []models.PortMapping{{ContainerPort: 1234, HostPort: 5678}}),
-					)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				Context("with the same cell and instance guid", func() {
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
-					})
-
-					It("does not return an error", func() {
-						Expect(claimErr).NotTo(HaveOccurred())
-					})
-
-					It("reverts the persisted LRP to the CLAIMED state", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateClaimed))
-					})
-
-					It("clears the net info", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.Address).To(BeEmpty())
-						Expect(lrpGroupInBBS.Instance.Ports).To(BeEmpty())
-					})
-				})
-
-				Context("with a different cell", func() {
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey(instanceGuid, "another-cell-id")
-					})
-
-					It("returns an error", func() {
-						Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-					})
-
-					It("does not alter the existing LRP", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.CellID).To(Equal(cellID))
-					})
-				})
-
-				Context("when the instance guid differs", func() {
-					BeforeEach(func() {
-						lrpKey = createdLRP.ActualLRPKey
-						instanceKey = models.NewActualLRPInstanceKey("another-instance-guid", cellID)
-					})
-
-					It("returns an error", func() {
-						Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-					})
-
-					It("does not alter the existing actual", func() {
-						lrpGroupInBBS, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(lrpGroupInBBS.Instance.InstanceGuid).To(Equal(instanceGuid))
-					})
-				})
-			})
-
-			Context("when there is a placement error", func() {
-				BeforeEach(func() {
-					lrpKey = createdLRP.ActualLRPKey
-					instanceKey = models.NewActualLRPInstanceKey("some-instance-guid", cellID)
-
-					err := lrpBBS.FailActualLRP(logger, lrpKey, "insufficient resources")
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("should clear placement error", func() {
-					createdLRP, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(createdLRP.Instance.PlacementError).To(BeEmpty())
-				})
-			})
-		})
-
-		Context("when the actual LRP does not exist", func() {
-			BeforeEach(func() {
-				lrpKey = models.NewActualLRPKey("process-guid", 1, "domain")
-				instanceKey = models.NewActualLRPInstanceKey("instance-guid", cellID)
-			})
-
-			It("cannot claim the LRP", func() {
-				Expect(claimErr).To(Equal(bbserrors.ErrActualLRPCannotBeClaimed))
-			})
-
-			It("does not create an actual LRP", func() {
-				_, err := etcdClient.ListRecursively(shared.ActualLRPSchemaRoot)
-				Expect(err).To(HaveOccurred())
-			})
-		})
-	})
-
 	Describe("StartActualLRP", func() {
 		var startErr error
 		var lrpKey models.ActualLRPKey
@@ -453,7 +153,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := lrpBBS.ClaimActualLRP(
+					err := lrpBBS.LegacyClaimActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),
@@ -762,7 +462,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpGroups).To(HaveKey(0))
-				err = lrpBBS.ClaimActualLRP(
+				err = lrpBBS.LegacyClaimActualLRP(
 					logger,
 					lrpGroups[0].Instance.ActualLRPKey,
 					models.NewActualLRPInstanceKey("some-instance-guid-1", cellID),
@@ -770,7 +470,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpGroups).To(HaveKey(1))
-				err = lrpBBS.ClaimActualLRP(
+				err = lrpBBS.LegacyClaimActualLRP(
 					logger,
 					lrpGroups[1].Instance.ActualLRPKey,
 					models.NewActualLRPInstanceKey("some-instance-guid-2", cellID),
@@ -957,7 +657,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 			Context("not in unclaimed state", func() {
 				BeforeEach(func() {
-					claimErr := lrpBBS.ClaimActualLRP(logger, actualLRPKey, instanceKey)
+					claimErr := lrpBBS.LegacyClaimActualLRP(logger, actualLRPKey, instanceKey)
 					Expect(claimErr).NotTo(HaveOccurred())
 				})
 
