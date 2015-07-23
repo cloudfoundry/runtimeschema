@@ -61,7 +61,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			It("creates one ActualLRP per index", func() {
 				err := lrpBBS.DesireLRP(logger, lrp)
 				Expect(err).NotTo(HaveOccurred())
-				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, "some-process-guid")
+				actualLRPGroups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, "some-process-guid")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actualLRPGroups).To(HaveLen(5))
 			})
@@ -69,7 +69,7 @@ var _ = Describe("DesiredLRP Lifecycle", func() {
 			It("sets a ModificationTag on each ActualLRP with a unique epoch", func() {
 				err := lrpBBS.DesireLRP(logger, lrp)
 				Expect(err).NotTo(HaveOccurred())
-				actualLRPGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, "some-process-guid")
+				actualLRPGroups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, "some-process-guid")
 				Expect(err).NotTo(HaveOccurred())
 
 				epochs := map[string]models.ActualLRP{}

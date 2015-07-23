@@ -107,51 +107,6 @@ var _ = Describe("Actual LRP Getters", func() {
 		}
 	})
 
-	Describe("ActualLRPGroupsByProcessGuid", func() {
-		Context("when there are both /instance and /evacuating LRPs", func() {
-			BeforeEach(func() {
-				testHelper.SetRawActualLRP(baseLRP)
-				testHelper.SetRawActualLRP(otherIndexLRP)
-				testHelper.SetRawActualLRP(yetAnotherIndexLRP)
-				testHelper.SetRawEvacuatingActualLRP(yetAnotherIndexLRP, noExpirationTTL)
-				testHelper.SetRawActualLRP(otherProcessGuidLRP)
-			})
-
-			It("returns all the /instance LRPs and /evacuating LRPs in groups", func() {
-				actualLRPGroupsByIndex, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, baseProcessGuid)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actualLRPGroupsByIndex).To(Equal(models.ActualLRPGroupsByIndex{
-					baseIndex:       {Instance: &baseLRP, Evacuating: nil},
-					otherIndex:      {Instance: &otherIndexLRP, Evacuating: nil},
-					yetAnotherIndex: {Instance: &yetAnotherIndexLRP, Evacuating: &yetAnotherIndexLRP},
-				}))
-			})
-		})
-
-		Context("when there are no LRPs", func() {
-			BeforeEach(func() {
-				// leave some intermediate directories in the store
-				testHelper.SetRawActualLRP(baseLRP)
-				err := lrpBBS.RemoveActualLRP(logger, baseLRPKey, baseLRPInstanceKey)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns an empty map", func() {
-				actualLRPGroupsByIndex, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, baseProcessGuid)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actualLRPGroupsByIndex).NotTo(BeNil())
-				Expect(actualLRPGroupsByIndex).To(BeEmpty())
-			})
-		})
-
-		Context("when given an empty process guid", func() {
-			It("returns an error", func() {
-				_, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, "")
-				Expect(err).To(Equal(bbserrors.ErrNoProcessGuid))
-			})
-		})
-	})
-
 	Describe("LegacyActualLRPGroupByProcessGuidAndIndex", func() {
 		Context("when there is an /instance entry", func() {
 			BeforeEach(func() {

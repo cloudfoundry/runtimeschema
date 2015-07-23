@@ -98,16 +98,6 @@ type FakeRepBBS struct {
 	crashActualLRPReturns struct {
 		result1 error
 	}
-	RemoveActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) error
-	removeActualLRPMutex       sync.RWMutex
-	removeActualLRPArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-	}
-	removeActualLRPReturns struct {
-		result1 error
-	}
 	EvacuateClaimedActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
 	evacuateClaimedActualLRPMutex       sync.RWMutex
 	evacuateClaimedActualLRPArgsForCall []struct {
@@ -440,40 +430,6 @@ func (fake *FakeRepBBS) CrashActualLRPArgsForCall(i int) (lager.Logger, models.A
 func (fake *FakeRepBBS) CrashActualLRPReturns(result1 error) {
 	fake.CrashActualLRPStub = nil
 	fake.crashActualLRPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeRepBBS) RemoveActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPInstanceKey) error {
-	fake.removeActualLRPMutex.Lock()
-	fake.removeActualLRPArgsForCall = append(fake.removeActualLRPArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-	}{arg1, arg2, arg3})
-	fake.removeActualLRPMutex.Unlock()
-	if fake.RemoveActualLRPStub != nil {
-		return fake.RemoveActualLRPStub(arg1, arg2, arg3)
-	} else {
-		return fake.removeActualLRPReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPCallCount() int {
-	fake.removeActualLRPMutex.RLock()
-	defer fake.removeActualLRPMutex.RUnlock()
-	return len(fake.removeActualLRPArgsForCall)
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) {
-	fake.removeActualLRPMutex.RLock()
-	defer fake.removeActualLRPMutex.RUnlock()
-	return fake.removeActualLRPArgsForCall[i].arg1, fake.removeActualLRPArgsForCall[i].arg2, fake.removeActualLRPArgsForCall[i].arg3
-}
-
-func (fake *FakeRepBBS) RemoveActualLRPReturns(result1 error) {
-	fake.RemoveActualLRPStub = nil
-	fake.removeActualLRPReturns = struct {
 		result1 error
 	}{result1}
 }

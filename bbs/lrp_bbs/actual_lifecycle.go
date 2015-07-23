@@ -176,7 +176,7 @@ func (bbs *LRPBBS) CrashActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) RemoveActualLRP(
+func (bbs *LRPBBS) LegacyRemoveActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,

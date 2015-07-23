@@ -179,7 +179,7 @@ var _ = Describe("Convergence", func() {
 			Expect(gatherError).NotTo(HaveOccurred())
 
 			for _, guid := range testData.validDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+				groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -187,13 +187,13 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.validDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
@@ -211,7 +211,7 @@ var _ = Describe("Convergence", func() {
 			}
 
 			for _, guid := range testData.invalidDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+				groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -219,13 +219,13 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.invalidDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))
@@ -243,7 +243,7 @@ var _ = Describe("Convergence", func() {
 			}
 
 			for _, guid := range testData.unknownDesiredGuidsWithOnlyInvalidActuals {
-				groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+				groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(groups).To(BeEmpty())
 			}
@@ -251,13 +251,13 @@ var _ = Describe("Convergence", func() {
 			for i, guid := range testData.unknownDesiredGuidsWithSomeValidActuals {
 				switch i % 3 {
 				case 0:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(2))
 					Expect(groups).To(HaveKey(randomIndex1))
 					Expect(groups).To(HaveKey(randomIndex2))
 				case 1:
-					groups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, guid)
+					groups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, guid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(groups).To(HaveLen(1))
 					Expect(groups).To(HaveKey(randomIndex1))

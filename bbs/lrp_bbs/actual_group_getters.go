@@ -13,7 +13,7 @@ import (
 
 const maxActualGroupGetterWorkPoolSize = 50
 
-func (bbs *LRPBBS) ActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error) {
+func (bbs *LRPBBS) LegacyActualLRPGroupsByProcessGuid(logger lager.Logger, processGuid string) (models.ActualLRPGroupsByIndex, error) {
 	if len(processGuid) == 0 {
 		return models.ActualLRPGroupsByIndex{}, bbserrors.ErrNoProcessGuid
 	}

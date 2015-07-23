@@ -345,32 +345,6 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		})
 	})
 
-	Describe("RemoveActualLRP", func() {
-		BeforeEach(func() {
-			netInfo := models.NewActualLRPNetInfo("127.0.0.3", []models.PortMapping{{9090, 90}})
-			err := lrpBBS.StartActualLRP(logger, actualLRPKey, instanceKey, netInfo)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		Context("when the LRP matches", func() {
-			It("removes the LRP", func() {
-				err := lrpBBS.RemoveActualLRP(logger, actualLRPKey, instanceKey)
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = etcdClient.Get(shared.ActualLRPSchemaPath(actualLRPKey.ProcessGuid, actualLRPKey.Index))
-				Expect(err).To(MatchError(storeadapter.ErrorKeyNotFound))
-			})
-		})
-
-		Context("when the LRP differs from the one in the store", func() {
-			It("does not delete the LRP", func() {
-				instanceKey.InstanceGuid = "another-instance-guid"
-				err := lrpBBS.RemoveActualLRP(logger, actualLRPKey, instanceKey)
-				Expect(err).To(Equal(bbserrors.ErrStoreComparisonFailed))
-			})
-		})
-	})
-
 	Describe("RetireActualLRPs", func() {
 		Context("with an Unclaimed LRP", func() {
 			var processGuid string
@@ -458,7 +432,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 				errDesire := lrpBBS.DesireLRP(logger, desiredLRP)
 				Expect(errDesire).NotTo(HaveOccurred())
 
-				lrpGroups, err := lrpBBS.ActualLRPGroupsByProcessGuid(logger, desiredLRP.ProcessGuid)
+				lrpGroups, err := lrpBBS.LegacyActualLRPGroupsByProcessGuid(logger, desiredLRP.ProcessGuid)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lrpGroups).To(HaveKey(0))

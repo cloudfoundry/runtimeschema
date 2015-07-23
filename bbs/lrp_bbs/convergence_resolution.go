@@ -60,7 +60,7 @@ func (bbs *LRPBBS) resolveActualsWithMissingCells(logger lager.Logger, desired m
 		})
 
 		logger.Debug("removing-actual-lrp")
-		err := bbs.RemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPInstanceKey)
+		err := bbs.LegacyRemoveActualLRP(logger, actual.ActualLRPKey, actual.ActualLRPInstanceKey)
 		if err != nil {
 			logger.Error("failed-removing-actual-lrp", err)
 			return
