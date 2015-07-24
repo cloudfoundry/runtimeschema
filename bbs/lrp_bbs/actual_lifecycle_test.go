@@ -29,14 +29,14 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 		netInfo = models.NewActualLRPNetInfo("127.0.0.2", []models.PortMapping{{8081, 87}})
 	})
 
-	Describe("StartActualLRP", func() {
+	Describe("LegacyStartActualLRP", func() {
 		var startErr error
 		var lrpKey models.ActualLRPKey
 		var instanceKey models.ActualLRPInstanceKey
 		var netInfo models.ActualLRPNetInfo
 
 		JustBeforeEach(func() {
-			startErr = lrpBBS.StartActualLRP(logger, lrpKey, instanceKey, netInfo)
+			startErr = lrpBBS.LegacyStartActualLRP(logger, lrpKey, instanceKey, netInfo)
 		})
 
 		Context("when the actual LRP exists", func() {
@@ -225,7 +225,7 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 
 				BeforeEach(func() {
 					instanceGuid = "some-instance-guid"
-					err := lrpBBS.StartActualLRP(
+					err := lrpBBS.LegacyStartActualLRP(
 						logger,
 						createdLRP.ActualLRPKey,
 						models.NewActualLRPInstanceKey(instanceGuid, cellID),

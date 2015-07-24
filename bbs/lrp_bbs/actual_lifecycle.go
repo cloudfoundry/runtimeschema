@@ -60,7 +60,7 @@ func (bbs *LRPBBS) LegacyClaimActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) StartActualLRP(
+func (bbs *LRPBBS) LegacyStartActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,

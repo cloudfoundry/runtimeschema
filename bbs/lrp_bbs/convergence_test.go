@@ -391,7 +391,7 @@ var _ = Describe("LrpConvergence", func() {
 					)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.StartActualLRP(
+					err = lrpBBS.LegacyStartActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),
@@ -584,7 +584,7 @@ var _ = Describe("LrpConvergence", func() {
 					)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = lrpBBS.StartActualLRP(
+					err = lrpBBS.LegacyStartActualLRP(
 						logger,
 						actualLRPGroup.Instance.ActualLRPKey,
 						models.NewActualLRPInstanceKey("instance-guid", cellPresence.CellID),

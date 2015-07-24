@@ -76,17 +76,6 @@ type FakeRepBBS struct {
 	completeTaskReturns struct {
 		result1 error
 	}
-	StartActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) error
-	startActualLRPMutex       sync.RWMutex
-	startActualLRPArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-		arg4 models.ActualLRPNetInfo
-	}
-	startActualLRPReturns struct {
-		result1 error
-	}
 	CrashActualLRPStub        func(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, string) error
 	crashActualLRPMutex       sync.RWMutex
 	crashActualLRPArgsForCall []struct {
@@ -360,41 +349,6 @@ func (fake *FakeRepBBS) CompleteTaskArgsForCall(i int) (lager.Logger, string, st
 func (fake *FakeRepBBS) CompleteTaskReturns(result1 error) {
 	fake.CompleteTaskStub = nil
 	fake.completeTaskReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeRepBBS) StartActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 models.ActualLRPInstanceKey, arg4 models.ActualLRPNetInfo) error {
-	fake.startActualLRPMutex.Lock()
-	fake.startActualLRPArgsForCall = append(fake.startActualLRPArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 models.ActualLRPInstanceKey
-		arg4 models.ActualLRPNetInfo
-	}{arg1, arg2, arg3, arg4})
-	fake.startActualLRPMutex.Unlock()
-	if fake.StartActualLRPStub != nil {
-		return fake.StartActualLRPStub(arg1, arg2, arg3, arg4)
-	} else {
-		return fake.startActualLRPReturns.result1
-	}
-}
-
-func (fake *FakeRepBBS) StartActualLRPCallCount() int {
-	fake.startActualLRPMutex.RLock()
-	defer fake.startActualLRPMutex.RUnlock()
-	return len(fake.startActualLRPArgsForCall)
-}
-
-func (fake *FakeRepBBS) StartActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey, models.ActualLRPNetInfo) {
-	fake.startActualLRPMutex.RLock()
-	defer fake.startActualLRPMutex.RUnlock()
-	return fake.startActualLRPArgsForCall[i].arg1, fake.startActualLRPArgsForCall[i].arg2, fake.startActualLRPArgsForCall[i].arg3, fake.startActualLRPArgsForCall[i].arg4
-}
-
-func (fake *FakeRepBBS) StartActualLRPReturns(result1 error) {
-	fake.StartActualLRPStub = nil
-	fake.startActualLRPReturns = struct {
 		result1 error
 	}{result1}
 }
