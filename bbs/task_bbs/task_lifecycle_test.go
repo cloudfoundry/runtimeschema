@@ -50,7 +50,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("persists the task", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(persistedTask.Domain).To(Equal(domain))
@@ -59,13 +59,13 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("honours the CreatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.CreatedAt).To(Equal(createdAtTime))
 					})
 
 					It("sets the UpdatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
@@ -147,7 +147,7 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("persists the task", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(persistedTask.Domain).To(Equal(domain))
@@ -156,13 +156,13 @@ var _ = Describe("Task BBS", func() {
 					})
 
 					It("provides a CreatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.CreatedAt).To(Equal(clock.Now().UnixNano()))
 					})
 
 					It("sets the UpdatedAt time", func() {
-						persistedTask, err := bbs.TaskByGuid(logger, taskGuid)
+						persistedTask, err := bbs.OldTaskByGuid(logger, taskGuid)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(persistedTask.UpdatedAt).To(Equal(clock.Now().UnixNano()))
 					})
@@ -185,7 +185,7 @@ var _ = Describe("Task BBS", func() {
 				It("does not persist another", func() {
 					Consistently(
 						func() ([]models.Task, error) {
-							return bbs.Tasks(logger)
+							return bbs.OldTasks(logger)
 						}).Should(HaveLen(1))
 				})
 
@@ -211,7 +211,7 @@ var _ = Describe("Task BBS", func() {
 
 			It("does not persist a task", func() {
 				Consistently(func() ([]models.Task, error) {
-					return bbs.Tasks(logger)
+					return bbs.OldTasks(logger)
 				}).Should(BeEmpty())
 			})
 
@@ -299,7 +299,7 @@ var _ = Describe("Task BBS", func() {
 				})
 
 				It("does not change the Task in the store", func() {
-					task, err := bbs.TaskByGuid(logger, task.TaskGuid)
+					task, err := bbs.OldTaskByGuid(logger, task.TaskGuid)
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(task.UpdatedAt).To(Equal(previousTime))
@@ -333,7 +333,7 @@ var _ = Describe("Task BBS", func() {
 
 			JustBeforeEach(func() {
 				cancelError = bbs.CancelTask(logger, task.TaskGuid)
-				taskAfterCancel, _ = bbs.TaskByGuid(logger, task.TaskGuid)
+				taskAfterCancel, _ = bbs.OldTaskByGuid(logger, task.TaskGuid)
 			})
 
 			itMarksTaskAsCancelled := func() {
@@ -931,7 +931,7 @@ var _ = Describe("Task BBS", func() {
 				err := bbs.ResolveTask(logger, task.TaskGuid)
 				Expect(err).NotTo(HaveOccurred())
 
-				tasks, err := bbs.Tasks(logger)
+				tasks, err := bbs.OldTasks(logger)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(tasks).To(BeEmpty())
 			})

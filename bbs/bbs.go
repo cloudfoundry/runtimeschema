@@ -23,9 +23,6 @@ import (
 type ReceptorBBS interface {
 	//task
 	DesireTask(lager.Logger, models.Task) error
-	Tasks(logger lager.Logger) ([]models.Task, error)
-	TasksByDomain(logger lager.Logger, domain string) ([]models.Task, error)
-	TaskByGuid(logger lager.Logger, taskGuid string) (models.Task, error)
 	ResolvingTask(logger lager.Logger, taskGuid string) error
 	ResolveTask(logger lager.Logger, taskGuid string) error
 	CancelTask(logger lager.Logger, taskGuid string) error
@@ -49,8 +46,6 @@ type RepBBS interface {
 
 	//task
 	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
-	TaskByGuid(logger lager.Logger, taskGuid string) (models.Task, error)
-	TasksByCellID(logger lager.Logger, cellID string) ([]models.Task, error)
 	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
@@ -122,9 +117,6 @@ type TpsBBS interface {
 }
 
 type VeritasBBS interface {
-	//task
-	Tasks(logger lager.Logger) ([]models.Task, error)
-
 	//lrp
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error

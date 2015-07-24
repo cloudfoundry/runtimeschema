@@ -7,7 +7,7 @@ import (
 	"github.com/pivotal-golang/lager"
 )
 
-func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
+func (bbs *TaskBBS) OldTasks(logger lager.Logger) ([]models.Task, error) {
 	logger.Info("fetching-tasks-from-store")
 	node, err := bbs.store.ListRecursively(shared.TaskSchemaRoot)
 	if err == storeadapter.ErrorKeyNotFound {
@@ -38,7 +38,7 @@ func (bbs *TaskBBS) Tasks(logger lager.Logger) ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (bbs *TaskBBS) TaskByGuid(logger lager.Logger, guid string) (models.Task, error) {
+func (bbs *TaskBBS) OldTaskByGuid(logger lager.Logger, guid string) (models.Task, error) {
 	logger = logger.WithData(lager.Data{"guid": guid})
 
 	logger.Debug("getting-task")
@@ -53,41 +53,41 @@ func (bbs *TaskBBS) TaskByGuid(logger lager.Logger, guid string) (models.Task, e
 }
 
 func (bbs *TaskBBS) PendingTasks(logger lager.Logger) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+	all, err := bbs.OldTasks(logger)
 	return filterTasksByState(all, models.TaskStatePending), err
 }
 
 func (bbs *TaskBBS) RunningTasks(logger lager.Logger) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+	all, err := bbs.OldTasks(logger)
 	return filterTasksByState(all, models.TaskStateRunning), err
 }
 
 func (bbs *TaskBBS) CompletedTasks(logger lager.Logger) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+	all, err := bbs.OldTasks(logger)
 	return filterTasksByState(all, models.TaskStateCompleted), err
 }
 
 func (bbs *TaskBBS) FailedTasks(logger lager.Logger) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+	all, err := bbs.OldTasks(logger)
 	return filterTasks(all, func(task models.Task) bool {
 		return task.State == models.TaskStateCompleted && task.Failed
 	}), err
 }
 
 func (bbs *TaskBBS) ResolvingTasks(logger lager.Logger) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+	all, err := bbs.OldTasks(logger)
 	return filterTasksByState(all, models.TaskStateResolving), err
 }
 
-func (bbs *TaskBBS) TasksByDomain(logger lager.Logger, domain string) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+func (bbs *TaskBBS) tasksByDomain(logger lager.Logger, domain string) ([]models.Task, error) {
+	all, err := bbs.OldTasks(logger)
 	return filterTasks(all, func(task models.Task) bool {
 		return task.Domain == domain
 	}), err
 }
 
-func (bbs *TaskBBS) TasksByCellID(logger lager.Logger, cellId string) ([]models.Task, error) {
-	all, err := bbs.Tasks(logger)
+func (bbs *TaskBBS) tasksByCellID(logger lager.Logger, cellId string) ([]models.Task, error) {
+	all, err := bbs.OldTasks(logger)
 	return filterTasks(all, func(task models.Task) bool {
 		return task.CellID == cellId
 	}), err
