@@ -39,16 +39,6 @@ type FakeAuctioneerBBS struct {
 		result1 ifrit.Runner
 		result2 error
 	}
-	FailActualLRPStub        func(lager.Logger, models.ActualLRPKey, string) error
-	failActualLRPMutex       sync.RWMutex
-	failActualLRPArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 string
-	}
-	failActualLRPReturns struct {
-		result1 error
-	}
 }
 
 func (fake *FakeAuctioneerBBS) Cells() ([]models.CellPresence, error) {
@@ -142,40 +132,6 @@ func (fake *FakeAuctioneerBBS) NewAuctioneerLockReturns(result1 ifrit.Runner, re
 		result1 ifrit.Runner
 		result2 error
 	}{result1, result2}
-}
-
-func (fake *FakeAuctioneerBBS) FailActualLRP(arg1 lager.Logger, arg2 models.ActualLRPKey, arg3 string) error {
-	fake.failActualLRPMutex.Lock()
-	fake.failActualLRPArgsForCall = append(fake.failActualLRPArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 models.ActualLRPKey
-		arg3 string
-	}{arg1, arg2, arg3})
-	fake.failActualLRPMutex.Unlock()
-	if fake.FailActualLRPStub != nil {
-		return fake.FailActualLRPStub(arg1, arg2, arg3)
-	} else {
-		return fake.failActualLRPReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerBBS) FailActualLRPCallCount() int {
-	fake.failActualLRPMutex.RLock()
-	defer fake.failActualLRPMutex.RUnlock()
-	return len(fake.failActualLRPArgsForCall)
-}
-
-func (fake *FakeAuctioneerBBS) FailActualLRPArgsForCall(i int) (lager.Logger, models.ActualLRPKey, string) {
-	fake.failActualLRPMutex.RLock()
-	defer fake.failActualLRPMutex.RUnlock()
-	return fake.failActualLRPArgsForCall[i].arg1, fake.failActualLRPArgsForCall[i].arg2, fake.failActualLRPArgsForCall[i].arg3
-}
-
-func (fake *FakeAuctioneerBBS) FailActualLRPReturns(result1 error) {
-	fake.FailActualLRPStub = nil
-	fake.failActualLRPReturns = struct {
-		result1 error
-	}{result1}
 }
 
 var _ bbs.AuctioneerBBS = new(FakeAuctioneerBBS)

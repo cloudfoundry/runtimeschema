@@ -101,9 +101,6 @@ type AuctioneerBBS interface {
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, retryInterval time.Duration) (ifrit.Runner, error)
-
-	//lrp
-	FailActualLRP(lager.Logger, models.ActualLRPKey, string) error
 }
 
 //go:generate counterfeiter -o fake_bbs/fake_metrics_bbs.go . MetricsBBS

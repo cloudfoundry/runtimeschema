@@ -134,18 +134,18 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 					Expect(lrpGroupInBBS.Instance.State).To(Equal(models.ActualLRPStateRunning))
 				})
 
-				Context("when there is a placement error", func() {
-					BeforeEach(func() {
-						err := lrpBBS.FailActualLRP(logger, lrpKey, "found no compatible cells")
-						Expect(err).NotTo(HaveOccurred())
-					})
+				// Context("when there is a placement error", func() {
+				// 	BeforeEach(func() {
+				// 		err := lrpBBS.FailActualLRP(logger, lrpKey, "found no compatible cells") -- doesnt exist any more
+				// 		Expect(err).NotTo(HaveOccurred())
+				// 	})
 
-					It("should clear placement error", func() {
-						createdLRP, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-						Expect(err).NotTo(HaveOccurred())
-						Expect(createdLRP.Instance.PlacementError).To(BeEmpty())
-					})
-				})
+				// 	It("should clear placement error", func() {
+				// 		createdLRP, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
+				// 		Expect(err).NotTo(HaveOccurred())
+				// 		Expect(createdLRP.Instance.PlacementError).To(BeEmpty())
+				// 	})
+				// })
 			})
 
 			Context("when the existing ActualLRP is Claimed", func() {
@@ -567,86 +567,6 @@ var _ = Describe("Actual LRP Lifecycle", func() {
 						Expect(logger.TestSink.LogMessages()).To(ContainElement("test.retire-actual-lrps.failed-to-retire"))
 					})
 				})
-			})
-		})
-	})
-
-	Describe("FailActualLRP", func() {
-		var (
-			placementError string
-			instanceGuid   string
-			processGuid    string
-			index          int
-			createdLRP     models.ActualLRP
-		)
-
-		BeforeEach(func() {
-			index = 1
-			placementError = "insufficient resources"
-			processGuid = "process-guid"
-			instanceGuid = "instance-guid"
-		})
-
-		Context("when lrp exists", func() {
-			BeforeEach(func() {
-				desiredLRP := models.DesiredLRP{
-					ProcessGuid: processGuid,
-					Domain:      "the-domain",
-					RootFS:      "some:rootfs",
-					Instances:   3,
-					Action: &models.RunAction{
-						Path: "true",
-						User: "me",
-					},
-				}
-
-				errDesire := lrpBBS.DesireLRP(logger, desiredLRP)
-				Expect(errDesire).NotTo(HaveOccurred())
-
-				createdLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-				Expect(err).NotTo(HaveOccurred())
-
-				actualLRPKey = createdLRPGroup.Instance.ActualLRPKey
-				instanceKey = models.NewActualLRPInstanceKey(instanceGuid, cellID)
-			})
-
-			Context("in unclaimed state", func() {
-				BeforeEach(func() {
-					err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("sets the placement error", func() {
-					failedActualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(failedActualLRPGroup.Instance.PlacementError).To(Equal(placementError))
-				})
-
-				It("updates the ModificationIndex", func() {
-					failedActualLRPGroup, err := lrpBBS.LegacyActualLRPGroupByProcessGuidAndIndex(logger, processGuid, index)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(failedActualLRPGroup.Instance.ModificationTag.Index).To(Equal(createdLRP.ModificationTag.Index + 1))
-				})
-			})
-
-			Context("not in unclaimed state", func() {
-				BeforeEach(func() {
-					claimErr := lrpBBS.LegacyClaimActualLRP(logger, actualLRPKey, instanceKey)
-					Expect(claimErr).NotTo(HaveOccurred())
-				})
-
-				It("returns an error", func() {
-					err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
-					Expect(err).To(HaveOccurred())
-				})
-			})
-		})
-
-		Context("when lrp does not exist", func() {
-			It("returns an error", func() {
-				actualLRPKey := models.NewActualLRPKey("non-existent-process-guid", index, "tests")
-				err := lrpBBS.FailActualLRP(logger, actualLRPKey, placementError)
-				Expect(err).To(Equal(bbserrors.ErrActualLRPCannotBeFailed))
 			})
 		})
 	})

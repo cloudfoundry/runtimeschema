@@ -241,40 +241,6 @@ func (bbs *LRPBBS) RetireActualLRPs(
 	throttler.Work()
 }
 
-func (bbs *LRPBBS) FailActualLRP(
-	logger lager.Logger,
-	key models.ActualLRPKey,
-	errorMessage string,
-) error {
-	logger = logger.Session("set-placement-error-actual-lrp", lager.Data{"lrp-key": key})
-	logger.Info("starting")
-
-	lrp, storeIndex, err := bbs.actualLRPRepo.ActualLRPWithIndex(logger, key.ProcessGuid, key.Index)
-	if err == bbserrors.ErrStoreResourceNotFound {
-		logger.Error("failed-actual-lrp-not-found", err)
-		return bbserrors.ErrActualLRPCannotBeFailed
-	} else if err != nil {
-		logger.Error("failed-to-get-actual-lrp", err)
-		return err
-	}
-
-	if lrp.ActualLRPKey == key && lrp.State != models.ActualLRPStateUnclaimed {
-		logger.Error("failed-to-set-placement-error", bbserrors.ErrActualLRPCannotBeFailed)
-		return bbserrors.ErrActualLRPCannotBeFailed
-	}
-
-	lrp.Since = bbs.clock.Now().UnixNano()
-	lrp.PlacementError = errorMessage
-
-	err = bbs.actualLRPRepo.CompareAndSwapRawActualLRP(logger, lrp, storeIndex)
-	if err != nil {
-		return err
-	}
-
-	logger.Info("succeeded")
-	return nil
-}
-
 func (bbs *LRPBBS) createAndStartActualLRPsForDesired(logger lager.Logger, lrp models.DesiredLRP, indices []uint) {
 	createdIndices := bbs.actualLRPRepo.CreateActualLRPsForDesired(logger, lrp, indices)
 	start := models.NewLRPStartRequest(lrp, createdIndices...)
