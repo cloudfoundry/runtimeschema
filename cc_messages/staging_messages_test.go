@@ -3,9 +3,9 @@ package cc_messages_test
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/bbs/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/cc_messages"
 	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,7 +35,7 @@ var _ = Describe("StagingMessages", func() {
 				MemoryMB:        1024,
 				DiskMB:          10000,
 				FileDescriptors: 3,
-				Environment: cc_messages.Environment{
+				Environment: []*models.EnvironmentVariable{
 					{Name: "FOO", Value: "BAR"},
 				},
 				Timeout:       900,
@@ -94,16 +94,6 @@ var _ = Describe("StagingMessages", func() {
 				DockerImageUrl: "docker:///diego/image",
 			}))
 
-		})
-	})
-
-	Describe("Environment", func() {
-		It("translates into a []model.Environment", func() {
-			env := cc_messages.Environment{
-				{Name: "FOO", Value: "BAR"},
-			}
-			bbsEnv := env.BBSEnvironment()
-			Expect(bbsEnv).To(Equal([]models.EnvironmentVariable{{Name: "FOO", Value: "BAR"}}))
 		})
 	})
 

@@ -3,8 +3,8 @@ package cc_messages
 import (
 	"encoding/json"
 
+	"github.com/cloudfoundry-incubator/bbs/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
 )
 
 type StagingErrorID string
@@ -21,16 +21,16 @@ type StagingError struct {
 }
 
 type StagingRequestFromCC struct {
-	AppId           string                     `json:"app_id"`
-	FileDescriptors int                        `json:"file_descriptors"`
-	MemoryMB        int                        `json:"memory_mb"`
-	DiskMB          int                        `json:"disk_mb"`
-	Environment     Environment                `json:"environment"`
-	EgressRules     []models.SecurityGroupRule `json:"egress_rules,omitempty"`
-	Timeout         int                        `json:"timeout"`
-	LogGuid         string                     `json:"log_guid"`
-	Lifecycle       string                     `json:"lifecycle"`
-	LifecycleData   *json.RawMessage           `json:"lifecycle_data,omitempty"`
+	AppId           string                        `json:"app_id"`
+	FileDescriptors int                           `json:"file_descriptors"`
+	MemoryMB        int                           `json:"memory_mb"`
+	DiskMB          int                           `json:"disk_mb"`
+	Environment     []*models.EnvironmentVariable `json:"environment"`
+	EgressRules     []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
+	Timeout         int                           `json:"timeout"`
+	LogGuid         string                        `json:"log_guid"`
+	Lifecycle       string                        `json:"lifecycle"`
+	LifecycleData   *json.RawMessage              `json:"lifecycle_data,omitempty"`
 }
 
 type BuildpackStagingData struct {
