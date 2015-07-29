@@ -172,7 +172,7 @@ func (bbs *LRPBBS) EvacuateCrashedActualLRP(
 	logger.Info("started")
 
 	_ = bbs.RemoveEvacuatingActualLRP(logger, actualLRPKey, actualLRPInstanceKey)
-	err := bbs.CrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey, reason)
+	err := bbs.LegacyCrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey, reason)
 
 	if err == bbserrors.ErrStoreResourceNotFound {
 		return shared.DeleteContainer, nil

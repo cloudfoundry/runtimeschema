@@ -110,7 +110,7 @@ func (bbs *LRPBBS) LegacyStartActualLRP(
 	return nil
 }
 
-func (bbs *LRPBBS) CrashActualLRP(
+func (bbs *LRPBBS) LegacyCrashActualLRP(
 	logger lager.Logger,
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,

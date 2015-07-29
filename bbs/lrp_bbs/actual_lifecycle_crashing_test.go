@@ -15,7 +15,7 @@ import (
 
 const OverTime = lrp_bbs.CrashResetTimeout + time.Minute
 
-var _ = Describe("CrashActualLRP", func() {
+var _ = Describe("LegacyCrashActualLRP", func() {
 	var crashTests = []crashTest{
 		{
 			Name: "when the lrp is RUNNING and the crash count is greater than 3",
@@ -184,7 +184,7 @@ func (t crashTest) Test() {
 
 		JustBeforeEach(func() {
 			clock.Increment(600)
-			crashErr = lrpBBS.CrashActualLRP(logger, actualLRPKey, instanceKey, "crashed")
+			crashErr = lrpBBS.LegacyCrashActualLRP(logger, actualLRPKey, instanceKey, "crashed")
 		})
 
 		if t.Result.ReturnedErr == nil {
