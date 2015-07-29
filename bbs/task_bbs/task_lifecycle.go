@@ -348,3 +348,15 @@ func (bbs *TaskBBS) requestTaskAuctions(logger lager.Logger, tasks []models.Task
 
 	return nil
 }
+
+func (bbs *TaskBBS) getTask(taskGuid string) (models.Task, uint64, error) {
+	node, err := bbs.store.Get(shared.TaskSchemaPath(taskGuid))
+	if err != nil {
+		return models.Task{}, 0, shared.ConvertStoreError(err)
+	}
+
+	var task models.Task
+	err = models.FromJSON(node.Value, &task)
+
+	return task, node.Index, err
+}
