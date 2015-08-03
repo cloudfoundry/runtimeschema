@@ -32,9 +32,6 @@ type ReceptorBBS interface {
 	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
 	RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error
 
-	//actual lrp
-	RetireActualLRPs(lager.Logger, []models.ActualLRPKey)
-
 	// cells
 	Cells() ([]models.CellPresence, error)
 }

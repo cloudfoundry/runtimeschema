@@ -17,7 +17,7 @@ func (bbs *LRPBBS) ResolveConvergence(logger lager.Logger, desiredLRPs models.De
 	}
 
 	logger.Debug("retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
-	bbs.RetireActualLRPs(logger, actualKeys)
+	bbs.LegacyRetireActualLRPs(logger, actualKeys)
 	logger.Debug("done-retiring-actual-lrps", lager.Data{"num-actual-lrps": len(actualKeys)})
 
 	startRequests := newStartRequests(desiredLRPs)

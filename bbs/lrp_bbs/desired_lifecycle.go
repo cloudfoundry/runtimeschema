@@ -140,5 +140,5 @@ func (bbs *LRPBBS) stopInstanceRange(logger lager.Logger, lower, upper int, desi
 		}
 	}
 
-	bbs.RetireActualLRPs(logger, actualKeys)
+	bbs.LegacyRetireActualLRPs(logger, actualKeys)
 }

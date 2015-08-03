@@ -211,7 +211,7 @@ func (bbs *LRPBBS) removeActualLRPWithIndex(
 	return nil
 }
 
-func (bbs *LRPBBS) RetireActualLRPs(
+func (bbs *LRPBBS) LegacyRetireActualLRPs(
 	logger lager.Logger,
 	lrpKeys []models.ActualLRPKey,
 ) {

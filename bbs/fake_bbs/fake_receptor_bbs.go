@@ -74,12 +74,6 @@ type FakeReceptorBBS struct {
 	removeDesiredLRPByProcessGuidReturns struct {
 		result1 error
 	}
-	RetireActualLRPsStub        func(lager.Logger, []models.ActualLRPKey)
-	retireActualLRPsMutex       sync.RWMutex
-	retireActualLRPsArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 []models.ActualLRPKey
-	}
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
@@ -319,30 +313,6 @@ func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error)
 	fake.removeDesiredLRPByProcessGuidReturns = struct {
 		result1 error
 	}{result1}
-}
-
-func (fake *FakeReceptorBBS) RetireActualLRPs(arg1 lager.Logger, arg2 []models.ActualLRPKey) {
-	fake.retireActualLRPsMutex.Lock()
-	fake.retireActualLRPsArgsForCall = append(fake.retireActualLRPsArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 []models.ActualLRPKey
-	}{arg1, arg2})
-	fake.retireActualLRPsMutex.Unlock()
-	if fake.RetireActualLRPsStub != nil {
-		fake.RetireActualLRPsStub(arg1, arg2)
-	}
-}
-
-func (fake *FakeReceptorBBS) RetireActualLRPsCallCount() int {
-	fake.retireActualLRPsMutex.RLock()
-	defer fake.retireActualLRPsMutex.RUnlock()
-	return len(fake.retireActualLRPsArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) RetireActualLRPsArgsForCall(i int) (lager.Logger, []models.ActualLRPKey) {
-	fake.retireActualLRPsMutex.RLock()
-	defer fake.retireActualLRPsMutex.RUnlock()
-	return fake.retireActualLRPsArgsForCall[i].arg1, fake.retireActualLRPsArgsForCall[i].arg2
 }
 
 func (fake *FakeReceptorBBS) Cells() ([]models.CellPresence, error) {
