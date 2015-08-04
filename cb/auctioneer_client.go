@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/auctioneer"
+	"github.com/cloudfoundry-incubator/bbs/auctionhandlers"
 	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/tedsuo/rata"
@@ -29,14 +29,14 @@ func NewAuctioneerClient() AuctioneerClient {
 }
 
 func (c *auctioneerClient) RequestLRPAuctions(auctioneerURL string, lrpStarts []models.LRPStartRequest) error {
-	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
+	reqGen := rata.NewRequestGenerator(auctioneerURL, auctionhandlers.Routes)
 
 	payload, err := json.Marshal(lrpStarts)
 	if err != nil {
 		return err
 	}
 
-	req, err := reqGen.CreateRequest(auctioneer.CreateLRPAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
+	req, err := reqGen.CreateRequest(auctionhandlers.CreateLRPAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
@@ -57,14 +57,14 @@ func (c *auctioneerClient) RequestLRPAuctions(auctioneerURL string, lrpStarts []
 }
 
 func (c *auctioneerClient) RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error {
-	reqGen := rata.NewRequestGenerator(auctioneerURL, auctioneer.Routes)
+	reqGen := rata.NewRequestGenerator(auctioneerURL, auctionhandlers.Routes)
 
 	payload, err := json.Marshal(tasks)
 	if err != nil {
 		return err
 	}
 
-	req, err := reqGen.CreateRequest(auctioneer.CreateTaskAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
+	req, err := reqGen.CreateRequest(auctionhandlers.CreateTaskAuctionsRoute, rata.Params{}, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}

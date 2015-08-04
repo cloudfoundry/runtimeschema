@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/cloudfoundry-incubator/bbs/cellhandlers"
 	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/cloudfoundry-incubator/runtime-schema/routes"
 	"github.com/tedsuo/rata"
 )
 
@@ -33,9 +33,9 @@ func (c *cellClient) StopLRPInstance(
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	reqGen := rata.NewRequestGenerator(cellURL, routes.StopLRPRoutes)
+	reqGen := rata.NewRequestGenerator(cellURL, cellhandlers.Routes)
 
-	req, err := reqGen.CreateRequest(routes.StopLRPInstance, stopParamsFromLRP(key, instanceKey), nil)
+	req, err := reqGen.CreateRequest(cellhandlers.StopLRPInstanceRoute, stopParamsFromLRP(key, instanceKey), nil)
 	if err != nil {
 		return err
 	}
@@ -56,9 +56,9 @@ func (c *cellClient) StopLRPInstance(
 }
 
 func (c *cellClient) CancelTask(cellURL string, taskGuid string) error {
-	reqGen := rata.NewRequestGenerator(cellURL, routes.CancelTaskRoutes)
+	reqGen := rata.NewRequestGenerator(cellURL, cellhandlers.Routes)
 
-	req, err := reqGen.CreateRequest(routes.CancelTask, rata.Params{"task_guid": taskGuid}, nil)
+	req, err := reqGen.CreateRequest(cellhandlers.CancelTaskRoute, rata.Params{"task_guid": taskGuid}, nil)
 	if err != nil {
 		return err
 	}
