@@ -85,6 +85,7 @@ func SanitizeErrorMessage(message string) *StagingError {
 	case diego_errors.MISSING_DOCKER_IMAGE_URL:
 	case diego_errors.MISSING_DOCKER_REGISTRY:
 	case diego_errors.MISSING_DOCKER_CREDENTIALS:
+	case diego_errors.INVALID_DOCKER_REGISTRY_ADDRESS:
 	default:
 		message = "staging failed"
 	}
