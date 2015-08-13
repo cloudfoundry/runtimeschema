@@ -21,12 +21,6 @@ import (
 
 //go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
 type ReceptorBBS interface {
-	//task
-	DesireTask(lager.Logger, models.Task) error
-	ResolvingTask(logger lager.Logger, taskGuid string) error
-	ResolveTask(logger lager.Logger, taskGuid string) error
-	CancelTask(logger lager.Logger, taskGuid string) error
-
 	//desired lrp
 	DesireLRP(lager.Logger, models.DesiredLRP) error
 	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
@@ -40,11 +34,6 @@ type ReceptorBBS interface {
 type RepBBS interface {
 	//services
 	NewCellPresence(cellPresence models.CellPresence, retryInterval time.Duration) ifrit.Runner
-
-	//task
-	StartTask(logger lager.Logger, taskGuid string, cellID string) (bool, error)
-	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
-	CompleteTask(logger lager.Logger, taskGuid string, cellID string, failed bool, failureReason string, result string) error
 
 	// LRP evacuation
 	EvacuateClaimedActualLRP(lager.Logger, models.ActualLRPKey, models.ActualLRPInstanceKey) (shared.ContainerRetainment, error)
@@ -84,9 +73,6 @@ type NsyncBBS interface {
 type AuctioneerBBS interface {
 	//services
 	Cells() ([]models.CellPresence, error)
-
-	// task
-	FailTask(logger lager.Logger, taskGuid string, failureReason string) error
 
 	//lock
 	NewAuctioneerLock(auctioneerPresence models.AuctioneerPresence, retryInterval time.Duration) (ifrit.Runner, error)
