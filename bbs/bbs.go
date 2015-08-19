@@ -43,9 +43,6 @@ type ConvergerBBS interface {
 	//lrp
 	ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
 
-	//task
-	ConvergeTasks(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader)
-
 	//cell loader
 	NewCellsLoader() *services_bbs.CellsLoader
 
