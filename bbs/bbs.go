@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lrp_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/task_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/cb"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/cloudfoundry/storeadapter"
@@ -140,7 +139,6 @@ func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, rece
 		LockBBS:     lock_bbs.New(consul, clock, logger.Session("lock-bbs")),
 		LRPBBS:      lrp_bbs.New(store, clock, cellClient, auctioneerClient, services),
 		ServicesBBS: services,
-		TaskBBS:     task_bbs.New(store, consul, clock, cb.NewTaskClient(), auctioneerClient, cellClient, services, receptorTaskHandlerURL),
 	}
 }
 
@@ -148,5 +146,4 @@ type BBS struct {
 	*lock_bbs.LockBBS
 	*lrp_bbs.LRPBBS
 	*services_bbs.ServicesBBS
-	*task_bbs.TaskBBS
 }

@@ -19,15 +19,6 @@ type FakeCellClient struct {
 	stopLRPInstanceReturns struct {
 		result1 error
 	}
-	CancelTaskStub        func(cellURL string, taskGuid string) error
-	cancelTaskMutex       sync.RWMutex
-	cancelTaskArgsForCall []struct {
-		cellURL  string
-		taskGuid string
-	}
-	cancelTaskReturns struct {
-		result1 error
-	}
 }
 
 func (fake *FakeCellClient) StopLRPInstance(cellURL string, key models.ActualLRPKey, instanceKey models.ActualLRPInstanceKey) error {
@@ -60,39 +51,6 @@ func (fake *FakeCellClient) StopLRPInstanceArgsForCall(i int) (string, models.Ac
 func (fake *FakeCellClient) StopLRPInstanceReturns(result1 error) {
 	fake.StopLRPInstanceStub = nil
 	fake.stopLRPInstanceReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeCellClient) CancelTask(cellURL string, taskGuid string) error {
-	fake.cancelTaskMutex.Lock()
-	fake.cancelTaskArgsForCall = append(fake.cancelTaskArgsForCall, struct {
-		cellURL  string
-		taskGuid string
-	}{cellURL, taskGuid})
-	fake.cancelTaskMutex.Unlock()
-	if fake.CancelTaskStub != nil {
-		return fake.CancelTaskStub(cellURL, taskGuid)
-	} else {
-		return fake.cancelTaskReturns.result1
-	}
-}
-
-func (fake *FakeCellClient) CancelTaskCallCount() int {
-	fake.cancelTaskMutex.RLock()
-	defer fake.cancelTaskMutex.RUnlock()
-	return len(fake.cancelTaskArgsForCall)
-}
-
-func (fake *FakeCellClient) CancelTaskArgsForCall(i int) (string, string) {
-	fake.cancelTaskMutex.RLock()
-	defer fake.cancelTaskMutex.RUnlock()
-	return fake.cancelTaskArgsForCall[i].cellURL, fake.cancelTaskArgsForCall[i].taskGuid
-}
-
-func (fake *FakeCellClient) CancelTaskReturns(result1 error) {
-	fake.CancelTaskStub = nil
-	fake.cancelTaskReturns = struct {
 		result1 error
 	}{result1}
 }

@@ -10,7 +10,6 @@ import (
 const DataSchemaRoot = "/v1/"
 const ActualLRPSchemaRoot = DataSchemaRoot + "actual"
 const DesiredLRPSchemaRoot = DataSchemaRoot + "desired"
-const TaskSchemaRoot = DataSchemaRoot + "task"
 const DomainSchemaRoot = DataSchemaRoot + "domain"
 
 const ActualLRPInstanceKey = "instance"
@@ -38,10 +37,6 @@ func DesiredLRPSchemaPath(lrp models.DesiredLRP) string {
 
 func DesiredLRPSchemaPathByProcessGuid(processGuid string) string {
 	return path.Join(DesiredLRPSchemaRoot, processGuid)
-}
-
-func TaskSchemaPath(taskGuid string) string {
-	return path.Join(TaskSchemaRoot, taskGuid)
 }
 
 func DomainSchemaPath(domain string) string {

@@ -1,11 +1,6 @@
 package bbserrors
 
-import (
-	"errors"
-	"fmt"
-
-	"github.com/cloudfoundry-incubator/runtime-schema/models"
-)
+import "errors"
 
 var (
 	ErrActualLRPCannotBeUnclaimed = errors.New("cannot unclaim actual LRP")
@@ -30,32 +25,5 @@ var (
 
 	ErrServiceUnavailable = errors.New("service unavailable")
 
-	ErrTaskRunningOnDifferentCell = errors.New("task running on different cell")
-
 	ErrActualLRPCannotBeFailed = errors.New("cannot set placement error on actual LRP")
 )
-
-func NewTaskStateTransitionError(from, to models.TaskState) TaskStateTransitionError {
-	return TaskStateTransitionError{from, to}
-}
-
-type TaskStateTransitionError struct {
-	from models.TaskState
-	to   models.TaskState
-}
-
-func (e TaskStateTransitionError) Error() string {
-	return fmt.Sprint("Cannot transition from ", e.from, " to ", e.to)
-}
-
-func NewTaskCannotBeResolvedError(from models.TaskState) taskCannotBeResolvedError {
-	return taskCannotBeResolvedError{from}
-}
-
-type taskCannotBeResolvedError struct {
-	from models.TaskState
-}
-
-func (e taskCannotBeResolvedError) Error() string {
-	return fmt.Sprint("Cannot resolve task from ", e.from, " state")
-}

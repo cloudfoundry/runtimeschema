@@ -18,15 +18,6 @@ type FakeAuctioneerClient struct {
 	requestLRPAuctionsReturns struct {
 		result1 error
 	}
-	RequestTaskAuctionsStub        func(auctioneerURL string, tasks []models.Task) error
-	requestTaskAuctionsMutex       sync.RWMutex
-	requestTaskAuctionsArgsForCall []struct {
-		auctioneerURL string
-		tasks         []models.Task
-	}
-	requestTaskAuctionsReturns struct {
-		result1 error
-	}
 }
 
 func (fake *FakeAuctioneerClient) RequestLRPAuctions(auctioneerURL string, lrpStart []models.LRPStartRequest) error {
@@ -58,39 +49,6 @@ func (fake *FakeAuctioneerClient) RequestLRPAuctionsArgsForCall(i int) (string, 
 func (fake *FakeAuctioneerClient) RequestLRPAuctionsReturns(result1 error) {
 	fake.RequestLRPAuctionsStub = nil
 	fake.requestLRPAuctionsReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeAuctioneerClient) RequestTaskAuctions(auctioneerURL string, tasks []models.Task) error {
-	fake.requestTaskAuctionsMutex.Lock()
-	fake.requestTaskAuctionsArgsForCall = append(fake.requestTaskAuctionsArgsForCall, struct {
-		auctioneerURL string
-		tasks         []models.Task
-	}{auctioneerURL, tasks})
-	fake.requestTaskAuctionsMutex.Unlock()
-	if fake.RequestTaskAuctionsStub != nil {
-		return fake.RequestTaskAuctionsStub(auctioneerURL, tasks)
-	} else {
-		return fake.requestTaskAuctionsReturns.result1
-	}
-}
-
-func (fake *FakeAuctioneerClient) RequestTaskAuctionsCallCount() int {
-	fake.requestTaskAuctionsMutex.RLock()
-	defer fake.requestTaskAuctionsMutex.RUnlock()
-	return len(fake.requestTaskAuctionsArgsForCall)
-}
-
-func (fake *FakeAuctioneerClient) RequestTaskAuctionsArgsForCall(i int) (string, []models.Task) {
-	fake.requestTaskAuctionsMutex.RLock()
-	defer fake.requestTaskAuctionsMutex.RUnlock()
-	return fake.requestTaskAuctionsArgsForCall[i].auctioneerURL, fake.requestTaskAuctionsArgsForCall[i].tasks
-}
-
-func (fake *FakeAuctioneerClient) RequestTaskAuctionsReturns(result1 error) {
-	fake.RequestTaskAuctionsStub = nil
-	fake.requestTaskAuctionsReturns = struct {
 		result1 error
 	}{result1}
 }

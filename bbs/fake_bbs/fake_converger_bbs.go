@@ -27,15 +27,6 @@ type FakeConvergerBBS struct {
 		logger      lager.Logger
 		cellsLoader *services_bbs.CellsLoader
 	}
-	ConvergeTasksStub        func(logger lager.Logger, timeToClaim, convergenceInterval, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader)
-	convergeTasksMutex       sync.RWMutex
-	convergeTasksArgsForCall []struct {
-		logger              lager.Logger
-		timeToClaim         time.Duration
-		convergenceInterval time.Duration
-		timeToResolve       time.Duration
-		cellsLoader         *services_bbs.CellsLoader
-	}
 	NewCellsLoaderStub        func() *services_bbs.CellsLoader
 	newCellsLoaderMutex       sync.RWMutex
 	newCellsLoaderArgsForCall []struct{}
@@ -105,33 +96,6 @@ func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) (lager.Logger, *ser
 	fake.convergeLRPsMutex.RLock()
 	defer fake.convergeLRPsMutex.RUnlock()
 	return fake.convergeLRPsArgsForCall[i].logger, fake.convergeLRPsArgsForCall[i].cellsLoader
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasks(logger lager.Logger, timeToClaim time.Duration, convergenceInterval time.Duration, timeToResolve time.Duration, cellsLoader *services_bbs.CellsLoader) {
-	fake.convergeTasksMutex.Lock()
-	fake.convergeTasksArgsForCall = append(fake.convergeTasksArgsForCall, struct {
-		logger              lager.Logger
-		timeToClaim         time.Duration
-		convergenceInterval time.Duration
-		timeToResolve       time.Duration
-		cellsLoader         *services_bbs.CellsLoader
-	}{logger, timeToClaim, convergenceInterval, timeToResolve, cellsLoader})
-	fake.convergeTasksMutex.Unlock()
-	if fake.ConvergeTasksStub != nil {
-		fake.ConvergeTasksStub(logger, timeToClaim, convergenceInterval, timeToResolve, cellsLoader)
-	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasksCallCount() int {
-	fake.convergeTasksMutex.RLock()
-	defer fake.convergeTasksMutex.RUnlock()
-	return len(fake.convergeTasksArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ConvergeTasksArgsForCall(i int) (lager.Logger, time.Duration, time.Duration, time.Duration, *services_bbs.CellsLoader) {
-	fake.convergeTasksMutex.RLock()
-	defer fake.convergeTasksMutex.RUnlock()
-	return fake.convergeTasksArgsForCall[i].logger, fake.convergeTasksArgsForCall[i].timeToClaim, fake.convergeTasksArgsForCall[i].convergenceInterval, fake.convergeTasksArgsForCall[i].timeToResolve, fake.convergeTasksArgsForCall[i].cellsLoader
 }
 
 func (fake *FakeConvergerBBS) NewCellsLoader() *services_bbs.CellsLoader {
