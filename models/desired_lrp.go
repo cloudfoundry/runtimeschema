@@ -6,7 +6,10 @@ import (
 	"regexp"
 )
 
-const maximumRouteLength = 4 * 1024
+const (
+	maximumAnnotationLength = 10 * 1024
+	maximumRouteLength      = 4 * 1024
+)
 
 type DomainSet map[string]struct{}
 
