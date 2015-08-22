@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 
 	"github.com/cloudfoundry-incubator/bbs/models"
-	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 )
 
 type StagingErrorID string
 
-var (
-	STAGING_ERROR          StagingErrorID = "StagingError"
-	INSUFFICIENT_RESOURCES StagingErrorID = "InsufficientResources"
-	NO_COMPATIBLE_CELL     StagingErrorID = "NoCompatibleCell"
+const (
+	STAGING_ERROR            StagingErrorID = "StagingError"
+	INSUFFICIENT_RESOURCES   StagingErrorID = "InsufficientResources"
+	NO_COMPATIBLE_CELL       StagingErrorID = "NoCompatibleCell"
+	BUILDPACK_DETECT_FAILED  StagingErrorID = "NoAppDetectedError"
+	BUILDPACK_COMPILE_FAILED StagingErrorID = "BuildpackCompileFailed"
+	BUILDPACK_RELEASE_FAILED StagingErrorID = "BuildpackReleaseFailed"
 )
 
 type StagingError struct {
@@ -73,25 +75,4 @@ type BuildpackStagingResponse struct {
 
 type StagingTaskAnnotation struct {
 	Lifecycle string `json:"lifecycle"`
-}
-
-func SanitizeErrorMessage(message string) *StagingError {
-	id := STAGING_ERROR
-	switch message {
-	case diego_errors.INSUFFICIENT_RESOURCES_MESSAGE:
-		id = INSUFFICIENT_RESOURCES
-	case diego_errors.CELL_MISMATCH_MESSAGE:
-		id = NO_COMPATIBLE_CELL
-	case diego_errors.MISSING_DOCKER_IMAGE_URL:
-	case diego_errors.MISSING_DOCKER_REGISTRY:
-	case diego_errors.MISSING_DOCKER_CREDENTIALS:
-	case diego_errors.INVALID_DOCKER_REGISTRY_ADDRESS:
-	default:
-		message = "staging failed"
-	}
-
-	return &StagingError{
-		Id:      id,
-		Message: message,
-	}
 }

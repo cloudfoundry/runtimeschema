@@ -257,4 +257,3 @@ func (repo *actualLRPRepository) CreateActualLRPsForDesired(logger lager.Logger,
 func isInstanceActualLRPNode(node storeadapter.StoreNode) bool {
 	return path.Base(node.Key) == shared.ActualLRPInstanceKey
 }
-

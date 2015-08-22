@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/bbs/models"
 	"github.com/cloudfoundry-incubator/runtime-schema/cc_messages"
-	"github.com/cloudfoundry-incubator/runtime-schema/diego_errors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -239,48 +238,6 @@ var _ = Describe("StagingMessages", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(response).To(Equal(buildpackStagingResponse))
-		})
-	})
-
-	Describe("SanitizeErrorMessage", func() {
-		Context("when the message is InsufficientResources", func() {
-			It("returns a InsufficientResources", func() {
-				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE)
-				Expect(stagingErr.Id).To(Equal(cc_messages.INSUFFICIENT_RESOURCES))
-				Expect(stagingErr.Message).To(Equal(diego_errors.INSUFFICIENT_RESOURCES_MESSAGE))
-			})
-		})
-
-		Context("when the message is NoCompatibleCell", func() {
-			It("returns a NoCompatibleCell", func() {
-				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.CELL_MISMATCH_MESSAGE)
-				Expect(stagingErr.Id).To(Equal(cc_messages.NO_COMPATIBLE_CELL))
-				Expect(stagingErr.Message).To(Equal(diego_errors.CELL_MISMATCH_MESSAGE))
-			})
-		})
-
-		Context("when the message is missing docker image URL", func() {
-			It("returns a StagingError", func() {
-				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_IMAGE_URL)
-				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
-				Expect(stagingErr.Message).To(Equal(diego_errors.MISSING_DOCKER_IMAGE_URL))
-			})
-		})
-
-		Context("when the message is missing docker registry", func() {
-			It("returns a StagingError", func() {
-				stagingErr := cc_messages.SanitizeErrorMessage(diego_errors.MISSING_DOCKER_REGISTRY)
-				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
-				Expect(stagingErr.Message).To(Equal(diego_errors.MISSING_DOCKER_REGISTRY))
-			})
-		})
-
-		Context("any other message", func() {
-			It("returns a StagingError", func() {
-				stagingErr := cc_messages.SanitizeErrorMessage("some-error")
-				Expect(stagingErr.Id).To(Equal(cc_messages.STAGING_ERROR))
-				Expect(stagingErr.Message).To(Equal("staging failed"))
-			})
 		})
 	})
 })
