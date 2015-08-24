@@ -19,11 +19,6 @@ import (
 
 //go:generate counterfeiter -o fake_bbs/fake_receptor_bbs.go . ReceptorBBS
 type ReceptorBBS interface {
-	//desired lrp
-	DesireLRP(lager.Logger, models.DesiredLRP) error
-	UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
-	RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error
-
 	// cells
 	Cells() ([]models.CellPresence, error)
 }
@@ -85,10 +80,6 @@ type TpsBBS interface {
 }
 
 type VeritasBBS interface {
-	//lrp
-	DesireLRP(lager.Logger, models.DesiredLRP) error
-	RemoveDesiredLRPByProcessGuid(logger lager.Logger, guid string) error
-
 	//services
 	Cells() ([]models.CellPresence, error)
 	AuctioneerAddress() (string, error)
