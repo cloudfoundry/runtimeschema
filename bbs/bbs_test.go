@@ -8,16 +8,15 @@ import (
 
 var _ = Describe("BBS", func() {
 	It("should compile and be able to construct and return each BBS", func() {
-		receptorTaskHandlerURL := "http://example.com"
-		bbs.NewBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
-		bbs.NewRepBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
-		bbs.NewConvergerBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewBBS(etcdClient, consulSession, clock, logger)
+		bbs.NewRepBBS(etcdClient, consulSession, clock, logger)
+		bbs.NewConvergerBBS(etcdClient, consulSession, clock, logger)
 		bbs.NewNsyncBBS(consulSession, clock, logger)
-		bbs.NewAuctioneerBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewAuctioneerBBS(etcdClient, consulSession, clock, logger)
 		bbs.NewMetricsBBS(consulSession, clock, logger)
 		bbs.NewRouteEmitterBBS(consulSession, clock, logger)
 		bbs.NewTpsBBS(consulSession, clock, logger)
 		bbs.NewVeritasBBS(etcdClient, consulSession, clock, logger)
-		bbs.NewReceptorBBS(etcdClient, consulSession, receptorTaskHandlerURL, clock, logger)
+		bbs.NewReceptorBBS(etcdClient, consulSession, clock, logger)
 	})
 })

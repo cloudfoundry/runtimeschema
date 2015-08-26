@@ -85,24 +85,24 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
-func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ReceptorBBS {
-	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
+func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) ReceptorBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) RepBBS {
-	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
+func NewRepBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) RepBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewConvergerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) ConvergerBBS {
-	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
+func NewConvergerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) ConvergerBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
 func NewNsyncBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) NsyncBBS {
 	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
 }
 
-func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
-	return NewBBS(store, consul, receptorTaskHandlerURL, clock, logger)
+func NewAuctioneerBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) AuctioneerBBS {
+	return NewBBS(store, consul, clock, logger)
 }
 
 func NewMetricsBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) MetricsBBS {
@@ -118,10 +118,10 @@ func NewTpsBBS(consul *consuladapter.Session, clock clock.Clock, logger lager.Lo
 }
 
 func NewVeritasBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) VeritasBBS {
-	return NewBBS(store, consul, "", clock, logger)
+	return NewBBS(store, consul, clock, logger)
 }
 
-func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, receptorTaskHandlerURL string, clock clock.Clock, logger lager.Logger) *BBS {
+func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
 	cellClient := cb.NewCellClient()
