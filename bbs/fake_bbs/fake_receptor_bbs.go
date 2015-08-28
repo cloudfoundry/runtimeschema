@@ -6,38 +6,9 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
-	"github.com/pivotal-golang/lager"
 )
 
 type FakeReceptorBBS struct {
-	DesireLRPStub        func(lager.Logger, models.DesiredLRP) error
-	desireLRPMutex       sync.RWMutex
-	desireLRPArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 models.DesiredLRP
-	}
-	desireLRPReturns struct {
-		result1 error
-	}
-	UpdateDesiredLRPStub        func(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error
-	updateDesiredLRPMutex       sync.RWMutex
-	updateDesiredLRPArgsForCall []struct {
-		logger      lager.Logger
-		processGuid string
-		update      models.DesiredLRPUpdate
-	}
-	updateDesiredLRPReturns struct {
-		result1 error
-	}
-	RemoveDesiredLRPByProcessGuidStub        func(logger lager.Logger, processGuid string) error
-	removeDesiredLRPByProcessGuidMutex       sync.RWMutex
-	removeDesiredLRPByProcessGuidArgsForCall []struct {
-		logger      lager.Logger
-		processGuid string
-	}
-	removeDesiredLRPByProcessGuidReturns struct {
-		result1 error
-	}
 	CellsStub        func() ([]models.CellPresence, error)
 	cellsMutex       sync.RWMutex
 	cellsArgsForCall []struct{}
@@ -45,106 +16,6 @@ type FakeReceptorBBS struct {
 		result1 []models.CellPresence
 		result2 error
 	}
-}
-
-func (fake *FakeReceptorBBS) DesireLRP(arg1 lager.Logger, arg2 models.DesiredLRP) error {
-	fake.desireLRPMutex.Lock()
-	fake.desireLRPArgsForCall = append(fake.desireLRPArgsForCall, struct {
-		arg1 lager.Logger
-		arg2 models.DesiredLRP
-	}{arg1, arg2})
-	fake.desireLRPMutex.Unlock()
-	if fake.DesireLRPStub != nil {
-		return fake.DesireLRPStub(arg1, arg2)
-	} else {
-		return fake.desireLRPReturns.result1
-	}
-}
-
-func (fake *FakeReceptorBBS) DesireLRPCallCount() int {
-	fake.desireLRPMutex.RLock()
-	defer fake.desireLRPMutex.RUnlock()
-	return len(fake.desireLRPArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) DesireLRPArgsForCall(i int) (lager.Logger, models.DesiredLRP) {
-	fake.desireLRPMutex.RLock()
-	defer fake.desireLRPMutex.RUnlock()
-	return fake.desireLRPArgsForCall[i].arg1, fake.desireLRPArgsForCall[i].arg2
-}
-
-func (fake *FakeReceptorBBS) DesireLRPReturns(result1 error) {
-	fake.DesireLRPStub = nil
-	fake.desireLRPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeReceptorBBS) UpdateDesiredLRP(logger lager.Logger, processGuid string, update models.DesiredLRPUpdate) error {
-	fake.updateDesiredLRPMutex.Lock()
-	fake.updateDesiredLRPArgsForCall = append(fake.updateDesiredLRPArgsForCall, struct {
-		logger      lager.Logger
-		processGuid string
-		update      models.DesiredLRPUpdate
-	}{logger, processGuid, update})
-	fake.updateDesiredLRPMutex.Unlock()
-	if fake.UpdateDesiredLRPStub != nil {
-		return fake.UpdateDesiredLRPStub(logger, processGuid, update)
-	} else {
-		return fake.updateDesiredLRPReturns.result1
-	}
-}
-
-func (fake *FakeReceptorBBS) UpdateDesiredLRPCallCount() int {
-	fake.updateDesiredLRPMutex.RLock()
-	defer fake.updateDesiredLRPMutex.RUnlock()
-	return len(fake.updateDesiredLRPArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) UpdateDesiredLRPArgsForCall(i int) (lager.Logger, string, models.DesiredLRPUpdate) {
-	fake.updateDesiredLRPMutex.RLock()
-	defer fake.updateDesiredLRPMutex.RUnlock()
-	return fake.updateDesiredLRPArgsForCall[i].logger, fake.updateDesiredLRPArgsForCall[i].processGuid, fake.updateDesiredLRPArgsForCall[i].update
-}
-
-func (fake *FakeReceptorBBS) UpdateDesiredLRPReturns(result1 error) {
-	fake.UpdateDesiredLRPStub = nil
-	fake.updateDesiredLRPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuid(logger lager.Logger, processGuid string) error {
-	fake.removeDesiredLRPByProcessGuidMutex.Lock()
-	fake.removeDesiredLRPByProcessGuidArgsForCall = append(fake.removeDesiredLRPByProcessGuidArgsForCall, struct {
-		logger      lager.Logger
-		processGuid string
-	}{logger, processGuid})
-	fake.removeDesiredLRPByProcessGuidMutex.Unlock()
-	if fake.RemoveDesiredLRPByProcessGuidStub != nil {
-		return fake.RemoveDesiredLRPByProcessGuidStub(logger, processGuid)
-	} else {
-		return fake.removeDesiredLRPByProcessGuidReturns.result1
-	}
-}
-
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidCallCount() int {
-	fake.removeDesiredLRPByProcessGuidMutex.RLock()
-	defer fake.removeDesiredLRPByProcessGuidMutex.RUnlock()
-	return len(fake.removeDesiredLRPByProcessGuidArgsForCall)
-}
-
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidArgsForCall(i int) (lager.Logger, string) {
-	fake.removeDesiredLRPByProcessGuidMutex.RLock()
-	defer fake.removeDesiredLRPByProcessGuidMutex.RUnlock()
-	return fake.removeDesiredLRPByProcessGuidArgsForCall[i].logger, fake.removeDesiredLRPByProcessGuidArgsForCall[i].processGuid
-}
-
-func (fake *FakeReceptorBBS) RemoveDesiredLRPByProcessGuidReturns(result1 error) {
-	fake.RemoveDesiredLRPByProcessGuidStub = nil
-	fake.removeDesiredLRPByProcessGuidReturns = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *FakeReceptorBBS) Cells() ([]models.CellPresence, error) {
