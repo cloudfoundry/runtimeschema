@@ -34,12 +34,6 @@ type ConvergerBBS interface {
 	//lock
 	NewConvergeLock(convergerID string, retryInterval time.Duration) ifrit.Runner
 
-	//lrp
-	ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
-
-	//cell loader
-	NewCellsLoader() *services_bbs.CellsLoader
-
 	//cells
 	CellEvents() <-chan services_bbs.CellEvent
 }

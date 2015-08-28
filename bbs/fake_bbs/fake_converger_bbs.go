@@ -7,7 +7,6 @@ import (
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 )
 
@@ -20,18 +19,6 @@ type FakeConvergerBBS struct {
 	}
 	newConvergeLockReturns struct {
 		result1 ifrit.Runner
-	}
-	ConvergeLRPsStub        func(logger lager.Logger, cellsLoader *services_bbs.CellsLoader)
-	convergeLRPsMutex       sync.RWMutex
-	convergeLRPsArgsForCall []struct {
-		logger      lager.Logger
-		cellsLoader *services_bbs.CellsLoader
-	}
-	NewCellsLoaderStub        func() *services_bbs.CellsLoader
-	newCellsLoaderMutex       sync.RWMutex
-	newCellsLoaderArgsForCall []struct{}
-	newCellsLoaderReturns struct {
-		result1 *services_bbs.CellsLoader
 	}
 	CellEventsStub        func() <-chan services_bbs.CellEvent
 	cellEventsMutex       sync.RWMutex
@@ -71,54 +58,6 @@ func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
 	fake.NewConvergeLockStub = nil
 	fake.newConvergeLockReturns = struct {
 		result1 ifrit.Runner
-	}{result1}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPs(logger lager.Logger, cellsLoader *services_bbs.CellsLoader) {
-	fake.convergeLRPsMutex.Lock()
-	fake.convergeLRPsArgsForCall = append(fake.convergeLRPsArgsForCall, struct {
-		logger      lager.Logger
-		cellsLoader *services_bbs.CellsLoader
-	}{logger, cellsLoader})
-	fake.convergeLRPsMutex.Unlock()
-	if fake.ConvergeLRPsStub != nil {
-		fake.ConvergeLRPsStub(logger, cellsLoader)
-	}
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPsCallCount() int {
-	fake.convergeLRPsMutex.RLock()
-	defer fake.convergeLRPsMutex.RUnlock()
-	return len(fake.convergeLRPsArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) ConvergeLRPsArgsForCall(i int) (lager.Logger, *services_bbs.CellsLoader) {
-	fake.convergeLRPsMutex.RLock()
-	defer fake.convergeLRPsMutex.RUnlock()
-	return fake.convergeLRPsArgsForCall[i].logger, fake.convergeLRPsArgsForCall[i].cellsLoader
-}
-
-func (fake *FakeConvergerBBS) NewCellsLoader() *services_bbs.CellsLoader {
-	fake.newCellsLoaderMutex.Lock()
-	fake.newCellsLoaderArgsForCall = append(fake.newCellsLoaderArgsForCall, struct{}{})
-	fake.newCellsLoaderMutex.Unlock()
-	if fake.NewCellsLoaderStub != nil {
-		return fake.NewCellsLoaderStub()
-	} else {
-		return fake.newCellsLoaderReturns.result1
-	}
-}
-
-func (fake *FakeConvergerBBS) NewCellsLoaderCallCount() int {
-	fake.newCellsLoaderMutex.RLock()
-	defer fake.newCellsLoaderMutex.RUnlock()
-	return len(fake.newCellsLoaderArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) NewCellsLoaderReturns(result1 *services_bbs.CellsLoader) {
-	fake.NewCellsLoaderStub = nil
-	fake.newCellsLoaderReturns = struct {
-		result1 *services_bbs.CellsLoader
 	}{result1}
 }
 
