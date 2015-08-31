@@ -56,3 +56,11 @@ func (bbs *LockBBS) NewRuntimeMetricsLock(runtimeMetricsID string, retryInterval
 func (bbs *LockBBS) NewTpsWatcherLock(tpsWatcherID string, retryInterval time.Duration) ifrit.Runner {
 	return maintainer.NewLock(bbs.consul, shared.LockSchemaPath("tps_watcher_lock"), []byte(tpsWatcherID), bbs.clock, retryInterval, bbs.logger)
 }
+
+func (bbs *LockBBS) NewBBSMasterLock(bbsPresence models.BBSPresence, retryInterval time.Duration) (ifrit.Runner, error) {
+	bbsPresenceJSON, err := models.ToJSON(bbsPresence)
+	if err != nil {
+		return nil, err
+	}
+	return maintainer.NewLock(bbs.consul, shared.LockSchemaPath("bbs_lock"), bbsPresenceJSON, bbs.clock, retryInterval, bbs.logger), nil
+}

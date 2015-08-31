@@ -79,6 +79,10 @@ type VeritasBBS interface {
 	AuctioneerAddress() (string, error)
 }
 
+type BBSPresenceManager interface {
+	NewBBSMasterLock(bbsPresence models.BBSPresence, retryInterval time.Duration) (ifrit.Runner, error)
+}
+
 func NewReceptorBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) ReceptorBBS {
 	return NewBBS(store, consul, clock, logger)
 }
