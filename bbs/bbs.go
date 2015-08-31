@@ -119,6 +119,10 @@ func NewVeritasBBS(store storeadapter.StoreAdapter, consul *consuladapter.Sessio
 	return NewBBS(store, consul, clock, logger)
 }
 
+func NewBBSPresenceManager(consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) BBSPresenceManager {
+	return lock_bbs.New(consul, clock, logger.Session("lock-bbs"))
+}
+
 func NewBBS(store storeadapter.StoreAdapter, consul *consuladapter.Session, clock clock.Clock, logger lager.Logger) *BBS {
 	services := services_bbs.New(consul, clock, logger.Session("services-bbs"))
 	auctioneerClient := cb.NewAuctioneerClient()
