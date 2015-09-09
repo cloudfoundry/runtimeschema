@@ -20,7 +20,8 @@ var _ = Describe("StagingMessages", func() {
            "environment" : [{"name": "FOO", "value":"BAR"}],
            "timeout" : 900,
            "lifecycle": "buildpack",
-           "lifecycle_data": {"foo": "bar"}
+					 "lifecycle_data": {"foo": "bar"},
+					 "completion_callback": "https://api.cc.com/staging/complete"
         }`
 
 		It("should be mapped to the CC's staging request JSON", func() {
@@ -37,11 +38,11 @@ var _ = Describe("StagingMessages", func() {
 				Environment: []*models.EnvironmentVariable{
 					{Name: "FOO", Value: "BAR"},
 				},
-				Timeout:       900,
-				Lifecycle:     "buildpack",
-				LifecycleData: &lifecycle_data,
+				Timeout:            900,
+				Lifecycle:          "buildpack",
+				LifecycleData:      &lifecycle_data,
+				CompletionCallback: "https://api.cc.com/staging/complete",
 			}))
-
 		})
 	})
 
