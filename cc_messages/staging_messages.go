@@ -75,5 +75,6 @@ type BuildpackStagingResponse struct {
 }
 
 type StagingTaskAnnotation struct {
-	Lifecycle string `json:"lifecycle"`
+	Lifecycle          string `json:"lifecycle"`
+	CompletionCallback string `json:"completion_callback"`
 }
