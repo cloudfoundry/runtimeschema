@@ -62,8 +62,9 @@ var _ = Describe("Cell Service Registry", func() {
 			expectedJSON, err := models.ToJSON(firstCellPresence)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() ([]byte, error) {
-				return consulSession.GetAcquiredValue(shared.CellSchemaPath(firstCellPresence.CellID))
+			Eventually(func() []byte {
+				value, _ := consulSession.GetAcquiredValue(shared.CellSchemaPath(firstCellPresence.CellID))
+				return value
 			}, time.Second).Should(MatchJSON(expectedJSON))
 		})
 	})
