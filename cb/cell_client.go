@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cloudfoundry-incubator/bbs/cellhandlers"
 	"github.com/cloudfoundry-incubator/cf_http"
+	"github.com/cloudfoundry-incubator/rep"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/tedsuo/rata"
 )
@@ -32,9 +32,9 @@ func (c *cellClient) StopLRPInstance(
 	key models.ActualLRPKey,
 	instanceKey models.ActualLRPInstanceKey,
 ) error {
-	reqGen := rata.NewRequestGenerator(cellURL, cellhandlers.Routes)
+	reqGen := rata.NewRequestGenerator(cellURL, rep.Routes)
 
-	req, err := reqGen.CreateRequest(cellhandlers.StopLRPInstanceRoute, stopParamsFromLRP(key, instanceKey), nil)
+	req, err := reqGen.CreateRequest(rep.StopLRPInstanceRoute, stopParamsFromLRP(key, instanceKey), nil)
 	if err != nil {
 		return err
 	}
