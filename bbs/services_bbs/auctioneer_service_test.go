@@ -9,8 +9,8 @@ import (
 	"github.com/pivotal-golang/lager/lagertest"
 	"github.com/tedsuo/ifrit"
 
+	"github.com/cloudfoundry-incubator/locket"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/bbserrors"
-	"github.com/cloudfoundry-incubator/runtime-schema/bbs/lock_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/models"
 	"github.com/pivotal-golang/clock/fakeclock"
@@ -33,8 +33,8 @@ var _ = Describe("Receptor Service Registry", func() {
 			var auctioneerPresence models.AuctioneerPresence
 
 			JustBeforeEach(func() {
-				lockBbs := lock_bbs.New(consulSession, clock, logger)
-				auctioneerLock, err := lockBbs.NewAuctioneerLock(auctioneerPresence, 100*time.Millisecond)
+				locketClient := locket.New(consulSession, clock, logger)
+				auctioneerLock, err := locketClient.NewAuctioneerLock(auctioneerPresence, 100*time.Millisecond)
 				Expect(err).NotTo(HaveOccurred())
 				heartbeater = ifrit.Invoke(auctioneerLock)
 			})

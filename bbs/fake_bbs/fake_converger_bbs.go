@@ -3,62 +3,18 @@ package fake_bbs
 
 import (
 	"sync"
-	"time"
 
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs"
 	"github.com/cloudfoundry-incubator/runtime-schema/bbs/services_bbs"
-	"github.com/tedsuo/ifrit"
 )
 
 type FakeConvergerBBS struct {
-	NewConvergeLockStub        func(convergerID string, retryInterval time.Duration) ifrit.Runner
-	newConvergeLockMutex       sync.RWMutex
-	newConvergeLockArgsForCall []struct {
-		convergerID   string
-		retryInterval time.Duration
-	}
-	newConvergeLockReturns struct {
-		result1 ifrit.Runner
-	}
 	CellEventsStub        func() <-chan services_bbs.CellEvent
 	cellEventsMutex       sync.RWMutex
 	cellEventsArgsForCall []struct{}
 	cellEventsReturns struct {
 		result1 <-chan services_bbs.CellEvent
 	}
-}
-
-func (fake *FakeConvergerBBS) NewConvergeLock(convergerID string, retryInterval time.Duration) ifrit.Runner {
-	fake.newConvergeLockMutex.Lock()
-	fake.newConvergeLockArgsForCall = append(fake.newConvergeLockArgsForCall, struct {
-		convergerID   string
-		retryInterval time.Duration
-	}{convergerID, retryInterval})
-	fake.newConvergeLockMutex.Unlock()
-	if fake.NewConvergeLockStub != nil {
-		return fake.NewConvergeLockStub(convergerID, retryInterval)
-	} else {
-		return fake.newConvergeLockReturns.result1
-	}
-}
-
-func (fake *FakeConvergerBBS) NewConvergeLockCallCount() int {
-	fake.newConvergeLockMutex.RLock()
-	defer fake.newConvergeLockMutex.RUnlock()
-	return len(fake.newConvergeLockArgsForCall)
-}
-
-func (fake *FakeConvergerBBS) NewConvergeLockArgsForCall(i int) (string, time.Duration) {
-	fake.newConvergeLockMutex.RLock()
-	defer fake.newConvergeLockMutex.RUnlock()
-	return fake.newConvergeLockArgsForCall[i].convergerID, fake.newConvergeLockArgsForCall[i].retryInterval
-}
-
-func (fake *FakeConvergerBBS) NewConvergeLockReturns(result1 ifrit.Runner) {
-	fake.NewConvergeLockStub = nil
-	fake.newConvergeLockReturns = struct {
-		result1 ifrit.Runner
-	}{result1}
 }
 
 func (fake *FakeConvergerBBS) CellEvents() <-chan services_bbs.CellEvent {
