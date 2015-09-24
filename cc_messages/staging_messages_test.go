@@ -146,99 +146,31 @@ var _ = Describe("StagingMessages", func() {
 	})
 
 	Describe("StagingResponseForCC", func() {
-		var stagingResponseForCC cc_messages.StagingResponseForCC
-
-		BeforeEach(func() {
-			stagingResponseForCC = cc_messages.StagingResponseForCC{
-				ExecutionMetadata:    "the-execution-metadata",
-				DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
-			}
-		})
-
-		Context("without lifecycle data", func() {
-			It("generates valid json without the lifecycle data", func() {
-				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
-					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"}
-				}`))
-
-			})
-		})
-
-		Context("with lifecycle data", func() {
-			BeforeEach(func() {
-				lifecycleData := json.RawMessage(`{"foo": "bar"}`)
-				stagingResponseForCC = cc_messages.StagingResponseForCC{
-					ExecutionMetadata:    "the-execution-metadata",
-					DetectedStartCommand: map[string]string{"web": "the-detected-start-command"},
-					LifecycleData:        &lifecycleData,
-				}
-			})
-
-			It("generates valid json with lifecycle data", func() {
-				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
-					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"},
-					"lifecycle_data": {"foo": "bar"}
-				}`))
-
-			})
-		})
-
 		Context("without an error", func() {
 			It("generates valid JSON", func() {
+				result := json.RawMessage(`{"foo":"bar"}`)
+				stagingResponseForCC := cc_messages.StagingResponseForCC{
+					Result: &result,
+				}
 				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
-					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"}
+					"result": {"foo":"bar"}
 				}`))
-
 			})
 		})
 
 		Context("with an error", func() {
 			It("generates valid JSON with the error", func() {
-				stagingResponseForCC.Error = &cc_messages.StagingError{
+				err := &cc_messages.StagingError{
 					Id:      "StagingError",
 					Message: "FAIL, missing camels!",
 				}
+				stagingResponseForCC := cc_messages.StagingResponseForCC{
+					Error: err,
+				}
 				Expect(json.Marshal(stagingResponseForCC)).To(MatchJSON(`{
-					"error": { "id": "StagingError", "message": "FAIL, missing camels!" },
-
-					"execution_metadata": "the-execution-metadata",
-					"detected_start_command":{"web":"the-detected-start-command"}
+					"error": { "id": "StagingError", "message": "FAIL, missing camels!" }
 				}`))
-
 			})
-		})
-	})
-
-	Describe("BuildpackStagingResponse", func() {
-		var buildpackStagingResponse cc_messages.BuildpackStagingResponse
-
-		BeforeEach(func() {
-			buildpackStagingResponse = cc_messages.BuildpackStagingResponse{
-				BuildpackKey:      "buildpack-key",
-				DetectedBuildpack: "detected-buildpack",
-			}
-		})
-
-		It("marshals correctly", func() {
-			Expect(json.Marshal(buildpackStagingResponse)).To(MatchJSON(`{
-				"buildpack_key": "buildpack-key",
-				"detected_buildpack": "detected-buildpack"
-			}`))
-
-		})
-
-		It("marshals correctly", func() {
-			response := cc_messages.BuildpackStagingResponse{}
-			err := json.Unmarshal([]byte(`{
-				"buildpack_key": "buildpack-key",
-				"detected_buildpack": "detected-buildpack"
-			}`), &response)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(response).To(Equal(buildpackStagingResponse))
 		})
 	})
 })

@@ -63,15 +63,8 @@ type Buildpack struct {
 }
 
 type StagingResponseForCC struct {
-	ExecutionMetadata    string            `json:"execution_metadata"`
-	DetectedStartCommand map[string]string `json:"detected_start_command,omitempty"`
-	Error                *StagingError     `json:"error,omitempty"`
-	LifecycleData        *json.RawMessage  `json:"lifecycle_data,omitempty"`
-}
-
-type BuildpackStagingResponse struct {
-	BuildpackKey      string `json:"buildpack_key"`
-	DetectedBuildpack string `json:"detected_buildpack"`
+	Error  *StagingError    `json:"error,omitempty"`
+	Result *json.RawMessage `json:"result,omitempty"`
 }
 
 type StagingTaskAnnotation struct {
