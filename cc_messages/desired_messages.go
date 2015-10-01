@@ -56,8 +56,8 @@ func (r CCHTTPRoutes) CCRouteInfo() (CCRouteInfo, error) {
 }
 
 type CCHTTPRoute struct {
-	Hostname        string `json: "hostname"`
-	RouteServiceUrl string `json: "route_service_url,omitempty"`
+	Hostname        string `json:"hostname"`
+	RouteServiceUrl string `json:"route_service_url,omitempty"`
 }
 
 type CCDesiredStateServerResponse struct {
