@@ -14,6 +14,8 @@ const NoneHealthCheckType HealthCheckType = "none"
 
 const CC_HTTP_ROUTES = "http_routes"
 
+const CC_TCP_ROUTES = "tcp_routes"
+
 type DesireAppRequestFromCC struct {
 	ProcessGuid                 string                        `json:"process_guid"`
 	DropletUri                  string                        `json:"droplet_uri"`
@@ -37,6 +39,7 @@ type DesireAppRequestFromCC struct {
 	HealthCheckTimeoutInSeconds uint                          `json:"health_check_timeout_in_seconds"`
 	EgressRules                 []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
 	ETag                        string                        `json:"etag"`
+	Ports                       []uint32                      `json:"ports,omitempty"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
@@ -58,6 +61,27 @@ func (r CCHTTPRoutes) CCRouteInfo() (CCRouteInfo, error) {
 type CCHTTPRoute struct {
 	Hostname        string `json:"hostname"`
 	RouteServiceUrl string `json:"route_service_url,omitempty"`
+	Port            uint32 `json:"port,omitempty"`
+}
+
+type CCTCPRoutes []CCTCPRoute
+
+type CCTCPRoute struct {
+	RouterGroupGuid string `json:"router_group_guid"`
+	ExternalPort    uint32 `json:"external_port,omitempty"`
+	ContainerPort   uint32 `json:"container_port,omitempty"`
+}
+
+func (r CCTCPRoutes) CCRouteInfo() (CCRouteInfo, error) {
+	routesJson, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	routesPayload := json.RawMessage(routesJson)
+	routingInfo := make(map[string]*json.RawMessage)
+	routingInfo[CC_TCP_ROUTES] = &routesPayload
+	return routingInfo, nil
 }
 
 type CCDesiredStateServerResponse struct {
