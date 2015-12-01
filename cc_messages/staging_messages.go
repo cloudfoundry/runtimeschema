@@ -12,6 +12,7 @@ const (
 	STAGING_ERROR            StagingErrorID = "StagingError"
 	INSUFFICIENT_RESOURCES   StagingErrorID = "InsufficientResources"
 	NO_COMPATIBLE_CELL       StagingErrorID = "NoCompatibleCell"
+	CELL_COMMUNICATION_ERROR StagingErrorID = "CellCommunicationError"
 	BUILDPACK_DETECT_FAILED  StagingErrorID = "NoAppDetectedError"
 	BUILDPACK_COMPILE_FAILED StagingErrorID = "BuildpackCompileFailed"
 	BUILDPACK_RELEASE_FAILED StagingErrorID = "BuildpackReleaseFailed"
