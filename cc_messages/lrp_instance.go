@@ -8,6 +8,7 @@ const (
 	LRPInstanceStateStarting LRPInstanceState = "STARTING"
 	LRPInstanceStateRunning  LRPInstanceState = "RUNNING"
 	LRPInstanceStateCrashed  LRPInstanceState = "CRASHED"
+	LRPInstanceStateDown     LRPInstanceState = "DOWN"
 	LRPInstanceStateUnknown  LRPInstanceState = "UNKNOWN"
 )
 
