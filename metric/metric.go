@@ -18,36 +18,36 @@ func (c Counter) Add(i uint64) {
 
 type Duration string
 
-func (name Duration) Send(duration time.Duration) {
-	metrics.SendValue(string(name), float64(duration), "nanos")
+func (name Duration) Send(duration time.Duration) error {
+	return metrics.SendValue(string(name), float64(duration), "nanos")
 }
 
 type Mebibytes string
 
-func (name Mebibytes) Send(mebibytes int) {
-	metrics.SendValue(string(name), float64(mebibytes), "MiB")
+func (name Mebibytes) Send(mebibytes int) error {
+	return metrics.SendValue(string(name), float64(mebibytes), "MiB")
 }
 
 type Metric string
 
-func (name Metric) Send(value int) {
-	metrics.SendValue(string(name), float64(value), "Metric")
+func (name Metric) Send(value int) error {
+	return metrics.SendValue(string(name), float64(value), "Metric")
 }
 
 type Requests string
 
-func (name Requests) Send(value int) {
-	metrics.SendValue(string(name), float64(value), "Req")
+func (name Requests) Send(value int) error {
+	return metrics.SendValue(string(name), float64(value), "Req")
 }
 
 type BytesPerSecond string
 
-func (name BytesPerSecond) Send(value float64) {
-	metrics.SendValue(string(name), value, "B/s")
+func (name BytesPerSecond) Send(value float64) error {
+	return metrics.SendValue(string(name), value, "B/s")
 }
 
 type RequestsPerSecond string
 
-func (name RequestsPerSecond) Send(value float64) {
-	metrics.SendValue(string(name), value, "Req/s")
+func (name RequestsPerSecond) Send(value float64) error {
+	return metrics.SendValue(string(name), value, "Req/s")
 }
