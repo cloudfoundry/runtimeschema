@@ -102,3 +102,25 @@ type CCDesiredStateFingerprintResponse struct {
 type CCBulkToken struct {
 	Id int `json:"id"`
 }
+
+type TaskErrorID string
+
+type TaskRequestFromCC struct {
+	TaskGuid              string                        `json:"task_guid"`
+	LogGuid               string                        `json:"log_guid"`
+	MemoryMb              int                           `json:"memory_mb"`
+	DiskMb                int                           `json:"disk_mb"`
+	Lifecycle             string                        `json:"lifecycle"`
+	EnvironmentVariables  []*models.EnvironmentVariable `json:"environment"`
+	EgressRules           []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
+	DropletUri            string                        `json:"droplet_uri"`
+	DockerPath            string                        `json:"docker_path"`
+	RootFs                string                        `json:"rootfs"`
+	CompletionCallbackUrl string                        `json:"completion_callback"`
+	Command               string                        `json:"command"`
+}
+
+type TaskError struct {
+	Id      TaskErrorID `json:"id"`
+	Message string      `json:"message"`
+}
