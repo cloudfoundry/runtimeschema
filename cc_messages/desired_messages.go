@@ -16,6 +16,12 @@ const CC_HTTP_ROUTES = "http_routes"
 
 const CC_TCP_ROUTES = "tcp_routes"
 
+const (
+	TaskStatePending   = "PENDING"
+	TaskStateRunning   = "RUNNING"
+	TaskStateSucceeded = "SUCCEEDED"
+)
+
 type DesireAppRequestFromCC struct {
 	ProcessGuid                 string                        `json:"process_guid"`
 	DropletUri                  string                        `json:"droplet_uri"`
@@ -94,9 +100,20 @@ type CCDesiredAppFingerprint struct {
 	ETag        string `json:"etag"`
 }
 
+type CCTaskState struct {
+	TaskGuid              string `json:"task_guid"`
+	State                 string `json:"state"`
+	CompletionCallbackUrl string `json:"completion_callback"`
+}
+
 type CCDesiredStateFingerprintResponse struct {
 	Fingerprints []CCDesiredAppFingerprint `json:"fingerprints"`
 	CCBulkToken  *json.RawMessage          `json:"token"`
+}
+
+type CCTaskStatesResponse struct {
+	TaskStates  []CCTaskState    `json:"task_states"`
+	CCBulkToken *json.RawMessage `json:"token"`
 }
 
 type CCBulkToken struct {
@@ -118,6 +135,12 @@ type TaskRequestFromCC struct {
 	RootFs                string                        `json:"rootfs"`
 	CompletionCallbackUrl string                        `json:"completion_callback"`
 	Command               string                        `json:"command"`
+}
+
+type TaskFailResponseForCC struct {
+	TaskGuid      string `json:"task_guid"`
+	Failed        bool   `json:"failed"`
+	FailureReason string `json:"failure_reason"`
 }
 
 type TaskError struct {
