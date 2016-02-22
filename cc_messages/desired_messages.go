@@ -118,6 +118,7 @@ type TaskRequestFromCC struct {
 	RootFs                string                        `json:"rootfs"`
 	CompletionCallbackUrl string                        `json:"completion_callback"`
 	Command               string                        `json:"command"`
+	LogSource             string                        `json:"log_source,omit_empty"`
 }
 
 type TaskError struct {
