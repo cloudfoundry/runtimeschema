@@ -19,6 +19,7 @@ const CC_TCP_ROUTES = "tcp_routes"
 const (
 	TaskStatePending   = "PENDING"
 	TaskStateRunning   = "RUNNING"
+	TaskStateCanceling = "CANCELING"
 	TaskStateSucceeded = "SUCCEEDED"
 )
 
