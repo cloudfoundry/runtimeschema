@@ -47,6 +47,7 @@ type DesireAppRequestFromCC struct {
 	EgressRules                 []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
 	ETag                        string                        `json:"etag"`
 	Ports                       []uint32                      `json:"ports,omitempty"`
+	LogSource                   string                        `json:"log_source,omitempty"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
