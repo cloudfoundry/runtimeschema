@@ -1,6 +1,7 @@
 package cc_messages
 
 import "time"
+import "github.com/cloudfoundry-incubator/bbs/models"
 
 type LRPInstanceState string
 
@@ -13,16 +14,17 @@ const (
 )
 
 type LRPInstance struct {
-	ProcessGuid  string            `json:"process_guid"`
-	InstanceGuid string            `json:"instance_guid"`
-	Index        uint              `json:"index"`
-	State        LRPInstanceState  `json:"state"`
-	Details      string            `json:"details,omitempty"`
-	Host         string            `json:"host,omitempty"`
-	Port         uint16            `json:"port,omitempty"`
-	Uptime       int64             `json:"uptime"`
-	Since        int64             `json:"since"`
-	Stats        *LRPInstanceStats `json:"stats,omitempty"`
+	ProcessGuid  string                  `json:"process_guid"`
+	InstanceGuid string                  `json:"instance_guid"`
+	Index        uint                    `json:"index"`
+	State        LRPInstanceState        `json:"state"`
+	Details      string                  `json:"details,omitempty"`
+	Host         string                  `json:"host,omitempty"`
+	Port         uint16                  `json:"port,omitempty"`
+	NetInfo      models.ActualLRPNetInfo `json:"net_info"`
+	Uptime       int64                   `json:"uptime"`
+	Since        int64                   `json:"since"`
+	Stats        *LRPInstanceStats       `json:"stats,omitempty"`
 }
 
 type LRPInstanceStats struct {
