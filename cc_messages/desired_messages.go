@@ -48,6 +48,7 @@ type DesireAppRequestFromCC struct {
 	ETag                        string                        `json:"etag"`
 	Ports                       []uint32                      `json:"ports,omitempty"`
 	LogSource                   string                        `json:"log_source,omitempty"`
+	Network                     *models.Network               `json:"network,omitempty"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
