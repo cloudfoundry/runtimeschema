@@ -140,6 +140,7 @@ type TaskRequestFromCC struct {
 	CompletionCallbackUrl string                        `json:"completion_callback"`
 	Command               string                        `json:"command"`
 	LogSource             string                        `json:"log_source,omit_empty"`
+	VolumeMounts          []*models.VolumeMount         `json:"volume_mounts"`
 }
 
 type TaskFailResponseForCC struct {
