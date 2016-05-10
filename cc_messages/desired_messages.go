@@ -23,6 +23,18 @@ const (
 	TaskStateSucceeded = "SUCCEEDED"
 )
 
+type VolumeMount struct {
+	DriverID        string			`json:"driver_id"`
+	GroupID      	string			`json:"group_id"`
+	InstanceIDs 	[]string		`json:"instance_ids`
+	ContainerPath 	string			`json:"container_path"`
+	Mode          	models.BindMountMode	`json:"mode"`
+	Config     	[]byte			`json:"config"`
+	SizeMB 		uint64			`json:"size_mb"`
+	Tags 		map[string][]string	`json:"tags"`
+}
+
+
 type DesireAppRequestFromCC struct {
 	ProcessGuid                 string                        `json:"process_guid"`
 	DropletUri                  string                        `json:"droplet_uri"`
@@ -49,6 +61,7 @@ type DesireAppRequestFromCC struct {
 	Ports                       []uint32                      `json:"ports,omitempty"`
 	LogSource                   string                        `json:"log_source,omitempty"`
 	Network                     *models.Network               `json:"network,omitempty"`
+	VolumeMounts		    []*VolumeMount	          `json:"volume_mounts"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
