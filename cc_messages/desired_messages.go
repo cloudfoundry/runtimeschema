@@ -26,6 +26,7 @@ const (
 type DesireAppRequestFromCC struct {
 	ProcessGuid                 string                        `json:"process_guid"`
 	DropletUri                  string                        `json:"droplet_uri"`
+	DropletMD5                  string                        `json:"droplet_md5"`
 	DockerImageUrl              string                        `json:"docker_image"`
 	DockerLoginServer           string                        `json:"docker_login_server,omitempty"`
 	DockerUser                  string                        `json:"docker_user,omitempty"`
@@ -135,6 +136,7 @@ type TaskRequestFromCC struct {
 	EnvironmentVariables  []*models.EnvironmentVariable `json:"environment"`
 	EgressRules           []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
 	DropletUri            string                        `json:"droplet_uri"`
+	DropletMD5            string                        `json:"droplet_md5"`
 	DockerPath            string                        `json:"docker_path"`
 	RootFs                string                        `json:"rootfs"`
 	CompletionCallbackUrl string                        `json:"completion_callback"`
