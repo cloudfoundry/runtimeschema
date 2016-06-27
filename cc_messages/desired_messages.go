@@ -3,7 +3,7 @@ package cc_messages
 import (
 	"encoding/json"
 
-	"github.com/cloudfoundry-incubator/bbs/models"
+	"code.cloudfoundry.org/bbs/models"
 )
 
 type HealthCheckType string

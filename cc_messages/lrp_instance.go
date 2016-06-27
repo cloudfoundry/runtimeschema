@@ -1,7 +1,7 @@
 package cc_messages
 
 import "time"
-import "github.com/cloudfoundry-incubator/bbs/models"
+import "code.cloudfoundry.org/bbs/models"
 
 type LRPInstanceState string
 
