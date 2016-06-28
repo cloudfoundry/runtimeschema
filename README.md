@@ -1,5 +1,6 @@
 runtime-schema
 ==============
+**Note**: This repository should be imported as `code.cloudfoundry.org/runtimeschema`.
 
 Shared golang schema for runtime.
 
