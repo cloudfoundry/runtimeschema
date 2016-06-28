@@ -1,3 +1,3 @@
-package runtime_schema
+package runtimeschema
 
 //make it go gettable

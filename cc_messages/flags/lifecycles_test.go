@@ -1,7 +1,7 @@
 package flags_test
 
 import (
-	"github.com/cloudfoundry-incubator/runtime-schema/cc_messages/flags"
+	"code.cloudfoundry.org/runtimeschema/cc_messages/flags"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

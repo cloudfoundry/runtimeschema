@@ -3,7 +3,7 @@ package cc_messages_test
 import (
 	"encoding/json"
 
-	"github.com/cloudfoundry-incubator/runtime-schema/cc_messages"
+	"code.cloudfoundry.org/runtimeschema/cc_messages"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
