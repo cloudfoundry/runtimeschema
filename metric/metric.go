@@ -34,12 +34,6 @@ func (name Metric) Send(value int) error {
 	return metrics.SendValue(string(name), float64(value), "Metric")
 }
 
-type Requests string
-
-func (name Requests) Send(value int) error {
-	return metrics.SendValue(string(name), float64(value), "Req")
-}
-
 type BytesPerSecond string
 
 func (name BytesPerSecond) Send(value float64) error {
