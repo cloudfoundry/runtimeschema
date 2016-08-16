@@ -50,12 +50,20 @@ type DesireAppRequestFromCC struct {
 	Ports                       []uint32                      `json:"ports,omitempty"`
 	LogSource                   string                        `json:"log_source,omitempty"`
 	Network                     *models.Network               `json:"network,omitempty"`
-	VolumeMounts                []*models.VolumeMount         `json:"volume_mounts"`
+	VolumeMounts                []*VolumeMount                `json:"volume_mounts"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
 
 type CCHTTPRoutes []CCHTTPRoute
+
+type VolumeMount struct {
+	Driver       string            `json:"driver"`
+	ContainerDir string            `json:"container_dir"`
+	Mode         string            `json:"mode"`
+	DeviceType   string            `json:"device_type"`
+	Device       map[string]string `json:"device"`
+}
 
 func (r CCHTTPRoutes) CCRouteInfo() (CCRouteInfo, error) {
 	routesJson, err := json.Marshal(r)
@@ -142,7 +150,7 @@ type TaskRequestFromCC struct {
 	CompletionCallbackUrl string                        `json:"completion_callback"`
 	Command               string                        `json:"command"`
 	LogSource             string                        `json:"log_source,omit_empty"`
-	VolumeMounts          []*models.VolumeMount         `json:"volume_mounts"`
+	VolumeMounts          []*VolumeMount                `json:"volume_mounts"`
 }
 
 type TaskFailResponseForCC struct {
