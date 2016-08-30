@@ -58,11 +58,16 @@ type CCRouteInfo map[string]*json.RawMessage
 type CCHTTPRoutes []CCHTTPRoute
 
 type VolumeMount struct {
-	Driver       string            `json:"driver"`
-	ContainerDir string            `json:"container_dir"`
-	Mode         string            `json:"mode"`
-	DeviceType   string            `json:"device_type"`
-	Device       map[string]string `json:"device"`
+	Driver       string       `json:"driver"`
+	ContainerDir string       `json:"container_dir"`
+	Mode         string       `json:"mode"`
+	DeviceType   string       `json:"device_type"`
+	Device       SharedDevice `json:"device"`
+}
+
+type SharedDevice struct {
+	VolumeId    string                 `json:"volume_id"`
+	MountConfig map[string]interface{} `json:"mount_config,omitempty"`
 }
 
 func (r CCHTTPRoutes) CCRouteInfo() (CCRouteInfo, error) {
