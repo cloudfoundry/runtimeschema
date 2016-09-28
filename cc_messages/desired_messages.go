@@ -51,6 +51,7 @@ type DesireAppRequestFromCC struct {
 	LogSource                   string                        `json:"log_source,omitempty"`
 	Network                     *models.Network               `json:"network,omitempty"`
 	VolumeMounts                []*VolumeMount                `json:"volume_mounts"`
+	IsolationSegment            string                        `json:"isolation_segment"`
 }
 
 type CCRouteInfo map[string]*json.RawMessage
@@ -156,6 +157,7 @@ type TaskRequestFromCC struct {
 	Command               string                        `json:"command"`
 	LogSource             string                        `json:"log_source,omit_empty"`
 	VolumeMounts          []*VolumeMount                `json:"volume_mounts"`
+	IsolationSegment      string                        `json:"isolation_segment"`
 }
 
 type TaskFailResponseForCC struct {
