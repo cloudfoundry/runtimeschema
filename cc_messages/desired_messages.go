@@ -9,6 +9,7 @@ import (
 type HealthCheckType string
 
 const UnspecifiedHealthCheckType HealthCheckType = "" // backwards-compatibility
+const HTTPHealthCheckType HealthCheckType = "http"
 const PortHealthCheckType HealthCheckType = "port"
 const NoneHealthCheckType HealthCheckType = "none"
 
@@ -44,6 +45,7 @@ type DesireAppRequestFromCC struct {
 	AllowSSH                    bool                          `json:"allow_ssh"`
 	LogGuid                     string                        `json:"log_guid"`
 	HealthCheckType             HealthCheckType               `json:"health_check_type"`
+	HealthCheckHTTPEndpoint     string                        `json:"health_check_http_endpoint"`
 	HealthCheckTimeoutInSeconds uint                          `json:"health_check_timeout_in_seconds"`
 	EgressRules                 []*models.SecurityGroupRule   `json:"egress_rules,omitempty"`
 	ETag                        string                        `json:"etag"`
