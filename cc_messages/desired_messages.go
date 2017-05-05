@@ -154,6 +154,8 @@ type TaskRequestFromCC struct {
 	DropletUri            string                        `json:"droplet_uri"`
 	DropletHash           string                        `json:"droplet_hash"`
 	DockerPath            string                        `json:"docker_path"`
+	DockerUser            string                        `json:"docker_user,omitempty"`
+	DockerPassword        string                        `json:"docker_password,omitempty"`
 	RootFs                string                        `json:"rootfs"`
 	CompletionCallbackUrl string                        `json:"completion_callback"`
 	Command               string                        `json:"command"`
