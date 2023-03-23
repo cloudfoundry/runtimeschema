@@ -3,7 +3,7 @@ package flags_test
 import (
 	"code.cloudfoundry.org/runtimeschema/cc_messages/flags"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
